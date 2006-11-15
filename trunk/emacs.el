@@ -109,9 +109,6 @@
     (indent-for-tab-command)
     ))
 
-(global-unset-key "\C-m")	          ;;; \C-m is going to be our magic
-                                          ;;; key so we don't need a alias
-                                          ;;; for RET
 (defun coder-common ( language )
   (turn-on-font-lock)                     ;;; enable syntax highlighting
   (filladapt-mode 1)                      ;;; filladapt for formatting comments.   
@@ -121,6 +118,14 @@
 
   (gtags-mode)                            ;;; gtags mode, best tags support
   
+
+  (local-unset-key "\C-m")	          ;;; \C-m is going to be our magic
+                                          ;;; key so we don't need a alias
+                                          ;;; for RET
+
+  (local-set-key (kbd "<return>") 'newline-and-indent)	          
+
+
   (local-set-key (kbd "<right>") 'else-next-placeholder)
   (local-set-key (kbd "<left>") 'else-prev-placeholder)
   
