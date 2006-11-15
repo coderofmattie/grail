@@ -109,6 +109,9 @@
     (indent-for-tab-command)
     ))
 
+(global-unset-key "\C-m")	          ;;; \C-m is going to be our magic
+                                          ;;; key so we don't need a alias
+                                          ;;; for RET
 (defun coder-common ( language )
   (turn-on-font-lock)                     ;;; enable syntax highlighting
   (filladapt-mode 1)                      ;;; filladapt for formatting comments.   
@@ -121,8 +124,8 @@
   (local-set-key (kbd "<right>") 'else-next-placeholder)
   (local-set-key (kbd "<left>") 'else-prev-placeholder)
   
-  (local-set-key (kbd "\C-m \C-e") 'else-expand-placeholder)
-  (local-set-key (kbd "\C-m \C-d") 'else-kill-placeholder)
+  (local-set-key "\C-m \C-e" 'else-expand-placeholder)
+  (local-set-key "\C-m \C-d" 'else-kill-placeholder)
 
 ;;  (mode-compile)                                    ;;; turn on compile mode
 
