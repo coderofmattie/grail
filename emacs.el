@@ -1,4 +1,15 @@
-(load-file "/usr/share/emacs/site-lisp/site-gentoo.el")
+;;;----------------------------------------------------------------------
+;;; adjust to the host enviornment
+;;;----------------------------------------------------------------------
+(if (string-equal "gnu/linux" system-type)
+    (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
+
+(setq load-path (cons 
+		 (concat (getenv "HOME") "/system/lib/elisp/") load-path))
+
+;;;----------------------------------------------------------------------
+;;; this is archaic, the custom stuff. I want to get rid of it soon.
+;;;----------------------------------------------------------------------
 
 (custom-set-variables
   ;; custom-set-variables was added by Custom -- don't edit or cut/paste it!
@@ -16,9 +27,21 @@
   '(font-lock-keyword-face ((((class color) (background dark)) (:foreground "royalblue3"))))
   '(font-lock-string-face ((((class color) (background dark)) (:foreground "grey80"))))
   '(font-lock-type-face ((((class color) (background dark)) (:foreground "grey60"))))
-  '(font-lock-variable-name-face ((((class color) (background dark)) (:foreground "grey70")))))
+  '(font-lock-variable-name-face ((((class color) (background dark)) (:foreground "grey70"))))
 
-(setq backup-file-dir (concat (getenv "HOME") "/" "edit-backups"))
+  '(cperl-array-face ((((class color) (background dark)) (:foreground "grey70"))))
+  '(cperl-hash-face ((((class color) (background dark)) (:foreground "grey70"))))
+  '(cperl-nonoverridable-face ((((class color) (background dark)) (:foreground "grey70"))))
+)
+
+(set-cursor-color "yellow")
+(setq inhibit-splash-screen t)
+
+
+;; TODO: no backup files as a temporary solution to having a directory
+;; for backup files.
+
+(setq make-backup-files nil)
 
 ;;;----------------------------------------------------------------------
 ;;; gnus
@@ -31,7 +54,7 @@
 
 (blink-cursor-mode -1)		      ;;; turn off the blinking cursor
 
-(server-start)                        ;;; start emacs-server
+(gnuserv-start)                       ;;; start emacs-server
 
 (display-time)                        ;;; display the time on the modeline
 
@@ -39,9 +62,12 @@
   (lambda ()
     (set-face-foreground 'term-default-fg "grey")))
 
-;;;
-;;; shared functionality
-;;;
+;;;----------------------------------------------------------------------
+;;; basic programming functionality
+;;;----------------------------------------------------------------------
+
+(require 'emerge)		          ;;; 2-3 way merge tool, can be used
+					  ;;; for cherry picking and splitting
 
 (require 'filladapt)		          ;;; mode for adaptive fill (works
 					  ;;; inside of comments
@@ -60,7 +86,7 @@
 (require 'speedbar)		          ;;; speedbar for use with the tags
 				          ;;; facility
 
-(load "gtags")                            ;;; global tags mode
+(require 'else-mode)                      ;;; load the else template system
 
 ;;; hack to auto expand a collapsed buffer when performing a goto to a line
 ;;; inside a collapsed region, copied from content on emacsWiki
@@ -83,38 +109,80 @@
     (indent-for-tab-command)
     ))
 
-;;; configure autoloading of a mode by file extension patterns
+(defun coder-common ( language )
+  (turn-on-font-lock)                     ;;; enable syntax highlighting
+  (filladapt-mode 1)                      ;;; filladapt for formatting comments.   
+
+  (local-set-key (kbd "<tab>") 'indent-or-complete) ;;; tab-complete
+					            ;;; everything
+
+  (gtags-mode)                            ;;; gtags mode, best tags support
+  
+  (local-set-key (kbd "<right>") 'else-next-placeholder)
+  (local-set-key (kbd "<left>") 'else-prev-placeholder)
+  
+  (local-set-key (kbd "\C-m \C-e") 'else-expand-placeholder)
+  (local-set-key (kbd "\C-m \C-d") 'else-kill-placeholder)
+
+;;  (mode-compile)                                    ;;; turn on compile mode
+
+;;  (local-set-key "\C-cc" 'mode-compile)             ;;; bind keys to compile
+;;  (local-set-key "\C-ck" 'mode-compile-kill)
+)
+
+;;;----------------------------------------------------------------------
+;;; language specific tuning
+;;;----------------------------------------------------------------------
 
 (setq auto-mode-alist (append '(
 				 ("\\.c$"       . c-mode)
 				 ("\\.cc$"      . c++-mode)
 				 ("\\.cpp$"     . c++-mode)
 				 ("\\.h$"       . c++-mode)
-				 ("\\.pl$"      . perl-mode)
+				 ("\\.pl$"      . cperl-mode)
+				 ("\\.pm$"      . cperl-mode)
 				 ("\\.xsl$"     . xsl-mode)
 				 ("\\.html$"    . html-helper-mode)
-				 ("\\.scheme$"  . scheme-mode))
+				 ("\\.scheme$"  . slime-mode)
+				 )
 			auto-mode-alist ))
 
-;;;
+;;;----------------------------------------------------------------------
+;;; perl5
+;;;----------------------------------------------------------------------
+(setq cperl-invalid-face (quote off))   ;;; disable trailing whitespace with _
+(setq cperl-pod-here-scan nil)
+
+(add-hook 'cperl-mode-hook '
+  (lambda ()
+    (coder-common "perl5")
+
+    (else-mode)                             ;;; else language sensitive templates
+
+    (local-set-key (kbd "C-h f") 'cperl-perldoc)
+
+    (cperl-toggle-electric)
+    (cperl-toggle-abbrev)
+    ))
+
+;;;----------------------------------------------------------------------
 ;;; elisp
-;;;
+;;;----------------------------------------------------------------------
 
 (setq lisp-indent-offset 2)
 
 (add-hook 'emacs-lisp-mode-hook '
   (lambda ()
-    (turn-on-font-lock)
+    (coder-common "elisp")
     (hs-minor-mode)
-    (filladapt-mode 1)
     (local-set-key (kbd "<tab>") 'indent-or-complete) ;;; tab-complete
 					              ;;; everything
     )
   )
 
-;;;
+;;;----------------------------------------------------------------------
 ;;; scheme
-;;;
+;;;----------------------------------------------------------------------
 
 (setq scheme-program-name "scheme48")    ;;; setup the emacs front-end for the
                                          ;;; scheme48 virtual machine
@@ -125,22 +193,21 @@
 
 (add-hook 'scheme-mode-hook              ;;; tweak scheme-mode
   (lambda ()
-    (turn-on-font-lock)
-    (filladapt-mode 1)))
+    (coder-common "scheme")
+    ))
 
-;;;
+;;;----------------------------------------------------------------------
 ;;; C/C++ common
-;;;
-
-(require 'ediff)		          ;;; 2-3 way merge tool, can be used
-					  ;;; for cherry picking and splitting
+;;;----------------------------------------------------------------------
 
 (require 'cc-mode)                        ;;; cc-mode foundation for
 					  ;;; code editing
 
 (add-hook 'c-mode-common-hook '
   (lambda () 
-    (turn-on-font-lock)            ;;; syntax highlighting
+    (c-setup-filladapt)            ;;; adaptive fill for maintaing
+				   ;;; indenting inside comments
+    (coder-common "C")
     (c-set-style "linux")          ;;; base off of linux style
 
     (setq c-basic-offset 2)               ;;; tabs are 2 spaces
@@ -149,13 +216,8 @@
     (c-toggle-auto-hungry-state 1) ;;; auto-hungry newline and
 				   ;;; whitespace delete
 
-    (c-setup-filladapt)            ;;; adaptive fill for maintaing
-				   ;;; indenting inside comments
-    (filladapt-mode 1)             
-
     (hs-minor-mode)                ;;; activate hide/show mode
 
     (local-set-key (kbd "<tab>") 'indent-or-complete) ;;; tab-complete
 				                      ;;; everything
-    (gtags-mode 1)                 ;;; gtags mode
     ))
