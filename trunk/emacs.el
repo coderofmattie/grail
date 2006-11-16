@@ -62,81 +62,11 @@
   (lambda ()
     (set-face-foreground 'term-default-fg "grey")))
 
-;;;----------------------------------------------------------------------
-;;; basic programming functionality
-;;;----------------------------------------------------------------------
-
-(require 'emerge)		          ;;; 2-3 way merge tool, can be used
-					  ;;; for cherry picking and splitting
-
-(require 'filladapt)		          ;;; mode for adaptive fill (works
-					  ;;; inside of comments
-
-(global-unset-key (kbd "\M-g"))	          ;;; map alt-g to goto a line number
+(global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
 (global-set-key "\M-g" 'goto-line)
 
 (column-number-mode 1)		          ;;; handy guides when following
 (line-number-mode 1)			  ;;; errors
-
-
-(require 'hideshow)                       ;;; hide-show minor mode for
-					  ;;; collapsing and expanding
-					  ;;; source code
-
-(require 'speedbar)		          ;;; speedbar for use with the tags
-				          ;;; facility
-
-(require 'else-mode)                      ;;; load the else template system
-
-;;; hack to auto expand a collapsed buffer when performing a goto to a line
-;;; inside a collapsed region, copied from content on emacsWiki
-
-(defadvice goto-line (after expand-after-goto-line
-		       activate compile)
-
-  "hideshow-expand affected block when using goto-line in a collapsed buffer"
-  (save-excursion
-    (hs-show-block))
-  )
-
-;;; auto-completion or identation routine
-
-(defun indent-or-complete ()
-  "Complete if point is at end of a word, otherwise indent line."
-  (interactive)
-  (if (looking-at "\\>")
-    (dabbrev-expand nil)
-    (indent-for-tab-command)
-    ))
-
-(defun coder-common ( language )
-  (turn-on-font-lock)                     ;;; enable syntax highlighting
-  (filladapt-mode 1)                      ;;; filladapt for formatting comments.   
-
-  (local-set-key (kbd "<tab>") 'indent-or-complete) ;;; tab-complete
-					            ;;; everything
-
-  (gtags-mode)                            ;;; gtags mode, best tags support
-  
-
-  (local-unset-key "\C-m")	          ;;; \C-m is going to be our magic
-                                          ;;; key so we don't need a alias
-                                          ;;; for RET
-
-  (local-set-key (kbd "<return>") 'newline-and-indent)	          
-
-
-  (local-set-key (kbd "<right>") 'else-next-placeholder)
-  (local-set-key (kbd "<left>") 'else-prev-placeholder)
-  
-  (local-set-key "\C-m \C-e" 'else-expand-placeholder)
-  (local-set-key "\C-m \C-d" 'else-kill-placeholder)
-
-;;  (mode-compile)                                    ;;; turn on compile mode
-
-;;  (local-set-key "\C-cc" 'mode-compile)             ;;; bind keys to compile
-;;  (local-set-key "\C-ck" 'mode-compile-kill)
-)
 
 ;;;----------------------------------------------------------------------
 ;;; language specific tuning
@@ -151,58 +81,120 @@
 				 ("\\.pm$"      . cperl-mode)
 				 ("\\.xsl$"     . xsl-mode)
 				 ("\\.html$"    . html-helper-mode)
-				 ("\\.scheme$"  . slime-mode)
+				 ("\\.scheme$"  . scheme-mode)
 				 )
 			auto-mode-alist ))
 
 ;;;----------------------------------------------------------------------
+;;;          tags source code indexing
+;;;----------------------------------------------------------------------
+
+(defun tune-gtags ()
+  (gtags-mode)
+
+  ;; bind the global keys, f for find , r for references , and p for pop.
+
+  (local-set-key "\C-c/f" 'gtags-find-tag)
+  (local-set-key "\C-c/r" 'gtags-find-rtag)
+  (local-set-key "\C-c/p" 'gtags-pop-stack)
+  )
+
+;;;----------------------------------------------------------------------
+;;;          else (L)anguage (S)ensitive (E)diting.
+;;;----------------------------------------------------------------------
+(require 'else-mode)
+
+(defun tune-else-language ( lang )
+  (let ((resume (current-buffer))
+	 (template-file (concat (getenv "HOME") "/projects/else-mode/" lang ".lse"))
+	 (template-buf ))
+
+    (set-buffer (find-file-read-only template-file))
+      
+    (beginning-of-buffer)
+    (else-compile-buffer)
+
+    (kill-buffer template-buf)
+    (set-buffer resume)
+    )
+  
+  (else-mode)
+
+  ;; C-C / is my magic prefix
+  (local-set-key (kbd "<right>") 'else-next-placeholder)
+  (local-set-key (kbd "<left>") 'else-prev-placeholder)
+
+  (local-set-key "\C-c/e" 'else-expand-placeholder)
+  (local-set-key "\C-c/d" 'else-kill-placeholder)
+  )
+
+;;;----------------------------------------------------------------------
+;;;           basic programming functionality
+;;;----------------------------------------------------------------------
+
+;;; accelerate font lock
+(setq jit-lock-contextually nil          ;;; only refontify modified lines
+      jit-lock-defer-contextually t      ;;; until 5 seconds has passed
+      jit-lock-stealth-time 10           ;;; refontify 10 seconds after no input
+      jit-lock-stealth-time 15)          ;;; how long to wait to start deferred fontification
+
+(require 'emerge)		          ;;; 2-3 way merge tool, can be used
+					  ;;; for cherry picking and splitting
+
+(defun indent-or-complete ()
+  "Complete if point is at end of a word, otherwise indent line."
+  (interactive)
+  (if (looking-at "\\>")
+    (dabbrev-expand nil)
+    (indent-for-tab-command)
+    ))
+
+(defun tune-programming ()
+  (turn-on-font-lock)                     ;;; enable syntax highlighting
+
+  (filladapt-mode 1)                      ;;; filladapt for formatting comments.   
+
+  (local-set-key (kbd "<tab>") (function indent-or-complete)) ;;; tab-complete
+					                      ;;; everything
+  (local-set-key (kbd "<return>") 'newline-and-indent)
+
+  (if (string-equal "gnu/linux" system-type)
+    (tune-gtags))                            ;;; gtags mode, best tags support,
+                                             ;;; but not available on Mac OS X
+
+)
+
+;;;----------------------------------------------------------------------
 ;;; perl5
 ;;;----------------------------------------------------------------------
-(setq cperl-invalid-face (quote off))   ;;; disable trailing whitespace with _
-(setq cperl-pod-here-scan nil)
+(require 'cperl-mode)
+(defalias 'perl-mode 'cperl-mode)
 
-(add-hook 'cperl-mode-hook '
+(setq
+  cperl-invalid-face (quote off)   ;;; disable trailing whitespace with _
+  cperl-pod-here-scan nil)         ;;; more attempts to speed up font-lock
+
+(add-hook 'cperl-mode-hook
   (lambda ()
-    (coder-common "perl5")
-
-    (else-mode)                             ;;; else language sensitive templates
-
-    (local-set-key (kbd "C-h f") 'cperl-perldoc)
+    (tune-programming)
+    (tune-else-language "perl")
 
     (cperl-toggle-electric)
     (cperl-toggle-abbrev)
+
+    (local-set-key "\C-hf" 'cperl-perldoc-at-point)
     ))
 
 ;;;----------------------------------------------------------------------
 ;;; elisp
 ;;;----------------------------------------------------------------------
-
 (setq lisp-indent-offset 2)
 
-(add-hook 'emacs-lisp-mode-hook '
+(add-hook 'emacs-lisp-mode-hook
   (lambda ()
-    (coder-common "elisp")
-    (hs-minor-mode)
-    (local-set-key (kbd "<tab>") 'indent-or-complete) ;;; tab-complete
-					              ;;; everything
-    )
-  )
-
-;;;----------------------------------------------------------------------
-;;; scheme
-;;;----------------------------------------------------------------------
-
-(setq scheme-program-name "scheme48")    ;;; setup the emacs front-end for the
-                                         ;;; scheme48 virtual machine
-(autoload 'run-scheme
-  "cmuscheme48"
-  "Run an inferior Scheme process."
-  t)
-
-(add-hook 'scheme-mode-hook              ;;; tweak scheme-mode
-  (lambda ()
-    (coder-common "scheme")
+    (tune-programming)
     ))
+
 
 ;;;----------------------------------------------------------------------
 ;;; C/C++ common
@@ -210,12 +202,11 @@
 
 (require 'cc-mode)                        ;;; cc-mode foundation for
 					  ;;; code editing
-
-(add-hook 'c-mode-common-hook '
+(add-hook 'c-mode-common-hook
   (lambda () 
     (c-setup-filladapt)            ;;; adaptive fill for maintaing
 				   ;;; indenting inside comments
-    (coder-common "C")
+    (tune-programming)
     (c-set-style "linux")          ;;; base off of linux style
 
     (setq c-basic-offset 2)               ;;; tabs are 2 spaces
@@ -223,9 +214,4 @@
 
     (c-toggle-auto-hungry-state 1) ;;; auto-hungry newline and
 				   ;;; whitespace delete
-
-    (hs-minor-mode)                ;;; activate hide/show mode
-
-    (local-set-key (kbd "<tab>") 'indent-or-complete) ;;; tab-complete
-				                      ;;; everything
     ))
