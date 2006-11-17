@@ -34,14 +34,19 @@
   '(cperl-nonoverridable-face ((((class color) (background dark)) (:foreground "grey70"))))
 )
 
+;;;----------------------------------------------------------------------
+;;;                    asthethics
+;;;----------------------------------------------------------------------
+
+(blink-cursor-mode -1)		      ;;; turn off the blinking cursor
 (set-cursor-color "yellow")
 (setq inhibit-splash-screen t)
 
+(display-time)                        ;;; display the time on the modeline
 
-;; TODO: no backup files as a temporary solution to having a directory
-;; for backup files.
 
-(setq make-backup-files nil)
+(column-number-mode 1)		          ;;; handy guides when following
+(line-number-mode 1)			  ;;; errors
 
 ;;;----------------------------------------------------------------------
 ;;; gnus
@@ -52,21 +57,23 @@
 ;;;                    General modifications
 ;;;----------------------------------------------------------------------
 
-(blink-cursor-mode -1)		      ;;; turn off the blinking cursor
+;; TODO: no backup files as a temporary solution to having a directory
+;; for backup files.
 
-(gnuserv-start)                       ;;; start emacs-server
+(setq make-backup-files nil)
 
-(display-time)                        ;;; display the time on the modeline
+(if (string-equal "gnu/linux" system-type) ;;; start emacs-server
+    (gnuserv-start)    
+  (server-start))                     
 
-(add-hook 'term-mode-hook
-  (lambda ()
-    (set-face-foreground 'term-default-fg "grey")))
+;; this no longer works.
+
+;;(add-hook 'term-mode-hook
+;;  (lambda ()
+;;    (set-face-foreground 'term-default-fg "grey")))
 
 (global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
 (global-set-key "\M-g" 'goto-line)
-
-(column-number-mode 1)		          ;;; handy guides when following
-(line-number-mode 1)			  ;;; errors
 
 ;;;----------------------------------------------------------------------
 ;;; language specific tuning
@@ -132,7 +139,7 @@
 ;;;           basic programming functionality
 ;;;----------------------------------------------------------------------
 
-;;; accelerate font lock
+;;; tune font-lock, important for hairy files.
 (setq jit-lock-contextually nil          ;;; only refontify modified lines
       jit-lock-defer-contextually t      ;;; until 5 seconds has passed
       jit-lock-stealth-time 10           ;;; refontify 10 seconds after no input
@@ -152,17 +159,42 @@
 (defun tune-programming ()
   (turn-on-font-lock)                     ;;; enable syntax highlighting
 
-  (filladapt-mode 1)                      ;;; filladapt for formatting comments.   
+  (if (string-equal "gnu/linux" system-type)
+   ;;; Gnu/Linux only features.
+    (progn
+      (turn-on-filladapt-mode)            ;;; smart comment line wrapping
+      (tune-gtags)))                      ;;; gtags mode, best tags support,
 
   (local-set-key (kbd "<tab>") (function indent-or-complete)) ;;; tab-complete
 					                      ;;; everything
   (local-set-key (kbd "<return>") 'newline-and-indent)
-
-  (if (string-equal "gnu/linux" system-type)
-    (tune-gtags))                            ;;; gtags mode, best tags support,
-                                             ;;; but not available on Mac OS X
-
 )
+
+;;;----------------------------------------------------------------------
+;;; repl
+;;;
+;;; Handy tool for explatory programming. pops a new frame with the
+;;; interpreter for the language running in a REPL loop.
+;;;----------------------------------------------------------------------
+
+;;; TODO: use comint 'send-invisible' to dump a function into the interperter,
+;;; for this to be really cool , it would need to copy the function by tags lookup
+;;; automatically reformatting as necessary.
+
+(defun repl ( lang )
+  "start a REPL interpreter interface in a new frame based upon a given or inferred language parameter"
+  (interactive "MLanguage: ")
+
+  (select-frame-set-input-focus (make-frame))
+
+  (cond
+    ((string-equal "perl5" lang) 
+	(switch-to-buffer (make-comint "perl5 REPL" "/usr/bin/perl" nil "-d" "-e shell")))
+    ((string-equal "elisp" lang) 
+      (ielm))
+    (else 
+      (message "I don't support language %s" lang))
+    ))
 
 ;;;----------------------------------------------------------------------
 ;;; perl5
@@ -194,7 +226,6 @@
   (lambda ()
     (tune-programming)
     ))
-
 
 ;;;----------------------------------------------------------------------
 ;;; C/C++ common
