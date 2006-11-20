@@ -49,11 +49,6 @@
 (line-number-mode 1)			  ;;; errors
 
 ;;;----------------------------------------------------------------------
-;;; gnus
-;;;----------------------------------------------------------------------
-(setq gnus-select-method '(nntp "news.gmane.org"))
-
-;;;----------------------------------------------------------------------
 ;;;                    General modifications
 ;;;----------------------------------------------------------------------
 
@@ -62,9 +57,7 @@
 
 (setq make-backup-files nil)
 
-(if (string-equal "gnu/linux" system-type) ;;; start emacs-server
-    (gnuserv-start)    
-  (server-start))                     
+(server-start)
 
 ;; this no longer works.
 
