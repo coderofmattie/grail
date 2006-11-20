@@ -126,7 +126,9 @@
     (kill-buffer template-buf)
     (set-buffer resume)
     )
-  
+
+  ;; localize the current language to the buffer and set it properly
+  (set (make-local-variable 'else-Current-Language) lang)
   (else-mode)
 
   ;; C-C / is my magic prefix
