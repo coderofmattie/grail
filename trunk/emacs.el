@@ -170,6 +170,8 @@
   (local-set-key (kbd "<tab>") (function indent-or-complete)) ;;; tab-complete
 					                      ;;; everything
   (local-set-key (kbd "<return>") 'newline-and-indent)
+
+  (local-set-key "\C-c/r" 'query-replace-regexp)
 )
 
 ;;;----------------------------------------------------------------------
