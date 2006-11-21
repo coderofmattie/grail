@@ -203,7 +203,14 @@
 
 (setq
   cperl-invalid-face (quote off)   ;;; disable trailing whitespace with _
-  cperl-pod-here-scan nil)         ;;; more attempts to speed up font-lock
+  cperl-pod-here-scan nil          ;;; more attempts to speed up font-lock
+
+  cperl-indent-parens-as-block t   ;;; This was a critical fix , no more
+                                   ;;; data structure indenting to the opening brace
+
+  cperl-indent-level 2             ;;; indentation adjustements
+  cperl-continued-statement-offset 2
+  )
 
 (add-hook 'cperl-mode-hook
   (lambda ()
