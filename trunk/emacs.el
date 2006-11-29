@@ -52,12 +52,18 @@
 ;;;                    General modifications
 ;;;----------------------------------------------------------------------
 
+(setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
+                                          ;;; prompts.
+
 ;; TODO: no backup files as a temporary solution to having a directory
 ;; for backup files.
 
 (setq make-backup-files nil)
 
 (server-start)
+
+(require 'tramp)
+(setq tramp-default-method 'scp)
 
 ;; this no longer works.
 
