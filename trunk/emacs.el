@@ -153,7 +153,9 @@
     (indent-for-tab-command)
     ))
 
-(defun tune-programming ()
+;; (require 'paredit)
+
+(defun tune-programming ( lang )
   (turn-on-font-lock)                     ;;; enable syntax highlighting
 
   (if (string-equal "gnu/linux" system-type)
@@ -167,6 +169,13 @@
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (local-set-key "\C-c/r" 'query-replace-regexp)
+
+  (set (make-local-variable 'source-language) lang)
+
+;;  (paredit-mode +1)
+
+;;  (define-key paredit-mode-map (kbd "(") 'paredit-open-parenthesis)
+;;  (define-key paredit-mode-map (kbd ")") 'paredit-close-parenthesis)
 )
 
 ;;;----------------------------------------------------------------------
@@ -214,8 +223,8 @@
 
 (add-hook 'cperl-mode-hook
   (lambda ()
-    (tune-programming)
-    (tune-else-language "perl")
+    (tune-programming "perl5" )
+    (tune-else-language "perl" )
 
     (cperl-toggle-electric)
     (cperl-toggle-abbrev)
@@ -230,7 +239,7 @@
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
-    (tune-programming)
+    (tune-programming "elisp" )
     ))
 
 ;;;----------------------------------------------------------------------
@@ -251,7 +260,7 @@
   (lambda () 
     (c-setup-filladapt)            ;;; adaptive fill for maintaing
 				   ;;; indenting inside comments
-    (tune-programming)
+
     (c-set-style "linux")          ;;; base off of linux style
 
     (setq c-basic-offset 2)               ;;; tabs are 2 spaces
