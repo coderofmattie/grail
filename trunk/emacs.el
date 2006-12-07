@@ -65,12 +65,6 @@
 (require 'tramp)
 (setq tramp-default-method 'scp)
 
-;; this no longer works.
-
-;;(add-hook 'term-mode-hook
-;;  (lambda ()
-;;    (set-face-foreground 'term-default-fg "grey")))
-
 (global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
 (global-set-key "\M-g" 'goto-line)
 
