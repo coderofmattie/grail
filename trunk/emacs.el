@@ -136,6 +136,8 @@
 ;;;           basic programming functionality
 ;;;----------------------------------------------------------------------
 
+(setq indent-tabs-mode nil)              ;;; can get into alot of trouble without this
+
 ;;; tune font-lock, important for hairy files.
 (setq jit-lock-contextually nil          ;;; only refontify modified lines
       jit-lock-defer-contextually t      ;;; until 5 seconds has passed
