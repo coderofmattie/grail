@@ -4,7 +4,7 @@
 (if (string-equal "gnu/linux" system-type)
     (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
 
-(setq load-path (cons 
+(setq load-path (cons
 		 (concat (getenv "HOME") "/system/lib/elisp/") load-path))
 
 ;;;----------------------------------------------------------------------
@@ -112,7 +112,7 @@
 	 (template-buf ))
 
     (set-buffer (find-file-read-only template-file))
-      
+
     (beginning-of-buffer)
     (else-compile-buffer)
 
@@ -139,7 +139,7 @@
 ;;; space vs. tab, trailing, can get into alot of trouble committing
 ;;; "dirty" files.
 
-(setq indent-tabs-mode nil)              
+(setq indent-tabs-mode nil)
 (setq-default show-trailing-whitespace t)
 
 ;;; tune font-lock, important for hairy files.
@@ -205,11 +205,11 @@
   (select-frame-set-input-focus (make-frame))
 
   (cond
-    ((string-equal "perl5" lang) 
+    ((string-equal "perl5" lang)
 	(switch-to-buffer (make-comint "perl5 REPL" "/usr/bin/perl" nil "-d" "-e shell")))
-    ((string-equal "elisp" lang) 
+    ((string-equal "elisp" lang)
       (ielm))
-    (else 
+    (else
       (message "I don't support language %s" lang))
     ))
 
@@ -266,7 +266,7 @@
 (require 'cc-mode)                        ;;; cc-mode foundation for
 					  ;;; code editing
 (add-hook 'c-mode-common-hook
-  (lambda () 
+  (lambda ()
     (c-setup-filladapt)            ;;; adaptive fill for maintaing
 				   ;;; indenting inside comments
 
