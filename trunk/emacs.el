@@ -136,7 +136,11 @@
 ;;;           basic programming functionality
 ;;;----------------------------------------------------------------------
 
-(setq indent-tabs-mode nil)              ;;; can get into alot of trouble without this
+;;; space vs. tab, trailing, can get into alot of trouble committing
+;;; "dirty" files.
+
+(setq indent-tabs-mode nil)              
+(setq-default show-trailing-whitespace t)
 
 ;;; tune font-lock, important for hairy files.
 (setq jit-lock-contextually nil          ;;; only refontify modified lines
@@ -179,6 +183,9 @@
 ;;  (define-key paredit-mode-map (kbd "(") 'paredit-open-parenthesis)
 ;;  (define-key paredit-mode-map (kbd ")") 'paredit-close-parenthesis)
 )
+
+(defun show-bad-ws()
+  (highlight-regexp "\t"))
 
 ;;;----------------------------------------------------------------------
 ;;; repl
