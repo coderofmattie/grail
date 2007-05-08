@@ -139,7 +139,7 @@
 ;;; space vs. tab, trailing, can get into alot of trouble committing
 ;;; "dirty" files.
 
-(setq indent-tabs-mode nil)
+(setq-default indent-tabs-mode nil)
 (setq-default show-trailing-whitespace t)
 
 ;;; tune font-lock, important for hairy files.
