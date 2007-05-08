@@ -142,6 +142,9 @@
 (setq-default indent-tabs-mode nil)
 (setq-default show-trailing-whitespace t)
 
+(global-hi-lock-mode 1)
+(highlight-regexp "\t")
+
 ;;; tune font-lock, important for hairy files.
 (setq jit-lock-contextually nil          ;;; only refontify modified lines
       jit-lock-defer-contextually t      ;;; until 5 seconds has passed
