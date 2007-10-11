@@ -52,6 +52,9 @@
 ;;;                    General modifications
 ;;;----------------------------------------------------------------------
 
+(add-to-list 'eshell-visual-commands "ssh") ;; eshell works correctly !
+                                            ;; woot ! best way to remote ssh
+
 (setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
                                           ;;; prompts.
 (add-hook 'term-mode-hook
@@ -66,7 +69,8 @@
 (server-start)
 
 (require 'tramp)
-(setq tramp-default-method 'scp)
+(setq tramp-default-method "scp2")
+(setq tramp-terminal-type "eterm-color")
 
 (global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
 (global-set-key "\M-g" 'goto-line)
