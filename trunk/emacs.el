@@ -54,7 +54,7 @@
 
 (setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
                                           ;;; prompts.
-add-hook 'term-mode-hook
+(add-hook 'term-mode-hook
   (lambda () (setq show-trailing-whitespace nil))) ;; disable trailing whitespace
                                                    ;; for terminal emulation
 
