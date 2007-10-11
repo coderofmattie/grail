@@ -1,8 +1,40 @@
+;;----------------------------------------------------------------------
+;; misc grab-bag of stuff
+;;----------------------------------------------------------------------
+
+(defun string-join (prefix list)
+  (concat
+    prefix (car list)
+    (if (cdr list) (string-join prefix (cdr list)))
+    ))
+
+(defun string-prefix (prefix list)
+  (cons
+    (concat prefix (car list))
+
+    (cond
+      ((cdr list) (string-prefix prefix (cdr list)))
+       ('()))
+      ))
+
+(defun path-join (list)
+  (concat
+    (car list) ":"
+    (if (cdr list) (string-join (cdr list)))
+    ))
+
+(defun darwinize ()
+  (interactive)
+  (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
+
 ;;;----------------------------------------------------------------------
 ;;; adjust to the host enviornment
 ;;;----------------------------------------------------------------------
+
 (if (string-equal "gnu/linux" system-type)
-    (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
+  (load-file "/usr/share/emacs/site-lisp/site-gentoo.el")
+;;  (load-file (concat (getenv "HOME") "/system/emacs/darwin.el"))
+  )
 
 (setq load-path (cons
 		 (concat (getenv "HOME") "/system/lib/elisp/") load-path))
@@ -52,8 +84,10 @@
 ;;;                    General modifications
 ;;;----------------------------------------------------------------------
 
-(add-to-list 'eshell-visual-commands "ssh") ;; eshell works correctly !
-                                            ;; woot ! best way to remote ssh
+(require 'eshell)
+(add-hook 'eshell-mode-hook
+  (lambda ()
+    (add-to-list 'eshell-visual-commands "ssh")))
 
 (setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
                                           ;;; prompts.
@@ -265,8 +299,8 @@
 ;;; common lisp
 ;;;----------------------------------------------------------------------
 (setq inferior-lisp-program "/usr/bin/clisp")
-(require 'slime)
-(slime-setup)
+;; (require 'slime)
+;; (slime-setup)
 
 
 ;;;----------------------------------------------------------------------
