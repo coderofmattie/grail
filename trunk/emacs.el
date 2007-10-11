@@ -54,6 +54,9 @@
 
 (setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
                                           ;;; prompts.
+add-hook 'term-mode-hook
+  (lambda () (setq show-trailing-whitespace nil))) ;; disable trailing whitespace
+                                                   ;; for terminal emulation
 
 ;; TODO: no backup files as a temporary solution to having a directory
 ;; for backup files.
