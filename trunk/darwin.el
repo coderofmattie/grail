@@ -3,22 +3,31 @@
 ;; emacs does not get environment variables set from .profile and like
 ;; because it is launched by finder. Correct key environment variables.
 ;;----------------------------------------------------------------------
-(message "%s" "darwin system detected")
+(message "%s" "loading darwin system configuration")
 
-(defun export-ssh-agent ()
-  (load-file (concat (getenv "HOME") "/.emacs-ssh-agent")))
+(setq mac-option-modifier 'meta)  ;; oh happy day !!!
+                                  ;; no more hellish binding of meta
+                                  ;; on the mac key. can use CarbonEmacs again.
 
 (setenv "PATH"
+  ;; adjust PATH to locate commands
   (concat
     (getenv "PATH")
 
+    ;; add the third party package manager directories
+
     (string-join ":"
       (append '()
-        '("/sw/bin"
+        '( "/opt/local/bin"
+           "/opt/local/sbin"
+           "/sw/bin"
            "/sw/sbin")
 
+        ;; add User Local commands
+
         (string-prefix (getenv "HOME")
-          '( "/projects/rc"
+          '( "/system/bin"
+             "/projects/rc"
              "/projects/cherry" ))
         ))))
 
@@ -31,8 +40,6 @@
            "/projects/cmdline"
            "/projects/xstruct"
            "/projects/listy"))))
-
-(export-ssh-agent)
 
 
 
