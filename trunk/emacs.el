@@ -23,10 +23,6 @@
     (if (cdr list) (string-join (cdr list)))
     ))
 
-(defun darwinize ()
-  (interactive)
-  (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
-
 ;;;----------------------------------------------------------------------
 ;;; adjust to the host enviornment
 ;;;----------------------------------------------------------------------
