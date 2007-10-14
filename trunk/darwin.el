@@ -18,10 +18,10 @@
 
     (string-join ":"
       (append '()
+
+        ;; macports
         '( "/opt/local/bin"
-           "/opt/local/sbin"
-           "/sw/bin"
-           "/sw/sbin")
+           "/opt/local/sbin")
 
         ;; add User Local commands
 
