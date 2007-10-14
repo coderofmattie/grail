@@ -27,11 +27,6 @@
 ;;; adjust to the host enviornment
 ;;;----------------------------------------------------------------------
 
-;; (if (string-equal "gnu/linux" system-type)
-;;  (load-file "/usr/share/emacs/site-lisp/site-gentoo.el")
-;;  (load-file (concat (getenv "HOME") "/system/emacs/darwin.el"))
-;;  )
-
 (cond
   ((string-equal "gnu/linux" system-type) (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
   ((string-equal "darwin" system-type) (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
