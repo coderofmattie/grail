@@ -12,24 +12,22 @@
 (setenv "PATH"
   ;; adjust PATH to locate commands
   (concat
-    (getenv "PATH")
-
-    ;; add the third party package manager directories
 
     (string-join ":"
       (append '()
 
-        ;; macports
-        '( "/opt/local/bin"
-           "/opt/local/sbin")
-
-        ;; add User Local commands
-
-        (string-prefix (getenv "HOME")
+        (string-prefix (getenv "HOME") ;; add User Local commands
           '( "/system/bin"
              "/projects/rc"
              "/projects/cherry" ))
-        ))))
+
+        '( "/opt/local/bin"
+           "/opt/local/sbin") ;; macports
+
+        )) ;; add the third party package manager directories
+
+    (getenv "PATH")
+    ))
 
 (setenv "PERL5LIB"
   (string-join ":"
