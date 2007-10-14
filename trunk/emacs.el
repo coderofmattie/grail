@@ -72,12 +72,24 @@
 
 (display-time)                        ;;; display the time on the modeline
 
-
 (column-number-mode 1)		          ;;; handy guides when following
 (line-number-mode 1)			  ;;; errors
 
 ;;;----------------------------------------------------------------------
-;;;                    General modifications
+;;;                    General Modifications
+;;;----------------------------------------------------------------------
+
+;; TODO: no backup files as a temporary solution to having a directory
+;; for backup files.
+
+(setq make-backup-files nil)
+(server-start)
+
+(global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
+(global-set-key "\M-g" 'goto-line)
+
+;;;----------------------------------------------------------------------
+;;;                    Shell-in-Emacs
 ;;;----------------------------------------------------------------------
 
 (require 'eshell)
@@ -91,19 +103,13 @@
   (lambda () (setq show-trailing-whitespace nil))) ;; disable trailing whitespace
                                                    ;; for terminal emulation
 
-;; TODO: no backup files as a temporary solution to having a directory
-;; for backup files.
-
-(setq make-backup-files nil)
-
-(server-start)
+;;;----------------------------------------------------------------------
+;;;                    Tramp remote access
+;;;----------------------------------------------------------------------
 
 (require 'tramp)
 (setq tramp-default-method "scp2")
 (setq tramp-terminal-type "eterm-color")
-
-(global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
-(global-set-key "\M-g" 'goto-line)
 
 ;;;----------------------------------------------------------------------
 ;;; language specific tuning
