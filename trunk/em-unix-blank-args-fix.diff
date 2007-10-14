@@ -1,0 +1,13 @@
+gdiff -U3 /Users/mattie/system/lib/elisp/em-unix.el.dist /Users/mattie/system/lib/elisp/em-unix.el
+--- /Users/mattie/system/lib/elisp/em-unix.el.dist	2007-10-14 06:58:20.000000000 -0700
++++ /Users/mattie/system/lib/elisp/em-unix.el	2007-10-14 06:53:35.000000000 -0700
+@@ -963,7 +963,7 @@
+ 	  (setcdr (last args 3) nil))
+ 	(with-current-buffer
+ 	    (condition-case err
+-		(diff old new (eshell-flatten-and-stringify args))
++		(diff old new (nil-blank-string (eshell-flatten-and-stringify args)))
+ 	      (error
+ 	       (throw 'eshell-replace-command
+ 		      (eshell-parse-command "*diff" orig-args))))
+
