@@ -34,7 +34,7 @@
     (setq list (cdr list))))
 
 ;;;----------------------------------------------------------------------
-;;; adjust to the host enviornment
+;;; adjust to the host environment
 ;;;----------------------------------------------------------------------
 
 (cond
@@ -257,7 +257,7 @@
 ;;;----------------------------------------------------------------------
 ;;; repl
 ;;;
-;;; Handy tool for explatory programming. pops a new frame with the
+;;; Handy tool for exploratory programming. pops a new frame with the
 ;;; interpreter for the language running in a REPL loop.
 ;;;----------------------------------------------------------------------
 
@@ -293,7 +293,7 @@
   cperl-indent-parens-as-block t   ;;; This was a critical fix , no more
                                    ;;; data structure indenting to the opening brace
 
-  cperl-indent-level 2             ;;; indentation adjustements
+  cperl-indent-level 2             ;;; indentation adjustments
   cperl-continued-statement-offset 2
   )
 
@@ -334,7 +334,7 @@
 					  ;;; code editing
 (add-hook 'c-mode-common-hook
   (lambda ()
-    (c-setup-filladapt)            ;;; adaptive fill for maintaing
+    (c-setup-filladapt)            ;;; adaptive fill for maintaining
 				   ;;; indenting inside comments
 
     (c-set-style "linux")          ;;; base off of linux style
