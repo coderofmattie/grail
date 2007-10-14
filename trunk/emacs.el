@@ -23,6 +23,16 @@
     (if (cdr list) (string-join (cdr list)))
     ))
 
+;; taken from the Lisp Intro text as rendered by:
+;; http://www.rattlesnake.com/intro/print_002delements_002dof_002dlist.html
+
+;; modified slightly to issue debugging bread-crumbs to the Messages buffer
+(defun debug-elements-of-list (list)
+  "Print each element of LIST on a line of its own."
+  (while list
+    (message "debug: diff arg is: %s" (car list))
+    (setq list (cdr list))))
+
 ;;;----------------------------------------------------------------------
 ;;; adjust to the host enviornment
 ;;;----------------------------------------------------------------------
@@ -108,6 +118,7 @@
 ;;;----------------------------------------------------------------------
 
 (require 'diff)
+;; (load-file (concat (getenv "HOME") "/system/emacs/my-diff.el"))
 
 (custom-set-variables
   '(diff-switches "-U3")                           ;; turn on standard context diffs
