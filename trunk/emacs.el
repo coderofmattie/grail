@@ -23,6 +23,10 @@
     (if (cdr list) (string-join (cdr list)))
     ))
 
+(defun nil-blank-string ( string )
+  "if a string is all blanks return nil, if there are non-blank characters return the string"
+  (if (string-match "[^[:blank:]]" string ) string))
+
 ;; taken from the Lisp Intro text as rendered by:
 ;; http://www.rattlesnake.com/intro/print_002delements_002dof_002dlist.html
 
