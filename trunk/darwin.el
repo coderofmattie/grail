@@ -9,6 +9,14 @@
                                   ;; no more hellish binding of meta
                                   ;; on the mac key. can use CarbonEmacs again.
 
+(custom-set-variables
+  '(diff-command "gdiff")         ;; when invoking the shell on darwin aliases defined
+                                  ;; for a interactive shell cause the diff command to
+                                  ;; fail. Setting the diff command to gdiff provided
+                                  ;; by macports solves the problem without interfering
+                                  ;; with the alias'd diff command.
+  )
+
 (setenv "PATH"
   ;; adjust PATH to locate commands
   (concat
