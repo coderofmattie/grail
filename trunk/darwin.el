@@ -15,6 +15,10 @@
                                   ;; fail. Setting the diff command to gdiff provided
                                   ;; by macports solves the problem without interfering
                                   ;; with the alias'd diff command.
+
+  '(ediff-diff-program "gdiff")
+  '(ediff-diff3-program "gdiff3")
+  '(ediff-diff3-options "--diff-program=gdiff")
   )
 
 (setenv "PATH"
