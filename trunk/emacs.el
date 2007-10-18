@@ -118,14 +118,21 @@
                                                    ;; for terminal emulation
 
 ;;;----------------------------------------------------------------------
-;;;                    Basic Programming tools
+;;;                   Diff
 ;;;----------------------------------------------------------------------
 
 (require 'diff)
-;; (load-file (concat (getenv "HOME") "/system/emacs/my-diff.el"))
+(require 'ediff)		          ;;; 2-3 way merge tool, can be used
+					  ;;; for cherry picking and splitting
 
 (custom-set-variables
-  '(diff-switches "-U3")                           ;; turn on standard context diffs
+  '(diff-switches "-U3")                  ;; turn on standard context diffs,
+  '(ediff-custom-diff-options "-U3")      ;; same for ediff
+
+  '(ediff-split-window-function 'split-window-horizontally)
+  '(ediff-merge-split-window-function 'split-window-horizontally)
+
+  '(ediff-use-toolbar-p nil)              ;; disable the toolbar in ediff
   )
 
 ;;;----------------------------------------------------------------------
@@ -229,8 +236,6 @@
       jit-lock-stealth-time 10           ;;; refontify 10 seconds after no input
       jit-lock-stealth-time 15)          ;;; how long to wait to start deferred fontification
 
-(require 'emerge)		          ;;; 2-3 way merge tool, can be used
-					  ;;; for cherry picking and splitting
 
 (defun indent-or-complete ()
   "Complete if point is at end of a word, otherwise indent line."
