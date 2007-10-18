@@ -137,6 +137,16 @@
 (setq tramp-terminal-type "eterm-color")
 
 ;;;----------------------------------------------------------------------
+;;;                    Structure Tools
+;;;----------------------------------------------------------------------
+
+(require 'allout)
+
+;; (allout-init 'report)
+;; not sure I like this. I can always use allout-minor-mode when I need
+;; it.
+
+;;;----------------------------------------------------------------------
 ;;; language specific tuning
 ;;;----------------------------------------------------------------------
 
