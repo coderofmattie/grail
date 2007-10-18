@@ -149,7 +149,9 @@
                       (write-file wc-file)
                       (buffer-name)))
 
-          (head-buffer (vc-find-version merge-file "HEAD"))
+          ;; using vc-workfile-version is necessary so that subsequent merges
+          ;; get the correct head-buffer
+          (head-buffer (vc-find-version merge-file (vc-workfile-version merge-file)))
 
           (merge-buffer (progn
                           (vc-revert-file merge-file)
