@@ -135,6 +135,34 @@
   '(ediff-use-toolbar-p nil)              ;; disable the toolbar in ediff
   )
 
+(defun merge-changes ()
+  "Merge latest changes against the last checkout."
+  (interactive)
+  (let
+    ( (merge-file (buffer-file-name))
+      (wc-file (concat (buffer-file-name) ".merge"))
+      )
+
+    (save-excursion
+      (let
+        ((wc-buffer (progn
+                      (write-file wc-file)
+                      (buffer-name)))
+
+          (head-buffer (vc-find-version merge-file "HEAD"))
+
+          (merge-buffer (progn
+                          (vc-revert-file merge-file)
+                          (find-file merge-file)))
+        )
+
+        ;; ? check for an exit status from ediff
+        (ediff-merge-buffers head-buffer wc-buffer nil nil merge-file)
+
+        ;; ? make sure the changes were saved
+        ))
+      ))
+
 ;;;----------------------------------------------------------------------
 ;;;                    Tramp remote access
 ;;;----------------------------------------------------------------------
