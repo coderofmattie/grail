@@ -46,10 +46,15 @@
   ((string-equal "darwin" system-type) (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
   )
 
-(setq load-path (cons
-                  (concat (getenv "HOME") "/system/emacs/local/")
-                  (concat (getenv "HOME") "/system/lib/elisp/")
-                  load-path))
+(setq load-path
+  (append
+    ;; overide distributed elisp with local modifications by inserting a "local" directory
+    ;; at the beginning of the load list
+    (cons (concat (getenv "HOME") "/system/emacs/local/") load-path)
+
+    ;; 3rd party extensions not distributed by GNU Emacs are found here.
+    (concat (getenv "HOME") "/system/lib/elisp/")
+    ))
 
 ;;;----------------------------------------------------------------------
 ;;; this is archaic, the custom stuff. I want to get rid of it soon.
