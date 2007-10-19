@@ -47,7 +47,9 @@
   )
 
 (setq load-path (cons
-		 (concat (getenv "HOME") "/system/lib/elisp/") load-path))
+                  (concat (getenv "HOME") "/system/emacs/local/")
+                  (concat (getenv "HOME") "/system/lib/elisp/")
+                  load-path))
 
 ;;;----------------------------------------------------------------------
 ;;; this is archaic, the custom stuff. I want to get rid of it soon.
