@@ -183,8 +183,12 @@
 ;;;----------------------------------------------------------------------
 ;;;                    Structure Tools
 ;;;----------------------------------------------------------------------
-
 (require 'allout)
+
+(add-hook 'text-mode-hook
+  (lambda ()
+    (allout-mode)
+    ))
 
 ;; (allout-init 'report)
 ;; not sure I like this. I can always use allout-minor-mode when I need
@@ -206,6 +210,7 @@
 				 ("\\.xhtml$"   . nxml-mode)
 				 ("\\.xml$"     . nxml-mode)
 				 ("\\.scheme$"  . scheme-mode)
+                                 ("\\.txt$"     . text-mode)
 				 )
 			auto-mode-alist ))
 
