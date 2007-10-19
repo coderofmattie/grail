@@ -52,8 +52,10 @@
     ;; at the beginning of the load list
     (cons (concat (getenv "HOME") "/system/emacs/local/") load-path)
 
-    ;; 3rd party extensions not distributed by GNU Emacs are found here.
-    (concat (getenv "HOME") "/system/lib/elisp/")
+    (list
+      ;; 3rd party extensions not distributed by GNU Emacs are found here.
+      (concat (getenv "HOME") "/system/lib/elisp/")
+      )
     ))
 
 ;;;----------------------------------------------------------------------
