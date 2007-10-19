@@ -34,7 +34,7 @@
 (defun debug-elements-of-list (list)
   "Print each element of LIST on a line of its own."
   (while list
-    (message "debug: diff arg is: %s" (car list))
+    (message "debug: element %s" (car list))
     (setq list (cdr list))))
 
 ;;;----------------------------------------------------------------------
