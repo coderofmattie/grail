@@ -37,6 +37,15 @@
     (message "debug: element %s" (car list))
     (setq list (cdr list))))
 
+(defun examine-library (library-name)
+  "examine the source of a library. Type the library name without
+   any extension. If the library exists the source will be
+   loaded"
+
+  (interactive "F")
+  (find-file-read-only (locate-library (concat library-name ".el")))
+  )
+
 ;;;----------------------------------------------------------------------
 ;;; adjust to the host environment
 ;;;----------------------------------------------------------------------
