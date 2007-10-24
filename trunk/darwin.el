@@ -38,9 +38,7 @@
 
         )) ;; add the third party package manager directories
 
-    ":"
-
-    (getenv "PATH")
+    ":" (getenv "PATH")
     ))
 
 (setenv "PERL5LIB"
