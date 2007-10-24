@@ -38,6 +38,8 @@
 
         )) ;; add the third party package manager directories
 
+    ":"
+
     (getenv "PATH")
     ))
 
