@@ -53,6 +53,9 @@
            "/projects/xstruct"
            "/projects/listy"))))
 
+(setenv "TOOLKIT" "/usr/home/mattie/vcntl/reforged")
+(setenv "WORK" "/usr/home/mattie/vcntl/commercial")
+
 
 
 
