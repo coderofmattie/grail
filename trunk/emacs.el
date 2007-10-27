@@ -50,6 +50,25 @@
 ;;; adjust to the host environment
 ;;;----------------------------------------------------------------------
 
+;; This code will assume a structure like this:
+;;
+;; $HOME/system/emacs         | config files
+;; $HOME/system/emacs/local   | distributed files that have been locally modified
+;; $HOME/system/emacs/patches | patches against upstream
+
+;; $HOME/system/lib/elisp     | third party extensions
+
+;; only system/emacs/local is currently placed in the path. the files in system/emacs
+;; are assumed to chain manually.
+
+
+;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
+;;                              it like /var
+
+;; The config files are relocated to the $HOME/system/emacs so the config/code
+;; under version control is not stomped on or cluttered by all the traffic
+;; into the standard location: session and intra-session state.
+
 (cond
   ((string-equal "gnu/linux" system-type) (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
   ((string-equal "darwin" system-type) (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
