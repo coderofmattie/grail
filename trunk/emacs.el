@@ -242,6 +242,7 @@
 
 (add-hook 'text-mode-hook
   (lambda ()
+    ;; the allout mode keybindings are found with C-c C-h
     (allout-mode)
     ))
 
