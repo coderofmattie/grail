@@ -135,6 +135,10 @@
 
 (setq make-backup-files nil)
 
+;; enable ffap bindings so that C-x C-f on things like include directives
+;; opens the paths. This could be very magical.
+(ffap-bindings)
+
 (require 'server)
 
 (custom-set-variables
