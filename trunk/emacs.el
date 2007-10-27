@@ -134,6 +134,15 @@
 ;; for backup files.
 
 (setq make-backup-files nil)
+
+(require 'server)
+
+(custom-set-variables
+  '(server-use-tcp t))                  ;; when tcp is turned on a auth file
+                                        ;; is created - root can use emacsclient
+                                        ;; to connect to a session running as
+                                        ;; an unprivelaged user.
+
 (server-start)
 
 (global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
