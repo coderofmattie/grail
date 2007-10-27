@@ -125,9 +125,20 @@
 ;;;----------------------------------------------------------------------
 
 (require 'eshell)
+
+
 (add-hook 'eshell-mode-hook
   (lambda ()
-    (add-to-list 'eshell-visual-commands "ssh")))
+    ;; disable trailing whitespace
+    (setq show-trailing-whitespace nil)
+
+    ;; add a list of commands that will pop a term buffer for out-of-eshell
+    ;; handling. Note: the variable eshell-visual-commands is buffer-local.
+    (setq eshell-visual-commands
+      (append
+        eshell-visual-commands
+        (list "ssh" "su")))
+    ))
 
 (setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
                                           ;;; prompts.
