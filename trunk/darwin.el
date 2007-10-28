@@ -44,9 +44,10 @@
 (setenv "PERL5LIB"
   (string-join ":"
       (string-prefix (getenv "HOME")
-        '( "/projects/rc"
+
+        '( "/projects/Fault"
+           "/projects/rc"
            "/projects/cherry"
-           "/projects/cascade"
            "/projects/cmdline"
            "/projects/xstruct"
            "/projects/listy"))))
