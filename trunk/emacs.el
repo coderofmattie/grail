@@ -169,7 +169,7 @@
     (setq eshell-visual-commands
       (append
         eshell-visual-commands
-        (list "ssh" "su")))
+        (list "ssh" "su" "telnet")))
     ))
 
 (setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
