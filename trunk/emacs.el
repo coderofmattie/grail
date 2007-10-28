@@ -194,7 +194,8 @@
   '(ediff-split-window-function 'split-window-horizontally)
   '(ediff-merge-split-window-function 'split-window-horizontally)
 
-  '(ediff-use-toolbar-p nil)              ;; disable the toolbar in ediff
+  '(ediff-use-toolbar-p nil)              ;; doesnt work ? disable the toolbar in ediff
+  '(ediff-window-setup-function 'ediff-setup-windows-plain) ;; this should work.
   )
 
 (defun merge-changes ()
