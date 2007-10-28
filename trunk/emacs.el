@@ -101,7 +101,7 @@
 (custom-set-faces
   ;; custom-set-faces was added by Custom -- don't edit or cut/paste it!
   ;; Your init file should contain only one such instance.
-  '(default ((t (:stipple nil :background "black" :foreground "grey70" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 123 :width normal :family "dec terminal"))))
+  '(default ((t (:stipple nil :background "black" :foreground "grey70" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 123 :width normal :family "Standard Symbol L"))))
   '(font-lock-comment-face ((((class color) (background dark)) (:foreground "green4"))))
   '(font-lock-keyword-face ((((class color) (background dark)) (:foreground "royalblue3"))))
   '(font-lock-string-face ((((class color) (background dark)) (:foreground "grey80"))))
