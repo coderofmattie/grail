@@ -23,29 +23,6 @@
     (if (cdr list) (string-join (cdr list)))
     ))
 
-(defun nil-blank-string ( string )
-  "if a string is all blanks return nil, if there are non-blank characters return the string"
-  (if (string-match "[^[:blank:]]" string ) string))
-
-;; taken from the Lisp Intro text as rendered by:
-;; http://www.rattlesnake.com/intro/print_002delements_002dof_002dlist.html
-
-;; modified slightly to issue debugging bread-crumbs to the Messages buffer
-(defun debug-elements-of-list (list)
-  "Print each element of LIST on a line of its own."
-  (while list
-    (message "debug: element %s" (car list))
-    (setq list (cdr list))))
-
-(defun examine-library (library-name)
-  "examine the source of a library. Type the library name without
-   any extension. If the library exists the source will be
-   loaded"
-
-  (interactive "F")
-  (find-file-read-only (locate-library (concat library-name ".el")))
-  )
-
 ;;;----------------------------------------------------------------------
 ;;; adjust to the host environment
 ;;;----------------------------------------------------------------------
@@ -88,6 +65,19 @@
       )
     ))
 
+;;----------------------------------------------------------------------
+;; emacs hacking utilities.
+;;----------------------------------------------------------------------
+
+(defun examine-library (library-name)
+  "examine the source of a library. Type the library name without
+   any extension. If the library exists the source will be
+   loaded"
+
+  (interactive "F")
+  (find-file-read-only (locate-library (concat library-name ".el")))
+  )
+
 ;; This is a handy little function that allows you to localize
 ;; a distributed elisp source file. It assumes that the current
 ;; buffer is a distributed elisp file, and that localized-source-dir
@@ -111,6 +101,22 @@
         (write-file new-path)
         (message "aborted localizing distributed file"))
     )))
+
+;; taken from the Lisp Intro text as rendered by:
+;; http://www.rattlesnake.com/intro/print_002delements_002dof_002dlist.html
+
+;; modified slightly to issue debugging bread-crumbs to the Messages buffer
+(defun debug-elements-of-list (list)
+  "Print each element of LIST on a line of its own."
+  (while list
+    (message "debug: element %s" (car list))
+    (setq list (cdr list))))
+
+;; required for my patched em-unix, note: merged upstream, may collide
+;; on a update.
+(defun nil-blank-string ( string )
+  "if a string is all blanks return nil, if there are non-blank characters return the string"
+  (if (string-match "[^[:blank:]]" string ) string))
 
 ;;;----------------------------------------------------------------------
 ;;; this is archaic, the custom stuff. I want to get rid of it soon.
