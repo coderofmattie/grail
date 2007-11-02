@@ -184,6 +184,8 @@
 
 (require 'eshell)
 
+(custom-set-variables
+  '(eshell-windowed t))   ;; enable windowing
 
 (add-hook 'eshell-mode-hook
   (lambda ()

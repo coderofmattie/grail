@@ -1,0 +1,24 @@
+diff -U3 /home/mattie/system/emacs/orig/eshell.el /home/mattie/system/emacs/local/eshell.el
+--- /home/mattie/system/emacs/orig/eshell.el	2007-11-02 07:27:51.000000000 -0700
++++ /home/mattie/system/emacs/local/eshell.el	2007-11-02 07:23:24.000000000 -0700
+@@ -323,6 +323,9 @@
+       (= (file-modes eshell-directory-name)
+ 	 eshell-private-directory-modes)))
+ 
++(defvar eshell-windowed nil
++  "*eshell will be displayed in another window, splitting if necessary")
++
+ ;;;_* Running Eshell
+ ;;
+ ;; There are only three commands used to invoke Eshell.  The first two
+@@ -355,7 +358,7 @@
+     ;; it's necessary to add `eshell-buffer-name' to the variable
+     ;; `same-window-buffer-names', which is done when Eshell is loaded
+     (assert (and buf (buffer-live-p buf)))
+-    (pop-to-buffer buf)
++    (pop-to-buffer buf eshell-windowed)
+     (if (fboundp 'eshell-mode)
+ 	(unless (eq major-mode 'eshell-mode)
+ 	  (eshell-mode))
+
+
