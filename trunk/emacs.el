@@ -225,6 +225,15 @@
 (require 'ediff)		          ;;; 2-3 way merge tool, can be used
 					  ;;; for cherry picking and splitting
 
+;; when diff is called it will pop a window which is nice, but killing
+;; the buffer did not get rid of the popped window , until now.
+(add-hook 'diff-mode-hook
+  (lambda ()
+    (add-hook 'kill-buffer-hook
+      (lambda ()
+        (delete-windows-on (current-buffer))))))
+
+
 (custom-set-variables
   '(diff-switches "-U3")                  ;; turn on standard context diffs,
   '(ediff-custom-diff-options "-U3")      ;; same for ediff
