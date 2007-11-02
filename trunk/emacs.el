@@ -74,13 +74,13 @@
   ((string-equal "darwin" system-type) (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
   )
 
-(setq localized-source-dir "/system/emacs/local/")
+(setq localized-source-dir (concat (getenv "HOME") "/system/emacs/local/"))
 
 (setq load-path
   (append
     ;; overide distributed elisp with local modifications by inserting a "local" directory
     ;; at the beginning of the load list
-    (cons (concat (getenv "HOME") localized-source-dir) load-path)
+    (cons localized-source-dir load-path)
 
     (list
       ;; 3rd party extensions not distributed by GNU Emacs are found here.
