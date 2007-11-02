@@ -88,6 +88,30 @@
       )
     ))
 
+;; This is a handy little function that allows you to localize
+;; a distributed elisp source file. It assumes that the current
+;; buffer is a distributed elisp file, and that localized-source-dir
+;; points to a real directory.
+
+(defun localize-distrib ()
+  "localize a distributed lisp file by writing a copy of the file
+   to a directory searched before the distributed lisp files"
+  (interactive)
+
+  (let
+    ((new-name (file-name-nondirectory (buffer-file-name))))
+
+    (let
+      ((new-path
+        (concat localized-source-dir
+          (if (string-equal "gz" (file-name-extension new-name))
+            (file-name-sans-extension new-name)
+            (new-name)))))
+      (if (yes-or-no-p (concat "localize distributed file " new-name " to " new-path))
+        (write-file new-path)
+        (message "aborted localizing distributed file"))
+    )))
+
 ;;;----------------------------------------------------------------------
 ;;; this is archaic, the custom stuff. I want to get rid of it soon.
 ;;;----------------------------------------------------------------------
