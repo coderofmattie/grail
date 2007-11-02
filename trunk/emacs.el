@@ -367,6 +367,9 @@
 ;;;           basic programming functionality
 ;;;----------------------------------------------------------------------
 
+;; found this on emacs-wiki , all scripts are automatically made executable.
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+
 ;;; space vs. tab, trailing, can get into alot of trouble committing
 ;;; "dirty" files.
 
