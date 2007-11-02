@@ -178,6 +178,11 @@
 (global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
 (global-set-key "\M-g" 'goto-line)
 
+(defun rid-window ()
+  "get rid of the current window"
+  (interactive)
+  (delete-windows-on (current-buffer)))
+
 ;;;----------------------------------------------------------------------
 ;;;                    Shell-in-Emacs
 ;;;----------------------------------------------------------------------
@@ -198,6 +203,10 @@
       (append
         eshell-visual-commands
         (list "ssh" "su" "telnet")))
+
+    ;; I rarely want to quit eshell. when I do I can use quit. map
+    ;; the usual kill-buffer keybinding to rid-window.
+    (local-set-key "\C-xk" 'rid-window)
     ))
 
 (setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
@@ -231,10 +240,7 @@
 ;; the buffer did not get rid of the popped window , until now.
 (add-hook 'diff-mode-hook
   (lambda ()
-    (add-hook 'kill-buffer-hook
-      (lambda ()
-        (delete-windows-on (current-buffer))))))
-
+    (add-hook 'kill-buffer-hook 'rid-window)))
 
 (custom-set-variables
   '(diff-switches "-U3")                  ;; turn on standard context diffs,
