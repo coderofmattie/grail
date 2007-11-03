@@ -1,0 +1,21 @@
+--- /usr/share/emacs/21.2/lisp/eshell/eshell.el	2001-10-31 09:58:05.000000000 -0800
++++ local/eshell.el	2007-11-03 15:53:50.000000000 -0700
+@@ -340,6 +340,9 @@
+   :require 'eshell
+   :group 'eshell)
+ 
++(defvar eshell-windowed nil
++  "*eshell will be displayed in another window, splitting if necessary")
++
+ ;;;_* Running Eshell
+ ;;
+ ;; There are only three commands used to invoke Eshell.  The first two
+@@ -365,7 +368,7 @@
+     ;; it's necessary to add `eshell-buffer-name' to the variable
+     ;; `same-window-buffer-names', which is done when Eshell is loaded
+     (assert (and buf (buffer-live-p buf)))
+-    (pop-to-buffer buf)
++    (pop-to-buffer buf eshell-windowed)
+     (unless (fboundp 'eshell-mode)
+       (error "`eshell-auto' must be loaded before Eshell can be used"))
+     (unless (eq major-mode 'eshell-mode)
