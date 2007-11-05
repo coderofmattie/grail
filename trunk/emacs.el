@@ -248,9 +248,14 @@
 (custom-set-variables                     ;; cmd window + src
   '(gdb-show-main t))
 
-;;(add-hook 'perldb-mode-hook
-;;  (lambda ()
-;;    (new-frame)))
+(add-hook 'perldb-mode-hook
+  (lambda ()
+    ;; fix the obscure binding of history navigation that comint defaults
+    ;; to. make it work like eshell. GUD does not have a common hook, it
+    ;; should, I just need to add one.
+    (local-set-key (kbd "<up>") 'comint-previous-input)
+    (local-set-key (kbd "<down>") 'comint-next-input)
+    ))
 
 ;;----------------------------------------------------------------------
 ;;                   Diff
