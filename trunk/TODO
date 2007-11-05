@@ -1,0 +1,51 @@
+
+* I should have a command that allows me to look through any lisp file in read-only
+  mode. When I turn it writable it needs to copy the file to my local dir and
+  do a write-file to switch the buffer.
+
+  A. the main part is done. I need to copy the original as well for diffing against.
+
+* turn off trailing whitespace marking on term, comint, and eshell.
+
+  A. done on term,eshell
+
+
+ env-tree needs to be modified to work with the env program. Simply executing
+ a subshell will not work with things like eshell which I use on emacs, other
+ systems like windows where the shell is not fully intergrated will rely on
+ a program like env as well.
+
+* does allout mode work with cperl ?
+
+* vc stuff
+
+  -> vc-before-checkin-hook is run right before the pop-to-buffer
+     command in vc-start-entry. As long as there are no side effects
+     changing the current-buffer to a read-only diff between the
+     working-copy and the current version should work. No cleanup
+     would be performed though :( TODO
+
+     -> needs to get the file value for the current buffer: the working copy.
+
+     -> diff against last checkin
+
+     -> make the diff read-only
+
+     -> make the current buffer the diff.
+
+* Things needed:
+
+   hunk recovery. The ability to scrub all the plus and minuses to restore the text encompassed by a hunk
+   to it's original content.
+
+* ediff mode has a two way toggle between the merge buffer and a custom diff with
+  the 'D' key. The toggle currently displays the custom diff in the ediff control
+  panel window which is a single line by default (iconified).
+
+  * make the custom diff appear in the merge window.
+
+  * make the custom diff a made ediff-merge 'D' first a two toggle of
+    the custom diff and the merge buffer in AB merged window
+
+* three way 'D' toggle adding the final merged file for committing partial merges
+  it needs to update all the windows and the emerge-changes variables as necessary.
