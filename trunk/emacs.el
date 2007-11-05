@@ -1,4 +1,11 @@
 ;;----------------------------------------------------------------------
+;; emacs.el
+;; written by: Mike Mattie
+;;
+;; configuration for versions 22.1 and 23.x
+;;----------------------------------------------------------------------
+
+;;----------------------------------------------------------------------
 ;; misc grab-bag of stuff
 ;;----------------------------------------------------------------------
 
@@ -23,9 +30,9 @@
     (if (cdr list) (string-join (cdr list)))
     ))
 
-;;;----------------------------------------------------------------------
-;;; adjust to the host environment
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; adjust to the host environment
+;;----------------------------------------------------------------------
 
 ;; This code will assume a structure like this:
 ;;
@@ -66,8 +73,13 @@
     ))
 
 ;;----------------------------------------------------------------------
-;; emacs hacking utilities.
+;; local function library.
 ;;----------------------------------------------------------------------
+
+(defun rid-window ()
+  "get rid of the current window"
+  (interactive)
+  (delete-windows-on (current-buffer)))
 
 (defun examine-library (library-name)
   "examine the source of a library. Type the library name without
@@ -118,9 +130,9 @@
   "if a string is all blanks return nil, if there are non-blank characters return the string"
   (if (string-match "[^[:blank:]]" string ) string))
 
-;;;----------------------------------------------------------------------
-;;; this is archaic, the custom stuff. I want to get rid of it soon.
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; this is archaic, the custom stuff. I want to get rid of it soon.
+;;----------------------------------------------------------------------
 
 (custom-set-variables
   ;; custom-set-variables was added by Custom -- don't edit or cut/paste it!
@@ -145,31 +157,24 @@
   '(cperl-nonoverridable-face ((((class color) (background dark)) (:foreground "grey70"))))
 )
 
-;;;----------------------------------------------------------------------
-;;;                    asthethics
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;                    asthethics
+;;----------------------------------------------------------------------
 
-(blink-cursor-mode -1)		      ;;; turn off the blinking cursor
+(blink-cursor-mode -1)		      ;; turn off the blinking cursor
 (set-cursor-color "yellow")
 (setq inhibit-splash-screen t)
 
-(display-time)                        ;;; display the time on the modeline
+(display-time)                        ;; display the time on the modeline
 
-(column-number-mode 1)		          ;;; handy guides when following
-(line-number-mode 1)			  ;;; errors
+(column-number-mode 1)		          ;; handy guides when following
+(line-number-mode 1)			  ;; errors
 
-;;;----------------------------------------------------------------------
-;;;                    General Modifications
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;                    General Modifications
+;;----------------------------------------------------------------------
 
-;; TODO: no backup files as a temporary solution to having a directory
-;; for backup files.
-
-(setq make-backup-files nil)
-
-;; enable ffap bindings so that C-x C-f on things like include directives
-;; opens the paths. This could be very magical.
-(ffap-bindings)
+(setq make-backup-files nil)            ;; backups, currently off until fixed.
 
 (require 'server)
 
@@ -181,7 +186,15 @@
 
 (server-start)
 
-(global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
+;;----------------------------------------------------------------------
+;;                    General keybindings
+;;----------------------------------------------------------------------
+
+;; enable ffap bindings so that C-x C-f on things like include directives
+;; opens the paths. This could be very magical.
+(ffap-bindings)
+
+(global-unset-key "\M-g")	          ;; map alt-g to goto a line number
 (global-set-key "\M-g" 'goto-line)
 
 ;; I was trying to map ESC to 'execute-extended-command with a single keystroke.
@@ -194,14 +207,9 @@
 
 (global-set-key "\C-xe" 'execute-extended-command)
 
-(defun rid-window ()
-  "get rid of the current window"
-  (interactive)
-  (delete-windows-on (current-buffer)))
-
-;;;----------------------------------------------------------------------
-;;;                    Shell-in-Emacs
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;                    Shell-in-Emacs
+;;----------------------------------------------------------------------
 
 (require 'eshell)
 
@@ -225,32 +233,32 @@
     (local-set-key "\C-xk" 'rid-window)
     ))
 
-(setq shell-prompt-pattern "*? *")        ;;; critical , fix for my shell
-                                          ;;; prompts.
+(setq shell-prompt-pattern "*? *")        ;; critical , fix for my shell
+                                          ;; prompts.
 (add-hook 'term-mode-hook
   (lambda ()
     (setq show-trailing-whitespace nil)   ;; disable trailing whitespace
     ))                                    ;; for terminal emulation
 
-;;;----------------------------------------------------------------------
-;;;                   gud
-;;;----------------------------------------------------------------------
-(require 'speedbar)                       ;;; the speedbar is handy for GUD
+;;----------------------------------------------------------------------
+;;                   gud
+;;----------------------------------------------------------------------
+(require 'speedbar)                       ;; the speedbar is handy for GUD
 
-(custom-set-variables                     ;;; cmd window + src
+(custom-set-variables                     ;; cmd window + src
   '(gdb-show-main t))
 
 ;;(add-hook 'perldb-mode-hook
 ;;  (lambda ()
 ;;    (new-frame)))
 
-;;;----------------------------------------------------------------------
-;;;                   Diff
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;                   Diff
+;;----------------------------------------------------------------------
 
 (require 'diff)
-(require 'ediff)		          ;;; 2-3 way merge tool, can be used
-					  ;;; for cherry picking and splitting
+(require 'ediff)		          ;; 2-3 way merge tool, can be used
+					  ;; for cherry picking and splitting
 
 ;; when diff is called it will pop a window which is nice, but killing
 ;; the buffer did not get rid of the popped window , until now.
@@ -299,17 +307,17 @@
         ))
       ))
 
-;;;----------------------------------------------------------------------
-;;;                    Tramp remote access
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;                    Tramp remote access
+;;----------------------------------------------------------------------
 
 (require 'tramp)
 (setq tramp-default-method "scp2")
 (setq tramp-terminal-type "eterm-color")
 
-;;;----------------------------------------------------------------------
-;;;                    Structure Tools
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;                    Structure Tools
+;;----------------------------------------------------------------------
 (require 'allout)
 
 (add-hook 'text-mode-hook
@@ -322,9 +330,9 @@
 ;; not sure I like this. I can always use allout-minor-mode when I need
 ;; it.
 
-;;;----------------------------------------------------------------------
-;;; language specific tuning
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; language specific tuning
+;;----------------------------------------------------------------------
 
 (setq auto-mode-alist (append '(
 				 ("\\.c$"       . c-mode)
@@ -342,9 +350,9 @@
 				 )
 			auto-mode-alist ))
 
-;;;----------------------------------------------------------------------
-;;;          tags source code indexing
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;          tags source code indexing
+;;----------------------------------------------------------------------
 
 (defun tune-gtags ()
   (gtags-mode)
@@ -356,9 +364,9 @@
   (local-set-key "\C-c/p" 'gtags-pop-stack)
   )
 
-;;;----------------------------------------------------------------------
-;;;          else (L)anguage (S)ensitive (E)diting.
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;          else (L)anguage (S)ensitive (E)diting.
+;;----------------------------------------------------------------------
 (require 'else-mode)
 
 (defun tune-else-language ( lang )
@@ -387,15 +395,15 @@
   (local-set-key "\C-c/d" 'else-kill-placeholder)
   )
 
-;;;----------------------------------------------------------------------
-;;;           basic programming functionality
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;           basic programming functionality
+;;----------------------------------------------------------------------
 
 ;; found this on emacs-wiki , all scripts are automatically made executable.
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 
-;;; space vs. tab, trailing, can get into alot of trouble committing
-;;; "dirty" files.
+;; space vs. tab, trailing, can get into alot of trouble committing
+;; "dirty" files.
 
 (setq-default indent-tabs-mode nil)
 (setq-default show-trailing-whitespace t)
@@ -403,11 +411,11 @@
 (global-hi-lock-mode 1)
 (highlight-regexp "\t")
 
-;;; tune font-lock, important for hairy files.
-(setq jit-lock-contextually nil          ;;; only refontify modified lines
-      jit-lock-defer-contextually t      ;;; until 5 seconds has passed
-      jit-lock-stealth-time 10           ;;; refontify 10 seconds after no input
-      jit-lock-stealth-time 15)          ;;; how long to wait to start deferred fontification
+;; tune font-lock, important for hairy files.
+(setq jit-lock-contextually nil          ;; only refontify modified lines
+      jit-lock-defer-contextually t      ;; until 5 seconds has passed
+      jit-lock-stealth-time 10           ;; refontify 10 seconds after no input
+      jit-lock-stealth-time 15)          ;; how long to wait to start deferred fontification
 
 
 (defun indent-or-complete ()
@@ -421,16 +429,16 @@
 ;; (require 'paredit)
 
 (defun tune-programming ( lang )
-  (turn-on-font-lock)                     ;;; enable syntax highlighting
+  (turn-on-font-lock)                     ;; enable syntax highlighting
 
   (if (string-equal "gnu/linux" system-type)
-   ;;; Gnu/Linux only features.
+   ;; Gnu/Linux only features.
     (progn
-      (turn-on-filladapt-mode)            ;;; smart comment line wrapping
-      (tune-gtags)))                      ;;; gtags mode, best tags support,
+      (turn-on-filladapt-mode)            ;; smart comment line wrapping
+      (tune-gtags)))                      ;; gtags mode, best tags support,
 
-  (local-set-key (kbd "<tab>") (function indent-or-complete)) ;;; tab-complete
-					                      ;;; everything
+  (local-set-key (kbd "<tab>") (function indent-or-complete)) ;; tab-complete
+					                      ;; everything
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (local-set-key "\C-c/r" 'query-replace-regexp)
@@ -446,16 +454,16 @@
 (defun show-bad-ws()
   (highlight-regexp "\t"))
 
-;;;----------------------------------------------------------------------
-;;; repl
-;;;
-;;; Handy tool for exploratory programming. pops a new frame with the
-;;; interpreter for the language running in a REPL loop.
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; repl
+;;
+;; Handy tool for exploratory programming. pops a new frame with the
+;; interpreter for the language running in a REPL loop.
+;;----------------------------------------------------------------------
 
-;;; TODO: use comint 'send-invisible' to dump a function into the interperter,
-;;; for this to be really cool , it would need to copy the function by tags lookup
-;;; automatically reformatting as necessary.
+;; TODO: use comint 'send-invisible' to dump a function into the interperter,
+;; for this to be really cool , it would need to copy the function by tags lookup
+;; automatically reformatting as necessary.
 
 (defun repl ( lang )
   "start a REPL interpreter interface in a new frame based upon a given or inferred language parameter"
@@ -472,20 +480,20 @@
       (message "I don't support language %s" lang))
     ))
 
-;;;----------------------------------------------------------------------
-;;; perl5
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; perl5
+;;----------------------------------------------------------------------
 (require 'cperl-mode)
 (defalias 'perl-mode 'cperl-mode)
 
 (setq
-  cperl-invalid-face (quote off)   ;;; disable trailing whitespace with _
-  cperl-pod-here-scan nil          ;;; more attempts to speed up font-lock
+  cperl-invalid-face (quote off)   ;; disable trailing whitespace with _
+  cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
 
-  cperl-indent-parens-as-block t   ;;; This was a critical fix , no more
-                                   ;;; data structure indenting to the opening brace
+  cperl-indent-parens-as-block t   ;; This was a critical fix , no more
+                                   ;; data structure indenting to the opening brace
 
-  cperl-indent-level 2             ;;; indentation adjustments
+  cperl-indent-level 2             ;; indentation adjustments
   cperl-continued-statement-offset 2
   )
 
@@ -500,9 +508,9 @@
     (local-set-key "\C-hf" 'cperl-perldoc-at-point)
     ))
 
-;;;----------------------------------------------------------------------
-;;; elisp
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; elisp
+;;----------------------------------------------------------------------
 (setq lisp-indent-offset 2)
 
 (add-hook 'emacs-lisp-mode-hook
@@ -510,30 +518,30 @@
     (tune-programming "elisp" )
     ))
 
-;;;----------------------------------------------------------------------
-;;; common lisp
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; common lisp
+;;----------------------------------------------------------------------
 (setq inferior-lisp-program "/usr/bin/clisp")
 ;; (require 'slime)
 ;; (slime-setup)
 
 
-;;;----------------------------------------------------------------------
-;;; C/C++ common
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;; C/C++ common
+;;----------------------------------------------------------------------
 
-(require 'cc-mode)                        ;;; cc-mode foundation for
-					  ;;; code editing
+(require 'cc-mode)                        ;; cc-mode foundation for
+					  ;; code editing
 (add-hook 'c-mode-common-hook
   (lambda ()
-    (c-setup-filladapt)            ;;; adaptive fill for maintaining
-				   ;;; indenting inside comments
+    (c-setup-filladapt)            ;; adaptive fill for maintaining
+				   ;; indenting inside comments
 
-    (c-set-style "linux")          ;;; base off of linux style
+    (c-set-style "linux")          ;; base off of linux style
 
-    (setq c-basic-offset 2)               ;;; tabs are 2 spaces
-    (c-set-offset 'substatement-open '0)  ;;; hanging braces
+    (setq c-basic-offset 2)               ;; tabs are 2 spaces
+    (c-set-offset 'substatement-open '0)  ;; hanging braces
 
-    (c-toggle-auto-hungry-state 1) ;;; auto-hungry newline and
-				   ;;; whitespace delete
+    (c-toggle-auto-hungry-state 1) ;; auto-hungry newline and
+				   ;; whitespace delete
     ))
