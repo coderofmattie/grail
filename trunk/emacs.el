@@ -184,6 +184,16 @@
 (global-unset-key "\M-g")	          ;;; map alt-g to goto a line number
 (global-set-key "\M-g" 'goto-line)
 
+;; I was trying to map ESC to 'execute-extended-command with a single keystroke.
+;; when I unmapped ESC all of the meta sequences were unbound. I would like
+;; to solve this, but until then I will use C-xe which is pretty comfortable.
+
+;; (local-unset-key "\e")                ;; map C-xe to work like M-x which
+                                         ;; is more comfortable than using the
+                                         ;; lower keys
+
+(global-set-key "\C-xe" 'execute-extended-command)
+
 (defun rid-window ()
   "get rid of the current window"
   (interactive)
