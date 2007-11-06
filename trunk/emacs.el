@@ -207,6 +207,9 @@
 
 (global-set-key "\C-xe" 'execute-extended-command)
 
+;; This sweet binding makes shift-tab cycle windows
+(global-set-key (read-kbd-macro "<S-iso-lefttab>") 'other-window)
+
 ;;----------------------------------------------------------------------
 ;;                    Shell-in-Emacs
 ;;----------------------------------------------------------------------
