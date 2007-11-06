@@ -210,6 +210,13 @@
 ;; This sweet binding makes shift-tab cycle windows
 (global-set-key (read-kbd-macro "<S-iso-lefttab>") 'other-window)
 
+;; make meta-tab cycle buffers.
+(global-set-key (kbd "<M-tab>")
+  (lambda ()
+    (interactive)
+    (switch-to-buffer (other-buffer))
+    ))
+
 ;;----------------------------------------------------------------------
 ;;                    Shell-in-Emacs
 ;;----------------------------------------------------------------------
@@ -445,8 +452,9 @@
       (turn-on-filladapt-mode)            ;; smart comment line wrapping
       (tune-gtags)))                      ;; gtags mode, best tags support,
 
+  (local-unset-key (kbd "<M-tab>"))       ;; get rid of the usual magic tab
   (local-set-key (kbd "<tab>") (function indent-or-complete)) ;; tab-complete
-					                      ;; everything
+					                      ;; everything on TAB
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (local-set-key "\C-c/r" 'query-replace-regexp)
@@ -520,6 +528,11 @@
 ;; elisp
 ;;----------------------------------------------------------------------
 (setq lisp-indent-offset 2)
+
+(add-hook 'emacs-lisp-mode-hook
+  (lambda ()
+    (tune-programming "elisp" )
+    ))
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
