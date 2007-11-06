@@ -1,19 +1,39 @@
+* the C-xe binding should be a general execute emacs code concept.
+  in interactive mode it should replace C-u-x-e as a much shorter
+  binding. In any other sort of buffer it should run eval-expression.
 
-* I should have a command that allows me to look through any lisp file in read-only
-  mode. When I turn it writable it needs to copy the file to my local dir and
-  do a write-file to switch the buffer.
+* general cleanup of bindings in the source file, so that it is somewhat
+  apparent how things are bound without C-h-b.
 
-  A. the main part is done. I need to copy the original as well for diffing against.
+* fix magical tab expansion. It should call the right magical expansion
+  mode. currently it always calls dabbrev. In elisp it should call
+  lisp-complete-symbol.
+
+* gud does not have a common hook. It should for things like fixing
+  the keybindings for input history. Make the appropriate hook.
+
+* I should have a command that allows me to look through any lisp file
+  in read-only mode. When I turn it writable it needs to copy the file
+  to my local dir and do a write-file to switch the buffer.
+
+  A. the main part is done. I need to copy the original as well for
+     diffing against.  It also needs to have version information
+     encoded !!!!! I should be able to get the strings of the current
+     emacs version, and then encode that. How to ensure that further
+     diffs work ? possibly emit a script to perform the diff.
+
+* Sepia
+
+  need to attempt install after the gentoo local repository is moved.
 
 * turn off trailing whitespace marking on term, comint, and eshell.
 
-  A. done on term,eshell
+  A. done on term,eshell. Not sure about comint.
 
-
- env-tree needs to be modified to work with the env program. Simply executing
- a subshell will not work with things like eshell which I use on emacs, other
- systems like windows where the shell is not fully intergrated will rely on
- a program like env as well.
+ env-tree needs to be modified to work with the env program. Simply
+ executing a subshell will not work with things like eshell which I
+ use on emacs, other systems like windows where the shell is not fully
+ intergrated will rely on a program like env as well.
 
 * does allout mode work with cperl ?
 
@@ -35,17 +55,19 @@
 
 * Things needed:
 
-   hunk recovery. The ability to scrub all the plus and minuses to restore the text encompassed by a hunk
-   to it's original content.
+   hunk recovery. The ability to scrub all the plus and minuses to
+   restore the text encompassed by a hunk to it's original content.
 
-* ediff mode has a two way toggle between the merge buffer and a custom diff with
-  the 'D' key. The toggle currently displays the custom diff in the ediff control
-  panel window which is a single line by default (iconified).
+* ediff mode has a two way toggle between the merge buffer and a
+  custom diff with the 'D' key. The toggle currently displays the
+  custom diff in the ediff control panel window which is a single line
+  by default (iconified).
 
   * make the custom diff appear in the merge window.
 
   * make the custom diff a made ediff-merge 'D' first a two toggle of
     the custom diff and the merge buffer in AB merged window
 
-* three way 'D' toggle adding the final merged file for committing partial merges
-  it needs to update all the windows and the emerge-changes variables as necessary.
+* three way 'D' toggle adding the final merged file for committing
+  partial merges it needs to update all the windows and the
+  emerge-changes variables as necessary.
