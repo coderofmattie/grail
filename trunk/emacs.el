@@ -279,7 +279,8 @@
 ;; the buffer did not get rid of the popped window , until now.
 (add-hook 'diff-mode-hook
   (lambda ()
-    (add-hook 'kill-buffer-hook 'rid-window)))
+    ;; (make-local-hook ) for portability ? obsolete since 21.1
+    (add-hook 'kill-buffer-hook 'rid-window t t)))
 
 (custom-set-variables
   '(diff-switches "-U3")                  ;; turn on standard context diffs,
