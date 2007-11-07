@@ -238,6 +238,10 @@
         eshell-visual-commands
         (list "ssh" "su" "telnet")))
 
+    ;; unmask the global binding of shift-tab which is more useful
+    ;; to me
+    (local-unset-key (read-kbd-macro "<S-iso-lefttab>"))
+
     ;; I rarely want to quit eshell. when I do I can use quit. map
     ;; the usual kill-buffer keybinding to rid-window.
     (local-set-key "\C-xk" 'rid-window)
