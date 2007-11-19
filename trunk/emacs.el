@@ -5,17 +5,29 @@
 ;; configuration for versions 22.1 and 23.x
 ;;----------------------------------------------------------------------
 
+;;======================================================================
+;;         Phase 1: Library loading and host init/normalization
+;;======================================================================
+
 ;;----------------------------------------------------------------------
-;; These functions are required to setup the host environment.
+;; String handling functions oriented towards manipulating path lists.
+;; These are essential for the earliest part of the init process,
+;; modifying the library loading path.
 ;;----------------------------------------------------------------------
 
 (defun string-join (prefix list)
+  ;; This is analgous to the perl5 join function.
+  ;; given a <prefix> and a <list> of strings join the
+  ;; strings with <prefix> as a seperator between the
+  ;; list values.
+  ;;
+  ;; The result is a single string value.
   (concat
     prefix (car list)
     (if (cdr list) (string-join prefix (cdr list)))
     ))
 
-(defun string-prefix (prefix list)
+(defun string-prefix-list (prefix list)
   (cons
     (concat prefix (car list))
 
@@ -31,116 +43,91 @@
     ))
 
 ;;----------------------------------------------------------------------
-;; adjust to the host environment
+;; extend the library search space with local changes and third pary
+;; extensions
 ;;----------------------------------------------------------------------
 
-;; This code will assume a structure like this:
+;; This code will assume a FS structure like this:
 ;;
-;; $HOME/system/emacs         | config files
-;; $HOME/system/emacs/local   | distributed files that have been locally modified
-;; $HOME/system/emacs/patches | patches against upstream
+;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
+;;                              it like /var
+;;
+;; $HOME/system/emacs/emacs.el| entry point for emacs initialization
+;; $HOME/system/emacs/*.el    | other libraries.
 
-;; $HOME/system/lib/elisp     | third party extensions
+;; $HOME/system/emacs/local   | distributed files that have been locally modified
+;; $HOME/system/lib/elisp     | third party extensions not distributed by GNU Emacs.
+
+(setq localized-source-dir (concat (getenv "HOME") "/system/emacs/local/"))
+(setq extras-source-dir    (concat (getenv "HOME") "system/lib/elisp"))
+
+;; $HOME/system/emacs/patches | patches against upstream
 
 ;; only system/emacs/local is currently placed in the path. the files in system/emacs
 ;; are assumed to chain manually.
-
-
-;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
-;;                              it like /var
 
 ;; The config files are relocated to the $HOME/system/emacs so the config/code
 ;; under version control is not stomped on or cluttered by all the traffic
 ;; into the standard location: session and intra-session state.
 
-(cond
-  ((string-equal "gnu/linux" system-type) (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
-  ((string-equal "darwin" system-type) (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
-  )
-
-(setq localized-source-dir (concat (getenv "HOME") "/system/emacs/local/"))
-
 (setq load-path
   (append
-    ;; overide distributed elisp with local modifications by inserting a "local" directory
-    ;; at the beginning of the load list
+    ;; overide distributed elisp with local modifications by
+    ;; inserting a "local" directory at the beginning of the
+    ;; load list
     (cons localized-source-dir load-path)
 
-    (list
-      ;; 3rd party extensions not distributed by GNU Emacs are found here.
-      (concat (getenv "HOME") "/system/lib/elisp/")
-      )
+    ;; add the extras to the end of the list.
+    (list extras-source-dir)
     ))
 
 ;;----------------------------------------------------------------------
-;; local function library.
+;; Host specific customization.
+;;
+;; each host system has a customization file that normalizes the platform
+;; and extends the library search space for extra libraries it manages.
 ;;----------------------------------------------------------------------
+(cond
+  ;; Gentoo has a file that tunes emacs and loads the third party
+  ;; components managed by the package manager.
+  ((string-equal "gnu/linux" system-type)
+    (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
 
-(defun rid-window ()
-  "get rid of the current window"
-  (interactive)
-  (delete-windows-on (current-buffer)))
-
-(defun examine-library (library-name)
-  "examine the source of a library. Type the library name without
-   any extension. If the library exists the source will be
-   loaded"
-
-  (interactive "F")
-  (find-file-read-only (locate-library (concat library-name ".el")))
+  ;; on darwin assume carbon-emacs.
+  ((string-equal "darwin" system-type)
+    (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
   )
 
-;; This is a handy little function that allows you to localize
-;; a distributed elisp source file. It assumes that the current
-;; buffer is a distributed elisp file, and that localized-source-dir
-;; points to a real directory.
-
-(defun localize-distrib ()
-  "localize a distributed lisp file by writing a copy of the file
-   to a directory searched before the distributed lisp files"
-  (interactive)
-
-  (let
-    ((new-name (file-name-nondirectory (buffer-file-name))))
-
-    (let
-      ((new-path
-        (concat localized-source-dir
-          (if (string-equal "gz" (file-name-extension new-name))
-            (file-name-sans-extension new-name)
-            (new-name)))))
-      (if (yes-or-no-p (concat "localize distributed file " new-name " to " new-path))
-        (write-file new-path)
-        (message "aborted localizing distributed file"))
-    )))
-
-;; taken from the Lisp Intro text as rendered by:
-;; http://www.rattlesnake.com/intro/print_002delements_002dof_002dlist.html
-
-;; modified slightly to issue debugging bread-crumbs to the Messages buffer
-(defun debug-elements-of-list (list)
-  "Print each element of LIST on a line of its own."
-  (while list
-    (message "debug: element %s" (car list))
-    (setq list (cdr list))))
-
-;; required for my patched em-unix, note: merged upstream, may collide
-;; on a update.
-(defun nil-blank-string ( string )
-  "if a string is all blanks return nil, if there are non-blank characters return the string"
-  (if (string-match "[^[:blank:]]" string ) string))
-
 ;;----------------------------------------------------------------------
-;; this is archaic, the custom stuff. I want to get rid of it soon.
+;; basic startup tuning.
 ;;----------------------------------------------------------------------
+
+(setq inhibit-splash-screen t)
 
 (custom-set-variables
-  ;; custom-set-variables was added by Custom -- don't edit or cut/paste it!
-  ;; Your init file should contain only one such instance.
   '(case-fold-search t)
-  '(current-language-environment "ASCII")
-  '(require-final-newline t)
+  '(current-language-environment "ASCII"))
+
+;;======================================================================
+;;         Phase 2: Visual Asthethics & Global Key Bindings
+;;======================================================================
+
+(message "%s" "init Phase: 1 complete")
+
+(custom-set-variables
+  '(require-final-newline t)              ;; always require a final newline.
   '(show-paren-mode t nil (paren)))
+
+;; the cursor
+(blink-cursor-mode -1)
+(set-cursor-color "yellow")
+
+;; mode-line customization
+
+(display-time)                            ;; display the time on the modeline
+
+(column-number-mode 1)		          ;; handy guides when following
+(line-number-mode 1)			  ;; errors
 
 (custom-set-faces
   ;; custom-set-faces was added by Custom -- don't edit or cut/paste it!
@@ -158,17 +145,104 @@
 )
 
 ;;----------------------------------------------------------------------
-;;                    asthethics
+;;                    Custom Key Bindings
 ;;----------------------------------------------------------------------
 
-(blink-cursor-mode -1)		      ;; turn off the blinking cursor
-(set-cursor-color "yellow")
-(setq inhibit-splash-screen t)
+;; enable ffap bindings so that C-x C-f on things like include directives
+;; opens the paths. This could be very magical.
 
-(display-time)                        ;; display the time on the modeline
+(ffap-bindings)
 
-(column-number-mode 1)		          ;; handy guides when following
-(line-number-mode 1)			  ;; errors
+
+;; M-g    = (goto-line)  |  move point to the line number in buffer
+
+(global-unset-key "\M-g")
+(global-set-key "\M-g" 'goto-line)
+
+;; C-xe   = (execute-extended-command)
+
+;;          apply a interactive elisp function with arguments given
+;;          by the user.
+
+(global-set-key "\C-xe" 'execute-extended-command)
+
+;; M-TAB  = switch to the last buffer in the current window. cycles when
+;;          repeated.
+
+(global-set-key (kbd "<M-tab>")
+  (lambda ()
+    (interactive)
+    (switch-to-buffer (other-buffer))
+    ))
+
+;; S-TAB  = Shift tab cycles between windows.
+
+(global-set-key (read-kbd-macro "<S-iso-lefttab>") 'other-window)
+
+(defun contextualized-tab (completion-context)
+  ;; generate a contextualized flavor of the tab key behavior.
+
+  (lexical-let
+    ((completion-function
+       ;; this cond should be the tail of an if special form. First
+       ;; check if the completion-context symbol is a function. If
+       ;; so simply lexically-bind. Otherwise interpret as a string.
+
+       (cond
+         ;; use lisp-complete-symbol for elisp
+         ((string-equal completion-context "elisp") (function lisp-complete-symbol))
+
+         ;; fall back on dabbrev
+         ((lambda () (dabbrev-expand nil)))
+         )))
+
+    (lambda ()
+      "Complete if point is at end of a word, otherwise indent line."
+      (interactive)
+
+      (if (looking-at "\\>")
+        (funcall completion-function)
+        (indent-for-tab-command))
+      ))
+  )
+
+(defun apply-my-keybindings ( completion-context )
+  ;; when setting up major/minor modes adapt my global key-bindings to
+  ;; the modes of the buffer. Local key-bindings that shadow my global
+  ;; key-bindings are unset or replaced with contextualized variations
+  ;; of my global defaults.
+
+  (local-unset-key (kbd "<M-tab>"))
+  (local-unset-key (read-kbd-macro "<S-iso-lefttab>"))
+
+  (local-set-key (kbd "<tab>") (contextualized-tab completion-context))
+  )
+
+;;--------------------------> TODO <----------------------------------
+
+;; I was trying to map ESC to 'execute-extended-command with a single keystroke.
+;; when I unmapped ESC all of the meta sequences were unbound. I would like
+;; to solve this, but until then I will use C-xe which is pretty comfortable.
+
+;; Shift-Tab cycling is not working on Carbon-Emacs
+
+;;----------------------------------------------------------------------
+;; associate major modes with file extensions.
+;;----------------------------------------------------------------------
+
+(setq auto-mode-alist (append '(("\\.txt$"     . text-mode)
+				 ) auto-mode-alist ))
+
+;;======================================================================
+;;         Phase 3: Turn on more complex functionality.
+;;======================================================================
+(message "%s" "init Phase: 2 complete")
+
+;;----------------------------------------------------------------------
+;;                     Personal ELisp Library.
+;;----------------------------------------------------------------------
+
+(load-file (concat (getenv "HOME") "/system/emacs/mattie.el"))
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
@@ -187,38 +261,33 @@
 (server-start)
 
 ;;----------------------------------------------------------------------
-;;                    General keybindings
+;;                 IPC shell:  comint/term mode
 ;;----------------------------------------------------------------------
 
-;; enable ffap bindings so that C-x C-f on things like include directives
-;; opens the paths. This could be very magical.
-(ffap-bindings)
+(setq shell-prompt-pattern "*? *")        ;; comint-prompt-regex is set
+                                          ;; to this regex that captures
+                                          ;; my shell prompt.
 
-(global-unset-key "\M-g")	          ;; map alt-g to goto a line number
-(global-set-key "\M-g" 'goto-line)
+(custom-set-variables
+  '(comint-prompt-read-only t)            ;; make everything before the prompt RO
+  )
 
-;; I was trying to map ESC to 'execute-extended-command with a single keystroke.
-;; when I unmapped ESC all of the meta sequences were unbound. I would like
-;; to solve this, but until then I will use C-xe which is pretty comfortable.
-
-;; (local-unset-key "\e")                ;; map C-xe to work like M-x which
-                                         ;; is more comfortable than using the
-                                         ;; lower keys
-
-(global-set-key "\C-xe" 'execute-extended-command)
-
-;; This sweet binding makes shift-tab cycle windows
-(global-set-key (read-kbd-macro "<S-iso-lefttab>") 'other-window)
-
-;; make meta-tab cycle buffers.
-(global-set-key (kbd "<M-tab>")
+(add-hook 'comint-mode-hook
   (lambda ()
-    (interactive)
-    (switch-to-buffer (other-buffer))
+    (setq show-trailing-whitespace nil)   ;; disable trailing whitespace highlighting
+
+    ;; make up-down go through the history list.
+    (local-set-key (kbd "<up>") 'comint-previous-input)
+    (local-set-key (kbd "<down>") 'comint-next-input)
     ))
 
+(add-hook 'term-mode-hook
+  (lambda ()
+    (setq show-trailing-whitespace nil)   ;; disable trailing whitespace
+    ))                                    ;; for terminal emulation
+
 ;;----------------------------------------------------------------------
-;;                    Shell-in-Emacs
+;;                    EShell
 ;;----------------------------------------------------------------------
 
 (require 'eshell)
@@ -234,98 +303,15 @@
     ;; add a list of commands that will pop a term buffer for out-of-eshell
     ;; handling. Note: the variable eshell-visual-commands is buffer-local.
     (setq eshell-visual-commands
-      (append
-        eshell-visual-commands
-        (list "ssh" "su" "telnet")))
+      (append eshell-visual-commands (list "ssh" "su" "telnet")))
 
-    ;; unmask the global binding of shift-tab which is more useful
-    ;; to me
-    (local-unset-key (read-kbd-macro "<S-iso-lefttab>"))
+    ;; ensure that none of my custom keybindings are affected.
+    (apply-my-keybindings nil)
 
     ;; I rarely want to quit eshell. when I do I can use quit. map
     ;; the usual kill-buffer keybinding to rid-window.
     (local-set-key "\C-xk" 'rid-window)
     ))
-
-(setq shell-prompt-pattern "*? *")        ;; critical , fix for my shell
-                                          ;; prompts.
-(add-hook 'term-mode-hook
-  (lambda ()
-    (setq show-trailing-whitespace nil)   ;; disable trailing whitespace
-    ))                                    ;; for terminal emulation
-
-;;----------------------------------------------------------------------
-;;                   gud
-;;----------------------------------------------------------------------
-(require 'speedbar)                       ;; the speedbar is handy for GUD
-
-(custom-set-variables                     ;; cmd window + src
-  '(gdb-show-main t))
-
-(add-hook 'perldb-mode-hook
-  (lambda ()
-    ;; fix the obscure binding of history navigation that comint defaults
-    ;; to. make it work like eshell. GUD does not have a common hook, it
-    ;; should, I just need to add one.
-    (local-set-key (kbd "<up>") 'comint-previous-input)
-    (local-set-key (kbd "<down>") 'comint-next-input)
-    ))
-
-;;----------------------------------------------------------------------
-;;                   Diff
-;;----------------------------------------------------------------------
-
-(require 'diff)
-(require 'ediff)		          ;; 2-3 way merge tool, can be used
-					  ;; for cherry picking and splitting
-
-;; when diff is called it will pop a window which is nice, but killing
-;; the buffer did not get rid of the popped window , until now.
-(add-hook 'diff-mode-hook
-  (lambda ()
-    ;; (make-local-hook ) for portability ? obsolete since 21.1
-    (add-hook 'kill-buffer-hook 'rid-window t t)))
-
-(custom-set-variables
-  '(diff-switches "-U3")                  ;; turn on standard context diffs,
-  '(ediff-custom-diff-options "-U3")      ;; same for ediff
-
-  '(ediff-split-window-function 'split-window-horizontally)
-  '(ediff-merge-split-window-function 'split-window-horizontally)
-
-  '(ediff-use-toolbar-p nil)              ;; doesnt work ? disable the toolbar in ediff
-  '(ediff-window-setup-function 'ediff-setup-windows-plain) ;; this should work.
-  )
-
-(defun merge-changes ()
-  "Merge latest changes against the last checkout."
-  (interactive)
-  (let
-    ( (merge-file (buffer-file-name))
-      (wc-file (concat (buffer-file-name) ".merge"))
-      )
-
-    (save-excursion
-      (let
-        ((wc-buffer (progn
-                      (write-file wc-file)
-                      (buffer-name)))
-
-          ;; using vc-workfile-version is necessary so that subsequent merges
-          ;; get the correct head-buffer
-          (head-buffer (vc-find-version merge-file (vc-workfile-version merge-file)))
-
-          (merge-buffer (progn
-                          (vc-revert-file merge-file)
-                          (find-file merge-file)))
-        )
-
-        ;; ? check for an exit status from ediff
-        (ediff-merge-buffers head-buffer wc-buffer nil nil merge-file)
-
-        ;; ? make sure the changes were saved
-        ))
-      ))
 
 ;;----------------------------------------------------------------------
 ;;                    Tramp remote access
@@ -336,7 +322,24 @@
 (setq tramp-terminal-type "eterm-color")
 
 ;;----------------------------------------------------------------------
-;;                    Structure Tools
+;;                           Diff
+;;----------------------------------------------------------------------
+
+(require 'diff)
+
+(custom-set-variables
+  '(diff-switches "-U3"))                 ;; turn on standard context diffs,
+
+(add-hook 'diff-mode-hook
+
+  ;; when diff is called it will pop a window which is nice, but killing
+  ;; the buffer did not get rid of the popped window , until now.
+
+  (lambda ()
+    (add-hook 'kill-buffer-hook 'rid-window t t)))
+
+;;----------------------------------------------------------------------
+;;                 Structured Document Tools
 ;;----------------------------------------------------------------------
 (require 'allout)
 
@@ -350,46 +353,22 @@
 ;; not sure I like this. I can always use allout-minor-mode when I need
 ;; it.
 
-;;----------------------------------------------------------------------
-;; language specific tuning
-;;----------------------------------------------------------------------
 
-(setq auto-mode-alist (append '(
-				 ("\\.c$"       . c-mode)
-				 ("\\.cc$"      . c++-mode)
-				 ("\\.cpp$"     . c++-mode)
-				 ("\\.h$"       . c++-mode)
-				 ("\\.pl$"      . cperl-mode)
-				 ("\\.pm$"      . cperl-mode)
-				 ("\\.xsl$"     . xsl-mode)
-				 ("\\.html$"    . nxml-mode)
-				 ("\\.xhtml$"   . nxml-mode)
-				 ("\\.xml$"     . nxml-mode)
-				 ("\\.scheme$"  . scheme-mode)
-                                 ("\\.txt$"     . text-mode)
-				 )
-			auto-mode-alist ))
+;;======================================================================
+;;                  Phase 4: Programming
+;;======================================================================
+(message "%s" "init Phase: 3 complete")
 
 ;;----------------------------------------------------------------------
-;;          tags source code indexing
-;;----------------------------------------------------------------------
-
-(defun tune-gtags ()
-  (gtags-mode)
-
-  ;; bind the global keys, f for find , r for references , and p for pop.
-
-  (local-set-key "\C-c/f" 'gtags-find-tag)
-  (local-set-key "\C-c/r" 'gtags-find-rtag)
-  (local-set-key "\C-c/p" 'gtags-pop-stack)
-  )
-
-;;----------------------------------------------------------------------
-;;           basic programming functionality
+;;                       misc.
 ;;----------------------------------------------------------------------
 
 ;; found this on emacs-wiki , all scripts are automatically made executable.
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+
+;;----------------------------------------------------------------------
+;;                   whitespace dogma
+;;----------------------------------------------------------------------
 
 ;; space vs. tab, trailing, can get into alot of trouble committing
 ;; "dirty" files.
@@ -397,8 +376,13 @@
 (setq-default indent-tabs-mode nil)
 (setq-default show-trailing-whitespace t)
 
+;; make sure tabs are impossible to miss.
 (global-hi-lock-mode 1)
 (highlight-regexp "\t")
+
+;;----------------------------------------------------------------------
+;;                      font-lock engine
+;;----------------------------------------------------------------------
 
 ;; tune font-lock, important for hairy files.
 (setq jit-lock-contextually nil          ;; only refontify modified lines
@@ -407,67 +391,63 @@
       jit-lock-stealth-time 15)          ;; how long to wait to start deferred fontification
 
 
-(defun indent-or-complete ()
-  "Complete if point is at end of a word, otherwise indent line."
-  (interactive)
-  (if (looking-at "\\>")
-    (dabbrev-expand nil)
-    (indent-for-tab-command)
-    ))
+;;----------------------------------------------------------------------
+;;                          GUD
+;;----------------------------------------------------------------------
 
-;; (require 'paredit)
+;; (require 'speedbar)                       ;; the speedbar is handy for GUD
+
+(custom-set-variables                     ;; cmd window + src
+  '(gdb-show-main t))
+
+;;----------------------------------------------------------------------
+;;                          Ediff
+;;----------------------------------------------------------------------
+
+;; I will enventually create my interactive merge interface with this
+;; mode as a foundation. Until then tweak the basics.
+
+(require 'ediff)		          ;; 2-3 way merge tool, can be used
+					  ;; for cherry picking and splitting
+
+(custom-set-variables
+  '(ediff-custom-diff-options "-U3")      ;; same for ediff
+
+  '(ediff-split-window-function 'split-window-horizontally)
+  '(ediff-merge-split-window-function 'split-window-horizontally)
+
+  '(ediff-use-toolbar-p nil)              ;; doesnt work ? disable the toolbar in ediff
+  '(ediff-window-setup-function 'ediff-setup-windows-plain) ;; this should work.
+  )
+
+
+;;----------------------------------------------------------------------
+;;                          tune-programming
+;;----------------------------------------------------------------------
 
 (defun tune-programming ( lang )
+  ;; customization shared by all programming languages.
+
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
-  (if (string-equal "gnu/linux" system-type)
-   ;; Gnu/Linux only features.
-    (progn
-      (turn-on-filladapt-mode)            ;; smart comment line wrapping
-      (tune-gtags)))                      ;; gtags mode, best tags support,
+  (turn-on-filladapt-mode)                ;; smart comment line wrapping
 
-  (local-unset-key (kbd "<M-tab>"))       ;; get rid of the usual magic tab
-  (local-set-key (kbd "<tab>") (function indent-or-complete)) ;; tab-complete
-					                      ;; everything on TAB
+  (apply-my-keybindings lang)               ;; use my keybindings
+
+  ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
-  (local-set-key "\C-c/r" 'query-replace-regexp)
-
   (set (make-local-variable 'source-language) lang)
-
-;;  (paredit-mode +1)
-
-;;  (define-key paredit-mode-map (kbd "(") 'paredit-open-parenthesis)
-;;  (define-key paredit-mode-map (kbd ")") 'paredit-close-parenthesis)
 )
 
-(defun show-bad-ws()
-  (highlight-regexp "\t"))
-
 ;;----------------------------------------------------------------------
-;; repl
-;;
-;; Handy tool for exploratory programming. pops a new frame with the
-;; interpreter for the language running in a REPL loop.
+;; elisp
 ;;----------------------------------------------------------------------
+(setq lisp-indent-offset 2)
 
-;; TODO: use comint 'send-invisible' to dump a function into the interperter,
-;; for this to be really cool , it would need to copy the function by tags lookup
-;; automatically reformatting as necessary.
-
-(defun repl ( lang )
-  "start a REPL interpreter interface in a new frame based upon a given or inferred language parameter"
-  (interactive "MLanguage: ")
-
-  (select-frame-set-input-focus (make-frame))
-
-  (cond
-    ((string-equal "perl5" lang)
-	(switch-to-buffer (make-comint "perl5 REPL" "/usr/bin/perl" nil "-d" "-e shell")))
-    ((string-equal "elisp" lang)
-      (ielm))
-    (else
-      (message "I don't support language %s" lang))
+(add-hook 'emacs-lisp-mode-hook
+  (lambda ()
+    (tune-programming "elisp")
     ))
 
 ;;----------------------------------------------------------------------
@@ -476,8 +456,11 @@
 (require 'cperl-mode)
 (defalias 'perl-mode 'cperl-mode)
 
-(setq
-  cperl-invalid-face (quote off)   ;; disable trailing whitespace with _
+(setq auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
+				("\\.pm$"      . cperl-mode)
+                                 ) auto-mode-alist )
+
+  cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
   cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
 
   cperl-indent-parens-as-block t   ;; This was a critical fix , no more
@@ -489,37 +472,10 @@
 
 (add-hook 'cperl-mode-hook
   (lambda ()
-    (tune-programming "perl5" )
-;;    (tune-else-language "perl" )
-
-    (cperl-toggle-electric)
-    (cperl-toggle-abbrev)
+    (tune-programming "perl5")
 
     (local-set-key "\C-hf" 'cperl-perldoc-at-point)
     ))
-
-;;----------------------------------------------------------------------
-;; elisp
-;;----------------------------------------------------------------------
-(setq lisp-indent-offset 2)
-
-(add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    (tune-programming "elisp" )
-    ))
-
-(add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    (tune-programming "elisp" )
-    ))
-
-;;----------------------------------------------------------------------
-;; common lisp
-;;----------------------------------------------------------------------
-(setq inferior-lisp-program "/usr/bin/clisp")
-;; (require 'slime)
-;; (slime-setup)
-
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
@@ -527,6 +483,13 @@
 
 (require 'cc-mode)                        ;; cc-mode foundation for
 					  ;; code editing
+(setq auto-mode-alist (append '(
+				 ("\\.c$"       . c-mode)
+				 ("\\.cc$"      . c++-mode)
+				 ("\\.cpp$"     . c++-mode)
+				 ("\\.h$"       . c++-mode)
+				 ) auto-mode-alist ))
+
 (add-hook 'c-mode-common-hook
   (lambda ()
     (c-setup-filladapt)            ;; adaptive fill for maintaining

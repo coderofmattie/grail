@@ -1,3 +1,5 @@
+* examine-library has a terrible prompt and no completion.
+
 * the C-xe binding should be a general execute emacs code concept.
   in interactive mode it should replace C-u-x-e as a much shorter
   binding. In any other sort of buffer it should run eval-expression.
@@ -5,9 +7,7 @@
 * general cleanup of bindings in the source file, so that it is somewhat
   apparent how things are bound without C-h-b.
 
-* fix magical tab expansion. It should call the right magical expansion
-  mode. currently it always calls dabbrev. In elisp it should call
-  lisp-complete-symbol.
+  need to try completion cycling, it could help.
 
 * gud does not have a common hook. It should for things like fixing
   the keybindings for input history. Make the appropriate hook.
@@ -22,20 +22,18 @@
      emacs version, and then encode that. How to ensure that further
      diffs work ? possibly emit a script to perform the diff.
 
+* use comint 'send-invisible' to dump a function into the interperter,
+  for this to be really cool , it would need to copy the function by tags lookup
+  automatically reformatting as necessary.
+
 * Sepia
 
   need to attempt install after the gentoo local repository is moved.
 
-* turn off trailing whitespace marking on term, comint, and eshell.
-
-  A. done on term,eshell. Not sure about comint.
-
- env-tree needs to be modified to work with the env program. Simply
- executing a subshell will not work with things like eshell which I
- use on emacs, other systems like windows where the shell is not fully
- intergrated will rely on a program like env as well.
-
-* does allout mode work with cperl ?
+* env-tree needs to be modified to work with the env program. Simply
+  executing a subshell will not work with things like eshell which I
+  use on emacs, other systems like windows where the shell is not fully
+  intergrated will rely on a program like env as well.
 
 * vc stuff
 

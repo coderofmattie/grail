@@ -28,7 +28,7 @@
     (string-join ":"
       (append '()
 
-        (string-prefix (getenv "HOME") ;; add User Local commands
+        (string-prefix-list (getenv "HOME") ;; add User Local commands
           '( "/system/bin"
              "/projects/rc"
              "/projects/cherry" ))
