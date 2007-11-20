@@ -7,7 +7,10 @@
 * general cleanup of bindings in the source file, so that it is somewhat
   apparent how things are bound without C-h-b.
 
-  need to try completion cycling, it could help.
+  1. There should be two arguements to tune-programming, a language, and
+     a keybinding. The keybinding if nil should be derived from the value
+     of language. This way the language can be set independent of some
+     uber-dwim completion scheme.
 
 * gud does not have a common hook. It should for things like fixing
   the keybindings for input history. Make the appropriate hook.
