@@ -159,12 +159,17 @@
 (global-unset-key "\M-g")
 (global-set-key "\M-g" 'goto-line)
 
-;; C-xe   = (execute-extended-command)
+;; escape = (execute-extended-command)
 
-;;          apply a interactive elisp function with arguments given
-;;          by the user.
+;; standard emacs prompt for a interactive command
 
-(global-set-key "\C-xe" 'execute-extended-command)
+(global-set-key (kbd "<escape>") 'execute-extended-command)
+
+;; C-xe   = (eval-expression)
+
+;; evaluate the elisp expression given by the user
+
+(global-set-key "\C-xe" 'eval-expression)
 
 ;; M-TAB  = switch to the last buffer in the current window. cycles when
 ;;          repeated.
