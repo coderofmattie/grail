@@ -43,7 +43,7 @@
 
 (setenv "PERL5LIB"
   (string-join ":"
-      (string-prefix (getenv "HOME")
+      (string-prefix-list (getenv "HOME")
 
         '( "/projects/Fault"
            "/projects/rc"

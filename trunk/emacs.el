@@ -32,7 +32,7 @@
     (concat prefix (car list))
 
     (cond
-      ((cdr list) (string-prefix prefix (cdr list)))
+      ((cdr list) (string-prefix-list prefix (cdr list)))
        ('()))
       ))
 
