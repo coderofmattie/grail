@@ -102,6 +102,8 @@
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
 
+(custom-set-variables tool-bar-mode nil)
+
 (setq inhibit-splash-screen t)
 
 (custom-set-variables
