@@ -102,7 +102,8 @@
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
 
-(custom-set-variables tool-bar-mode nil)
+(custom-set-variables 
+ '(tool-bar-mode nil))                     ;; disable the toolbar ; waste of space
 
 (setq inhibit-splash-screen t)
 
