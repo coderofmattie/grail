@@ -198,7 +198,7 @@
 
 ;; S-TAB  = Shift tab cycles between windows.
 
-(global-set-key (read-kbd-macro "<S-iso-lefttab>") 'other-window)
+(global-set-key [(shift tab)] 'other-window)
 
 (defun contextualized-tab (completion-context)
   ;; generate a contextualized flavor of the tab key behavior.
@@ -234,7 +234,7 @@
   ;; of my global defaults.
 
   (local-unset-key (kbd "<M-tab>"))
-  (local-unset-key (read-kbd-macro "<S-iso-lefttab>"))
+  (local-unset-key [(shift tab)])
 
   (local-set-key (kbd "<tab>") (contextualized-tab completion-context))
   )
