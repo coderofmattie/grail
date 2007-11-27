@@ -61,7 +61,7 @@
 ;;                              This is the highest maintenance burden.
 
 (setq localized-source-dir (concat (getenv "HOME") "/system/emacs/local/"))
-(setq extras-source-dir    (concat (getenv "HOME") "system/emacs/elisp"))
+(setq extras-source-dir    (concat (getenv "HOME") "/system/emacs/elisp"))
 
 ;; $HOME/system/emacs/patches | patches against upstream
 
@@ -449,12 +449,64 @@
 ;;----------------------------------------------------------------------
 (require 'else-mode)
 
+(setq else-mode-template-dir (concat (getenv "HOME") "/system/emacs/else/"))
+
+(defun else-language-spec-p ( lang )
+  "determine if a language definition has been loaded for lang"
+  (if (assoc lang else-Language-Definitions)
+    t
+    nil)
+  )
+
+;; (else-language-spec-p "perl5")  - should be false
+;; (else-language-spec-p "Empty")  - shoule be true
+
+(defun load-else-language-def ( language-name )
+
+  ;; create an alternative loading scheme. Instead of a language defining a complete
+  ;; or base set of tokens , load only the language settings.
+
+  ;; returns true if such a definition is already loaded, or definition file is found
+  ;; and successfully loaded.
+
+  (if (else-language-spec-p language-name)
+    (return t))
+
+  (let
+    ((template-path (concat else-mode-template-dir language-name ".lse")))
+
+    (if (not (file-readable-p template-path))
+      (return nil))
+
+    (save-excursion
+      (with-temp-buffer
+        (progn
+          (beginning-of-buffer)
+          (insert-file-contents-literally template-path nil nil nil t )
+          (else-compile-buffer)
+          )))
+    ))
+
+(defun tune-else ()
+    (if (load-else-language-def source-language)
+      (progn
+
+        ;; localize the current language to the buffer and set it properly
+        (set (make-local-variable 'else-Current-Language) lang)
+        (else-mode)
+        )
+      )
+
+  ;;else-is-template-file-present
+  ;;file-readable-p
+  )
+
 (defun tune-programming ( lang )
   ;; customization shared by all programming languages.
 
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
-  (turn-on-filladapt-mode)                ;; smart comment line wrapping
+  ;; (turn-on-filladapt-mode)                ;; smart comment line wrapping
 
   (apply-my-keybindings lang)               ;; use my keybindings
 
@@ -463,9 +515,7 @@
 
   (set (make-local-variable 'source-language) lang)
 
-  ;; localize the current language to the buffer and set it properly
-  (set (make-local-variable 'else-Current-Language) lang)
-  (else-mode)
+  (tune-else)
 )
 
 ;;----------------------------------------------------------------------
