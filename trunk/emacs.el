@@ -56,10 +56,12 @@
 ;; $HOME/system/emacs/*.el    | other libraries.
 
 ;; $HOME/system/emacs/local   | distributed files that have been locally modified
-;; $HOME/system/lib/elisp     | third party extensions not distributed by GNU Emacs.
+;; $HOME/system/emacs/elisp   | Third party extensions that are not distributed by
+;;                              emacs and not integrated through host package management.
+;;                              This is the highest maintenance burden.
 
 (setq localized-source-dir (concat (getenv "HOME") "/system/emacs/local/"))
-(setq extras-source-dir    (concat (getenv "HOME") "system/lib/elisp"))
+(setq extras-source-dir    (concat (getenv "HOME") "system/emacs/elisp"))
 
 ;; $HOME/system/emacs/patches | patches against upstream
 
