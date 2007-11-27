@@ -461,7 +461,7 @@
 ;; (else-language-spec-p "perl5")  - should be false
 ;; (else-language-spec-p "Empty")  - shoule be true
 
-(defun load-else-language-def ( language-name )
+(defun minimal-else-language-def ( language-name )
 
   ;; create an alternative loading scheme. Instead of a language defining a complete
   ;; or base set of tokens , load only the language settings.
@@ -488,7 +488,7 @@
     ))
 
 (defun tune-else ()
-    (if (load-else-language-def source-language)
+    (if (minimal-else-language-def source-language)
       (progn
 
         ;; localize the current language to the buffer and set it properly
