@@ -9,6 +9,11 @@
   (interactive)
   (highlight-regexp "\t"))
 
+(defun rid-window ()
+  "get rid of the current window"
+  (interactive)
+  (delete-windows-on (current-buffer)))
+
 ;;----------------------------------------------------------------------
 ;; repl
 ;;
@@ -22,15 +27,24 @@
 
   (interactive "MLanguage: ")
 
-  (select-frame-set-input-focus (make-frame))
+  (lexical-let
+    ((repl-frame (make-frame))
+      )
 
-  (cond
-    ((string-equal "perl5" lang)
+    (select-frame-set-input-focus repl-frame)
+
+    (cond
+      ((string-equal "perl5" lang)
 	(switch-to-buffer (make-comint "perl5 REPL" "/usr/bin/perl" nil "-d" "-e shell")))
-    ((string-equal "elisp" lang)
-      (ielm))
-    (else
-      (message "I don't support language %s" lang))
+      ((string-equal "elisp" lang)
+        (ielm))
+      (else
+        (message "I don't support language %s" lang)))
+
+  (add-hook 'kill-buffer-hook
+    (lambda ()
+      (delete-frame repl-frame))
+    t t)
     ))
 
 (defun examine-library (library-name)
@@ -65,11 +79,6 @@
         (write-file new-path)
         (message "aborted localizing distributed file"))
     )))
-
-(defun rid-window ()
-  "get rid of the current window"
-  (interactive)
-  (delete-windows-on (current-buffer)))
 
 ;; required for my patched em-unix, note: merged upstream, may collide
 ;; on a update.
