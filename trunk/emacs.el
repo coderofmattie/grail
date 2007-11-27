@@ -447,6 +447,7 @@
 ;;----------------------------------------------------------------------
 ;;                          tune-programming
 ;;----------------------------------------------------------------------
+(require 'else-mode)
 
 (defun tune-programming ( lang )
   ;; customization shared by all programming languages.
@@ -461,6 +462,10 @@
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (set (make-local-variable 'source-language) lang)
+
+  ;; localize the current language to the buffer and set it properly
+  (set (make-local-variable 'else-Current-Language) lang)
+  (else-mode)
 )
 
 ;;----------------------------------------------------------------------
