@@ -1,0 +1,43 @@
+* Basic Integration
+
+  Ponder over the schema that I am creating for languages. I haven't put much thought in so
+  it is probably pretty cruddy.
+
+  create an autoconf file for dealing with host configuration and emacs version issues. The
+  compilation problem with .esl files has brought this to light. This is a more general problem
+  with the entire config, just keep the else part in the loop when it gets fixed.
+
+  move over to a xstruct based front-end for reading the macros. Abbreviate everything macro
+  related to single character tag names, maybe two character at best. Build the translater
+  in perl5.
+
+  create a elisp function that can run the perl5 based translater. That should be enough for
+  a crude manual system.
+
+* Long Term
+
+  indent value should not be taken from the template file. It should be supplied as an arguement
+  to the tune-else and do whatever is neccessary to recompile the templates. Deferred compilation
+  of the templates should be considered.
+
+  intergrate with the speedbar. Would be good to see a list of available macros.
+
+  the ability to refactor is probably the best use of else for my workflow. This would involve
+  marking a region and having that supplied as a replacement text for a sub. that way you could
+  move a block inside a loop easily, that sort of thing.
+
+
+  the ability to supply the parameters to the template function. this may involve the creation
+  of a sort of special expand form , where it would look like a elisp function, however instead
+  of a elisp function it would be a macro. that way you could type:
+
+  (macro foo bar baz)
+
+  expand it, and have foo bar and baz supplied as the replacement text for the subs.
+
+* Macro ideas
+
+  .. Perl5
+
+  a macro for method creation
+  a macro for method invocation
