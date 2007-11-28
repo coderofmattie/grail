@@ -445,8 +445,12 @@
 
 
 ;;----------------------------------------------------------------------
-;;                          tune-programming
+;;                          else mode
 ;;----------------------------------------------------------------------
+
+;; else-mode is definitely the crown jewel of my input expansion. Sets
+;; the standard for macro expansion.
+
 (require 'else-mode)
 
 (setq else-mode-template-dir (concat (getenv "HOME") "/system/emacs/else/"))
@@ -457,6 +461,9 @@
     t
     nil)
   )
+
+;; (else-language-spec-p "perl5")  - should be false
+;; (else-language-spec-p "Empty")  - shoule be true
 
 (defun else-reload-minimal ( &optional language-name )
   "reload the minimal definition of the else-mode language clearing all defined token expansions."
@@ -477,9 +484,6 @@
       )
   ))
 
-;; (else-language-spec-p "perl5")  - should be false
-;; (else-language-spec-p "Empty")  - shoule be true
-
 (defun minimal-else-language-def ( language-name )
   ;; create an alternative loading scheme. Instead of a language defining a complete
   ;; or base set of tokens , load only the language settings.
@@ -499,15 +503,19 @@
 
         ;; localize the current language to the buffer and set it properly
         (set (make-local-variable 'else-Current-Language) lang)
-        (else-mode))
-      )
+        (else-mode)
 
-  ;; here is where C-xe will expand templates
-  (local-set-key "\C-xe" 'else-expand-placeholder)
-
-  ;;else-is-template-file-present
-  ;;file-readable-p
+        ;; here is where C-xe will expand templates
+        (local-set-key "\C-xe" 'else-expand-placeholder)
+        ))
   )
+
+;;----------------------------------------------------------------------
+;;                          tune-programming
+;;----------------------------------------------------------------------
+
+;; some mundane asthetics and keybindings plus whatever dwim input
+;; expansion I can cook up.
 
 (defun tune-programming ( lang )
   ;; customization shared by all programming languages.
