@@ -6,5 +6,8 @@
 
 EMACSLOADPATH = "/usr/share/emacs/21.2/lisp/international/:${HOME}/system/emacs/elisp/"
 
+perl5.lse: perl5.xml
+	xsltproc language.xslt $< | sed -e '/^\s*$$/d' >$@
+
 perl5.esl: perl5.lse
 	env EMACSLOADPATH=${EMACSLOADPATH} emacs -batch -q -l mule-util -l else-mode --eval '(else-compile-fast-load "$<")'
