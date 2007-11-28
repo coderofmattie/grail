@@ -466,25 +466,27 @@
   ;; create an alternative loading scheme. Instead of a language defining a complete
   ;; or base set of tokens , load only the language settings.
 
-  ;; returns true if such a definition is already loaded, or definition file is found
-  ;; and successfully loaded.
+  ;; try to establish a minimal else language definition for the value of language-name.
 
-  (if (else-language-spec-p language-name)
-    (return t))
+  (or
+    ;; already loaded ?
+    (else-language-spec-p language-name)
 
-  (let
-    ((template-path (concat else-mode-template-dir language-name ".lse")))
+    ;; attempt load from the else directory.
+    (let
+      ((template-path (concat else-mode-template-dir language-name ".lse")))
 
-    (if (not (file-readable-p template-path))
-      (return nil))
+      (if (not (file-readable-p template-path))
+        (return nil))
 
-    (save-excursion
-      (with-temp-buffer
-        (progn
-          (beginning-of-buffer)
-          (insert-file-contents-literally template-path nil nil nil t )
-          (else-compile-buffer)
-          )))
+      (save-excursion
+        (with-temp-buffer
+          (progn
+            (beginning-of-buffer)
+            (insert-file-contents-literally template-path nil nil nil t )
+            (else-compile-buffer)
+            )))
+      )
     ))
 
 (defun tune-else ()
@@ -493,8 +495,7 @@
 
         ;; localize the current language to the buffer and set it properly
         (set (make-local-variable 'else-Current-Language) lang)
-        (else-mode)
-        )
+        (else-mode))
       )
 
   ;;else-is-template-file-present
