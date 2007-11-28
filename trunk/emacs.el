@@ -458,34 +458,39 @@
     nil)
   )
 
+(defun else-reload-minimal ( &optional language-name )
+  "reload the minimal definition of the else-mode language clearing all defined token expansions."
+
+  (interactive)
+  (let*
+    ((lang (or language-name source-language))
+     (template-path (concat else-mode-template-dir lang ".lse")))
+
+    (if (file-readable-p template-path)
+      (save-excursion
+        (with-temp-buffer
+          (progn
+            (beginning-of-buffer)
+            (insert-file-contents-literally template-path nil nil nil t )
+            (else-compile-buffer)
+            )))
+      )
+  ))
+
 ;; (else-language-spec-p "perl5")  - should be false
 ;; (else-language-spec-p "Empty")  - shoule be true
 
 (defun minimal-else-language-def ( language-name )
-
   ;; create an alternative loading scheme. Instead of a language defining a complete
   ;; or base set of tokens , load only the language settings.
 
   ;; try to establish a minimal else language definition for the value of language-name.
-
   (or
     ;; already loaded ?
     (else-language-spec-p language-name)
 
     ;; attempt load from the else directory.
-    (let
-      ((template-path (concat else-mode-template-dir language-name ".lse")))
-
-      (if (file-readable-p template-path)
-        (save-excursion
-          (with-temp-buffer
-            (progn
-              (beginning-of-buffer)
-              (insert-file-contents-literally template-path nil nil nil t )
-              (else-compile-buffer)
-              )))
-        )
-      )
+    (else-reload-minimal language-name)
     ))
 
 (defun tune-else ()
