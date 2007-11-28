@@ -7,9 +7,23 @@
   compilation problem with .esl files has brought this to light. This is a more general problem
   with the entire config, just keep the else part in the loop when it gets fixed.
 
-  move over to a xstruct based front-end for reading the macros. Abbreviate everything macro
-  related to single character tag names, maybe two character at best. Build the translater
-  in perl5.
+  .. macro translater
+
+  Macro translator or compiler that compensates for the low level nature of the macro definition
+  syntax implemented by else-mode.
+
+  After looking again at my previous attempt in XML I have spotted the essential function of
+  the translater. A significant flaw in the macro definition syntax is the placement of auto-repeat
+  in the placeholder instead of the token. This binds a placeholder tightly to a token preventing
+  common names from being used contextually in a token.
+
+  A translator can overcome this problem by computing a placeholder definition and naming
+  it in a way that is unique to the token. The else-mode implementation does not need modification
+  to interpret these definitions correctly.
+
+  computing the correct auto-repeat definitions will require a token definition as specified
+  in it's entirety to compute the first placeholder encountered. This establishes a clear
+  input granularity. For each token it should emit and flush a sequence of definitions.
 
   create a elisp function that can run the perl5 based translater. That should be enough for
   a crude manual system.
