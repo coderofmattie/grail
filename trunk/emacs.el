@@ -497,6 +497,9 @@
         (else-mode))
       )
 
+  ;; here is where C-xe will expand templates
+  (local-set-key "\C-xe" 'else-expand-placeholder)
+
   ;;else-is-template-file-present
   ;;file-readable-p
   )
