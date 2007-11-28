@@ -181,7 +181,7 @@
 
 ;; standard emacs prompt for a interactive command
 
-(global-set-key (kbd "<escape>") 'execute-extended-command)
+(global-set-key [(escape)] 'execute-extended-command)
 
 ;; C-xe   = (eval-expression)
 
