@@ -192,7 +192,7 @@
 ;; M-TAB  = switch to the last buffer in the current window. cycles when
 ;;          repeated.
 
-(global-set-key (kbd "<M-tab>")
+(global-set-key [(meta tab)]
   (lambda ()
     (interactive)
     (switch-to-buffer (other-buffer))
@@ -235,10 +235,10 @@
   ;; key-bindings are unset or replaced with contextualized variations
   ;; of my global defaults.
 
-  (local-unset-key (kbd "<M-tab>"))
+  (local-unset-key [(meta tab)])
   (local-unset-key [(shift tab)])
 
-  (local-set-key (kbd "<tab>") (contextualized-tab completion-context))
+  (local-set-key [(tab)] (contextualized-tab completion-context))
   )
 
 ;;--------------------------> TODO <----------------------------------
