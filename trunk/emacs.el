@@ -300,8 +300,8 @@
     (setq show-trailing-whitespace nil)   ;; disable trailing whitespace highlighting
 
     ;; make up-down go through the history list.
-    (local-set-key (kbd "<up>") 'comint-previous-input)
-    (local-set-key (kbd "<down>") 'comint-next-input)
+    (local-set-key [(up)] 'comint-previous-input)
+    (local-set-key [(down)] 'comint-next-input)
     ))
 
 (add-hook 'term-mode-hook
