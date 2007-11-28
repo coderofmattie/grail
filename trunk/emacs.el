@@ -511,7 +511,7 @@
   (apply-my-keybindings lang)               ;; use my keybindings
 
   ;; better return key for programming
-  (local-set-key (kbd "<return>") 'newline-and-indent)
+  (local-set-key [(return)] 'newline-and-indent)
 
   (set (make-local-variable 'source-language) lang)
 
