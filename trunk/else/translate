@@ -1,0 +1,601 @@
+#! /usr/bin/env perl
+
+#----------------------------------------------------------------------
+# translate
+# Primary Author: Mike Mattie
+# copyright: Mike Mattie (2007)
+# License: GPLv3
+#----------------------------------------------------------------------
+
+my ( $language_name , $input_file ) = @ARGV;
+
+our $debug_flags = 1;
+
+#----------------------------------------------------------------------
+# The humble beginnings of a intermediate structure. Right now a anarchistic
+# AST
+#----------------------------------------------------------------------
+
+package Builder;
+
+#----------------------------------------------------------------------
+# data_register
+#----------------------------------------------------------------------
+
+# The data structure builder that accounts for the event driven nature
+# of SAX.
+
+# Accumulate a series of "characters" events into scalar variables. This
+# needs to function as a stack so that nested data structures can be
+# built from nested XML elements. All sinks are a key/value pair inside
+# a hash reference. Any hash reference can be supplied.
+
+# data_accumulator : the stack of sink array elements that we are using to
+#                    accumulate "characters" events into strings bounded by
+#                    open/close tags. Each element of the array corresponds
+#                    to a variable in the nested data structure
+
+# sink element    = ( element-name , data-key , data-ref )
+
+# element-name: is the XML element name so that we know when to pop this
+# sink off the stack.
+
+# data-key: the hash key, a pointer within the struct so to speak.
+
+# data-ref: a hash reference, the struct itself.
+
+our @data_accumulator = ();
+
+sub register_ready {
+  our @data_accumulator;
+  ( @data_accumulator ) ? 1 : 0;
+}
+
+sub register_push {
+  # push a new sink onto @data_accumulator. The element is given along
+  # with the key to write to. data_ref is either specified as a third
+  # arguement or an alias to the previous sink's reference.
+
+  our @data_accumulator;
+
+  my ( $element , $data_key , $data_ref ) = @_;
+
+
+  print STDERR "WARNING ! probable parser noise interpreted as syntax\n"
+    if ( $data_key =~  m/^\s*$/ );
+
+  unless ( defined $data_ref ) {
+    $data_ref = $data_accumulator[-1][2];
+  }
+
+  push @data_accumulator , [ $element->{LocalName} , $data_key , $data_ref ];
+}
+
+sub register_pop {
+  # pop a sink.
+  our @data_accumulator;
+  pop @data_accumulator;
+}
+
+sub register_element {
+  # return the XML tag associated with the current sink.
+  our @data_accumulator;
+
+  ( @data_accumulator )
+    ? ${ $data_accumulator[-1] }[0]
+    : undef;
+}
+
+sub register_concat {
+
+  # append to the current sink.
+  our @data_accumulator;
+
+  my $data_key = $data_accumulator[-1][1];
+  my $data_ref = $data_accumulator[-1][2];
+
+#  print STDERR "data $data_ptr\$data" , Dumper( $data ) , "\n";
+#  print STDERR "data $data_key\n";
+
+  my $dribble = shift();
+
+  print STDERR "register concat sees: $dribble\n";
+
+  if ( exists $data_ref->{$data_key} ) {
+    $dribble = $data_ref->{$data_key} . $dribble;
+  }
+
+  $data_ref->{$data_key} = $dribble;
+}
+
+#----------------------------------------------------------------------
+# defines are the syntax tree part.
+#----------------------------------------------------------------------
+
+our @defines = ();
+
+sub defines_ready {
+  return ( @defines ) ? 1 : 0;
+}
+
+sub define {
+  our @defines;
+  $defines[-1];
+}
+
+sub new_define {
+  our @defines;
+
+  my $def = {};
+  push @defines , $def;
+
+  Builder::register_push( $element , 'description' , $def );
+}
+
+use Data::Dumper;
+
+# define complete currently means discard as we are not building
+# a tree yet.
+sub define_complete {
+  our @defines;
+
+  my $def = define();
+
+  define_copy_macro( $def );
+
+  if ( $debug_flags ) {
+    print STDERR Dumper( $def ) , "\n";
+  }
+
+  emit::define( $def );
+  pop @defines;
+}
+
+sub get_terminal {
+  # rece
+  # ghetto. Make a bunch of nested hashes if necessary.
+  my $p = shift();
+
+  my $def = define();
+
+  unless ( exists $def->{ptable} ) {
+    $def->{ptable} = {};
+  }
+
+  my $ptable = $def->{ptable};
+
+  if ( exists $def->{$p} ) {
+    return $def->{$p};
+  }
+
+  my $ref = {};
+  $ptable->{$p} = $ref;
+
+  $ref;
+}
+
+sub define_copy_macro {
+  # copy from the data "buffer" to the actual macro structure.
+  # hopefully the caller waited until all the characters
+  # events were sent.
+
+  # clears ->data
+
+  my $def = shift();
+
+  unless( exists $def->{data} ) {
+    return;
+  }
+
+  if ( exists $def->{macro} ) {
+    push @{ $def->{macro} } , $def->{data};
+  }
+  else {
+    $def->{macro} = [ $def->{data} ];
+  }
+
+  $def->{data} = '';
+}
+
+
+#----------------------------------------------------------------------
+# introduce Syntax. Pretty much the intermediate form.
+#----------------------------------------------------------------------
+
+package Syntax;
+
+# right now The syntax part and the intermediate form construction
+# are the same thing. It's gross but obvious. Strategy is to get
+# The abstractions right first , then untange the implementation
+# hopefully without breaking as much.
+
+*syntax_list = \*Builder::defines;
+
+sub current_namespace {
+  our @syntax_list;
+
+  my @scopes = ();
+  map { push @scopes , $_->{name} } @syntax_list;
+
+  @scopes;
+}
+
+#----------------------------------------------------------------------
+# emit
+#----------------------------------------------------------------------
+
+package emit;
+
+# First the formatting functions for easy access. These functions do
+# the translation of generic text into valid syntax, converting or
+# flagging it as illegal.
+
+# currently it only converts a little.
+
+sub mk_decl_ident {
+  # else names must be upper-case ascii alphas, digits, or underscores.
+  join ('_', map {
+    $_ =~ s/-/_/g;         # translate all the illegal characters to underscores
+    uc($_);                # uppercase all the alpha characters.
+  }  @_  );
+}
+
+# mk_ref_ident will be a converter for the lower case reference inside of
+#              body variant.
+
+sub trim_ws {
+  my $s = shift();
+
+  $s =~ s/\s+$//;
+  $s =~ s/^\s+//;
+
+  $s;
+}
+
+sub quote {
+  "\"" . shift() . "\"";
+}
+
+#----------------------------------------------------------------------
+# emit stack.
+#----------------------------------------------------------------------
+
+# The recursion involved in doing various re-writes and compilations
+# means that writing output directly to a stream during processing
+# won't work. serialize at complete definitions with a stack.
+
+our @emit_stack;
+
+# it should not be difficult to convert a placeholder to a token.
+
+sub emit_macro_open {
+  our @emit_stack;
+  my ( $name , $type ) = @_;
+
+  # the opening stanza deletes a previous definition and then begins a new
+  # declaration.
+
+  my $kind = mk_decl_ident( $type );
+
+  push @emit_stack , <<OPEN_DECL;
+DELETE $kind $name -
+  /LANGUAGE="$language_name" -
+DEFINE $kind $name -
+  /LANGUAGE="$language_name" -
+OPEN_DECL
+
+  undef;
+}
+
+#sub placeholder_to_token {
+#  my ( $name , $p ) = @_;
+#}
+
+sub emit_define_close {
+  our @emit_stack;
+  $emit_stack[-1] .= "END DEFINE";
+
+  print STDOUT pop @emit_stack , "\n";
+}
+
+sub emit_auto_substitute {
+  our @emit_stack;
+
+  my $p = shift();
+
+  if ( exists $p->{autosub} ) {
+    my $count = $p->{autosub};
+
+    $emit_stack[-1] .= <<SUBSPEC;
+  /AUTO_SUBSTITUTE -
+  /SUBSTITUTE_COUNT=$count -
+SUBSPEC
+  }
+  else {
+    $emit_stack[-1] .= <<SUBSPEC;
+  /NOAUTO_SUBSTITUTE -
+SUBSPEC
+  }
+}
+
+sub emit_terminal_close {
+  our @emit_stack;
+  my $description = quote( trim_ws( shift() ) );
+
+  $emit_stack[-1] .= <<TERM_CLOSE;
+  /TYPE=TERMINAL
+$description
+TERM_CLOSE
+
+  emit_define_close();
+}
+
+sub emit_nonterminal_open {
+  our @emit_stack;
+  my $description = quote( trim_ws( shift() ) );
+
+  $emit_stack[-1] .= <<NONTERM_OPEN;
+  /DESCRIPTION=$description -
+  /TYPE=NONTERMINAL -
+NONTERM_OPEN
+}
+
+sub terminal {
+  my ( $p , $token ) = @_;
+
+  print STDERR "placeholder \"$p\"" , "\n";
+  my @namespace = ( Syntax::current_namespace() , $p );
+  my $name = mk_decl_ident( @namespace );
+
+  # the opening stanza deletes a previous definition and then begins a new
+  # declaration.
+
+  emit_macro_open( $name , 'placeholder' );
+
+  # no conversion to token is necessary, has no need of the name feild.
+  emit_auto_substitute( $token->{ptable}->{$p} );
+
+  emit_terminal_close( $token->{ptable}->{$p}->{description} );
+}
+
+sub define {
+  my $token = shift();
+
+  # Ideally what is in the ptable is all terminal type definitions.
+  # anything that is non-terminal should be outside of ptable.
+
+  map {
+    # getting some weird garbage from keys , filter the crap until I can find the
+    # bug, probably have an odd number of elements in the hash or some such crap.
+
+    if ( $_ !~  m/^\s*$/ ) {
+      terminal( $_ , $token );
+    }
+
+  } ( keys %{ $token->{ptable} } ) , "\n";
+
+}
+
+#----------------------------------------------------------------------
+# DropFilter
+#
+# implement globally ignored parts of the document.
+#----------------------------------------------------------------------
+package DropFilter;
+
+use XML::SAX::Base;
+@ISA = ('XML::SAX::Base');
+
+our $ignore_data = 0;
+our $ignore_children = 0;
+
+sub comment {
+  our $ignore_data;
+
+  $ignore_data = 1;
+}
+
+sub start_element {
+  our $ignore_data , $ignore_children;
+  my ( $self , $element ) = @_;
+
+  return if ( $ignore_children );
+  if ( $element->{LocalName} =~ /else|token|span/ ) {
+    $ignore_data = 1;
+
+    if ( $element->{LocalName} =~ /span/ ) {
+      $ignore_children = 1;
+      return;
+    }
+
+    # a list of elements that we forward for further processing
+    # despite the fact that we are ignoring the element data.
+    if ( $element->{LocalName} =~ /token/ ) {
+      goto forward;
+    }
+
+    return;
+  }
+
+  $ignore_data = 0;
+
+ forward:
+  $self->{Handler}->start_element($element);
+}
+
+sub characters {
+  our $ignore_data , $ignore_children;
+  my ( $self , $data ) = @_;
+
+  unless( $ignore_data || $ignore_children ) {
+    $self->{Handler}->characters( $data );
+  }
+}
+
+sub end_element {
+  our $ignore_children;
+  my ( $self , $element ) = @_;
+
+  if ( $element->{LocalName} =~ /span/ ) {
+    $ignore_children = 0;
+    return;
+  }
+
+  return if ( $ignore_children || $element->{LocalName} =~ /else/ );
+  $self->{Handler}->end_element($element);
+}
+
+sub xml_decl {
+  undef;
+}
+
+sub processing_instruction {
+  undef;
+}
+
+#----------------------------------------------------------------------
+# Translater
+#
+# implement the translator
+#----------------------------------------------------------------------
+package Translater;
+
+use Data::Dumper;
+
+use XML::SAX::Base;
+@ISA = ('XML::SAX::Base');
+
+# elements defined by the translater implementation.
+our %defined = (
+  token => [ 'Builder::new_define' , 'Builder::define_complete' ],
+  name => [ 'name_start' , undef ],
+  body => [ 'macro_start' , undef ],
+
+  prefix => [ prefix_start , undef ],
+  r => [ undef , undef ],
+ );
+
+#----------------------------------------------------------------------
+# dispatch_element
+#
+# look up an element in a table of handlers. Execute the handler if
+# a match is found. Unlike the SAX event handlers these are keyed by
+# XML elements.
+#----------------------------------------------------------------------
+
+sub dispatch_element {
+  our %defined;
+
+  my ( $index , $element ) = @_;
+  my $name = $element->{LocalName};
+
+  if ( exists $defined{$name} ) {
+    my $href = ${ $defined{ $name } }[$index];
+
+    # execute the event handler if there is one.
+    &{ $href }( $element ) if ( defined $href );
+    return 1;
+  }
+
+  return 0;
+}
+
+sub dispatch_start { dispatch_element( 0 , @_ ); }
+sub dispatch_end { dispatch_element( 1 , @_ ); }
+
+#----------------------------------------------------------------------
+# these SAX event handlers need the data_register functions
+#----------------------------------------------------------------------
+
+sub start_element {
+  my ( $self , $element ) = @_;
+
+  return if dispatch_start( $element );
+
+  # this is required because elements not recognized by the interpreter
+  # are non-terminals by default in the define.
+
+  if ( Builder::defines_ready() ) {
+    Builder::register_push( $element , 'description' ,
+                            Builder::get_terminal( $element->{LocalName} ) );
+  }
+}
+
+sub end_element {
+  my ( $self , $element ) = @_;
+
+  # The data accumulator needs a signal to stop recording.
+  if ( Builder::register_element() eq $element->{LocalName} ) {
+    Builder::register_pop();
+  }
+
+  return if dispatch_end( $element );
+}
+
+sub characters {
+  my ( $self ,  $data ) = @_;
+
+  if ( Builder::register_ready() ) {
+    Builder::register_concat( $data->{Data} );
+  }
+}
+
+sub macro_start {
+  my $element = shift();
+
+  # macros begin by recording into ->data. this is basically
+  # a input buffer for the macro body that is replicated
+  # without interpretation.
+
+  Builder::register_push( $element , 'data' , undef );
+}
+
+sub name_start {
+  my $element = shift();
+  Builder::register_push( $element , 'name' , undef );
+}
+
+sub required_start {
+  my $element = shift();
+
+  my $token = current_token();
+
+  if ( $token->{data} ) {
+
+  }
+}
+
+sub prefix_start {
+  my $element = shift();
+  Builder::register_push( $element, 'prefix' , undef );
+}
+
+#----------------------------------------------------------------------
+# main
+#----------------------------------------------------------------------
+
+package main;
+
+use XML::SAX::Machines qw/Pipeline/;
+
+my $tr = Pipeline (
+  DropFilter => Translater => \*STDERR
+ );
+
+# The decision to emit on the fly is really fundamentally flawed. The first pass
+# through the parser simply needs to gather the data from the document and build
+# a tree. This does not mean modifying the stacks, only additionally creating a
+# tree of references holding the objects.
+
+# to implement shadowing of placeholders with lexical scoping I will need a tree
+# from the token forest minimally. Anything that cannot be resolved up to root
+# is assumed to be global and not prefixed ? toggle shadowing ?
+
+# With this sort of design it's possible to walk the tree and do some nifty error
+# checking and linking. The final Third stage would be emitting by recursion
+# using the same serializing stack.
+
+# The parser is truly just a data structure builder.
+
+$tr->parse_uri( $input_file );
+
