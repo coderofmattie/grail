@@ -24,7 +24,7 @@
     -->
 
     <body>
-my $<r p="@control-var"/>; for ( $<r p="@control-var"/> = 0; $<r p="@control-var"/> &lt; @<r p="@list"/>; $<r p="@control-var"/>++ ) {
+my $<r p="@control-var"/>; for ( $<r p="@control-var"/> = 0; $<r p="@control-var"/> &lt; @<r p="list"/>; $<r p="@control-var"/>++ ) {
 }
 <span name="array-ref"><r p="@list"/>[$<r p="@control-var"/>]</span>
     </body>

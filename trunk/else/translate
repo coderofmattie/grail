@@ -9,7 +9,7 @@
 
 my ( $language_name , $input_file ) = @ARGV;
 
-our $debug_flags = 1;
+our $debug_flags = 0;
 
 #----------------------------------------------------------------------
 # The humble beginnings of a intermediate structure. Right now a anarchistic
@@ -349,7 +349,7 @@ sub quote_context {
   my @wrap = ();
 
   if ( $context eq 'required' ) {
-    @wrap = ( '[' , ']' );
+    @wrap = ( '{' , '}' );
   }
 
   return join('',$wrap[0],$ref,$wrap[1]);
