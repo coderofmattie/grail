@@ -1,23 +1,85 @@
-* examine-library has a terrible prompt and no completion.
 
-* the C-xe binding should be a general execute emacs code concept.
-  in interactive mode it should replace C-u-x-e as a much shorter
-  binding. In any other sort of buffer it should run eval-expression.
+* General
 
-* general cleanup of bindings in the source file, so that it is somewhat
-  apparent how things are bound without C-h-b.
+.. the C-xe binding should be a general execute emacs code concept.
+   in interactive mode it should replace C-u-x-e as a much shorter
+   binding. In any other sort of buffer it should run eval-expression.
+
+   .. Options
+
+   (done) hook it into else for epanding templates
+
+   have it send function defintions to the interpeter via comint-invisible
+   or other methods ala slime
+
+.. general cleanup of bindings in the source file, so that it is somewhat
+   apparent how things are bound without C-h-b.
 
   1. There should be two arguements to tune-programming, a language, and
      a keybinding. The keybinding if nil should be derived from the value
      of language. This way the language can be set independent of some
      uber-dwim completion scheme.
 
-* gud does not have a common hook. It should for things like fixing
-  the keybindings for input history. Make the appropriate hook.
+.. examine-library has a terrible prompt and no completion.
 
-* I should have a command that allows me to look through any lisp file
-  in read-only mode. When I turn it writable it needs to copy the file
-  to my local dir and do a write-file to switch the buffer.
+.. I should have a command that allows me to look through any lisp file
+   in read-only mode. When I turn it writable it needs to copy the file
+   to my local dir and do a write-file to switch the buffer.
+
+* input completion
+
+  tab completion needs cycling
+
+  .. ultimate template refactor system
+
+* code navigation
+
+.. navigate by terms
+
+Move forwards and backwards in syntax by terms.
+
+* Better template modes
+
+.. Basic integration
+
+   mode loading is now done except for the completely hosed install system.
+   there needs to be an autoconf to deal with compiling emacs code. There
+   are way to many varations. generate makefiles with various emacs quirks.
+
+* Merging
+
+** Co-process interpreters
+
+.. Sepia
+
+   need to attempt install after the gentoo local repository is moved.
+
+.. Slime
+
+  enable slime mode
+
+* Debugger
+
+.. gud does not have a common hook. It should for things like fixing
+   the keybindings for input history. Make the appropriate hook.
+
+
+* Pure Evil
+
+  build a foreign function interface that allows parrot closures
+  to be created and called from emacs by embedding parrot ( insane+ ).
+
+  allow parrot code to callback into emacs, analyze risk of
+  changing semantics,side-effects etc.
+
+  push up syntax trees into the invisible annotations of a buffer.
+  be able to sync via a function.
+
+  code name: Babel :) they will run screaming.
+
+* glasses-mode can be used for langauges that use case-change
+  as a word seperator e.g: FooBar
+
 
   A. the main part is done. I need to copy the original as well for
      diffing against.  It also needs to have version information
@@ -28,10 +90,6 @@
 * use comint 'send-invisible' to dump a function into the interperter,
   for this to be really cool , it would need to copy the function by tags lookup
   automatically reformatting as necessary.
-
-* Sepia
-
-  need to attempt install after the gentoo local repository is moved.
 
 * env-tree needs to be modified to work with the env program. Simply
   executing a subshell will not work with things like eshell which I

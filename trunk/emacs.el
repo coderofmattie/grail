@@ -448,54 +448,10 @@
 ;;                          else mode
 ;;----------------------------------------------------------------------
 
+(load-file (concat (getenv "HOME") "/system/emacs/else-adapted.el"))
+
 ;; else-mode is definitely the crown jewel of my input expansion. Sets
 ;; the standard for macro expansion.
-
-(require 'else-mode)
-
-(setq else-mode-template-dir (concat (getenv "HOME") "/system/emacs/else/"))
-
-(defun else-language-spec-p ( lang )
-  "determine if a language definition has been loaded for lang"
-  (if (assoc lang else-Language-Definitions)
-    t
-    nil)
-  )
-
-;; (else-language-spec-p "perl5")  - should be false
-;; (else-language-spec-p "Empty")  - shoule be true
-
-(defun else-reload-minimal ( &optional language-name )
-  "reload the minimal definition of the else-mode language clearing all defined token expansions."
-
-  (interactive)
-  (let*
-    ((lang (or language-name source-language))
-     (template-path (concat else-mode-template-dir lang ".lse")))
-
-    (if (file-readable-p template-path)
-      (save-excursion
-        (with-temp-buffer
-          (progn
-            (beginning-of-buffer)
-            (insert-file-contents-literally template-path nil nil nil t )
-            (else-compile-buffer)
-            )))
-      )
-  ))
-
-(defun minimal-else-language-def ( language-name )
-  ;; create an alternative loading scheme. Instead of a language defining a complete
-  ;; or base set of tokens , load only the language settings.
-
-  ;; try to establish a minimal else language definition for the value of language-name.
-  (or
-    ;; already loaded ?
-    (else-language-spec-p language-name)
-
-    ;; attempt load from the else directory.
-    (else-reload-minimal language-name)
-    ))
 
 (defun tune-else ()
     (if (minimal-else-language-def source-language)
