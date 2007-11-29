@@ -99,7 +99,7 @@ sub register_concat {
 
   my $dribble = shift();
 
-  print STDERR "register concat sees: $dribble\n";
+#  print STDERR "register concat sees: $dribble\n";
 
   if ( exists $data_ref->{$data_key} ) {
     $dribble = $data_ref->{$data_key} . $dribble;
@@ -126,7 +126,11 @@ sub define {
 sub new_define {
   our @defines;
 
-  my $def = {};
+  my $def = {
+    # whenever we nest beyond root call it a placeholder.
+    decl => ( @defines ) ? 'placeholder' : 'token',
+  };
+
   push @defines , $def;
 
   Builder::register_push( $element , 'description' , $def );
@@ -164,8 +168,8 @@ sub get_terminal {
 
   my $ptable = $def->{ptable};
 
-  if ( exists $def->{$p} ) {
-    return $def->{$p};
+  if ( exists $ptable->{$p} ) {
+    return $ptable->{$p};
   }
 
   my $ref = {};
@@ -231,19 +235,68 @@ sub current_namespace {
   @scopes;
 }
 
+sub increment_autosub {
+  # if the syntax analysis was a real phase it would be possible
+  # to prune the defines with autosub=1 . However this is the
+  # default count value.
+
+  my $define = shift();
+
+  if ( exists $define->{autosub} ) {
+    $define->{autosub}++;
+  }
+  else {
+    $define->{autosub} = 1;
+  }
+}
+
+sub evaluate_deref {
+  # locate the referenced definition and set or increase it's autosub.
+  my $expr = shift();
+
+  # need to split any modififer
+  my ( $modifier , $deref ) = $expr =~ m/([@])(.*)/;
+
+  my $points_to = Builder::get_terminal( $deref );
+
+  unless ( $points_to->{description} ) {
+    print STDERR "Warning ! creating anonymous non-terminal $deref in ",
+      join("::", current_namespace() ) , "\n";
+
+    $points_to->{description} = "any string";
+  }
+
+  if ( defined( $modifier ) && $modifier eq '@' ) {
+    increment_autosub( $points_to );
+  }
+
+  $deref;
+}
+
 package Syntax::Ref;
 
 sub new {
   shift();
 
-  my ( $expr ) = @_;
+  my ( $context , $expr ) = @_;
 
   # here is where we go in and do the autosub stuff.
 
+  # it needs the context, optional or required and it will
+  # have what it needs to emit complete definitions.
+
   bless {
-    expr => $expr,
+    context => $context,
+    deref => Syntax::evaluate_deref( $expr ),
     namespace => [ Syntax::current_namespace() ],
   }, 'Syntax::Ref';
+}
+
+sub def_generate {
+  my $self = shift();
+
+  emit::quote_context( $self->{context},
+                       emit::mk_ref_ident( @{ $self->{namespace} } , $self->{deref} ) );
 }
 
 #----------------------------------------------------------------------
@@ -263,21 +316,18 @@ sub cnv_to_ident {
 
   join ('_', map {
     $_ =~ s/-/_/g;         # translate all the illegal characters to underscores
+    $_;
   }  @_  );
 }
 
 sub mk_decl_ident {
   my $ident = cnv_to_ident( @_ );
-  uc( $ident  );                # uppercase all the alpha characters.
-
-  $ident;
+  uc( $ident );                # uppercase all the alpha characters.
 }
 
 sub mk_ref_ident {
   my $ident = cnv_to_ident( @_ );
   lc( $ident  );                # lowercase all the alpha characters
-
-  $ident;
 }
 
 sub trim_ws {
@@ -291,6 +341,18 @@ sub trim_ws {
 
 sub quote {
   "\"" . shift() . "\"";
+}
+
+sub quote_context {
+  my ( $context , $ref ) = @_;
+
+  my @wrap = ();
+
+  if ( $context eq 'required' ) {
+    @wrap = ( '[' , ']' );
+  }
+
+  return join('',$wrap[0],$ref,$wrap[1]);
 }
 
 #----------------------------------------------------------------------
@@ -312,7 +374,7 @@ sub emit_macro_open {
   # the opening stanza deletes a previous definition and then begins a new
   # declaration.
 
-  my $kind = mk_decl_ident( $type );
+  $kind = mk_decl_ident( $type );
 
   push @emit_stack , <<OPEN_DECL;
 DELETE $kind $name -
@@ -330,9 +392,7 @@ OPEN_DECL
 
 sub emit_define_close {
   our @emit_stack;
-  $emit_stack[-1] .= "END DEFINE";
-
-  print STDOUT pop @emit_stack , "\n";
+  print STDOUT pop @emit_stack , "END DEFINE\n";
 }
 
 sub emit_auto_substitute {
@@ -377,10 +437,28 @@ sub emit_nonterminal_open {
 NONTERM_OPEN
 }
 
-sub terminal {
-  my ( $p , $token ) = @_;
+sub emit_body {
+  my $def = shift();
 
-  print STDERR "placeholder \"$p\"" , "\n";
+  my @lines = split /\n/ ,
+    join( '' , map {
+      my $text;
+      if ( 'Syntax::Ref' eq ref ( $_ ) ) {
+        $text = $_->def_generate();
+      }
+      else {
+        $text = $_;
+      }
+      $text;
+    } @{ $def->{macro} } );
+
+  $emit_stack[-1] .= join("\n" , map { quote( $_ ) } @lines ) . "\n";
+}
+
+sub terminal {
+  my ( $p , $def ) = @_;
+
+  #print STDERR "placeholder \"$p\"" , "\n";
   my @namespace = ( Syntax::current_namespace() , $p );
   my $name = mk_decl_ident( @namespace );
 
@@ -390,13 +468,15 @@ sub terminal {
   emit_macro_open( $name , 'placeholder' );
 
   # no conversion to token is necessary, has no need of the name feild.
-  emit_auto_substitute( $token->{ptable}->{$p} );
+  emit_auto_substitute( $def->{ptable}->{$p} );
 
-  emit_terminal_close( $token->{ptable}->{$p}->{description} );
+  emit_terminal_close( $def->{ptable}->{$p}->{description} );
 }
 
 sub define {
-  my $token = shift();
+  my $def = shift();
+
+  emit_macro_open( $def->{name} , $def->{decl} );
 
   # Ideally what is in the ptable is all terminal type definitions.
   # anything that is non-terminal should be outside of ptable.
@@ -406,11 +486,17 @@ sub define {
     # bug, probably have an odd number of elements in the hash or some such crap.
 
     if ( $_ !~  m/^\s*$/ ) {
-      terminal( $_ , $token );
+      terminal( $_ , $def );
     }
 
-  } ( keys %{ $token->{ptable} } ) , "\n";
+  } ( keys %{ $def->{ptable} } ) , "\n";
 
+  emit_auto_substitute( $def );
+
+  emit_nonterminal_open( $def->{description} );
+
+  emit_body( $def );
+  emit_define_close();
 }
 
 #----------------------------------------------------------------------
@@ -592,9 +678,15 @@ sub name_start {
   Builder::register_push( $element , 'name' , undef );
 }
 
+use Data::Dumper;
+
 sub required_start {
   my $element = shift();
-  Builder::define_insert_ref( new Syntax::Ref( 'dummy' ) );
+
+  # no name so this should actually work.
+  my $expr = $element->{Attributes}->{'{}p'}->{Value};
+
+  Builder::define_insert_ref( new Syntax::Ref( 'required' , $expr ) );
 
   # need to extract the p attribute. This is our expression.
 }
