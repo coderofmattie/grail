@@ -480,6 +480,16 @@ sub terminal {
 sub define {
   my $def = shift();
 
+  # for terminals the name is always capitalized. But for tokens
+  # the name is kept in lower case. Rationale:
+
+  # placeholders should be largely invisble when attempting to
+  # expand a symbol as a template. The placeholder's are noise
+  # when you want a token.
+
+  # Making placeholders all upper-case helps maintain a distinction
+  # between implementation (placeholders) and tokens (templates).
+
   emit_macro_open( $def->{name} , $def->{decl} );
 
   # Ideally what is in the ptable is all terminal type definitions.
