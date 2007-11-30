@@ -251,11 +251,15 @@ sub increment_autosub {
 }
 
 sub evaluate_deref {
+  # evaluate_deref is a critical maintenance point in the assembler.
+  # this is where dereference expressions are interpreted.
+
   # locate the referenced definition and set or increase it's autosub.
   my $expr = shift();
 
   # need to split any modififer
-  my ( $modifier , $deref ) = $expr =~ m/([@])(.*)/;
+  my ( $modifier , $deref ) = $expr =~ m/([@])?(.*)/;
+  #print STDERR "expr: $expr modifier = $modifier  , deref = $deref\n";
 
   my $points_to = Builder::get_terminal( $deref );
 
