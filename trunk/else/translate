@@ -170,6 +170,10 @@ sub define_complete {
     print STDERR Dumper( $def ) , "\n";
   }
 
+  # When it's time to prototype the error checking put it here so it can be
+  # run after all the parsing is complete, and we haven't wrote anything bad
+  # yet. We want to emit only the subset that is correct.
+
   emit::define( $def );
   pop @defines;
 }
@@ -219,7 +223,7 @@ sub define_copy_macro {
 
   my $def = shift();
 
-  unless( exists $def->{data} ) {
+  unless( $def->{data} ) {
     return;
   }
 
@@ -636,14 +640,16 @@ sub ignore_consider_start {
 }
 
 sub ignore_consider_end {
-  our $mode_ignore_data , $mode_ignore_child_count , $mode_ignore_child_element;
+  our $mode_ignore_data , $mode_ignore_child_count, $mode_ignore_child_element;
 
   my $element = shift();
 
   if ( ignore_children() ) {
 
     if ( $element->{LocalName} eq $mode_ignore_child_element ) {
-      $mode_ignore_child_count--;
+      if ( --$mode_ignore_child_count < 1 ) {
+        $mode_ignore_data = 0;
+      }
     }
 
     return 1;
