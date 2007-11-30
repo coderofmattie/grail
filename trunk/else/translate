@@ -369,7 +369,7 @@ sub mk_decl_ident {
 
 sub mk_ref_ident {
   my $ident = cnv_to_ident( @_ );
-  lc( $ident  );                # lowercase all the alpha characters
+  lc( $ident );                # lowercase all the alpha characters
 }
 
 sub trim_ws {
@@ -379,6 +379,15 @@ sub trim_ws {
   $s =~ s/^\s+//;
 
   $s;
+}
+
+sub trim_ws_lines {
+  trim: my $tail = pop @_;
+  goto trim if ( $tail =~ /^\s*$/ && @_ );
+
+  push @_ , $tail;
+
+  @_;
 }
 
 sub quote {
@@ -496,7 +505,10 @@ sub emit_body {
       $text;
     } @{ $def->{macro} } );
 
-  $emit_stack[-1] .= join("\n" , map { quote( $_ ) } @lines ) . "\n";
+  # get rid of both leading and trailing whitespace lines
+  @lines = reverse trim_ws_lines( reverse trim_ws_lines( @lines ) );
+
+  $emit_stack[-1] .= join("\n", map { quote( $_ ) } @lines ) . "\n";
 }
 
 sub terminal {

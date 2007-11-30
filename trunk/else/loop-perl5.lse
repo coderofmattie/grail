@@ -22,9 +22,6 @@ DEFINE TOKEN seq-index -
   /NOAUTO_SUBSTITUTE -
   /DESCRIPTION="loop iteration through an array." -
   /TYPE=NONTERMINAL -
-""
 "my ${seq_index_control}; for ( ${seq_index_control} = 0; ${seq_index_control} < @{seq_index_list}; ${seq_index_control}++ ) {"
 "}"
-""
-"      "
 END DEFINE
