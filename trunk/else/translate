@@ -7,8 +7,9 @@
 # License: GPLv3
 #----------------------------------------------------------------------
 
-my ( $language_name , $input_file ) = @ARGV;
+# better argument handling would be good. Currently a mask is required.
 
+our $lang_mask = shift( @ARGV );
 our $debug_flags = 0;
 
 #----------------------------------------------------------------------
@@ -60,7 +61,6 @@ sub register_push {
 
   my ( $element , $data_key , $data_ref ) = @_;
 
-
   print STDERR "WARNING ! probable parser noise interpreted as syntax\n"
     if ( $data_key =~  m/^\s*$/ );
 
@@ -103,12 +103,12 @@ sub register_concat {
   my $data_key = $data_accumulator[-1][1];
   my $data_ref = $data_accumulator[-1][2];
 
-#  print STDERR "data $data_ptr\$data" , Dumper( $data ) , "\n";
-#  print STDERR "data $data_key\n";
+  #  print STDERR "data $data_ptr\$data" , Dumper( $data ) , "\n";
+  #  print STDERR "data $data_key\n";
 
   my $dribble = shift();
 
-#  print STDERR "register concat sees: $dribble\n";
+  # print STDERR "register concat sees: $dribble\n";
 
   if ( exists $data_ref->{$data_key} ) {
     $dribble = $data_ref->{$data_key} . $dribble;
@@ -122,6 +122,11 @@ sub register_concat {
 #----------------------------------------------------------------------
 
 our @defines = ();
+our $current_language = '';
+
+sub set_language {
+  our $current_language = shift();
+}
 
 sub defines_ready {
   return ( @defines ) ? 1 : 0;
@@ -138,6 +143,7 @@ sub new_define {
   my $def = {
     # whenever we nest beyond root call it a placeholder.
     decl => ( @defines ) ? 'placeholder' : 'token',
+    lang => $current_language,
   };
 
   push @defines , $def;
@@ -154,6 +160,10 @@ sub define_complete {
 
   my $def = define();
 
+  unless( defined( $def ) ) {
+    die "Absurd. define_complete called on non-existant define\n";
+  }
+
   define_copy_macro( $def );
 
   if ( $debug_flags ) {
@@ -165,11 +175,14 @@ sub define_complete {
 }
 
 sub get_terminal {
-  # rece
   # ghetto. Make a bunch of nested hashes if necessary.
   my $p = shift();
 
   my $def = define();
+
+  unless( defined( $def ) ) {
+    die "Absurd trying to get a non-terminal outside of a definition\n";
+  }
 
   unless ( exists $def->{ptable} ) {
     $def->{ptable} = {};
@@ -234,6 +247,18 @@ package Syntax;
 # hopefully without breaking as much.
 
 *syntax_list = \*Builder::defines;
+
+sub language {
+  # go from the top down and get the first lang attribute that can be found.
+
+  foreach my $def (reverse @syntax_list) {
+    if ( exists $def->{lang} ) {
+      return $def->{lang};
+    }
+  }
+
+  return undef;
+}
 
 sub current_namespace {
   our @syntax_list;
@@ -389,11 +414,13 @@ sub emit_macro_open {
 
   $kind = mk_decl_ident( $type );
 
+  my $lang = Syntax::language();
+
   push @emit_stack , <<OPEN_DECL;
 DELETE $kind $name -
-  /LANGUAGE="$language_name" -
+  /LANGUAGE="$lang" -
 DEFINE $kind $name -
-  /LANGUAGE="$language_name" -
+  /LANGUAGE="$lang" -
 OPEN_DECL
 
   undef;
@@ -532,63 +559,140 @@ package DropFilter;
 use XML::SAX::Base;
 @ISA = ('XML::SAX::Base');
 
-our $ignore_data = 0;
-our $ignore_children = 0;
+our @drop_data = ( qw/ else token / );
+our @drop_children = ();
+
+sub drop_tree {
+  our @drop_data , @drop_children;
+
+  map {
+    push @drop_data , $_;
+    push @drop_children , $_;
+  } @_;
+}
+
+our $mode_ignore_data = 0;
+our $mode_ignore_child_count = 0;
+our $mode_ignore_child_element = undef;
+
+sub drop_now {
+  my $element = shift();
+  drop_tree( $element->{LocalName} );
+
+  our ( $mode_ignore_data ,
+        $mode_ignore_child_count ,
+        $mode_ignore_child_element) = (1,
+                                       1,
+                                       $element->{LocalName} );
+}
+
+sub ignore_children {
+  our $mode_ignore_child_count;
+  return $mode_ignore_child_count;
+}
+
+sub ignore_data {
+   our $mode_ignore_data;
+   return $mode_ignore_data;
+}
+
+# $ignore_children needs to be a count. the tag that is being ignored is copied. then
+# every start tag from that point increments a count. the end decrements it. When it hits
+# zero it's done.
+
+sub ignore_consider_start {
+  our @drop_children, @drop_data;
+  our $mode_ignore_data, $mode_ignore_child_count , $mode_ignore_child_element;
+
+  my $element = shift();
+
+  # immediately bail if we are already ignoring children.
+  if ( ignore_children() ) {
+    if ( $mode_ignore_child_element eq $element->{LocalName} ) {
+      $mode_ignore_child_count++;
+    }
+
+    return 1;
+  }
+
+  # do I ignore this element ?
+
+  if ( scalar grep { $element->{LocalName} eq $_ } @drop_data ) {
+    $mode_ignore_data = 1;
+  }
+
+  if ( scalar grep { $element->{LocalName} eq $_ } @drop_children ) {
+    $mode_ignore_child_count = 1;
+    $mode_ignore_child_element = $element->{LocalName};
+
+    return 1;
+  }
+
+  if ( $element->{LocalName} eq 'else' ) {
+    return 1;
+  }
+
+  return 0;
+}
+
+sub ignore_consider_end {
+  our $mode_ignore_data , $mode_ignore_child_count , $mode_ignore_child_element;
+
+  my $element = shift();
+
+  if ( ignore_children() ) {
+
+    if ( $element->{LocalName} eq $mode_ignore_child_element ) {
+      $mode_ignore_child_count--;
+    }
+
+    return 1;
+  }
+
+  if ( scalar grep { $element->{LocalName} eq $_ } @drop_data ) {
+    $mode_ignore_data = 0;
+  }
+
+  if ( $element->{LocalName} eq 'else' ) {
+    return 1;
+  }
+
+  return 0;
+}
 
 sub comment {
-  our $ignore_data;
-
-  $ignore_data = 1;
+  our $mode_ignore_data = 1;
 }
 
 sub start_element {
-  our $ignore_data , $ignore_children;
   my ( $self , $element ) = @_;
 
-  return if ( $ignore_children );
-  if ( $element->{LocalName} =~ /else|token|span/ ) {
-    $ignore_data = 1;
-
-    if ( $element->{LocalName} =~ /span/ ) {
-      $ignore_children = 1;
-      return;
-    }
-
-    # a list of elements that we forward for further processing
-    # despite the fact that we are ignoring the element data.
-    if ( $element->{LocalName} =~ /token/ ) {
-      goto forward;
-    }
-
+  if ( ignore_consider_start( $element ) ) {
     return;
   }
 
-  $ignore_data = 0;
+  # the mode_ignore_data doesn't have to be cleared by paired events.
+  # make sure we don't forget to turn it on by default.
 
- forward:
+  our $mode_ignore_data = 0;
   $self->{Handler}->start_element($element);
 }
 
-sub characters {
-  our $ignore_data , $ignore_children;
-  my ( $self , $data ) = @_;
-
-  unless( $ignore_data || $ignore_children ) {
-    $self->{Handler}->characters( $data );
-  }
-}
-
 sub end_element {
-  our $ignore_children;
+  our $mode_ignore_children;
   my ( $self , $element ) = @_;
 
-  if ( $element->{LocalName} =~ /span/ ) {
-    $ignore_children = 0;
-    return;
-  }
+  return if ( ignore_consider_end( $element )  );
 
-  return if ( $ignore_children || $element->{LocalName} =~ /else/ );
   $self->{Handler}->end_element($element);
+}
+
+sub characters {
+  our $mode_ignore_data , $mode_ignore_children;
+  my ( $self , $data ) = @_;
+
+  return if ( ignore_data() || ignore_children() );
+  $self->{Handler}->characters( $data );
 }
 
 sub xml_decl {
@@ -653,17 +757,34 @@ sub dispatch_end { dispatch_element( 1 , @_ ); }
 # these SAX event handlers need the data_register functions
 #----------------------------------------------------------------------
 
+our @languages = split /,/, $main::lang_mask;
+
 sub start_element {
+  our @languages;
+
   my ( $self , $element ) = @_;
+
+#  print STDERR "translater saw: ", $element->{LocalName} , "\n";
 
   return if dispatch_start( $element );
 
-  # this is required because elements not recognized by the interpreter
-  # are non-terminals by default in the define.
+  # elements not recognized by the interpreter are either language
+  # elements enclosing sets of tokens, or declaration of placeholders
+  # inside of tokens. Basically if we are inside a define create
+  # a terminal, or update the language.
 
   if ( Builder::defines_ready() ) {
     Builder::register_push( $element , 'description' ,
                             Builder::get_terminal( $element->{LocalName} ) );
+  }
+  else {
+    unless ( scalar grep { $element->{LocalName} eq $_ } @languages ) {
+      print STDERR "Notice: Language ", $element->{LocalName} , " is not on the guest list.\n";
+      DropFilter::drop_now( $element );
+      return;
+    }
+
+    Builder::set_language( $element->{LocalName} );
   }
 }
 
@@ -729,6 +850,7 @@ use XML::SAX::Machines qw/Pipeline/;
 
 # A simple architecture for the assembler.
 
+DropFilter::drop_tree( qw/ span prefix / );  # span is ignored for now
 
 my $tr = Pipeline (
   # standard translation pipeline
@@ -746,5 +868,13 @@ my $tr = Pipeline (
 
 
 
-$tr->parse_uri( $input_file );
+input_file: foreach my $file ( @ARGV ) {
+  unless( -f $file ) {
+    print STDERR "file $file not found - Ignoring argument.\n";
+    next input_file;
+  }
+
+  $tr->parse_uri( $file );
+}
+
 
