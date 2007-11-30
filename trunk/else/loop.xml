@@ -10,7 +10,7 @@
     <list>array name</list>
 
     <control>
-      <prefix>$</prefix> <!-- Prefix is not yet implemented -->
+      <perl5:prefix>$</perl5:prefix> <!-- Prefix is not yet implemented -->
       index variable name
     </control>
 

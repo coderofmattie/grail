@@ -9,6 +9,9 @@
   entire config, just keep the else part in the loop when it gets
   fixed.
 
+  Put in some sort of test framework. It should be fairly easy to
+  check against the reference output.
+
   .. macro translater -> macro assembler.
 
   A Macro Assembler that compensates for the stateless design of else
@@ -34,10 +37,28 @@
 
 * Major contributions
 
+  .. Toolbox ideas
+
+  Add in some of the old toolbox ideas. Each token should be a
+  repository of general programming knowledge. The purpose of
+  the templates is to be able to rapidly instantiate that
+  knowledge into a particular technique.
+
+  The Compound nature of XML is a good fit for assembling data
+  like this.
+
+  implemented description tag which turns the body into extended
+  documentation that is stripped. Along with leveraging the
+  namespaceURI for language specifics the design is layed out.
+
+  .. Chunks
+
   Generate "chunks" in template expansion which are incomplete code
   fragments that are loaded into registers or some such temporary
   facility. That way you can use those chunks after the template in
   writing new code.
+
+  .. refactor with parameters
 
   The ability to mark a region of code and pass it as the value for a
   terminal placeholder. This allows code to be re-factored quickly.
