@@ -1,0 +1,30 @@
+DELETE PLACEHOLDER SEQ_INDEX_CONTROL -
+  /LANGUAGE="perl5" -
+DEFINE PLACEHOLDER SEQ_INDEX_CONTROL -
+  /LANGUAGE="perl5" -
+  /AUTO_SUBSTITUTE -
+  /SUBSTITUTE_COUNT=4 -
+  /TYPE=TERMINAL
+"index variable name"
+END DEFINE
+DELETE PLACEHOLDER SEQ_INDEX_LIST -
+  /LANGUAGE="perl5" -
+DEFINE PLACEHOLDER SEQ_INDEX_LIST -
+  /LANGUAGE="perl5" -
+  /NOAUTO_SUBSTITUTE -
+  /TYPE=TERMINAL
+"array name"
+END DEFINE
+DELETE TOKEN seq-index -
+  /LANGUAGE="perl5" -
+DEFINE TOKEN seq-index -
+  /LANGUAGE="perl5" -
+  /NOAUTO_SUBSTITUTE -
+  /DESCRIPTION="loop iteration through an array." -
+  /TYPE=NONTERMINAL -
+""
+"my ${seq_index_control}; for ( ${seq_index_control} = 0; ${seq_index_control} < @{seq_index_list}; ${seq_index_control}++ ) {"
+"}"
+""
+"      "
+END DEFINE
