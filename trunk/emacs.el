@@ -458,7 +458,7 @@
       (progn
 
         ;; localize the current language to the buffer and set it properly
-        (set (make-local-variable 'else-Current-Language) lang)
+        (else-establish-language source-language)
         (else-mode)
 
         ;; here is where C-xe will expand templates
