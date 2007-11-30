@@ -124,8 +124,22 @@ sub register_concat {
 our @defines = ();
 our $current_language = '';
 
-sub set_language {
-  our $current_language = shift();
+sub clone_for_language {
+  my $lang = shift();
+
+  # clone the current define for a language specific version.
+
+  # this is actually simple in concept, but somewhat tedious
+  # to implement. The first time clone is called make a copy
+  # of the current define tree. for each subsequent call return
+  # that first tree.
+
+  # for now it's shorted by assuming we are only generating one
+  # language at a time. Simply go to the top and mark the language there.
+
+  unless ( $defines[0]->{lang} ) {
+    $defines[0]->{lang} = $lang;
+  }
 }
 
 sub defines_ready {
@@ -439,10 +453,6 @@ OPEN_DECL
   undef;
 }
 
-#sub placeholder_to_token {
-#  my ( $name , $p ) = @_;
-#}
-
 sub emit_define_close {
   our @emit_stack;
   print STDOUT pop @emit_stack , "END DEFINE\n";
@@ -566,151 +576,18 @@ sub define {
 }
 
 #----------------------------------------------------------------------
-# DropFilter
+# DefineFilter
 #
-# implement globally ignored parts of the document.
+# Along with misc XML document parts drop anything that is documentation
+# that doesn't end up in the macro definition itself.
 #----------------------------------------------------------------------
-package DropFilter;
+package XMLFilter;
 
 use XML::SAX::Base;
 @ISA = ('XML::SAX::Base');
 
-our @drop_data = ( qw/ else token / );
-our @drop_children = ();
-
-sub drop_tree {
-  our @drop_data , @drop_children;
-
-  map {
-    push @drop_data , $_;
-    push @drop_children , $_;
-  } @_;
-}
-
-our $mode_ignore_data = 0;
-our $mode_ignore_child_count = 0;
-our $mode_ignore_child_element = undef;
-
-sub drop_now {
-  my $element = shift();
-  drop_tree( $element->{LocalName} );
-
-  our ( $mode_ignore_data ,
-        $mode_ignore_child_count ,
-        $mode_ignore_child_element) = (1,
-                                       1,
-                                       $element->{LocalName} );
-}
-
-sub ignore_children {
-  our $mode_ignore_child_count;
-  return $mode_ignore_child_count;
-}
-
-sub ignore_data {
-   our $mode_ignore_data;
-   return $mode_ignore_data;
-}
-
-# $ignore_children needs to be a count. the tag that is being ignored is copied. then
-# every start tag from that point increments a count. the end decrements it. When it hits
-# zero it's done.
-
-sub ignore_consider_start {
-  our @drop_children, @drop_data;
-  our $mode_ignore_data, $mode_ignore_child_count , $mode_ignore_child_element;
-
-  my $element = shift();
-
-  # immediately bail if we are already ignoring children.
-  if ( ignore_children() ) {
-    if ( $mode_ignore_child_element eq $element->{LocalName} ) {
-      $mode_ignore_child_count++;
-    }
-
-    return 1;
-  }
-
-  # do I ignore this element ?
-
-  if ( scalar grep { $element->{LocalName} eq $_ } @drop_data ) {
-    $mode_ignore_data = 1;
-  }
-
-  if ( scalar grep { $element->{LocalName} eq $_ } @drop_children ) {
-    $mode_ignore_child_count = 1;
-    $mode_ignore_child_element = $element->{LocalName};
-
-    return 1;
-  }
-
-  if ( $element->{LocalName} eq 'else' ) {
-    return 1;
-  }
-
-  return 0;
-}
-
-sub ignore_consider_end {
-  our $mode_ignore_data , $mode_ignore_child_count, $mode_ignore_child_element;
-
-  my $element = shift();
-
-  if ( ignore_children() ) {
-
-    if ( $element->{LocalName} eq $mode_ignore_child_element ) {
-      if ( --$mode_ignore_child_count < 1 ) {
-        $mode_ignore_data = 0;
-      }
-    }
-
-    return 1;
-  }
-
-  if ( scalar grep { $element->{LocalName} eq $_ } @drop_data ) {
-    $mode_ignore_data = 0;
-  }
-
-  if ( $element->{LocalName} eq 'else' ) {
-    return 1;
-  }
-
-  return 0;
-}
-
 sub comment {
-  our $mode_ignore_data = 1;
-}
-
-sub start_element {
-  my ( $self , $element ) = @_;
-
-  if ( ignore_consider_start( $element ) ) {
-    return;
-  }
-
-  # the mode_ignore_data doesn't have to be cleared by paired events.
-  # make sure we don't forget to turn it on by default.
-
-  our $mode_ignore_data = 0;
-  $self->{Handler}->start_element($element);
-}
-
-sub end_element {
-  our $mode_ignore_children;
-  my ( $self , $element ) = @_;
-
-  return if ( ignore_consider_end( $element )  );
-
-  $self->{Handler}->end_element($element);
-}
-
-sub characters {
-  our $mode_ignore_data , $mode_ignore_children;
-  my ( $self , $data ) = @_;
-
-  return if ( ignore_data() || ignore_children() );
-  $self->{Handler}->characters( $data );
+  undef;
 }
 
 sub xml_decl {
@@ -722,11 +599,205 @@ sub processing_instruction {
 }
 
 #----------------------------------------------------------------------
-# Translater
+# ElementMatch
+#----------------------------------------------------------------------
+package ElementMatch;
+
+sub new_filter {
+  shift();
+  bless { @_ } , 'ElementMatch';
+}
+
+sub new_drop {
+  shift();
+
+  my $spec = shift();
+  # initialize the count
+  my %copy = ( %$spec , count => 1 );
+
+  bless \%copy , 'ElementMatch';
+}
+
+sub matches {
+  my ( $self , $element ) = @_;
+
+  # ignore data keys, use all the search keys.
+  foreach my $check ( grep { !/count/ } keys %$self ) {
+    unless ( $element->{$check}
+             && $element->{$check} =~ /$self->{$check}/ ) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+sub consume_start {
+  my ( $self , $element ) = @_;
+
+  if ( $self->matches( $element ) ) {
+    my $self->{count}++;
+  }
+
+  # ignore data keys, use all the search keys.
+  foreach my $check ( grep { !/count/ } keys %$self ) {
+    unless ( $element->{$check}
+             && $element->{$check} =~ /$self->{$check}/ ) {
+      return;
+    }
+  }
+}
+
+sub consume_end {
+  # when this returns true the match object has expired.
+
+  my ( $self , $element )  = @_;
+
+  if( $self->matches( $element ) ) {
+    --$self->{count}
+  }
+
+ # invert bool , it's not final until it's nil.
+ ( $self->{count} ) ? 0 : 1;
+}
+
+#----------------------------------------------------------------------
+# PruneFilter
+#----------------------------------------------------------------------
+package PruneFilter;
+
+use XML::SAX::Base;
+@ISA = ('XML::SAX::Base');
+
+# implement a simple matching object for elements
+
+our @blacklist = ();
+our $drop = undef;
+
+sub filter {
+  our @blacklist;
+
+  my $filter = new_filter ElementMatch( @_ );
+  push @blacklist, $filter;
+
+  $filter;
+}
+
+sub prune {
+  our $drop = new_drop ElementMatch( filter( @_ ) );
+}
+
+sub start_element {
+  our $drop;
+  my ( $self , $element ) = @_;
+
+  if ( $drop ) {
+    $drop->consume_start( $element );
+    return;
+  }
+
+  foreach my $filter ( @blacklist ) {
+    if ( $filter->matches( $element ) ) {
+      $drop = new_drop ElementMatch( $filter );
+      goto zap;
+    }
+  }
+
+  $self->{Handler}->start_element($element);
+
+ zap: undef;
+}
+
+sub end_element {
+  our $drop;
+
+  my ( $self , $element ) = @_;
+
+  if ( $drop ) {
+    if ( $drop->consume_end( $element ) ) {
+      $drop = undef;
+    }
+
+    return;
+  }
+
+  $self->{Handler}->end_element($element);
+}
+
+sub characters {
+  our $drop;
+  my ( $self , $data ) = @_;
+
+  if ( $drop ) {
+    return;
+  }
+
+  $self->{Handler}->characters( $data );
+}
+
+#----------------------------------------------------------------------
+#
+#----------------------------------------------------------------------
+package StripFilter;
+
+use XML::SAX::Base;
+@ISA = ('XML::SAX::Base');
+
+our @strip_list = ( qw/ else token / );
+
+our @strip_flag = ();
+our $level = 0;
+
+sub strip_data {
+  our $level, @strip_flag;
+
+  ( @strip_flag && $strip_flag[-1] == $level )
+    ? 1
+    : 0;
+}
+
+sub strip_parent {
+  our $level, $strip_flag;
+  push @strip_flag, $level - 1;
+}
+
+sub start_element {
+  our $level++ , @strip_flag;
+
+  my ( $self , $element ) = @_;
+
+  if ( scalar grep { element->{LocalName} eq $_ } @strip_list ) {
+    push @strip_flag , $level;
+  }
+
+  $self->{Handler}->start_element($element);
+}
+
+sub end_element {
+  our $level--, @strip_flag;
+
+  while( @strip_flag && $level < @strip_flag[-1] ) {
+    pop @strip_flag;
+  }
+
+  my ( $self , $element ) = @_;
+
+  $self->{Handler}->end_element($element);
+}
+
+sub characters {
+  my ( $self , $data ) = @_;
+
+  return if ( strip_data() );
+  $self->{Handler}->characters( $data );
+}
+
+#----------------------------------------------------------------------
+# Assembler
 #
 # implement the translator
 #----------------------------------------------------------------------
-package Translater;
+package Assembler;
 
 use Data::Dumper;
 
@@ -737,8 +808,9 @@ use XML::SAX::Base;
 our %defined = (
   token => [ 'Builder::new_define' , 'Builder::define_complete' ],
   name => [ 'name_start' , undef ],
-  body => [ 'macro_start' , undef ],
+  description => [ 'description_start' , undef ],
 
+  body => [ 'macro_start' , undef ],
   prefix => [ 'prefix_start' , undef ],
   r => [ 'required_start' , undef ],
  );
@@ -782,27 +854,27 @@ sub start_element {
 
   my ( $self , $element ) = @_;
 
-#  print STDERR "translater saw: ", $element->{LocalName} , "\n";
+  #print STDERR "Dump element ", Dumper( $element ), "\n";
 
-  return if dispatch_start( $element );
+  if ( $element->{NamespaceURI} ) {
+    unless ( scalar grep { $element->{NamespaceURI} eq $_ } @languages ) {
+      print STDERR "Notice: Language ", $element->{NamespaceURI}, " is not on the guest list.\n";
+      PruneFilter::prune( NamespaceURI => $element->{NamespaceURI} );
 
-  # elements not recognized by the interpreter are either language
-  # elements enclosing sets of tokens, or declaration of placeholders
-  # inside of tokens. Basically if we are inside a define create
-  # a terminal, or update the language.
+      return;
+    }
+
+    Builder::clone_for_language( $element->{NamespaceURI} );
+  }
+
+  return if ( dispatch_start( $element ) );
+
+  # elements not recognized are declaration of placeholders
+  # inside of tokens.
 
   if ( Builder::defines_ready() ) {
     Builder::register_push( $element , 'description' ,
                             Builder::get_terminal( $element->{LocalName} ) );
-  }
-  else {
-    unless ( scalar grep { $element->{LocalName} eq $_ } @languages ) {
-      print STDERR "Notice: Language ", $element->{LocalName} , " is not on the guest list.\n";
-      DropFilter::drop_now( $element );
-      return;
-    }
-
-    Builder::set_language( $element->{LocalName} );
   }
 }
 
@@ -822,7 +894,10 @@ sub characters {
 
   if ( Builder::register_ready() ) {
     Builder::register_concat( $data->{Data} );
+    return;
   }
+
+  $self->{Handler}->characters( $data );
 }
 
 sub macro_start {
@@ -838,6 +913,16 @@ sub macro_start {
 sub name_start {
   my $element = shift();
   Builder::register_push( $element , 'name' , undef );
+}
+
+# description means we want verbose documentation in the document, but we are
+# going to create a terse summary for the token definition. Copy this body
+# as the summary and strip the body of the parent.
+sub description_start {
+  my $element = shift();
+
+  StripFilter::strip_parent();
+  Builder::register_push( $element, 'description' , undef );
 }
 
 # use Data::Dumper;
@@ -868,15 +953,18 @@ use XML::SAX::Machines qw/Pipeline/;
 
 # A simple architecture for the assembler.
 
-DropFilter::drop_tree( qw/ span prefix / );  # span is ignored for now
-
 my $tr = Pipeline (
   # standard translation pipeline
 
-  DropFilter =>                 # Filter to eliminate XML,comments, any other sequences
-                                # Not related to creating definitions.
+  XMLFilter =>                  # Filter to eliminate pure XML document parts.
 
-  Translater =>                 # Translate definitions. Currently constructs a abstract
+  PruneFilter =>                # Eliminate undesired languages etc. valid define material
+                                # that is eliminated from the syntax.
+
+  StripFilter =>                # a filter that removes the body data from elements that
+                                # are purely containers.
+
+  Assembler =>                  # Assemble definitions. Currently constructs a abstract
                                 # structure, rewrites it with some conveinences, and
                                 # emits declarations.
 
@@ -884,7 +972,7 @@ my $tr = Pipeline (
                                 # is an error.
  );
 
-
+PruneFilter::filter( LocalName => qr/span|prefix/ );  # filter unimplemented features.
 
 input_file: foreach my $file ( @ARGV ) {
   unless( -f $file ) {
