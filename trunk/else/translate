@@ -71,19 +71,28 @@ sub register_push {
   push @data_accumulator , [ $element->{LocalName} , $data_key , $data_ref ];
 }
 
+sub register_recognize {
+  # we need a way to determine if a given element is relevant to the current
+  # register. This way we can pop the register when the closing tag is
+  # encountered.
+
+  our @data_accumulator;
+
+  my $element = shift();
+
+  unless ( @data_accumulator ) {
+    return 0;
+  }
+
+  return ( ${ $data_accumulator[-1] }[0] eq $element->{LocalName} )
+    ? 1
+    : 0;
+}
+
 sub register_pop {
   # pop a sink.
   our @data_accumulator;
   pop @data_accumulator;
-}
-
-sub register_element {
-  # return the XML tag associated with the current sink.
-  our @data_accumulator;
-
-  ( @data_accumulator )
-    ? ${ $data_accumulator[-1] }[0]
-    : undef;
 }
 
 sub register_concat {
@@ -662,7 +671,7 @@ sub end_element {
   my ( $self , $element ) = @_;
 
   # The data accumulator needs a signal to stop recording.
-  if ( Builder::register_element() eq $element->{LocalName} ) {
+  if ( Builder::register_recognize( $element ) ) {
     Builder::register_pop();
   }
 
