@@ -718,24 +718,24 @@ package main;
 
 use XML::SAX::Machines qw/Pipeline/;
 
+# A simple architecture for the assembler.
+
+
 my $tr = Pipeline (
-  DropFilter => Translater => \*STDERR
+  # standard translation pipeline
+
+  DropFilter =>                 # Filter to eliminate XML,comments, any other sequences
+                                # Not related to creating definitions.
+
+  Translater =>                 # Translate definitions. Currently constructs a abstract
+                                # structure, rewrites it with some conveinences, and
+                                # emits declarations.
+
+  \*STDERR                      # Any part of the document that is unhandled after translation
+                                # is an error.
  );
 
-# The decision to emit on the fly is really fundamentally flawed. The first pass
-# through the parser simply needs to gather the data from the document and build
-# a tree. This does not mean modifying the stacks, only additionally creating a
-# tree of references holding the objects.
 
-# to implement shadowing of placeholders with lexical scoping I will need a tree
-# from the token forest minimally. Anything that cannot be resolved up to root
-# is assumed to be global and not prefixed ? toggle shadowing ?
-
-# With this sort of design it's possible to walk the tree and do some nifty error
-# checking and linking. The final Third stage would be emitting by recursion
-# using the same serializing stack.
-
-# The parser is truly just a data structure builder.
 
 $tr->parse_uri( $input_file );
 
