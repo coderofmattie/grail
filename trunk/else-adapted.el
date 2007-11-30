@@ -5,6 +5,10 @@
 
 (setq else-mode-template-dir (concat (getenv "HOME") "/system/emacs/else/"))
 
+(custom-set-variables
+  '(else-kill-proceed-to-next-placeholder t)
+  )
+
 (defun else-language-spec-p ( lang )
   "determine if a language definition has been loaded for lang"
   (if (assoc lang else-Language-Definitions)
