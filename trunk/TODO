@@ -63,7 +63,6 @@ Move forwards and backwards in syntax by terms.
 .. gud does not have a common hook. It should for things like fixing
    the keybindings for input history. Make the appropriate hook.
 
-
 * Pure Evil
 
   build a foreign function interface that allows parrot closures
@@ -79,7 +78,6 @@ Move forwards and backwards in syntax by terms.
 
 * glasses-mode can be used for langauges that use case-change
   as a word seperator e.g: FooBar
-
 
   A. the main part is done. I need to copy the original as well for
      diffing against.  It also needs to have version information

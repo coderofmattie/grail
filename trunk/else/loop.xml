@@ -2,31 +2,28 @@
 
 <else>
   <token>
-    <name>array-iter</name>
+    <name>seq-index</name>
     loop iteration through a list
 
-    <list>list for a iterative traverse</list>
-    <control-var>
+    <list>array name</list>
+    <control>
       <prefix>$</prefix>
-      control variable for a iterative traverse
-    </control-var>
+      index variable name
+    </control>
 
     <!--
-         Ideally the expression of referencing the array should be inserted by
-         else-mode into a register for later use. How this could work is very,
-         very, interesting. Dabbrev expand anyone ?
+        Prefix is currently deferred.
     -->
 
     <!--
-        In the spec now as span. some magic in the form of using Elisp hooks will
-        be needed. This needs to run after expansion and kill or load the chunks
-        generated.
+        <span> is the idea for chunks that would be loaded into named registers or something
+        of the sort. currently ignored.
     -->
 
     <body>
-my $<r p="@control-var"/>; for ( $<r p="@control-var"/> = 0; $<r p="@control-var"/> &lt; @<r p="list"/>; $<r p="@control-var"/>++ ) {
+my $<r p="@control"/>; for ( $<r p="@control"/> = 0; $<r p="@control"/> &lt; @<r p="list"/>; $<r p="@control"/>++ ) {
 }
-<span name="array-ref"><r p="@list"/>[$<r p="@control-var"/>]</span>
+<span name="array-ref"><r p="@list"/>[$<r p="@control"/>]</span>
     </body>
   </token>
 </else>

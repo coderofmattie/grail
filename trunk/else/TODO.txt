@@ -1,62 +1,72 @@
 * Basic Integration
 
-  Ponder over the schema that I am creating for languages. I haven't put much thought in so
-  it is probably pretty cruddy.
+  Ponder over the schema that I am creating for languages. I haven't
+  put much thought in so it is probably pretty cruddy.
 
-  create an autoconf file for dealing with host configuration and emacs version issues. The
-  compilation problem with .esl files has brought this to light. This is a more general problem
-  with the entire config, just keep the else part in the loop when it gets fixed.
+  create an autoconf file for dealing with host configuration and
+  emacs version issues. The compilation problem with .esl files has
+  brought this to light. This is a more general problem with the
+  entire config, just keep the else part in the loop when it gets
+  fixed.
 
-  .. macro translater
+  .. macro translater -> macro assembler.
 
-  Macro translator or compiler that compensates for the low level nature of the macro definition
-  syntax implemented by else-mode.
-
-  After looking again at my previous attempt in XML I have spotted the essential function of
-  the translater. A significant flaw in the macro definition syntax is the placement of auto-repeat
-  in the placeholder instead of the token. This binds a placeholder tightly to a token preventing
-  common names from being used contextually in a token.
-
-  A translator can overcome this problem by computing a placeholder definition and naming
-  it in a way that is unique to the token. The else-mode implementation does not need modification
-  to interpret these definitions correctly.
-
-  computing the correct auto-repeat definitions will require a token definition as specified
-  in it's entirety to compute the first placeholder encountered. This establishes a clear
-  input granularity. For each token it should emit and flush a sequence of definitions.
+  A Macro Assembler that compensates for the stateless design of else
+  template definition interpretation. The definition language has
+  limitations that are easily overcome with an intermediate form that
+  allows the relationship between various declarations to be
+  computeted by the assembler, such as autosub counts. Using a tree
+  structure also allows for scoping which allows common names to be
+  re-used.
 
 * Short Term
 
-  indent value should not be taken from the template file. It should be supplied as an arguement
-  to the tune-else and do whatever is neccessary to recompile the templates. Deferred compilation
-  of the templates should be considered.
+  indent value should not be taken from the template file. It should
+  be supplied as an arguement to the tune-else and do whatever is
+  neccessary to recompile the templates. Deferred compilation of the
+  templates should be considered.
 
-  I have figured out what my major contribution to else mode will be. The ability
-  to pass a existing region (marked ? ) to a expansion variable making it a refactor
-  system. The more intelligent it is at code fixups in both the region and the
-  generated code (icrementals ? ability to re-templatize ?) will be primary goodness.
+  Tab complete token/placeholder symbols. This would be a nice
+  feature, and it would be a good way to get into the completion
+  API's.
 
-  intergrate with the speedbar. Would be good to see a list of available macros.
+* Medium Term
 
-  the ability to refactor is probably the best use of else for my workflow. This would involve
-  marking a region and having that supplied as a replacement text for a sub. that way you could
-  move a block inside a loop easily, that sort of thing.
+* Major contributions
 
-  the ability to supply the parameters to the template function. this may involve the creation
-  of a sort of special expand form , where it would look like a elisp function, however instead
-  of a elisp function it would be a macro. that way you could type:
+  Generate "chunks" in template expansion which are incomplete code
+  fragments that are loaded into registers or some such temporary
+  facility. That way you can use those chunks after the template in
+  writing new code.
+
+  The ability to mark a region of code and pass it as the value for a
+  terminal placeholder. This allows code to be re-factored quickly.
+
+  the ability to supply the parameters to the template function. this
+  may involve the creation of a sort of special expand form , where it
+  would look like a elisp function, however it would start the
+  template expansion with the replacements given as arguments.
 
   (macro foo bar baz)
 
-  expand it, and have foo bar and baz supplied as the replacement text for the subs.
+  expand it, and have foo bar and baz supplied as the replacement text
+  for the subs.
 
 * Long Term
 
-  have the macro assembler generate elisp code instead of the definition language, and compile
-  the results directly.
+  have the macro assembler generate elisp code instead of the
+  definition language, and compile the results directly.
 
-  include support, if connected to emacs with IPC it could become a loader as well implementing
-  dependencies.
+  .. The loader idea
+
+  It is a fundamental assumption throughout else-mode that loading a
+  file loads all of the necessary templates. I would much rather load
+  them as needed in sets. A loader could be constructed that would
+  implement dependencies so that any set can be easily loaded.
+
+  The loader would have to communicate via IPC with emacs to do this.
+  It would need to be able to see if a given set is already loaded
+  and that can only be done inside emacs.
 
 * Macro ideas
 
