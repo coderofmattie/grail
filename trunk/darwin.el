@@ -50,7 +50,10 @@
            "/projects/cherry"
            "/projects/cmdline"
            "/projects/xstruct"
-           "/projects/listy"))))
+           "/projects/listy"
+           "/system/cpan/lib/perl5/site_perl"
+           "/system/cpan/lib/perl5/5.8.8"
+           ))))
 
 (setenv "TOOLKIT" "/usr/home/mattie/vcntl/reforged")
 (setenv "WORK" "/usr/home/mattie/vcntl/commercial")
