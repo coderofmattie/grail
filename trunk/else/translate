@@ -13,51 +13,36 @@ our $lang_mask = shift( @ARGV );
 our $debug_flags = 0;
 
 #----------------------------------------------------------------------
-# The humble beginnings of a intermediate structure. Right now a anarchistic
-# AST
+# register
 #----------------------------------------------------------------------
+package Register;
 
-package Builder;
+# The data builder that serializes SAX characters events into variables.
+# Conceptually a simple stack for recursion. Each stack element is
+# a pointer to a scalar, and a match for end_element events to pop
+# the stack.
 
-#----------------------------------------------------------------------
-# data_register
-#----------------------------------------------------------------------
-
-# The data structure builder that accounts for the event driven nature
-# of SAX.
-
-# Accumulate a series of "characters" events into scalar variables. This
-# needs to function as a stack so that nested data structures can be
-# built from nested XML elements. All sinks are a key/value pair inside
-# a hash reference. Any hash reference can be supplied.
-
-# data_accumulator : the stack of sink array elements that we are using to
-#                    accumulate "characters" events into strings bounded by
-#                    open/close tags. Each element of the array corresponds
-#                    to a variable in the nested data structure
-
-# sink element    = ( element-name , data-key , data-ref )
+# @registers  : the stack of pointers.
+# pointer     : [ element-name , data-key , data-ref ]
 
 # element-name: is the XML element name so that we know when to pop this
-# sink off the stack.
+#               sink off the stack.
 
-# data-key: the hash key, a pointer within the struct so to speak.
+# data-key    : the hash key, a pointer within the struct so to speak.
 
-# data-ref: a hash reference, the struct itself.
+# data-ref    : a hash reference, the struct itself.
 
-our @data_accumulator = ();
+our @registers = ();
 
-sub register_ready {
-  our @data_accumulator;
-  ( @data_accumulator ) ? 1 : 0;
+sub ready {
+  ( our @registers ) ? 1 : 0;
 }
 
-sub register_push {
-  # push a new sink onto @data_accumulator. The element is given along
+sub push {
+  # push a new pointer onto @registers. The element is given along
   # with the key to write to. data_ref is either specified as a third
-  # arguement or an alias to the previous sink's reference.
-
-  our @data_accumulator;
+  # arguement or when undef the reference of the previous pointer on
+  # stack is aliased.
 
   my ( $element , $data_key , $data_ref ) = @_;
 
@@ -65,46 +50,43 @@ sub register_push {
     if ( $data_key =~  m/^\s*$/ );
 
   unless ( defined $data_ref ) {
-    $data_ref = $data_accumulator[-1][2];
+    $data_ref = $registers[-1][2];
   }
 
-  push @data_accumulator , [ $element->{LocalName} , $data_key , $data_ref ];
+  push our @registers , [ $element->{LocalName} , $data_key , $data_ref ];
 }
 
-sub register_recognize {
+sub pop {
+  # pop a sink.
+  pop our @registers;
+}
+
+sub recognize {
   # we need a way to determine if a given element is relevant to the current
   # register. This way we can pop the register when the closing tag is
   # encountered.
 
-  our @data_accumulator;
+  our @registers;
 
   my $element = shift();
 
-  unless ( @data_accumulator ) {
+  unless ( @registers ) {
     return 0;
   }
 
-  return ( ${ $data_accumulator[-1] }[0] eq $element->{LocalName} )
+  return ( ${ $registers[-1] }[0] eq $element->{LocalName} )
     ? 1
     : 0;
 }
 
-sub register_pop {
-  # pop a sink.
-  our @data_accumulator;
-  pop @data_accumulator;
-}
-
-sub register_concat {
-
+sub concat {
   # append to the current sink.
-  our @data_accumulator;
+  our @registers;
 
-  my $data_key = $data_accumulator[-1][1];
-  my $data_ref = $data_accumulator[-1][2];
+  my ( $data_key , $data_ref ) = ( $registers[-1][1],
+                                   $registers[-1][2] );
 
   #  print STDERR "data $data_ptr\$data" , Dumper( $data ) , "\n";
-  #  print STDERR "data $data_key\n";
 
   my $dribble = shift();
 
@@ -116,6 +98,14 @@ sub register_concat {
 
   $data_ref->{$data_key} = $dribble;
 }
+
+#----------------------------------------------------------------------
+# Builder
+#----------------------------------------------------------------------
+package Builder;
+
+# The humble beginnings of a intermediate structure. Right now a anarchistic
+# AST
 
 #----------------------------------------------------------------------
 # defines are the syntax tree part.
@@ -162,7 +152,7 @@ sub new_define {
 
   push @defines , $def;
 
-  Builder::register_push( $element , 'description' , $def );
+  Register::push( $element , 'description' , $def );
 }
 
 use Data::Dumper;
@@ -330,7 +320,7 @@ sub evaluate_deref {
 
   # need to split any modififer
   my ( $modifier , $deref ) = $spec->{expr} =~ m/([@])?(.*)/;
-  print STDERR "expr: $expr modifier = $modifier  , deref = $deref\n";
+#  print STDERR "expr: $expr modifier = $modifier  , deref = $deref\n";
 
   my $p = Builder::get_placeholder( $deref );
 
@@ -970,7 +960,7 @@ sub start_element {
   # inside of tokens.
 
   if ( Builder::defines_ready() ) {
-    Builder::register_push( $element , 'description' ,
+    Register::push( $element , 'description' ,
                             Builder::get_placeholder( $element->{LocalName} ) );
   }
 }
@@ -979,8 +969,8 @@ sub end_element {
   my ( $self , $element ) = @_;
 
   # The data accumulator needs a signal to stop recording.
-  if ( Builder::register_recognize( $element ) ) {
-    Builder::register_pop();
+  if ( Register::recognize( $element ) ) {
+    Register::pop();
   }
 
   return if dispatch_end( $element );
@@ -989,8 +979,8 @@ sub end_element {
 sub characters {
   my ( $self ,  $data ) = @_;
 
-  if ( Builder::register_ready() ) {
-    Builder::register_concat( $data->{Data} );
+  if ( Register::ready() ) {
+    Register::concat( $data->{Data} );
     return;
   }
 
@@ -1004,12 +994,12 @@ sub macro_start {
   # a input buffer for the macro body that is replicated
   # without interpretation.
 
-  Builder::register_push( $element , 'data' , undef );
+  Register::push( $element , 'data' , undef );
 }
 
 sub name_start {
   my $element = shift();
-  Builder::register_push( $element , 'name' , undef );
+  Register::push( $element , 'name' , undef );
 }
 
 # description means we want verbose documentation in the document, but we are
@@ -1019,7 +1009,7 @@ sub description_start {
   my $element = shift();
 
   StripFilter::strip_parent();
-  Builder::register_push( $element, 'description' , undef );
+  Register::push( $element, 'description' , undef );
 }
 
 # use Data::Dumper;
@@ -1062,7 +1052,7 @@ sub required_start {
 
 sub prefix_start {
   my $element = shift();
-  Builder::register_push( $element, 'prefix' , undef );
+  Register::push( $element, 'prefix' , undef );
 }
 
 #----------------------------------------------------------------------
