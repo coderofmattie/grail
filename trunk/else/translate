@@ -104,8 +104,7 @@ sub concat {
 #----------------------------------------------------------------------
 package Builder;
 
-# The humble beginnings of a intermediate structure. Right now a anarchistic
-# AST
+# Construct the intermediate form usually referred to as 'define' or 'def'.
 
 #----------------------------------------------------------------------
 # defines are the syntax tree part.
@@ -244,15 +243,19 @@ sub define_insert_ref {
 }
 
 #----------------------------------------------------------------------
-# introduce Syntax. Pretty much the intermediate form.
+# Syntax
 #----------------------------------------------------------------------
-
 package Syntax;
 
-# right now The syntax part and the intermediate form construction
-# are the same thing. It's gross but obvious. Strategy is to get
-# The abstractions right first , then untange the implementation
-# hopefully without breaking as much.
+# Syntax does the more sophisticated analysis oriented traversals of the
+# intermediate define trees created by Builder::
+
+# Whereas builder looks at the "current" define only, and always traverses
+# downwards, Syntax is where the more general and complex traversals of
+# a tree are performed for analysis and define generation by inference as
+# well as pure spec translation.
+
+# until the stages are seperated Syntax simply aliases Builder's define stack.
 
 *syntax_list = \*Builder::defines;
 
@@ -961,7 +964,7 @@ sub start_element {
 
   if ( Builder::defines_ready() ) {
     Register::push( $element , 'description' ,
-                            Builder::get_placeholder( $element->{LocalName} ) );
+                    Builder::get_placeholder( $element->{LocalName} ) );
   }
 }
 
