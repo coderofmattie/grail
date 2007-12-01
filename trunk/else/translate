@@ -338,6 +338,12 @@ sub evaluate_deref {
     increment_autosub( $p );
   }
 
+  if ( $spec->{repeat} ) {
+    foreach my $copy ( qw/ repeat separator / ) {
+      $p->{$copy} = $spec->{$copy};
+    }
+  }
+
   $deref;
 }
 
@@ -381,8 +387,10 @@ sub new {
   # emacs-else parlance)
 
   my $self = bless {
-    context => $spec{context},
     namespace => [ Syntax::current_namespace() ],
+
+    context => $spec{context},
+    repeat => ( $spec{repeat} ) ? 1 : 0,
   }, 'Syntax::Ref';
 
   delete $spec{context};
@@ -402,8 +410,15 @@ sub new {
 sub def_generate {
   my $self = shift();
 
-  emit::quote_context( $self->{context},
-                       emit::mk_ref_ident( @{ $self->{namespace} } , $self->{deref} ) );
+  my $def =
+    emit::quote_context( $self->{context},
+                         emit::mk_ref_ident( @{ $self->{namespace} } , $self->{deref} ) );
+
+  if ( $self->{repeat} ) {
+    $def .= "...";
+  }
+
+  $def;
 }
 
 #----------------------------------------------------------------------
@@ -529,6 +544,32 @@ SUBSPEC
   }
 }
 
+our %repeat_abbrev = (
+ h => 'HORIZONTAL',
+ v => 'VERTICAL',
+ a => 'CONTEXT_DEPENDENT',
+  );
+
+sub emit_repeat {
+  our @emit_stack , %repeat_abbrev;
+  my $p = shift();
+
+  if ( $p->{separator} ) {
+    my $sep = $p->{separator};
+
+    $emit_stack[-1] .= <<DUPSPEC;
+  /SEPARATOR="$sep" -
+DUPSPEC
+  }
+
+  if ( $p->{repeat} ) {
+    my $dup = $repeat_abbrev{ $p->{repeat} };
+    $emit_stack[-1] .= <<DUPSPEC;
+  /DUPLICATE="$dup" -
+DUPSPEC
+  }
+}
+
 sub emit_terminal_close {
   our @emit_stack;
   my $description = quote( trim_ws( shift() ) );
@@ -586,6 +627,8 @@ sub terminal {
 
   # no conversion to token is necessary, has no need of the name feild.
   emit_auto_substitute( $def->{ptable}->{$p} );
+
+  emit_repeat( $def->{ptable}->{$p} );
 
   emit_terminal_close( $def->{ptable}->{$p}->{description} );
 }
@@ -981,17 +1024,17 @@ sub description_start {
 
 # use Data::Dumper;
 
-sub extract_duplicate_controls {
+sub extract_repeat_controls {
   my $element = shift();
 
-  foreach my $spec ( qw/ h v dup / ) {
+  foreach my $spec ( qw/ h v a / ) {
     if ( $element->{Attributes}->{'{}' . $spec}->{Value} ) {
 
-      # set seperator and duplicate for repeated placeholders.
+      # set separator and duplicate for repeated placeholders.
 
       return (
-        seperator => $element->{Attributes}->{'{}' . $spec}->{Value},
-        duplicate => ( $spec eq 'dup' ) ? 'a' : $spec,
+        separator => $element->{Attributes}->{'{}' . $spec}->{Value},
+        repeat => $spec,
        )
     }
   }
@@ -1013,7 +1056,7 @@ sub required_start {
 
   my $term = Builder::define_insert_ref( new Syntax::Ref( context => 'required',
                                                           expr => $expr,
-                                                          extract_duplicate_controls( $element ),
+                                                          extract_repeat_controls( $element ),
                                                          ));
 }
 
