@@ -33,6 +33,16 @@
   feature, and it would be a good way to get into the completion
   API's.
 
+  .. pre-loader
+
+  split else-load-xml into else-load-xml-{global,local}
+
+
+  .. language init
+
+  need a way to load a collection of various xml files when
+  a language first loads.
+
 * Medium Term
 
 * Major contributions
