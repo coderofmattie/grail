@@ -310,16 +310,32 @@ sub new_define {
 
   push @defines, $def;
 
-  my $element = shift();
-  Register::push( $element , 'description' , $def );
-}
+  # set the default marker.
 
-use Data::Dumper;
+  my $element = shift();
+
+  # the default marker has a reference to the define, this is important to make
+  # sure that push will always work correctly without specifying a explicit
+  # ref
+
+  Register::push_default_marker( $def );
+  Register::push( $element , 'description' );
+}
 
 # define complete currently means discard as we are not building
 # a tree yet.
 sub define_complete {
   our @defines;
+
+  # make sure the register gets cleaned up after tokens along with the rest.
+
+  my $element = shift();
+  if ( Register::recognize( $element ) ) {
+    Register::pop();
+  }
+
+  # pop our 'current' marker on the register stack.
+  Register::pop_default_marker();
 
   my $def = define();
 
@@ -342,10 +358,26 @@ sub define_complete {
 }
 
 sub get_placeholder {
-  # ghetto. Make a bunch of nested hashes if necessary.
+  our @defines;
+
+  # we will always get a name minimally.
   my $p = shift();
 
-  my $def = define();
+  # if we still have arguments we are attaching a existing define of some sort.
+  my ( $recursion_level, $ref ) = @_;
+
+  if ( $recursion_level ) {
+    unless ( $defines[$recusion_level] ) {
+      die "invalid token requested by recursion_level: $recursion_level in get_placeholder\n";
+    }
+  }
+  else {
+    $recursion_level = -1;
+  }
+
+  my $def = $defines[$recursion_level];
+
+  # ghetto. Make a bunch of nested hashes if necessary.
 
   unless( defined( $def ) ) {
     die "Absurd trying to get a non-terminal outside of a definition\n";
@@ -361,7 +393,10 @@ sub get_placeholder {
     return $ptable->{$p};
   }
 
-  my $ref = {};
+  unless ( $ref ) {
+    $ref = {};
+  }
+
   $ptable->{$p} = $ref;
 
   $ref;
