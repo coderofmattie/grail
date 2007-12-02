@@ -19,7 +19,10 @@ if ( $ARGV[0] eq "-d" ) {
 }
 
 sub debug_switch {
+  our %debug_flags;
   my $flag = shift();
+
+  return ( $debug_flags[$flag] ) ? 1 : 0;
 }
 
 our $lang_mask = shift( @ARGV );
@@ -105,7 +108,7 @@ sub concat {
   if ( ::debug_switch('macro-literal') ) {
     print STDERR "register concat sees: $dribble\n";
   }
-  
+
   if ( exists $data_ref->{$data_key} ) {
     $dribble = $data_ref->{$data_key} . $dribble;
   }
@@ -163,7 +166,7 @@ sub new_define {
     lang => $current_language,
   };
 
-  push @defines , $def;
+  push @defines, $def;
 
   Register::push( $element , 'description' , $def );
 }
