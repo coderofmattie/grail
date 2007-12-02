@@ -461,8 +461,16 @@
         (else-establish-language source-language)
         (else-mode)
 
+        ;; use Ctrl-l as the prefix for the else commands. It's short
+        ;; and the usual unix meaning of clearing a screen is irrevelent
+        ;; in emacs buffers.
+        (local-unset-key "\C-l")
+
         ;; here is where C-xe will expand templates
-        (local-set-key "\C-xe" 'else-expand-placeholder)
+        (local-set-key "\C-le" 'else-expand-placeholder)
+        (local-set-key "\C-ln" 'else-next-placeholder)
+
+        (local-set-key "\C-lk" 'else-kill-placeholder)
         ))
   )
 
