@@ -70,7 +70,7 @@
               (file-readable-p path)
 
               (= 0 (call-process
-                     (concat else-mode-template-dir "/translate")    ;; translater program
+                     (concat else-mode-template-dir "/assemble")     ;; translater program
                      nil                                             ;; stdin is /dev/null
                      (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
                      nil                                             ;; don't refresh
