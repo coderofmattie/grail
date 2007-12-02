@@ -37,4 +37,29 @@ my $<r p="@control"/>; for ( $<r p="@control"/> = 0; $<r p="@control"/> &lt; @<r
  my ( <r p="lvalue" h=","/> ) = @_;
 </perl5:body>
   </token>
+
+  <!-- test recursive definition. -->
+  <token>
+    <name>hash</name>
+    <description>naming function arguements</description>
+
+    <token>
+      <name>pair</name>
+      <description>a key value pair</description>
+
+      <key>hash key</key>
+      <value>hash value</value>
+
+      <perl5:body>
+<r p="key"/> => <r p="value"/>
+      </perl5:body>
+    </token>
+
+    <ident>name of the hash</ident>
+<perl5:body>
+my %<r p="ident"/> = (
+  <r p="pair" v=","/>
+);
+</perl5:body>
+  </token>
 </else>

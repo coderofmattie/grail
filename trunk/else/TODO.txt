@@ -24,10 +24,20 @@
 
 * Short Term
 
+  .. implementation
+
+  implement optional
+
+  implement menu ? ( big one )
+
+  .. indent
+
   indent value should not be taken from the template file. It should
   be supplied as an arguement to the tune-else and do whatever is
   neccessary to recompile the templates. Deferred compilation of the
   templates should be considered.
+
+  .. complete
 
   Tab complete token/placeholder symbols. This would be a nice
   feature, and it would be a good way to get into the completion
@@ -37,13 +47,15 @@
 
   split else-load-xml into else-load-xml-{global,local}
 
-
   .. language init
 
   need a way to load a collection of various xml files when
   a language first loads.
 
 * Medium Term
+
+  implement generation of multiple languages at a time ? ( ponder dropping this
+  feature since I can just run the assembler repeatedly.
 
 * Major contributions
 
