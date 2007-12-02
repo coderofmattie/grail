@@ -1008,10 +1008,10 @@ sub characters {
 
   if ( Register::ready() ) {
     Register::concat( $data->{Data} );
-    return;
   }
-
-  $self->{Handler}->characters( $data );
+  else {
+    $self->{Handler}->characters( $data );
+  }
 }
 
 sub macro_start {
