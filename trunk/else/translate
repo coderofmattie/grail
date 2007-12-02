@@ -49,8 +49,130 @@ package Register;
 
 our @registers = ();
 
+sub dump_stack {
+  our @registers;
+
+  print STDERR "register [stack] = ",
+    join(",",
+         map {
+           ( 'ARRAY' eq ref( $_ ) )
+             ? join("->", $$_[0], $$_[1] )
+             : "recursion = " . $_[0];
+         } @registers ),
+    "\n";
+}
+
+sub is_ptr {
+  our @registers;
+  my $i = shift();
+
+  unless( defined($i) ) {
+    $i = -1;
+  }
+
+  ( 'ARRAY' eq ref( $registers[$i] ) )
+      ? 1
+      : 0;
+}
+
+sub is_default {
+  our @registers;
+  my $i = shift();
+
+  unless( defined($i) ) {
+    $i = -1;
+  }
+
+  ( 'Register::default' eq ref( $registers[$i] ) )
+      ? 1
+      : 0;
+}
+
+sub default_ref {
+  our @registers;
+
+  return ( is_ptr() )
+    ? $registers[-1][2]
+    : $registers[-1][1]
+}
+
 sub ready {
-  ( our @registers ) ? 1 : 0;
+  our @registers;
+
+  ( @registers > 0 && is_ptr() )
+    ? 1 : 0;
+}
+
+sub push_default_marker {
+  my $ref = shift();
+  push our @registers, bless [Builder::recursion_level(), $ref ], 'Register::default' ;
+}
+
+sub pop_default_marker {
+  our @registers;
+
+  unless ( is_default() ) {
+    print STDERR "pop_default_marker: top of stack is not a default marker, @registers stack is corrupted\n";
+    print STDERR "dumping registers\n";
+
+    print STDERR Dumper( \@registers ), "\n";
+
+    die "Failed ! Register::registers corruption discovered by pop_default_marker\n";
+  }
+
+  pop @registers;
+}
+
+sub replace_default {
+  our @registers;
+
+  my ( $element, $data_key ) = @_;
+
+  # BROWN BAG:
+
+  # element should be a SAX element. Instead it is a scalar that is the name of the element.
+  # This is because at the time we call replace-default we have the new element, not the
+  # element that started the default.
+
+  # A much better solution would be to store A ElementMatch instance along with the recursion
+  # level. This issue should be addressed when ElementMatch is weilded seriously to deal
+  # with NamespaceURI.
+
+  # from the top of the register stack search down for a pointer that
+  # matches the data-key.
+
+  if ( ::debug_switch( 'register-replace' ) ) {
+    print STDERR "replace before",Dumper(\@registers), "\n";
+  }
+
+  my $i;
+  for( $i = @registers - 1 ;
+       $i >= 0 && is_ptr($i) ;
+       $i-- ) {
+
+    # when we find the data-key replace the element that we match on.
+    if ( $registers[$i][1] eq $data_key ) {
+      # replace the old default element with the new one
+
+      $registers[$i][0] = $element;
+
+      # since the default is probably right after the current marker we need to move
+      # it to the top of the stack otherwise it will explode when the stack is popped.
+      push @registers, splice @registers,$i,1;
+
+      if ( ::debug_switch('register-replace') ) {
+        print STDERR "replace after",Dumper(\@registers), "\n";
+      }
+
+      return;
+    }
+  }
+
+  # if we have failed we should be sitting at a current marker.
+  unless ( $i > 0 ) {
+    print STDERR "default for $data_key could not be found at recursion level: ", $registers[$i][0], "\n";
+    die "Failed ! Register::registers corruption discovered by replace_default\n";
+  }
 }
 
 sub push {
@@ -65,7 +187,7 @@ sub push {
     if ( $data_key =~  m/^\s*$/ );
 
   unless ( defined $data_ref ) {
-    $data_ref = $registers[-1][2];
+    $data_ref = default_ref();
   }
 
   push our @registers , [ $element->{LocalName} , $data_key , $data_ref ];
@@ -73,6 +195,15 @@ sub push {
 
 sub pop {
   # pop a sink.
+
+  unless ( @registers > 0 ) {
+    die "failed ! Register::registers corruption discovered by pop\n";
+  }
+
+  unless ( is_ptr() ) {
+    die "failed ! Register::registers corruption discovered by pop - attempting to pop a current marker\n";
+  }
+
   pop our @registers;
 }
 
@@ -85,7 +216,7 @@ sub recognize {
 
   my $element = shift();
 
-  unless ( @registers ) {
+  unless ( @registers > 0 && is_ptr() ) {
     return 0;
   }
 
@@ -108,11 +239,8 @@ sub concat {
   }
 
   if ( ::debug_switch('register') ) {
-    print STDERR "register [pointer] = $data_key @level ", Builder::recursion_level(), "\n";
-
-    print STDERR "register stack = ",
-                 join(",", map { join("-", $$_[0], $$_[1] ) } @registers ),
-                 "\n";
+    print STDERR "register [pointer] = $data_key \@level ", Builder::recursion_level(), "\n";
+    dump_stack();
   }
 
   if ( $data_ref->{$data_key} ) {
@@ -156,6 +284,14 @@ sub clone_for_language {
 
 sub defines_ready {
   return ( @defines ) ? 1 : 0;
+}
+
+sub recursion_level {
+  our @defines;
+
+  ( @defines > 0 )
+    ? scalar our @defines
+    : 0;
 }
 
 sub define {
