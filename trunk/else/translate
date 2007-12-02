@@ -9,8 +9,20 @@
 
 # better argument handling would be good. Currently a mask is required.
 
+our %debug_flags = ();
+
+if ( $ARGV[0] eq "-d" ) {
+  # take each of the comma seperated debug flags and make a hash pair
+  # out of them
+  my @flags = split /,/, ( splice @ARGV,0,2 )[1];
+  my %debug_flags = map { ( $_ => 1 ) } @flags;
+}
+
+sub debug_switch {
+  my $flag = shift();
+}
+
 our $lang_mask = shift( @ARGV );
-our $debug_flags = 0;
 
 #----------------------------------------------------------------------
 # register
@@ -90,8 +102,10 @@ sub concat {
 
   my $dribble = shift();
 
-  # print STDERR "register concat sees: $dribble\n";
-
+  if ( ::debug_switch('macro-literal') ) {
+    print STDERR "register concat sees: $dribble\n";
+  }
+  
   if ( exists $data_ref->{$data_key} ) {
     $dribble = $data_ref->{$data_key} . $dribble;
   }
@@ -169,7 +183,7 @@ sub define_complete {
 
   define_copy_macro( $def );
 
-  if ( $debug_flags ) {
+  if ( ::debug_switch( 'struct' ) ) {
     print STDERR Dumper( $def ) , "\n";
   }
 
