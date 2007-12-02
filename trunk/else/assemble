@@ -1059,17 +1059,26 @@ sub rewrite_tree {
     return 0;
   }
 
-  # add another level to the namespace.
-  push @namespace , $tree->{name};
-
   if ( exists $tree->{lang} ) {
     our $language = $tree->{lang};
     delete $tree->{lang};
   }
 
+  # add another level to the namespace, record in the tree
+  push @namespace , $tree->{name};
+  $tree->{namespace} = [ @namespace ];
+
+  # we don't need to distinguish between nodes and leaves anymore
+  # for this vertex.
+  delete $tree->{name};
+
   # no longer need the data buffer. purely a SAX parsing mechanism.
   if ( exists $tree->{data} ) {
     delete $tree->{data};
+  }
+
+  unless ( exists $tree->{decl} ) {
+    $tree->{decl} = 'placeholder';
   }
 
   foreach my $v ( keys %{ $tree->{ptable} } ) {
@@ -1086,6 +1095,12 @@ sub rewrite_tree {
       unless ( rewrite_tree( $tree->{ptable}->{$v} ) ) {
         delete $tree->{ptable}->{$v};
       }
+    }
+    else {
+      # add in the fields that are always missing on the leafs,
+      # this keeps the emitter simple.
+      $tree->{ptable}->{$v}->{decl} = 'placeholder';
+      $tree->{ptable}->{$v}->{namespace} = [ @namespace , $v ];
     }
   }
 
