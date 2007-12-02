@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="US-ASCII"?>
-<else>
-  <token xmlns:perl5="perl5" xmlns:java="java">
+<else  xmlns:perl5="perl5"
+       xmlns:java="java">
+  <token>
     <name>seq-index</name>
     <description>loop iteration through an array.</description>
 
