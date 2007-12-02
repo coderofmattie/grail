@@ -1092,10 +1092,10 @@ use XML::SAX::Base;
 # elements defined by the translater implementation.
 our %defined = (
   token => [ 'Builder::new_define' , 'Builder::define_complete' ],
-  name => [ 'name_start' , undef ],
+  name => [ qw/name_start name_end/ ],
   description => [ 'description_start' , undef ],
 
-  body => [ 'macro_start' , undef ],
+  body => [ 'macro_start', undef ],
   prefix => [ 'prefix_start' , undef ],
   r => [ 'required_start' , undef ],
  );
@@ -1192,12 +1192,22 @@ sub macro_start {
   # a input buffer for the macro body that is replicated
   # without interpretation.
 
-  Register::push( $element , 'data' , undef );
+  Register::push( $element , 'data' );
 }
 
 sub name_start {
   my $element = shift();
-  Register::push( $element , 'name' , undef );
+  Register::push( $element , 'name' );
+}
+
+sub name_end {
+  # we cannot attatch a nested define to the parent define until we have the name.
+  # so we need to capture the event of </name>, and attatch the child to the parent.
+
+  if( Builder::recursion_level() > 1 ) {
+    my $def = Builder::define();
+    Builder::get_placeholder( $def->{name} , -2 , $def);
+  }
 }
 
 # description means we want verbose documentation in the document, but we are
@@ -1207,7 +1217,7 @@ sub description_start {
   my $element = shift();
 
   StripFilter::strip_parent();
-  Register::push( $element, 'description' );
+  Register::replace_default( 'description', 'description' );
 }
 
 # use Data::Dumper;
