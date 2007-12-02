@@ -136,13 +136,13 @@ sub replace_default {
 
   # BROWN BAG:
 
-  # element should be a SAX element. Instead it is a scalar that is the name of the element.
-  # This is because at the time we call replace-default we have the new element, not the
-  # element that started the default.
+  # element should be a SAX element. Instead it is a scalar that is
+  # the name of the element.  At the time we call replace-default we
+  # have the new element, not the element that started the default.
 
-  # A much better solution would be to store A ElementMatch instance along with the recursion
-  # level. This issue should be addressed when ElementMatch is weilded seriously to deal
-  # with NamespaceURI.
+  # A much better solution: Store an ElementMatch instance along with
+  # the recursion level. This issue should be addressed when
+  # ElementMatch is weilded seriously to deal with NamespaceURI.
 
   # from the top of the register stack search down for a pointer that
   # matches the data-key.
@@ -262,10 +262,6 @@ sub concat {
 package Builder;
 
 # Construct the intermediate form usually referred to as 'define' or 'def'.
-
-#----------------------------------------------------------------------
-# defines are the syntax tree part.
-#----------------------------------------------------------------------
 
 our @defines = ();
 
@@ -936,6 +932,10 @@ our $language = '';
 
 # a namespace stack allows me to avoid doing child -> parent linking
 # in the AST tree.
+
+# I am keeping the namespace generation in Syntax in the hope that I
+# can someday compact the namespace identifiers without making them
+# too ugly.
 
 our @namespace = ();
 
