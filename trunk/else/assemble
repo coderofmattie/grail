@@ -1,11 +1,13 @@
 #! /usr/bin/env perl
 
 #----------------------------------------------------------------------
-# translate
+# Assemble
 # Primary Author: Mike Mattie
 # copyright: Mike Mattie (2007)
 # License: GPLv3
 #----------------------------------------------------------------------
+
+use Data::Dumper;
 
 # better argument handling would be good. Currently a mask is required.
 
@@ -48,6 +50,10 @@ package Register;
 # data-ref    : a hash reference, the struct itself.
 
 our @registers = ();
+
+sub reset {
+  our @registers = ();
+}
 
 sub dump_stack {
   our @registers;
@@ -115,7 +121,7 @@ sub pop_default_marker {
     print STDERR "pop_default_marker: top of stack is not a default marker, @registers stack is corrupted\n";
     print STDERR "dumping registers\n";
 
-    print STDERR Dumper( \@registers ), "\n";
+    print STDERR ::Dumper( \@registers ), "\n";
 
     die "Failed ! Register::registers corruption discovered by pop_default_marker\n";
   }
@@ -142,7 +148,7 @@ sub replace_default {
   # matches the data-key.
 
   if ( ::debug_switch( 'register-replace' ) ) {
-    print STDERR "replace before",Dumper(\@registers), "\n";
+    print STDERR "replace before",::Dumper(\@registers), "\n";
   }
 
   my $i;
@@ -161,7 +167,7 @@ sub replace_default {
       push @registers, splice @registers,$i,1;
 
       if ( ::debug_switch('register-replace') ) {
-        print STDERR "replace after",Dumper(\@registers), "\n";
+        print STDERR "replace after",::Dumper(\@registers), "\n";
       }
 
       return;
@@ -262,7 +268,10 @@ package Builder;
 #----------------------------------------------------------------------
 
 our @defines = ();
-our $current_language = '';
+
+sub reset {
+  our @defines = ();
+}
 
 sub clone_for_language {
   my $lang = shift();
@@ -283,14 +292,14 @@ sub clone_for_language {
 }
 
 sub defines_ready {
-  return ( @defines ) ? 1 : 0;
+  return ( @defines > 0 ) ? 1 : 0;
 }
 
 sub recursion_level {
   our @defines;
 
   ( @defines > 0 )
-    ? scalar our @defines
+    ? scalar @defines
     : 0;
 }
 
@@ -305,8 +314,16 @@ sub new_define {
   my $def = {
     # whenever we nest beyond root call it a placeholder.
     decl => ( @defines ) ? 'placeholder' : 'token',
-    lang => $current_language,
+#    lang => $current_language,
   };
+
+  # BROWN BAG : since the whole cloning for language thing isn't figured out
+  # just queue each structure for the Syntax phase. Later the queuing needs to
+  # happen for each language instance of a tree.
+
+  unless ( @defines > 0 ) {
+    Syntax::queue( $def );
+  }
 
   push @defines, $def;
 
@@ -345,15 +362,16 @@ sub define_complete {
 
   define_copy_macro( $def );
 
-  if ( ::debug_switch( 'struct' ) ) {
-    print STDERR Dumper( $def ) , "\n";
+  if ( ::debug_switch( 'b-struct' ) ) {
+    print STDERR ::Dumper( $def ) , "\n";
   }
+
+  # TODO:
 
   # When it's time to prototype the error checking put it here so it can be
   # run after all the parsing is complete, and we haven't wrote anything bad
   # yet. We want to emit only the subset that is correct.
 
-  emit::define( $def );
   pop @defines;
 }
 
@@ -429,7 +447,7 @@ sub define_copy_macro {
   $def->{data} = '';
 }
 
-sub define_insert_ref {
+sub define_insert {
   # flush any literal sequence in the buffer
   my $def = define();
   define_copy_macro( $def );
@@ -438,109 +456,17 @@ sub define_insert_ref {
 }
 
 #----------------------------------------------------------------------
-# Syntax
+# Builder::Ref
 #----------------------------------------------------------------------
-package Syntax;
+package Builder::Ref;
 
-# Syntax does the more sophisticated analysis oriented traversals of the
-# intermediate define trees created by Builder::
-
-# Whereas builder looks at the "current" define only, and always traverses
-# downwards, Syntax is where the more general and complex traversals of
-# a tree are performed for analysis and define generation by inference as
-# well as pure spec translation.
-
-# until the stages are seperated Syntax simply aliases Builder's define stack.
-
-*syntax_list = \*Builder::defines;
-
-sub language {
-  # go from the top down and get the first lang attribute that can be found.
-
-  foreach my $def (reverse @syntax_list) {
-    if ( exists $def->{lang} ) {
-      return $def->{lang};
-    }
-  }
-
-  return undef;
-}
-
-sub current_namespace {
-  our @syntax_list;
-
-  my @scopes = ();
-  map { push @scopes , $_->{name} } @syntax_list;
-
-  @scopes;
-}
-
-sub increment_autosub {
-  # if the syntax analysis was a real phase it would be possible
-  # to prune the defines with autosub=1 . However this is the
-  # default count value.
-
-  my $define = shift();
-
-  if ( exists $define->{autosub} ) {
-    $define->{autosub}++;
-  }
-  else {
-    $define->{autosub} = 1;
-  }
-}
-
-sub evaluate_deref {
-  # This is a critical design point: where all of the AST rewrites begin.
-
-  # All placeholders are generated as unique. The advantage is that
-  # the user can choose unique names when there is a distinction to be
-  # made, and not bother with policing unique-ness when it has no
-  # impact on function.
-
-  # However there can be multiple references to the same placeholder that
-  # is functionally essential, as in the case of the auto-substitute
-  # function.
-
-  # To resolve this question evaluation will generate a placeholder
-  # unless a existing definition is found. If that definition is
-  # functionally compatible the reference will merge: e.g update
-  # auto-substitute reference count.
-
-  # If the generated and existing placeholder's are exclusive then
-  # the generated placeholder will be named uniquely and returned.
-
-  # This behavior is the concise and flexible without sacrificing
-  # correctness , which is do everything the original else-mode
-  # definitions could do.
-
-  my $spec = shift();
-
-  # need to split any modififer
-  my ( $modifier , $deref ) = $spec->{expr} =~ m/([@])?(.*)/;
-#  print STDERR "expr: $expr modifier = $modifier  , deref = $deref\n";
-
-  my $p = Builder::get_placeholder( $deref );
-
-  if ( defined( $modifier ) && $modifier eq '@' ) {
-    increment_autosub( $p );
-  }
-
-  if ( $spec->{repeat} ) {
-    foreach my $copy ( qw/ repeat separator / ) {
-      $p->{$copy} = $spec->{$copy};
-    }
-  }
-
-  $deref;
-}
-
-package Syntax::Ref;
+# references to placeholders contain much of the placeholder spec. This
+# object is a specification of how that placeholder is evaluated.
 
 sub new {
   shift();
 
-  # the Syntax::Ref constructor is a key point in the design of the
+  # the Builder::Ref constructor is a key point in the design of the
   # assembler.
 
   # Background:
@@ -575,286 +501,17 @@ sub new {
   # emacs-else parlance)
 
   my $self = bless {
-    namespace => [ Syntax::current_namespace() ],
+#    namespace => [ Syntax::current_namespace() ],
 
     context => $spec{context},
     repeat => ( $spec{repeat} ) ? 1 : 0,
-  }, 'Syntax::Ref';
+  }, 'Builder::Ref';
 
   delete $spec{context};
 
-  # Syntax::evaluate_deref will evaluate the specification ; modify the
-  # AST as necessary to get a unique and valid placeholder name.
-
-  $self->{deref} = Syntax::evaluate_deref( \%spec );
-
-  # return the newly created Syntax::Ref which is the residual of
-  # Syntax::evaluate_deref sufficient to generate the reference
-  # to the placeholder.
+  $self->{spec} = \%spec,
 
   $self;
-}
-
-sub def_generate {
-  my $self = shift();
-
-  my $def =
-    emit::quote_context( $self->{context},
-                         emit::mk_ref_ident( @{ $self->{namespace} } , $self->{deref} ) );
-
-  if ( $self->{repeat} ) {
-    $def .= "...";
-  }
-
-  $def;
-}
-
-#----------------------------------------------------------------------
-# emit
-#----------------------------------------------------------------------
-
-package emit;
-
-# First the formatting functions for easy access. These functions do
-# the translation of generic text into valid syntax, converting or
-# flagging it as illegal.
-
-# currently it only converts a little.
-
-sub cnv_to_ident {
-  # else names must be upper-case ascii alphas, digits, or underscores.
-
-  join ('_', map {
-    $_ =~ s/-/_/g;         # translate all the illegal characters to underscores
-    $_;
-  }  @_  );
-}
-
-sub mk_decl_ident {
-  my $ident = cnv_to_ident( @_ );
-  uc( $ident );                # uppercase all the alpha characters.
-}
-
-sub mk_ref_ident {
-  my $ident = cnv_to_ident( @_ );
-  lc( $ident );                # lowercase all the alpha characters
-}
-
-sub trim_ws {
-  my $s = shift();
-
-  $s =~ s/\s+$//;
-  $s =~ s/^\s+//;
-
-  $s;
-}
-
-sub trim_ws_lines {
-  trim: my $tail = pop @_;
-  goto trim if ( $tail =~ /^\s*$/ && @_ );
-
-  push @_ , $tail;
-
-  @_;
-}
-
-sub quote {
-  "\"" . shift() . "\"";
-}
-
-sub quote_context {
-  my ( $context , $ref ) = @_;
-
-  my @wrap = ();
-
-  if ( $context eq 'required' ) {
-    @wrap = ( '{' , '}' );
-  }
-
-  return join('',$wrap[0],$ref,$wrap[1]);
-}
-
-#----------------------------------------------------------------------
-# emit stack.
-#----------------------------------------------------------------------
-
-# The recursion involved in doing various re-writes and compilations
-# means that writing output directly to a stream during processing
-# won't work. serialize at complete definitions with a stack.
-
-our @emit_stack;
-
-# it should not be difficult to convert a placeholder to a token.
-
-sub emit_macro_open {
-  our @emit_stack;
-  my ( $name , $type ) = @_;
-
-  # the opening stanza deletes a previous definition and then begins a new
-  # declaration.
-
-  $kind = mk_decl_ident( $type );
-
-  my $lang = Syntax::language();
-
-  push @emit_stack , <<OPEN_DECL;
-DELETE $kind $name -
-  /LANGUAGE="$lang" -
-DEFINE $kind $name -
-  /LANGUAGE="$lang" -
-OPEN_DECL
-
-  undef;
-}
-
-sub emit_define_close {
-  our @emit_stack;
-  print STDOUT pop @emit_stack , "END DEFINE\n";
-}
-
-sub emit_auto_substitute {
-  our @emit_stack;
-
-  my $p = shift();
-
-  if ( exists $p->{autosub} ) {
-    my $count = $p->{autosub};
-
-    $emit_stack[-1] .= <<SUBSPEC;
-  /AUTO_SUBSTITUTE -
-  /SUBSTITUTE_COUNT=$count -
-SUBSPEC
-  }
-  else {
-    $emit_stack[-1] .= <<SUBSPEC;
-  /NOAUTO_SUBSTITUTE -
-SUBSPEC
-  }
-}
-
-our %repeat_abbrev = (
- h => 'HORIZONTAL',
- v => 'VERTICAL',
- a => 'CONTEXT_DEPENDENT',
-  );
-
-sub emit_repeat {
-  our @emit_stack , %repeat_abbrev;
-  my $p = shift();
-
-  if ( $p->{separator} ) {
-    my $sep = $p->{separator};
-
-    $emit_stack[-1] .= <<DUPSPEC;
-  /SEPARATOR="$sep" -
-DUPSPEC
-  }
-
-  if ( $p->{repeat} ) {
-    my $dup = $repeat_abbrev{ $p->{repeat} };
-    $emit_stack[-1] .= <<DUPSPEC;
-  /DUPLICATE="$dup" -
-DUPSPEC
-  }
-}
-
-sub emit_terminal_close {
-  our @emit_stack;
-  my $description = quote( trim_ws( shift() ) );
-
-  $emit_stack[-1] .= <<TERM_CLOSE;
-  /TYPE=TERMINAL
-$description
-TERM_CLOSE
-
-  emit_define_close();
-}
-
-sub emit_nonterminal_open {
-  our @emit_stack;
-  my $description = quote( trim_ws( shift() ) );
-
-  $emit_stack[-1] .= <<NONTERM_OPEN;
-  /DESCRIPTION=$description -
-  /TYPE=NONTERMINAL -
-NONTERM_OPEN
-}
-
-sub emit_body {
-  my $def = shift();
-
-  my @lines = split /\n/ ,
-    join( '' , map {
-      my $text;
-      if ( 'Syntax::Ref' eq ref ( $_ ) ) {
-        $text = $_->def_generate();
-      }
-      else {
-        $text = $_;
-      }
-      $text;
-    } @{ $def->{macro} } );
-
-  # get rid of both leading and trailing whitespace lines
-  @lines = reverse trim_ws_lines( reverse trim_ws_lines( @lines ) );
-
-  $emit_stack[-1] .= join("\n", map { quote( $_ ) } @lines ) . "\n";
-}
-
-sub terminal {
-  my ( $p , $def ) = @_;
-
-  #print STDERR "placeholder \"$p\"" , "\n";
-  my @namespace = ( Syntax::current_namespace() , $p );
-  my $name = mk_decl_ident( @namespace );
-
-  # the opening stanza deletes a previous definition and then begins a new
-  # declaration.
-
-  emit_macro_open( $name , 'placeholder' );
-
-  # no conversion to token is necessary, has no need of the name feild.
-  emit_auto_substitute( $def->{ptable}->{$p} );
-
-  emit_repeat( $def->{ptable}->{$p} );
-
-  emit_terminal_close( $def->{ptable}->{$p}->{description} );
-}
-
-sub define {
-  my $def = shift();
-
-  # for terminals the name is always capitalized. But for tokens
-  # the name is kept in lower case. Rationale:
-
-  # placeholders should be largely invisble when attempting to
-  # expand a symbol as a template. The placeholder's are noise
-  # when you want a token.
-
-  # Making placeholders all upper-case helps maintain a distinction
-  # between implementation (placeholders) and tokens (templates).
-
-  emit_macro_open( $def->{name} , $def->{decl} );
-
-  # Ideally what is in the ptable is all terminal type definitions.
-  # anything that is non-terminal should be outside of ptable.
-
-  map {
-    # getting some weird garbage from keys , filter the crap until I can find the
-    # bug, probably have an odd number of elements in the hash or some such crap.
-
-    if ( $_ !~  m/^\s*$/ ) {
-      terminal( $_ , $def );
-    }
-
-  } ( keys %{ $def->{ptable} } ) , "\n";
-
-  emit_auto_substitute( $def );
-
-  emit_nonterminal_open( $def->{description} );
-
-  emit_body( $def );
-  emit_define_close();
 }
 
 #----------------------------------------------------------------------
@@ -1077,19 +734,18 @@ sub characters {
 }
 
 #----------------------------------------------------------------------
-# Assembler
+# Parser
 #
-# Implement the Assembler. This is actually just SAX event handlers that
-# drive AST generation.
+# Implement the Parser as SAX event handlers that drive AST generation.
 #----------------------------------------------------------------------
-package Assembler;
-
-use Data::Dumper;
+package Parser;
 
 use XML::SAX::Base;
 @ISA = ('XML::SAX::Base');
 
-# elements defined by the translater implementation.
+our @languages = split /,/, $main::lang_mask;
+
+# elements defined by the Aseembler implementation.
 our %defined = (
   token => [ 'Builder::new_define' , 'Builder::define_complete' ],
   name => [ qw/name_start name_end/ ],
@@ -1129,17 +785,15 @@ sub dispatch_start { dispatch_element( 0 , @_ ); }
 sub dispatch_end { dispatch_element( 1 , @_ ); }
 
 #----------------------------------------------------------------------
-# these SAX event handlers need the data_register functions
+# SAX event handlers that drive dispatch_element
 #----------------------------------------------------------------------
-
-our @languages = split /,/, $main::lang_mask;
 
 sub start_element {
   our @languages;
 
   my ( $self , $element ) = @_;
 
-  #print STDERR "Dump element ", Dumper( $element ), "\n";
+  #print STDERR "Dump element ", ::Dumper( $element ), "\n";
 
   if ( $element->{NamespaceURI} ) {
     unless ( scalar grep { $element->{NamespaceURI} eq $_ } @languages ) {
@@ -1185,6 +839,10 @@ sub characters {
   }
 }
 
+#----------------------------------------------------------------------
+# high level event handlers driven by dispatch_element
+#----------------------------------------------------------------------
+
 sub macro_start {
   my $element = shift();
 
@@ -1220,8 +878,6 @@ sub description_start {
   Register::replace_default( 'description', 'description' );
 }
 
-# use Data::Dumper;
-
 sub extract_repeat_controls {
   my $element = shift();
 
@@ -1246,16 +902,17 @@ sub required_start {
   # need to extract the p attribute. This is our expression.
   my $expr = $element->{Attributes}->{'{}p'}->{Value};
 
-  # Syntax::Ref constructs or modifies the placeholder tree as necessary
-  # to create a reference we can insert in the defintion.
+  # Builder::Ref collects the specification for how the placeholder is
+  # expanded. This spec is inserted into the ->macro sequence for
+  # deferred evaluation during the syntax phase.
 
   # At this point the specification of the placeholder needs to be complete
   # aside from affects like auto-substitute which are computed by collision.
 
-  my $term = Builder::define_insert_ref( new Syntax::Ref( context => 'required',
-                                                          expr => $expr,
-                                                          extract_repeat_controls( $element ),
-                                                         ));
+  my $term = Builder::define_insert( new Builder::Ref( context => 'required',
+                                                       expr => $expr,
+                                                       extract_repeat_controls( $element ),
+                                                      ));
 }
 
 sub prefix_start {
@@ -1264,10 +921,53 @@ sub prefix_start {
 }
 
 #----------------------------------------------------------------------
+# Syntax
+#----------------------------------------------------------------------
+package Syntax;
+
+our @AST = ();
+
+sub reset {
+  our @AST = ();
+}
+
+sub queue {
+  # add a tree to the AST list.
+  push our @AST , shift();
+}
+
+sub rewrite {
+  our @AST;
+
+  if ( ::debug_switch( 's-struct' ) ) {
+    print STDERR "dumping syntax tree before re-write\n";
+    print STDERR ::Dumper( \@AST );
+  }
+}
+
+#----------------------------------------------------------------------
+# Emit
+#----------------------------------------------------------------------
+package Emit;
+
+# the back-end. Generate the assembled macro definitions.
+
+sub reset {
+
+}
+
+#----------------------------------------------------------------------
 # main
 #----------------------------------------------------------------------
 
 package main;
+
+sub reset_all_phases {
+  Register::reset();
+  Builder::reset();
+  Syntax::reset();
+  Emit::reset();
+}
 
 use XML::SAX::Machines qw/Pipeline/;
 
@@ -1284,9 +984,8 @@ my $tr = Pipeline (
   StripFilter =>                # a filter that removes the body data from elements that
                                 # are purely containers.
 
-  Assembler =>                  # Assemble definitions. Currently constructs a abstract
-                                # structure, rewrites it with some conveinences, and
-                                # emits declarations.
+  Parser =>                     # Parse definitions. Currently constructs a abstract
+                                # structure
 
   \*STDERR                      # Any part of the document that is unhandled after translation
                                 # is an error.
@@ -1300,5 +999,12 @@ input_file: foreach my $file ( @ARGV ) {
     next input_file;
   }
 
+  reset_all_phases();
+
   $tr->parse_uri( $file );
+
+  Syntax::rewrite();
+
+  # emit the definitions we have queued
+  #emit::emit_queued();
 }
