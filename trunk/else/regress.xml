@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="US-ASCII"?>
-<else>
-  <token xmlns:perl5="perl5" xmlns:java="java">
+<else xmlns:perl5="perl5" xmlns:java="java">
+  <!-- auto-repeat example -->
+
+  <token>
     <name>seq-index</name>
     <description>loop iteration through an array.</description>
-
-    Sequential index is used where the ordering of the array allows
-    the random access quality of the array to be exploited.
 
     <list>array name</list>
 
     <control>
-      <perl5:prefix>$</perl5:prefix> <!-- Prefix is not yet implemented -->
+      <perl5:prefix>$</perl5:prefix> <!-- Prefix is not yet implemented , tests filtering -->
       index variable name
     </control>
 
@@ -23,8 +22,19 @@ my $<r p="@control"/>; for ( $<r p="@control"/> = 0; $<r p="@control"/> &lt; @<r
 
     <java:body>
       <!--
-          Java section is under construction. Merely here to test the translater a bit.
+          Java section is under construction. Test filtering by NamespaceURI
       -->
     </java:body>
+  </token>
+
+  <!-- test more than one token , and repeat -->
+
+  <token>
+    <name>param</name>
+    <description>naming function arguements</description>
+    <lvalue>any lvalue or undef</lvalue>
+<perl5:body>
+ my ( <r p="lvalue" h=","/> ) = @_;
+</perl5:body>
   </token>
 </else>

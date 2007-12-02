@@ -986,6 +986,8 @@ sub increment_autosub {
 }
 
 sub evaluate_macro_body {
+  our @namespace;
+
   # This is a critical design point: where all of the AST rewrites begin.
 
   # All placeholders are generated as unique. The advantage is that
@@ -1040,7 +1042,7 @@ sub evaluate_macro_body {
     # replace the AST reference with the syntax reference
 
     delete $ref->{expr};
-    $ref->{deref} = $deref;
+    $ref->{namespace} = [ @namespace , $deref ];
 
     $tree->{macro}[$i] = bless $ref , 'Syntax::Ref';
   }
@@ -1077,8 +1079,13 @@ sub rewrite_tree {
     delete $tree->{data};
   }
 
+  # make sure we always have a decl. default to placeholder unless specified.
   unless ( exists $tree->{decl} ) {
     $tree->{decl} = 'placeholder';
+  }
+
+  unless ( exists $tree->{description} ) {
+    $tree->{description} = "any input";
   }
 
   foreach my $v ( keys %{ $tree->{ptable} } ) {
@@ -1165,17 +1172,44 @@ sub mk_ref_ident {
   lc( $ident );                # lowercase all the alpha characters
 }
 
+sub quote {
+  "\"" . shift() . "\"";
+}
+
+sub quote_context {
+  my ( $context , $text ) = @_;
+
+  my @wrap = ();
+
+  if ( $context eq 'required' ) {
+    @wrap = ( '{' , '}' );
+  }
+
+  return join('',$wrap[0],$text,$wrap[1]);
+}
+
 # it should not be difficult to convert a placeholder to a token.
 
 sub open {
-  my ( $name , $type , $lang ) = @_;
+  my ( $namespace , $type , $lang ) = @_;
+
+  # tokens are symbols we will enter in the buffer, so keep them lowerspace.
+  # placeholders are children of tokens, upper-case them to match the
+  # classic ELSE style, and act as another barrier against collisions.
+
+  # BROWN BAG: note the join for the token type is '-'. This should definitely
+  # be user customizable for a more generic version.
+
+  my $name = ( $type eq 'token' )
+    ? join('-', @$namespace )
+    : mk_decl_ident( @$namespace );
 
   # the opening stanza deletes a previous definition and then begins a new
   # declaration.
 
   my $kind = mk_decl_ident( $type );
 
-  Emit::printer( <<OPEN_DECL );
+  Emit::push_emit( <<OPEN_DECL );
 DELETE $kind $name -
   /LANGUAGE="$lang" -
 DEFINE $kind $name -
@@ -1186,15 +1220,13 @@ OPEN_DECL
 }
 
 sub close {
-  Emit::printer( "END DEFINE\n" );
+  Emit::pop_emit( "END DEFINE\n" );
 }
 
 sub autosub {
-  my $p = shift();
+  my $count = shift();
 
-  if ( exists $p->{autosub} ) {
-    my $count = $p->{autosub};
-
+  if ( $count ) {
     Emit::printer( <<SUBSPEC );
   /AUTO_SUBSTITUTE -
   /SUBSTITUTE_COUNT=$count -
@@ -1215,23 +1247,61 @@ our %repeat_abbrev = (
 
 sub repeat {
   our %repeat_abbrev;
-  my $p = shift();
+  my ( $sep , $repeat ) = @_;
 
-  if ( $p->{separator} ) {
-    my $sep = $p->{separator};
+  my $dup = $repeat_abbrev{ $repeat };
 
-    Emit::printer( <<DUPSPEC );
+  Emit::printer( <<DUPSPEC );
   /SEPARATOR="$sep" -
-DUPSPEC
-  }
-
-  if ( $p->{repeat} ) {
-    my $dup = $repeat_abbrev{ $p->{repeat} };
-
-    Emit::printer( <<DUPSPEC );
   /DUPLICATE="$dup" -
 DUPSPEC
+}
+
+sub pref {
+  my $ref = shift();
+
+  my $text =
+    quote_context( $ref->{context},
+                   mk_ref_ident( @{ $ref->{namespace} } ) );
+
+  if ( $ref->{repeat} ) {
+    $text .= "...";
   }
+
+  $text;
+}
+
+sub terminal {
+  my $description = quote( shift() );
+
+  Emit::printer( <<TERMINAL );
+  /TYPE=TERMINAL -
+$description
+TERMINAL
+}
+
+sub macro {
+  my $description = quote( shift() );
+
+  my @lines = split /\n/ ,
+    join( '' , map {
+      my $text;
+      if ( 'Syntax::Ref' eq ref ( $_ ) ) {
+        $text = pref( $_ );
+      }
+      else {
+        $text = $_;
+      }
+      $text;
+    } @_ );
+
+  # get rid of both leading and trailing whitespace lines
+  @lines = reverse Emit::trim_ws_lines( reverse Emit::trim_ws_lines( @lines ) );
+
+  Emit::printer(<<MACRO, join("\n", map { quote( $_ ) } @lines ) . "\n" );
+  /DESCRIPTION=$description -
+  /TYPE=NONTERMINAL -
+MACRO
 }
 
 #----------------------------------------------------------------------
@@ -1249,8 +1319,41 @@ package Emit;
 
 our @emit_stack = ();
 
-sub printer {
+sub push_emit {
   push our @emit_stack, join('', @_ );
+}
+
+sub printer {
+  our @emit_stack;
+  $emit_stack[-1] .= join('', @_ );
+}
+
+sub pop_emit {
+  our @emit_stack;
+  print STDOUT join('', pop @emit_stack , @_ );
+}
+
+sub flush {
+  our @emit_stack;
+  pop_emit() if ( @emit_stack > 0 );
+}
+
+sub trim_ws {
+  my $s = shift();
+
+  $s =~ s/\s+$//;
+  $s =~ s/^\s+//;
+
+  $s;
+}
+
+sub trim_ws_lines {
+  trim: my $tail = pop @_;
+  goto trim if ( $tail =~ /^\s*$/ && @_ );
+
+  push @_ , $tail;
+
+  @_;
 }
 
 #----------------------------------------------------------------------
@@ -1270,6 +1373,7 @@ sub select_generator {
   foreach my $func ( qw/
     open close
     autosub repeat
+    macro terminal
   / ) {
 
     my ( $import , $from ) =
@@ -1287,7 +1391,7 @@ sub queue {
   our %queue;
   my ( $lang, $tree ) = @_;
 
-  if ( exists $queue{lang} ) {
+  if ( exists $queue{$lang} ) {
     push @{ $queue{$lang} } , $tree;
   }
   else {
@@ -1298,13 +1402,34 @@ sub queue {
 sub generate_tree {
   my ( $lang , $tree ) = @_;
 
-  gen_open( $tree->{name}, $tree->{decl}, $lang );
+  gen_open( $tree->{namespace}, $tree->{decl}, $lang );
+
+  # Ideally what is in the ptable is all terminal type definitions.
+  # anything that is non-terminal should be outside of ptable.
+
+  map { generate_tree( $lang, $_ ) } ( values %{ $tree->{ptable} } );
+
+  gen_autosub( ( exists $tree->{autosub} ) ? $tree->{autosub} : 0 );
+
+  if ( exists $tree->{repeat} ) {
+    gen_repeat( $tree->{separator} , $tree->{repeat} );
+  }
+
+  my @description = trim_ws_lines( split /\n/, $tree->{description} );
+  @description = map { trim_ws( $_ ) } trim_ws_lines( reverse @description);
+
+  if ( exists $tree->{macro} ) {
+    gen_macro( join('',@description), @{ $tree->{macro} } );
+  }
+  else {
+    gen_terminal( join('',@description) );
+  }
 
   gen_close();
 }
 
 sub generate {
-  our %queue, @emit_stack;
+  our %queue;
 
 # print STDERR "have languages: ", join(',', keys %queue) , "\n";
 # print STDERR ::Dumper(\%queue), "\n";
@@ -1313,7 +1438,7 @@ sub generate {
     map { generate_tree( $lang, $_)  } @{ $queue{$lang} };
   }
 
-  map { print STDOUT $_; } @emit_stack;
+  flush();
 }
 
 #----------------------------------------------------------------------
@@ -1363,8 +1488,10 @@ input_file: foreach my $file ( @ARGV ) {
 
   reset_all_phases();
 
+  # parse the input
   $tr->parse_uri( $file );
 
+  # rewrite the AST generating the defitions
   Syntax::rewrite();
 
   # emit the definitions we have queued
