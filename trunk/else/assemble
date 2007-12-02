@@ -317,14 +317,6 @@ sub new_define {
 #    lang => $current_language,
   };
 
-  # BROWN BAG : since the whole cloning for language thing isn't figured out
-  # just queue each structure for the Syntax phase. Later the queuing needs to
-  # happen for each language instance of a tree.
-
-  unless ( @defines > 0 ) {
-    Syntax::queue( $def );
-  }
-
   push @defines, $def;
 
   # set the default marker.
@@ -344,35 +336,69 @@ sub new_define {
 sub define_complete {
   our @defines;
 
-  # make sure the register gets cleaned up after tokens along with the rest.
-
-  my $element = shift();
-  if ( Register::recognize( $element ) ) {
-    Register::pop();
-  }
-
   # pop our 'current' marker on the register stack.
   Register::pop_default_marker();
 
-  my $def = define();
+  # pop off the define we have completed.
+  my $finish = pop @defines;
 
-  unless( defined( $def ) ) {
+  unless( defined( $finish ) ) {
     die "Absurd. define_complete called on non-existant define\n";
   }
 
-  define_copy_macro( $def );
+  # the trailing literal data from the body of the macro may be lingering
+  # in the data buffer.
+  define_copy_macro( $finish );
 
-  if ( ::debug_switch( 'b-struct' ) ) {
-    print STDERR ::Dumper( $def ) , "\n";
+  # if we have reached the root of the tree queue it for Syntax
+
+  unless ( @defines > 0 ) {
+    # TODO:
+
+    # When it's time to prototype the error checking put it here so it can be
+    # run after all the parsing is complete, and we haven't wrote anything bad
+    # yet. We want to emit only the subset that is correct.
+
+    if ( ::debug_switch( 'b-struct' ) ) {
+      print STDERR ::Dumper( $finish ) , "\n";
+    }
+
+    # BROWN BAG : since the whole cloning for language thing isn't figured out
+    # just queue each structure for the Syntax phase. Later the queuing needs to
+    # happen for each language instance of a tree.
+
+    Syntax::queue( $finish );
+  }
+}
+
+sub get_placeholder_for {
+  # ghetto. Make a bunch of nested hashes if necessary.
+
+  my ( $p , $def , $ref ) = @_;
+
+  unless( defined( $def ) ) {
+    die "Absurd trying to get a non-terminal for a null define\n";
   }
 
-  # TODO:
+  unless ( exists $def->{ptable} ) {
+    $def->{ptable} = {};
+  }
 
-  # When it's time to prototype the error checking put it here so it can be
-  # run after all the parsing is complete, and we haven't wrote anything bad
-  # yet. We want to emit only the subset that is correct.
+  my $ptable = $def->{ptable};
 
-  pop @defines;
+  # already exists case
+  if ( exists $ptable->{$p} ) {
+    return $ptable->{$p};
+  }
+
+  # create new case
+  unless ( defined($ref) ) {
+    $ref = {};
+  }
+
+  $ptable->{$p} = $ref;
+
+  $ref;
 }
 
 sub get_placeholder {
@@ -395,29 +421,7 @@ sub get_placeholder {
 
   my $def = $defines[$recursion_level];
 
-  # ghetto. Make a bunch of nested hashes if necessary.
-
-  unless( defined( $def ) ) {
-    die "Absurd trying to get a non-terminal outside of a definition\n";
-  }
-
-  unless ( exists $def->{ptable} ) {
-    $def->{ptable} = {};
-  }
-
-  my $ptable = $def->{ptable};
-
-  if ( exists $ptable->{$p} ) {
-    return $ptable->{$p};
-  }
-
-  unless ( $ref ) {
-    $ref = {};
-  }
-
-  $ptable->{$p} = $ref;
-
-  $ref;
+  get_placeholder_for( $p , $def , $ref );
 }
 
 sub define_append_macro {
@@ -490,9 +494,7 @@ sub new {
   # generation (AST rewrite) An abstraction barrier is implemented here.
 
   # The specification is gathered up in a list of pairs. The keys must
-  # be defined by Syntax::evaluate_deref to be meaningful.
-
-  my %spec = ( @_ );
+  # be defined by Syntax::evaluate_macro_body to be meaningful.
 
   # The context is whatever part of the placeholder specification is
   # orthogonal to the definition of a placeholder.
@@ -500,18 +502,10 @@ sub new {
   # Currently this is wether it is optional or not (killable in
   # emacs-else parlance)
 
-  my $self = bless {
-#    namespace => [ Syntax::current_namespace() ],
-
-    context => $spec{context},
-    repeat => ( $spec{repeat} ) ? 1 : 0,
+  # this used to be a real constructor , but now it's been gutted.
+  bless {
+    @_
   }, 'Builder::Ref';
-
-  delete $spec{context};
-
-  $self->{spec} = \%spec,
-
-  $self;
 }
 
 #----------------------------------------------------------------------
@@ -745,9 +739,9 @@ use XML::SAX::Base;
 
 our @languages = split /,/, $main::lang_mask;
 
-# elements defined by the Aseembler implementation.
+# elements defined by the Assembler implementation.
 our %defined = (
-  token => [ 'Builder::new_define' , 'Builder::define_complete' ],
+  token => [ qw/Builder::new_define define_end/ ],
   name => [ qw/name_start name_end/ ],
   description => [ 'description_start' , undef ],
 
@@ -843,6 +837,18 @@ sub characters {
 # high level event handlers driven by dispatch_element
 #----------------------------------------------------------------------
 
+sub define_end {
+  # make sure the register gets cleaned up before we finalize with
+  # Builder::define_complete.
+
+  my $element = shift();
+  if ( Register::recognize( $element ) ) {
+    Register::pop();
+  }
+
+  Builder::define_complete();
+}
+
 sub macro_start {
   my $element = shift();
 
@@ -926,9 +932,17 @@ sub prefix_start {
 package Syntax;
 
 our @AST = ();
+our $language = '';
+
+# a namespace stack allows me to avoid doing child -> parent linking
+# in the AST tree.
+
+our @namespace = ();
 
 sub reset {
   our @AST = ();
+  our $language = '';
+  our @namespace = ();
 }
 
 sub queue {
@@ -936,11 +950,171 @@ sub queue {
   push our @AST , shift();
 }
 
+sub reject_tree {
+  my ( $reason , $tree ) = shift();
+  print STDERR "rejecting AST tree: $reason\n";
+  print STDERR ::Dumper($tree);
+}
+
+#----------------------------------------------------------------------
+# meat
+#----------------------------------------------------------------------
+
+# alias the get_placeholder implementation in Builder:: that is
+# not specialized for the parse phase.
+
+*get_placeholder = \*Builder::get_placeholder_for;
+
+sub is_node {
+  my $v = shift();
+  return ( exists $v->{name} ) ? 1 : 0;
+}
+
+sub increment_autosub {
+  # if the syntax analysis was a real phase it would be possible
+  # to prune the defines with autosub=1 . However this is the
+  # default count value.
+
+  my $define = shift();
+
+  if ( exists $define->{autosub} ) {
+    $define->{autosub}++;
+  }
+  else {
+    $define->{autosub} = 1;
+  }
+}
+
+sub evaluate_macro_body {
+  # This is a critical design point: where all of the AST rewrites begin.
+
+  # All placeholders are generated as unique. The advantage is that
+  # the user can choose unique names when there is a distinction to be
+  # made, and not bother with policing unique-ness when it has no
+  # impact on function.
+
+  # However there can be multiple references to the same placeholder that
+  # is functionally essential, as in the case of the auto-substitute
+  # function.
+
+  # To resolve this question evaluation will generate a placeholder
+  # unless a existing definition is found. If that definition is
+  # functionally compatible the reference will merge: e.g update
+  # auto-substitute reference count.
+
+  # If the generated and existing placeholder's are exclusive then
+  # the generated placeholder will be named uniquely and returned.
+
+  # This behavior is the concise and flexible without sacrificing
+  # correctness , which is do everything the original else-mode
+  # definitions could do.
+
+  my $tree = shift();
+
+  my $i ; for ( $i = 0 ; $i < @{ $tree->{macro} } ; $i++ ) {
+    my $ref = $tree->{macro}[$i];
+
+    # skip over the literal spans in the macro
+    next unless ( 'Builder::Ref' eq ref( $ref ) );
+
+    # need to split any modififer
+    my ( $modifier , $deref ) = $ref->{expr} =~ m/([@])?(.*)/;
+    # print STDERR "expr: $expr modifier = $modifier  , deref = $deref\n";
+
+    my $p = get_placeholder( $deref , $tree );
+
+    # implement autosub computation
+    if ( defined( $modifier ) && $modifier eq '@' ) {
+      increment_autosub( $p );
+    }
+
+    # implement repeat
+    if ( $ref->{repeat} ) {
+      foreach my $copy ( qw/ repeat separator / ) {
+        $p->{$copy} = $ref->{$copy};
+      }
+    }
+
+    # TODO: here is where menu placeholder generation would go.
+
+    # replace the AST reference with the syntax reference
+
+    delete $ref->{expr};
+    $ref->{deref} = $deref;
+
+    $tree->{macro}[$i] = bless $ref , 'Syntax::Ref';
+  }
+}
+
+sub rewrite_tree {
+  our @namespace;
+
+  my $tree = shift();
+
+  # even placeholders that aren't really templates with bodies should
+  # have a ->{name} field. Otherwise we are screwed.
+
+  unless ( exists $tree->{name} ) {
+    reject_tree( 'toplevel define does not have a name' , $tree );
+    return 0;
+  }
+
+  # add another level to the namespace.
+  push @namespace , $tree->{name};
+
+  if ( exists $tree->{lang} ) {
+    our $language = $tree->{lang};
+    delete $tree->{lang};
+  }
+
+  # no longer need the data buffer. purely a SAX parsing mechanism.
+  if ( exists $tree->{data} ) {
+    delete $tree->{data};
+  }
+
+  foreach my $v ( keys %{ $tree->{ptable} } ) {
+    if ( $v =~ m/^\s*$/ ) {
+      # getting some weird garbage from keys , filter the crap until I can find the
+      # bug, probably have an odd number of elements in the hash or some such crap.
+
+      print STDERR "warning ! deleting \"$v\" garbage key in ptable\n";
+      delete $tree->{ptable}->{$_};
+      next;
+    }
+
+    if ( is_node( $tree->{ptable}->{$v} ) ) {
+      unless ( rewrite_tree( $tree->{ptable}->{$v} ) ) {
+        delete $tree->{ptable}->{$v};
+      }
+    }
+  }
+
+  if ( exists $tree->{macro} ) {
+    evaluate_macro_body( $tree );
+  }
+
+  # discard the current namespace level
+  pop @namespace;
+
+  return 1;
+}
+
 sub rewrite {
-  our @AST;
+  our @AST, $language;
 
   if ( ::debug_switch( 's-struct' ) ) {
     print STDERR "dumping syntax tree before re-write\n";
+    print STDERR ::Dumper( \@AST );
+  }
+
+  map {
+    if ( rewrite_tree( $_ ) ) {
+      Emit::queue( $language , $_ );
+    }
+  } @AST;
+
+  if ( ::debug_switch( 's-struct' ) ) {
+    print STDERR "dumping syntax tree after re-write\n";
     print STDERR ::Dumper( \@AST );
   }
 }
@@ -950,9 +1124,46 @@ sub rewrite {
 #----------------------------------------------------------------------
 package Emit;
 
-# the back-end. Generate the assembled macro definitions.
+#----------------------------------------------------------------------
+# emit stack.
+#----------------------------------------------------------------------
+
+# The recursion involved in emitting the trees means that writing
+# output directly to a stream during processing won't work.
+# serialize at complete definitions with a stack.
+
+our @emit_stack;
+
+sub printer {
+  push our @emit_stack, join('', @_ );
+}
+
+
+#----------------------------------------------------------------------
+# major entry points.
+#----------------------------------------------------------------------
+our %queue = ();
 
 sub reset {
+
+}
+
+# entry point.
+
+sub queue {
+  our %queue;
+  my ( $lang, $tree ) = @_;
+
+  if ( exists $queue{lang} ) {
+    push @{ $queue{$lang} } , $tree;
+  }
+  else {
+    $queue{$lang} = [ $tree ];
+  }
+}
+
+sub generate {
+
 
 }
 
@@ -1006,5 +1217,5 @@ input_file: foreach my $file ( @ARGV ) {
   Syntax::rewrite();
 
   # emit the definitions we have queued
-  #emit::emit_queued();
+  #Emit::generate();
 }
