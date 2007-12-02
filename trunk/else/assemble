@@ -1119,6 +1119,106 @@ sub rewrite {
   }
 }
 
+
+#----------------------------------------------------------------------
+# Generate else definition language
+#----------------------------------------------------------------------
+package Gen::else;
+
+# First the formatting functions for easy access. These functions do
+# the translation of generic text into valid syntax, converting or
+# flagging it as illegal.
+
+# currently it only converts a little.
+
+sub cnv_to_ident {
+  # else names must be upper-case ascii alphas, digits, or underscores.
+
+  join ('_', map {
+    $_ =~ s/-/_/g;         # translate all the illegal characters to underscores
+    $_;
+  }  @_  );
+}
+
+sub mk_decl_ident {
+  my $ident = cnv_to_ident( @_ );
+  uc( $ident );                # uppercase all the alpha characters.
+}
+
+sub mk_ref_ident {
+  my $ident = cnv_to_ident( @_ );
+  lc( $ident );                # lowercase all the alpha characters
+}
+
+# it should not be difficult to convert a placeholder to a token.
+
+sub open {
+  my ( $name , $type , $lang ) = @_;
+
+  # the opening stanza deletes a previous definition and then begins a new
+  # declaration.
+
+  my $kind = mk_decl_ident( $type );
+
+  Emit::printer( <<OPEN_DECL );
+DELETE $kind $name -
+  /LANGUAGE="$lang" -
+DEFINE $kind $name -
+  /LANGUAGE="$lang" -
+OPEN_DECL
+
+  undef;
+}
+
+sub close {
+  Emit::printer( "END DEFINE\n" );
+}
+
+sub autosub {
+  my $p = shift();
+
+  if ( exists $p->{autosub} ) {
+    my $count = $p->{autosub};
+
+    Emit::printer( <<SUBSPEC );
+  /AUTO_SUBSTITUTE -
+  /SUBSTITUTE_COUNT=$count -
+SUBSPEC
+  }
+  else {
+    Emit::printer( <<SUBSPEC );
+  /NOAUTO_SUBSTITUTE -
+SUBSPEC
+  }
+}
+
+our %repeat_abbrev = (
+ h => 'HORIZONTAL',
+ v => 'VERTICAL',
+ a => 'CONTEXT_DEPENDENT',
+  );
+
+sub repeat {
+  our %repeat_abbrev;
+  my $p = shift();
+
+  if ( $p->{separator} ) {
+    my $sep = $p->{separator};
+
+    Emit::printer( <<DUPSPEC );
+  /SEPARATOR="$sep" -
+DUPSPEC
+  }
+
+  if ( $p->{repeat} ) {
+    my $dup = $repeat_abbrev{ $p->{repeat} };
+
+    Emit::printer( <<DUPSPEC );
+  /DUPLICATE="$dup" -
+DUPSPEC
+  }
+}
+
 #----------------------------------------------------------------------
 # Emit
 #----------------------------------------------------------------------
@@ -1132,12 +1232,11 @@ package Emit;
 # output directly to a stream during processing won't work.
 # serialize at complete definitions with a stack.
 
-our @emit_stack;
+our @emit_stack = ();
 
 sub printer {
   push our @emit_stack, join('', @_ );
 }
-
 
 #----------------------------------------------------------------------
 # major entry points.
@@ -1145,7 +1244,26 @@ sub printer {
 our %queue = ();
 
 sub reset {
+  our %queue = ();
+  our @emit_stack = ();
+}
 
+sub select_generator {
+  my $gen = shift();
+
+  # bind a generator.
+  foreach my $func ( qw/
+    open close
+    autosub repeat
+  / ) {
+
+    my ( $import , $from ) =
+      ( join('_','gen',$func) ,
+        join('::', 'Gen' , $gen , $func ) );
+
+#    print STDERR "importing $import from $from\n";
+    *$import = \*{ $from };
+  }
 }
 
 # entry point.
@@ -1158,13 +1276,29 @@ sub queue {
     push @{ $queue{$lang} } , $tree;
   }
   else {
-    $queue{$lang} = [ $tree ];
+    $queue{$lang} = [$tree ];
   }
 }
 
+sub generate_tree {
+  my ( $lang , $tree ) = @_;
+
+  gen_open( $tree->{name}, $tree->{decl}, $lang );
+
+  gen_close();
+}
+
 sub generate {
+  our %queue, @emit_stack;
 
+# print STDERR "have languages: ", join(',', keys %queue) , "\n";
+# print STDERR ::Dumper(\%queue), "\n";
 
+  foreach my $lang ( keys %queue ) {
+    map { generate_tree( $lang, $_)  } @{ $queue{$lang} };
+  }
+
+  map { print STDOUT $_; } @emit_stack;
 }
 
 #----------------------------------------------------------------------
@@ -1204,6 +1338,8 @@ my $tr = Pipeline (
 
 PruneFilter::filter( LocalName => qr/span|prefix/ );  # filter unimplemented features.
 
+Emit::select_generator('else');
+
 input_file: foreach my $file ( @ARGV ) {
   unless( -f $file ) {
     print STDERR "file $file not found - Ignoring argument.\n";
@@ -1217,5 +1353,5 @@ input_file: foreach my $file ( @ARGV ) {
   Syntax::rewrite();
 
   # emit the definitions we have queued
-  #Emit::generate();
+  Emit::generate();
 }
