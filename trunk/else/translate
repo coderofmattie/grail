@@ -15,14 +15,14 @@ if ( $ARGV[0] eq "-d" ) {
   # take each of the comma seperated debug flags and make a hash pair
   # out of them
   my @flags = split /,/, ( splice @ARGV,0,2 )[1];
-  my %debug_flags = map { ( $_ => 1 ) } @flags;
+  our %debug_flags = map { ( $_ => 1 ) } @flags;
 }
 
 sub debug_switch {
   our %debug_flags;
   my $flag = shift();
 
-  return ( $debug_flags[$flag] ) ? 1 : 0;
+  return ( $debug_flags{$flag} ) ? 1 : 0;
 }
 
 our $lang_mask = shift( @ARGV );
@@ -101,15 +101,21 @@ sub concat {
   my ( $data_key , $data_ref ) = ( $registers[-1][1],
                                    $registers[-1][2] );
 
-  #  print STDERR "data $data_ptr\$data" , Dumper( $data ) , "\n";
-
   my $dribble = shift();
 
   if ( ::debug_switch('macro-literal') ) {
-    print STDERR "register concat sees: $dribble\n";
+    print STDERR "register [concat] = $dribble\n";
   }
 
-  if ( exists $data_ref->{$data_key} ) {
+  if ( ::debug_switch('register') ) {
+    print STDERR "register [pointer] = $data_key @level ", Builder::recursion_level(), "\n";
+
+    print STDERR "register stack = ",
+                 join(",", map { join("-", $$_[0], $$_[1] ) } @registers ),
+                 "\n";
+  }
+
+  if ( $data_ref->{$data_key} ) {
     $dribble = $data_ref->{$data_key} . $dribble;
   }
 
