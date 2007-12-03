@@ -1,5 +1,11 @@
 
+* Bugs
+
 * General
+
+.. It would be nice if the major mode was loaded from the buffer
+   name so that I could make up temporary code buffers and get
+   the correct environment
 
 .. the C-xe binding should be a general execute emacs code concept.
    in interactive mode it should replace C-u-x-e as a much shorter
