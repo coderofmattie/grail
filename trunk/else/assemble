@@ -7,6 +7,21 @@
 # License: GPLv3
 #----------------------------------------------------------------------
 
+unless ( @ARGV > 0 ) {
+  print STDERR <<HOWTO;
+assemble [language,...] [input-file]....
+
+Assemble translates a XML input format to else-mode template
+definitions.
+
+The first arguement is the language to generate. the XML format
+allows more than one language definition for a given template,
+this arguement chooses which language will be emitted.
+
+input-file... is a list of XML input files to process.
+HOWTO
+}
+
 use Data::Dumper;
 
 # better argument handling would be good. Currently a mask is required.
