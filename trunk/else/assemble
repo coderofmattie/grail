@@ -1088,26 +1088,28 @@ sub rewrite_tree {
     $tree->{description} = "any input";
   }
 
-  foreach my $v ( keys %{ $tree->{ptable} } ) {
+  my $ptable = $tree->{ptable};
+
+  foreach my $v ( keys %{$ptable} ) {
     if ( $v =~ m/^\s*$/ ) {
       # getting some weird garbage from keys , filter the crap until I can find the
       # bug, probably have an odd number of elements in the hash or some such crap.
 
       print STDERR "warning ! deleting \"$v\" garbage key in ptable\n";
-      delete $tree->{ptable}->{$_};
+      delete $ptable->{$_};
       next;
     }
 
-    if ( is_node( $tree->{ptable}->{$v} ) ) {
-      unless ( rewrite_tree( $tree->{ptable}->{$v} ) ) {
-        delete $tree->{ptable}->{$v};
+    if ( is_node( $ptable->{$v} ) ) {
+      unless ( rewrite_tree( $ptable->{$v} ) ) {
+        delete $ptable->{$v};
       }
     }
     else {
       # add in the fields that are always missing on the leafs,
       # this keeps the emitter simple.
-      $tree->{ptable}->{$v}->{decl} = 'placeholder';
-      $tree->{ptable}->{$v}->{namespace} = [ @namespace , $v ];
+      $ptable->{$v}->{decl} = 'placeholder';
+      $ptable->{$v}->{namespace} = [ @namespace , $v ];
     }
   }
 
