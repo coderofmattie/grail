@@ -450,6 +450,10 @@
 
 (load-file (concat (getenv "HOME") "/system/emacs/else-adapted.el"))
 
+(custom-set-variables
+  '(else-kill-proceed-to-next-placeholder t)
+  )
+
 ;; else-mode is definitely the crown jewel of my input expansion. Sets
 ;; the standard for macro expansion.
 
@@ -461,16 +465,13 @@
         (else-establish-language source-language)
         (else-mode)
 
-        ;; use Ctrl-l as the prefix for the else commands. It's short
-        ;; and the usual unix meaning of clearing a screen is irrevelent
-        ;; in emacs buffers.
-        (local-unset-key "\C-l")
-
         ;; here is where C-xe will expand templates
         (local-set-key "\C-le" 'else-expand-placeholder)
         (local-set-key "\C-ln" 'else-next-placeholder)
 
         (local-set-key "\C-lk" 'else-kill-placeholder)
+
+        (local-set-key "\C-ll" 'else-show-token-names)
         ))
   )
 
@@ -481,8 +482,15 @@
 ;; some mundane asthetics and keybindings plus whatever dwim input
 ;; expansion I can cook up.
 
+(defun set-default-register ( register )
+  "set the default register"
+  (interactive "cregister? ")
+  (set default-register register)
+  )
+
 (defun tune-programming ( lang )
-  ;; customization shared by all programming languages.
+  "Enable my programming customizations for the buffer"
+  (interactive "Mlanguage? ")
 
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
@@ -494,6 +502,30 @@
   (local-set-key [(return)] 'newline-and-indent)
 
   (set (make-local-variable 'source-language) lang)
+
+  ;; create a default register that shortens repeated
+  ;; register commands
+  (set (make-local-variable 'default-register) 'a)
+
+  ;; use Ctrl-l as the prefix for e commands. It's short
+  ;; and the usual unix meaning of centering a screen is
+  ;; a small loss.
+  (local-unset-key "\C-l")
+
+  (local-set-key "\C-ls" 'set-default-register)
+  (local-set-key "\C-lr" 'list-registers)
+
+  (local-set-key "\C-lw"
+    (lambda ()
+      (interactive)
+      (set-register default-register
+        (filter-buffer-substring (region-beginning) (region-end)))
+      ))
+
+  (local-set-key "\C-li"
+    (lambda ()
+      (interactive)
+      (insert-register default-register)))
 
   (tune-else)
 )
