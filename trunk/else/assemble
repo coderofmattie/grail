@@ -1,5 +1,4 @@
 #! /usr/bin/env perl
-
 #----------------------------------------------------------------------
 # Assemble
 # Primary Author: Mike Mattie
@@ -22,9 +21,16 @@ input-file... is a list of XML input files to process.
 HOWTO
 }
 
-use Data::Dumper;
+#----------------------------------------------------------------------
+# debugging support
+#----------------------------------------------------------------------
 
-# better argument handling would be good. Currently a mask is required.
+# currently the user can pass a list of debug switches as the first
+# arguement seperated by ','
+#
+# example: -d s-struct,e-struct
+
+use Data::Dumper;
 
 our %debug_flags = ();
 
@@ -36,6 +42,9 @@ if ( $ARGV[0] eq "-d" ) {
 }
 
 sub debug_switch {
+  # given a string that should be a debug switch ask if it was
+  # enabled by the user.
+
   our %debug_flags;
   my $flag = shift();
 
@@ -47,14 +56,37 @@ our $lang_mask = shift( @ARGV );
 #----------------------------------------------------------------------
 # register
 #----------------------------------------------------------------------
-package Register;
 
 # The data builder that serializes SAX characters events into variables.
+
+# I named it register because I needed a accumulator for SAX events,
+# and having wrote intel assembler back in the day "ax" popped into
+# my head.
+
+# The primary purpose of Register is to answer the question: where does
+# this go? for data delivered by characters SAX events.
+
+# The main functions are: push,pop, recognize, and concat.
+
+# push,pop allow you to recurse into new variables to stuff data.
+
+# recognize is a necessary evil; you must pass element events
+# to recognize so that the registers stack can be kept in sync
+# with the document nesting. recognize should only be passed
+# closing tags, or "end" SAX events.
+
+#----------------------------------------------------------------------
+
+package Register;
+our @registers = ();              # the core stack data structure.
+
 # Conceptually a simple stack for recursion. Each stack element is
 # a pointer to a scalar, and a match for end_element events to pop
 # the stack.
 
-# @registers  : the stack of pointers.
+# There are two element types that live in the registers stack. scopes
+# and pointers.
+
 # pointer     : [ element-name , data-key , data-ref ]
 
 # element-name: is the XML element name so that we know when to pop this
@@ -64,13 +96,16 @@ package Register;
 
 # data-ref    : a hash reference, the struct itself.
 
-our @registers = ();
 
 sub reset {
+  # clear any global variables in this namespace.
+
   our @registers = ();
 }
 
 sub dump_stack {
+  # print a dump of the @registers stack for debugging and diagnostics.
+
   our @registers;
 
   print STDERR "register [stack] = ",
@@ -867,8 +902,7 @@ sub macro_start {
   my $element = shift();
 
   # macros begin by recording into ->data. this is basically
-  # a input buffer for the macro body that is replicated
-  # without interpretation.
+  # a input buffer for the literal parts of the macro body.
 
   Register::push( $element , 'data' );
 }
