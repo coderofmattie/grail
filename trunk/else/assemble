@@ -269,39 +269,12 @@ sub reset {
   our @defines = ();
 }
 
-sub clone_for_language {
-  my $lang = shift();
-
-  # clone the current define for a language specific version.
-
-  # this is actually simple in concept, but somewhat tedious
-  # to implement. The first time clone is called make a copy
-  # of the current define tree. for each subsequent call return
-  # that first tree.
-
-  # for now it's shorted by assuming we are only generating one
-  # language at a time. Simply go to the top and mark the language there.
-
-  unless ( $defines[0]->{lang} ) {
-    $defines[0]->{lang} = $lang;
-  }
-}
-
-sub defines_ready {
-  return ( @defines > 0 ) ? 1 : 0;
-}
-
 sub recursion_level {
   our @defines;
 
   ( @defines > 0 )
     ? scalar @defines
     : 0;
-}
-
-sub define {
-  our @defines;
-  $defines[-1];
 }
 
 sub new_define {
@@ -325,6 +298,36 @@ sub new_define {
 
   Register::push_default_marker( $def );
   Register::push( $element , 'description' );
+}
+
+#----------------------------------------------------------------------
+# @defines must be non-empty, check with ready()
+#----------------------------------------------------------------------
+sub ready {
+  return ( @defines > 0 ) ? 1 : 0;
+}
+
+sub define {
+  our @defines;
+  $defines[-1];
+}
+
+sub clone_for_language {
+  my $lang = shift();
+
+  # clone the current define for a language specific version.
+
+  # this is actually simple in concept, but somewhat tedious
+  # to implement. The first time clone is called make a copy
+  # of the current define tree. for each subsequent call return
+  # that first tree.
+
+  # for now it's shorted by assuming we are only generating one
+  # language at a time. Simply go to the top and mark the language there.
+
+  unless ( $defines[0]->{lang} ) {
+    $defines[0]->{lang} = $lang;
+  }
 }
 
 # define complete currently means discard as we are not building
@@ -551,9 +554,9 @@ sub matches {
   my ( $self , $element ) = @_;
 
   # ignore data keys, use all the search keys.
-  foreach my $check ( grep { !/count/ } keys %$self ) {
-    unless ( $element->{$check}
-             && $element->{$check} =~ /$self->{$check}/ ) {
+  foreach my $must_match ( grep { !/count/ } keys %$self ) {
+    unless ( $element->{$must_match}
+             && $element->{$must_match} =~ /$self->{$must_match}/ ) {
       return 0;
     }
   }
@@ -747,14 +750,14 @@ our %defined = (
  );
 
 #----------------------------------------------------------------------
-# dispatch_element
+# dispatch_reserved
 #
 # look up an element in a table of handlers. Execute the handler if
 # a match is found. Unlike the SAX event handlers these are keyed by
 # XML elements.
 #----------------------------------------------------------------------
 
-sub dispatch_element {
+sub dispatch_reserved {
   our %defined;
 
   my ( $index , $element ) = @_;
@@ -771,8 +774,8 @@ sub dispatch_element {
   return 0;
 }
 
-sub dispatch_start { dispatch_element( 0 , @_ ); }
-sub dispatch_end { dispatch_element( 1 , @_ ); }
+sub dispatch_reserved_start { dispatch_reserved( 0 , @_ ); }
+sub dispatch_reserved_end { dispatch_reserved( 1 , @_ ); }
 
 #----------------------------------------------------------------------
 # SAX event handlers that drive dispatch_element
@@ -796,12 +799,12 @@ sub start_element {
     Builder::clone_for_language( $element->{NamespaceURI} );
   }
 
-  return if ( dispatch_start( $element ) );
+  return if ( dispatch_reserved_start( $element ) );
 
   # elements not recognized are declaration of placeholders
   # inside of tokens.
 
-  if ( Builder::defines_ready() ) {
+  if ( Builder::ready() ) {
     Register::push( $element , 'description' ,
                     Builder::get_placeholder( $element->{LocalName} ) );
   }
@@ -815,7 +818,7 @@ sub end_element {
     Register::pop();
   }
 
-  return if dispatch_end( $element );
+  return if dispatch_reserved_end( $element );
 }
 
 sub characters {
@@ -1378,16 +1381,13 @@ sub select_generator {
     macro terminal
   / ) {
 
-    my ( $import , $from ) =
-      ( join('_','gen',$func) ,
-        join('::', 'Gen' , $gen , $func ) );
+    my ( $import , $from ) = ( join('_','gen',$func) ,
+                               join('::', 'Gen' , $gen , $func ) );
 
 #    print STDERR "importing $import from $from\n";
     *$import = \*{ $from };
   }
 }
-
-# entry point.
 
 sub queue {
   our %queue;
