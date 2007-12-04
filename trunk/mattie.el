@@ -5,6 +5,21 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
+(defun map-reduce ( func &rest seq )
+  "map-reduce. apply the function to the arguements ala mapcar, and
+   drop any nil results from the list returned."
+
+  (if (car seq)
+    (let
+      ((result (funcall func (car seq))))
+      (if result
+        (cons result (apply 'map-reduce func (cdr seq)))
+        (apply 'map-reduce func (cdr seq))
+        ))
+    (if (cdr seq)
+      (apply 'map-reduce func (cdr seq)))
+    ))
+
 (defun show-bad-ws()
   (interactive)
   (highlight-regexp "\t"))
