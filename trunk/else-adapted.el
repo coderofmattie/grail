@@ -3,7 +3,7 @@
 ;;----------------------------------------------------------------------
 (require 'else-mode)
 
-(setq else-mode-template-dir (concat (getenv "HOME") "/system/emacs/else/"))
+(setq else-mode-xml-dir (concat (getenv "HOME") "/system/emacs/else/"))
 
 (defun else-language-spec-p ( lang )
   "determine if a language definition has been loaded for lang"
@@ -21,7 +21,7 @@
   (interactive)
   (let*
     ((lang (or language-name source-language))
-     (template-path (concat else-mode-template-dir lang ".lse")))
+     (template-path (concat else-mode-xml-dir lang ".lse")))
 
     (if (file-readable-p template-path)
       (save-excursion
@@ -66,7 +66,7 @@
               (file-readable-p path)
 
               (= 0 (call-process
-                     (concat else-mode-template-dir "/assemble")     ;; translater program
+                     (concat else-mode-xml-dir "/assemble")          ;; translater program
                      nil                                             ;; stdin is /dev/null
                      (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
                      nil                                             ;; don't refresh
