@@ -448,7 +448,7 @@
 ;;                          else mode
 ;;----------------------------------------------------------------------
 
-(load-file (concat (getenv "HOME") "/system/emacs/else-adapted.el"))
+(load-file (concat (getenv "HOME") "/system/emacs/else-xml.el"))
 
 (custom-set-variables
   '(else-kill-proceed-to-next-placeholder t)
