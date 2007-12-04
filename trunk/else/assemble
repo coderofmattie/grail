@@ -81,21 +81,20 @@ package Register;
 our @registers = ();              # the core stack data structure.
 
 # Conceptually a simple stack for recursion. Each stack element is
-# a pointer to a scalar, and a match for end_element events to pop
-# the stack.
+# a pointer, and a match for end_element events to pop the stack.
 
 # There are two element types that live in the registers stack. scopes
 # and pointers.
 
 # pointer     : [ element-name , data-key , data-ref ]
+# scope       : [ recursion-level, data-ref ]
 
-# element-name: is the XML element name so that we know when to pop this
-#               sink off the stack.
+# The pointer combines a hash reference, a hash key, and a element
+# name allowing character data to be delivered to an arbitrary
+# hash.
 
-# data-key    : the hash key, a pointer within the struct so to speak.
-
-# data-ref    : a hash reference, the struct itself.
-
+# The scope is much different with a recursion-level, and a hash reference.
+# It serves as the default root of a tree of pointers (children).
 
 sub reset {
   # clear any global variables in this namespace.
@@ -118,6 +117,8 @@ sub dump_stack {
     "\n";
 }
 
+# distinguish between the two types of stack elements.
+
 sub is_ptr {
   our @registers;
   my $i = shift();
@@ -131,7 +132,7 @@ sub is_ptr {
       : 0;
 }
 
-sub is_default {
+sub is_scope {
   our @registers;
   my $i = shift();
 
@@ -139,12 +140,13 @@ sub is_default {
     $i = -1;
   }
 
-  ( 'Register::default' eq ref( $registers[$i] ) )
+  ( 'Register::scope' eq ref( $registers[$i] ) )
       ? 1
       : 0;
 }
 
 sub default_ref {
+  # return a default reference with element type ambiguity.
   our @registers;
 
   return ( is_ptr() )
@@ -152,28 +154,25 @@ sub default_ref {
     : $registers[-1][1]
 }
 
-sub ready {
-  our @registers;
+# push/pop scope elements.
 
-  ( @registers > 0 && is_ptr() )
-    ? 1 : 0;
-}
+# This is an opportunity to detect stack corruption which is actually
+# the parser losing synchronization with the recursion of nested
+# elements.
 
-sub push_default_marker {
+sub push_scope {
   my $ref = shift();
-  push our @registers, bless [Builder::recursion_level(), $ref ], 'Register::default' ;
+  push our @registers, bless [Builder::recursion_level(), $ref ], 'Register::scope' ;
 }
 
-sub pop_default_marker {
+sub pop_scope {
   our @registers;
 
-  unless ( is_default() ) {
-    print STDERR "pop_default_marker: top of stack is not a default marker, @registers stack is corrupted\n";
-    print STDERR "dumping registers\n";
+  unless ( is_scope() ) {
+    print STDERR "Register::pop_scope: top of stack is not a scope, stack is corrupted\n";
+    dump_stack();
 
-    print STDERR ::Dumper( \@registers ), "\n";
-
-    die "Failed ! Register::registers corruption discovered by pop_default_marker\n";
+    die "Failed ! Register corruption discovered by pop_scope\n";
   }
 
   pop @registers;
@@ -227,9 +226,20 @@ sub replace_default {
   # if we have failed we should be sitting at a current marker.
   unless ( $i > 0 ) {
     print STDERR "default for $data_key could not be found at recursion level: ", $registers[$i][0], "\n";
-    die "Failed ! Register::registers corruption discovered by replace_default\n";
+    die "Failed ! Register corruption discovered by replace_default\n";
   }
 }
+
+sub ready {
+  # return true if a subsequent concat operation is valid. register stack must
+  # be non-empty with a pointer type element on the top.
+
+  our @registers;
+
+  ( @registers > 0 && is_ptr() )
+    ? 1 : 0;
+}
+
 
 sub push {
   # push a new pointer onto @registers. The element is given along
@@ -250,14 +260,14 @@ sub push {
 }
 
 sub pop {
-  # pop a sink.
+  # pop a pointer.
 
   unless ( @registers > 0 ) {
-    die "failed ! Register::registers corruption discovered by pop\n";
+    die "failed ! Register corruption discovered by pop\n";
   }
 
   unless ( is_ptr() ) {
-    die "failed ! Register::registers corruption discovered by pop - attempting to pop a current marker\n";
+    die "failed ! Register corruption discovered by pop - attempting to pop a current marker\n";
   }
 
   pop our @registers;
@@ -282,8 +292,14 @@ sub recognize {
 }
 
 sub concat {
-  # append to the current sink.
+  # append to the hash/key indicated by the pointer on the top
+  # of the register stack.
+
   our @registers;
+
+  unless ( ready() && is_ptr() ) {
+    die "failed ! Register corruption discovered by concat - top of stack is not a pointer\n";
+  }
 
   my ( $data_key , $data_ref ) = ( $registers[-1][1],
                                    $registers[-1][2] );
@@ -346,7 +362,7 @@ sub new_define {
   # sure that push will always work correctly without specifying a explicit
   # ref
 
-  Register::push_default_marker( $def );
+  Register::push_scope( $def );
   Register::push( $element , 'description' );
 }
 
@@ -386,7 +402,7 @@ sub define_complete {
   our @defines;
 
   # pop our 'current' marker on the register stack.
-  Register::pop_default_marker();
+  Register::pop_scope();
 
   # pop off the define we have completed.
   my $finish = pop @defines;
