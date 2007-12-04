@@ -113,12 +113,11 @@
                  (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
                  nil                                             ;; don't refresh
                  language file-list))                            ;; arguements are language and input file.
-
           (progn
             (beginning-of-buffer)
             (else-compile-buffer))
           )
       (message "else XML auto-load for: %s completed." language)
       (message "Failed else XML auto-load for: %s" language)
-          ))
+      ))
   )
