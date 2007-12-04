@@ -447,12 +447,13 @@
 ;;----------------------------------------------------------------------
 ;;                          else mode
 ;;----------------------------------------------------------------------
-
-(load-file (concat (getenv "HOME") "/system/emacs/else-xml.el"))
+(require 'else-mode)
 
 (custom-set-variables
   '(else-kill-proceed-to-next-placeholder t)
   )
+
+(load-file (concat (getenv "HOME") "/system/emacs/else-xml.el"))
 
 ;; else-mode is definitely the crown jewel of my input expansion. Sets
 ;; the standard for macro expansion.
@@ -546,9 +547,15 @@
 (require 'cperl-mode)
 (defalias 'perl-mode 'cperl-mode)
 
-(setq auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
-				("\\.pm$"      . cperl-mode)
-                                 ) auto-mode-alist )
+(setq
+  auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
+                             ("\\.pm$"      . cperl-mode)
+                             ) auto-mode-alist )
+
+  else-xml-alist (append '(("perl5"      . (list
+                                             "perl5.xml"
+                                             "loop.xml"
+                                             ))) else-xml-alist)
 
   cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
   cperl-pod-here-scan nil          ;; more attempts to speed up font-lock

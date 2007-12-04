@@ -1,9 +1,12 @@
 ;;----------------------------------------------------------------------
-;;
+;; else-xml.el
+;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
-(require 'else-mode)
+
+;; This is the implementation of XML else-mode template definitions.
 
 (setq else-mode-xml-dir (concat (getenv "HOME") "/system/emacs/else/"))
+(setq else-xml-alist '())
 
 (defun else-language-spec-p ( lang )
   "determine if a language definition has been loaded for lang"
