@@ -458,13 +458,16 @@
 ;; else-mode is definitely the crown jewel of my input expansion. Sets
 ;; the standard for macro expansion.
 
-(defun tune-else ()
-    (if (minimal-else-language-def source-language)
+(defun else-xml-init ()
+    (if (else-xml-load-language source-language)
       (progn
 
         ;; localize the current language to the buffer and set it properly
         (else-establish-language source-language)
+
         (else-mode)
+
+        (else-xml-load-language-alist source-language)
 
         ;; here is where C-xe will expand templates
         (local-set-key "\C-le" 'else-expand-placeholder)
@@ -528,7 +531,7 @@
       (interactive)
       (insert-register default-register)))
 
-  (tune-else)
+  (else-xml-init)
 )
 
 ;;----------------------------------------------------------------------
@@ -552,10 +555,9 @@
                              ("\\.pm$"      . cperl-mode)
                              ) auto-mode-alist )
 
-  else-xml-alist (append '(("perl5"      . (list
-                                             "perl5.xml"
-                                             "loop.xml"
-                                             ))) else-xml-alist)
+  else-mode-xml-alist (cons '("perl5" . ("perl5.xml"
+                                          "loop.xml"))
+                        else-mode-xml-alist)
 
   cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
   cperl-pod-here-scan nil          ;; more attempts to speed up font-lock

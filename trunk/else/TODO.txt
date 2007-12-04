@@ -24,6 +24,19 @@
 
 * Short Term
 
+  .. schema
+
+  .. need a schema that I can use to validate the documents.
+
+  .. usability
+
+  need to be able to create a macro in a buffer and load it.
+
+  .. documentation
+
+  continue documenting one component at a time. The next component
+  is Builder:: . Don't forget to mop up extra whitespace in registers.
+
   .. implementation
 
   implement optional
@@ -46,11 +59,6 @@
   .. pre-loader
 
   split else-load-xml into else-load-xml-{global,local}
-
-  .. language init
-
-  need a way to load a collection of various xml files when
-  a language first loads.
 
 * Medium Term
 
