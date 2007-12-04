@@ -32,6 +32,11 @@ HOWTO
 
 use Data::Dumper;
 
+#----------------------------------------------------------------------
+# Settings
+#----------------------------------------------------------------------
+package Settings;
+
 our %debug_flags = ();
 
 if ( $ARGV[0] eq "-d" ) {
@@ -51,7 +56,7 @@ sub debug_switch {
   return ( $debug_flags{$flag} ) ? 1 : 0;
 }
 
-our $lang_mask = shift( @ARGV );
+our $emit_for_language = shift( @ARGV );
 
 #----------------------------------------------------------------------
 # register
@@ -196,7 +201,7 @@ sub replace_default {
   # from the top of the register stack search down for a pointer that
   # matches the data-key.
 
-  if ( ::debug_switch( 'register-replace' ) ) {
+  if ( Settings::debug_switch( 'register-replace' ) ) {
     print STDERR "replace before",::Dumper(\@registers), "\n";
   }
 
@@ -215,7 +220,7 @@ sub replace_default {
       # it to the top of the stack otherwise it will explode when the stack is popped.
       push @registers, splice @registers,$i,1;
 
-      if ( ::debug_switch('register-replace') ) {
+      if ( Settings::debug_switch('register-replace') ) {
         print STDERR "replace after",::Dumper(\@registers), "\n";
       }
 
@@ -306,11 +311,11 @@ sub concat {
 
   my $dribble = shift();
 
-  if ( ::debug_switch('macro-literal') ) {
+  if ( Settings::debug_switch('macro-literal') ) {
     print STDERR "register [concat] = $dribble\n";
   }
 
-  if ( ::debug_switch('register') ) {
+  if ( Settings::debug_switch('register') ) {
     print STDERR "register [pointer] = $data_key \@level ", Builder::recursion_level(), "\n";
     dump_stack();
   }
@@ -378,24 +383,6 @@ sub define {
   $defines[-1];
 }
 
-sub clone_for_language {
-  my $lang = shift();
-
-  # clone the current define for a language specific version.
-
-  # this is actually simple in concept, but somewhat tedious
-  # to implement. The first time clone is called make a copy
-  # of the current define tree. for each subsequent call return
-  # that first tree.
-
-  # for now it's shorted by assuming we are only generating one
-  # language at a time. Simply go to the top and mark the language there.
-
-  unless ( $defines[0]->{lang} ) {
-    $defines[0]->{lang} = $lang;
-  }
-}
-
 # define complete currently means discard as we are not building
 # a tree yet.
 sub define_complete {
@@ -424,14 +411,11 @@ sub define_complete {
     # run after all the parsing is complete, and we haven't wrote anything bad
     # yet. We want to emit only the subset that is correct.
 
-    if ( ::debug_switch( 'b-struct' ) ) {
+    if ( Settings::debug_switch( 'b-struct' ) ) {
       print STDERR ::Dumper( $finish ) , "\n";
     }
 
-    # BROWN BAG : since the whole cloning for language thing isn't figured out
-    # just queue each structure for the Syntax phase. Later the queuing needs to
-    # happen for each language instance of a tree.
-
+    # queue for rewrite
     Syntax::queue( $finish );
   }
 }
@@ -802,8 +786,6 @@ package Parser;
 use XML::SAX::Base;
 @ISA = ('XML::SAX::Base');
 
-our @languages = split /,/, $main::lang_mask;
-
 # elements defined by the Assembler implementation.
 our %defined = (
   token => [ qw/Builder::new_define define_end/ ],
@@ -848,21 +830,17 @@ sub dispatch_reserved_end { dispatch_reserved( 1 , @_ ); }
 #----------------------------------------------------------------------
 
 sub start_element {
-  our @languages;
-
   my ( $self , $element ) = @_;
 
   #print STDERR "Dump element ", ::Dumper( $element ), "\n";
 
   if ( $element->{NamespaceURI} ) {
-    unless ( scalar grep { $element->{NamespaceURI} eq $_ } @languages ) {
+    unless ( $element->{NamespaceURI} eq $Settings::emit_for_language ) {
       print STDERR "Notice: Language ", $element->{NamespaceURI}, " is not on the guest list.\n";
       PruneFilter::prune( NamespaceURI => $element->{NamespaceURI} );
 
       return;
     }
-
-    Builder::clone_for_language( $element->{NamespaceURI} );
   }
 
   return if ( dispatch_reserved_start( $element ) );
@@ -996,7 +974,6 @@ sub prefix_start {
 package Syntax;
 
 our @AST = ();
-our $language = '';
 
 # a namespace stack allows me to avoid doing child -> parent linking
 # in the AST tree.
@@ -1009,7 +986,6 @@ our @namespace = ();
 
 sub reset {
   our @AST = ();
-  our $language = '';
   our @namespace = ();
 }
 
@@ -1118,20 +1094,14 @@ sub evaluate_macro_body {
 
 sub rewrite_tree {
   our @namespace;
-
   my $tree = shift();
 
   # even placeholders that aren't really templates with bodies should
   # have a ->{name} field. Otherwise we are screwed.
 
   unless ( exists $tree->{name} ) {
-    reject_tree( 'toplevel define does not have a name' , $tree );
+    reject_tree( 'token does not have a name' , $tree );
     return 0;
-  }
-
-  if ( exists $tree->{lang} ) {
-    our $language = $tree->{lang};
-    delete $tree->{lang};
   }
 
   # add another level to the namespace, record in the tree
@@ -1194,23 +1164,22 @@ sub rewrite_tree {
 sub rewrite {
   our @AST, $language;
 
-  if ( ::debug_switch( 's-struct' ) ) {
+  if ( Settings::debug_switch( 's-struct' ) ) {
     print STDERR "dumping syntax tree before re-write\n";
     print STDERR ::Dumper( \@AST );
   }
 
   map {
     if ( rewrite_tree( $_ ) ) {
-      Emit::queue( $language , $_ );
+      Emit::queue( $_ );
     }
   } @AST;
 
-  if ( ::debug_switch( 's-struct' ) ) {
+  if ( Settings::debug_switch( 's-struct' ) ) {
     print STDERR "dumping syntax tree after re-write\n";
     print STDERR ::Dumper( \@AST );
   }
 }
-
 
 #----------------------------------------------------------------------
 # Generate else definition language
@@ -1429,11 +1398,11 @@ sub trim_ws_lines {
 #----------------------------------------------------------------------
 # major entry points.
 #----------------------------------------------------------------------
-our %queue = ();
+our @queue = ();
 
 sub reset {
-  our %queue = ();
   our @emit_stack = ();
+  our @queue = ();
 }
 
 sub select_generator {
@@ -1455,26 +1424,19 @@ sub select_generator {
 }
 
 sub queue {
-  our %queue;
-  my ( $lang, $tree ) = @_;
-
-  if ( exists $queue{$lang} ) {
-    push @{ $queue{$lang} } , $tree;
-  }
-  else {
-    $queue{$lang} = [$tree ];
-  }
+  our @queue;
+  push our @queue, shift();
 }
 
 sub generate_tree {
-  my ( $lang , $tree ) = @_;
+  my $tree = shift();
 
-  gen_open( $tree->{namespace}, $tree->{decl}, $lang );
+  gen_open( $tree->{namespace}, $tree->{decl}, $Settings::emit_for_language );
 
   # Ideally what is in the ptable is all terminal type definitions.
   # anything that is non-terminal should be outside of ptable.
 
-  map { generate_tree( $lang, $_ ) } ( values %{ $tree->{ptable} } );
+  map { generate_tree( $_ ) } ( values %{ $tree->{ptable} } );
 
   gen_autosub( ( exists $tree->{autosub} ) ? $tree->{autosub} : 0 );
 
@@ -1496,15 +1458,7 @@ sub generate_tree {
 }
 
 sub generate {
-  our %queue;
-
-# print STDERR "have languages: ", join(',', keys %queue) , "\n";
-# print STDERR ::Dumper(\%queue), "\n";
-
-  foreach my $lang ( keys %queue ) {
-    map { generate_tree( $lang, $_)  } @{ $queue{$lang} };
-  }
-
+  map { generate_tree( $_ ) } our @queue;
   flush();
 }
 
