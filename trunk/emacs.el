@@ -345,6 +345,20 @@
 (setq tramp-terminal-type "eterm-color")
 
 ;;----------------------------------------------------------------------
+;;                    ERC
+;;----------------------------------------------------------------------
+
+;; emacs IRC client is handy when on #emacs ...
+
+(eval-after-load "erc"
+  (custom-set-variables
+    '(erc-default-server "irc.freenode.net")
+    '(erc-default-port "6667")
+    '(erc-nick "codermattie")
+    )
+  )
+
+;;----------------------------------------------------------------------
 ;;                           Diff
 ;;----------------------------------------------------------------------
 
