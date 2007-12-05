@@ -330,9 +330,13 @@ sub concat {
 #----------------------------------------------------------------------
 # Builder
 #----------------------------------------------------------------------
-package Builder;
 
-# Construct the intermediate form usually referred to as 'define' or 'def'.
+# Construct a parse form of the define tree. The core data structure
+# is a stack where the top of the stack is the current define.
+
+#----------------------------------------------------------------------
+
+package Builder;
 
 our @defines = ();
 
@@ -341,6 +345,7 @@ sub reset {
 }
 
 sub recursion_level {
+
   our @defines;
 
   ( @defines > 0 )
@@ -1502,19 +1507,26 @@ PruneFilter::filter( LocalName => qr/span|prefix/ );  # filter unimplemented fea
 Emit::select_generator('else');
 
 input_file: foreach my $file ( @ARGV ) {
-  unless( -f $file ) {
-    print STDERR "file $file not found - Ignoring argument.\n";
-    next input_file;
+
+  if ($file eq "-" ) {
+    $tr->parse_file( \*STDIN );
   }
+  else {
+    unless( -e $file ) {
+      print STDERR "file $file not found - Ignoring argument.\n";
+      next input_file;
+    }
 
-  reset_all_phases();
-
-  # parse the input
-  $tr->parse_uri( $file );
+    $tr->parse_uri( $file );
+  }
 
   # rewrite the AST generating the defitions
   Syntax::rewrite();
 
   # emit the definitions we have queued
   Emit::generate();
+
+  reset_all_phases();
 }
+
+0;
