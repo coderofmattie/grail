@@ -99,8 +99,8 @@
   "expand the list of else XML files."
   ;; a little nutty ? but it works.
 
-    ;; map-reduce the full XML paths with a file exists test.
-    (apply 'map-reduce 'else-xml-file-if-exists
+    ;; map-filter-nil the full XML paths with a file exists test.
+    (apply 'map-filter-nil 'else-xml-file-if-exists
 
       ;; concat the xml-dir path with the file to form a path to the file.
       (mapcar (lambda ( xml-file )

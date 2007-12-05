@@ -5,19 +5,20 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
-(defun map-reduce ( func &rest seq )
-  "map-reduce. apply the function to the arguements ala mapcar, and
-   drop any nil results from the list returned."
+(defun map-filter-nil ( func &rest seq )
+  "map-filter-nil. apply the function to the arguements ala mapcar.
+   Filter any nil elements of the sequence before the function is
+   applied, and after the function is applied."
 
   (if (car seq)
     (let
       ((result (funcall func (car seq))))
       (if result
-        (cons result (apply 'map-reduce func (cdr seq)))
-        (apply 'map-reduce func (cdr seq))
+        (cons result (apply 'map-filter-nil func (cdr seq)))
+        (apply 'map-filter-nil func (cdr seq))
         ))
     (if (cdr seq)
-      (apply 'map-reduce func (cdr seq)))
+      (apply 'map-filter-nil func (cdr seq)))
     ))
 
 (defun show-bad-ws()
