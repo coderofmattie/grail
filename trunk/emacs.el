@@ -207,13 +207,13 @@
 
   (lexical-let
     ((completion-function
-       ;; this cond should be the tail of an if special form. First
-       ;; check if the completion-context symbol is a function. If
-       ;; so simply lexically-bind. Otherwise interpret as a string.
+       ;; this cond should be the tail of an if special form that
+       ;; would allow the caller to pass a lambda() instead of
+       ;; just a string selecting what is hardwired in here.
 
        (cond
          ;; use lisp-complete-symbol for elisp
-         ((string-equal completion-context "elisp") (function lisp-complete-symbol))
+         ((string-equal completion-context "elisp") 'lisp-complete-symbol)
 
          ;; fall back on dabbrev
          ((lambda () (dabbrev-expand nil)))
@@ -224,6 +224,7 @@
       (interactive)
 
       (if (looking-at "\\>")
+        ;; geting wrong argument, symbol.
         (funcall completion-function)
         (indent-for-tab-command))
       ))
@@ -280,7 +281,6 @@
                                         ;; is created - root can use emacsclient
                                         ;; to connect to a session running as
                                         ;; an unprivelaged user.
-
 (server-start)
 
 ;;----------------------------------------------------------------------
@@ -376,7 +376,6 @@
 ;; not sure I like this. I can always use allout-minor-mode when I need
 ;; it.
 
-
 ;;======================================================================
 ;;                  Phase 4: Programming
 ;;======================================================================
@@ -413,7 +412,6 @@
       jit-lock-stealth-time 10           ;; refontify 10 seconds after no input
       jit-lock-stealth-time 15)          ;; how long to wait to start deferred fontification
 
-
 ;;----------------------------------------------------------------------
 ;;                          GUD
 ;;----------------------------------------------------------------------
@@ -442,7 +440,6 @@
   '(ediff-use-toolbar-p nil)              ;; doesnt work ? disable the toolbar in ediff
   '(ediff-window-setup-function 'ediff-setup-windows-plain) ;; this should work.
   )
-
 
 ;;----------------------------------------------------------------------
 ;;                          else mode
