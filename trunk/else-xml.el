@@ -26,11 +26,10 @@
     (if (file-readable-p template-path)
       (save-excursion
         (with-temp-buffer
-          (progn
-            (beginning-of-buffer)
-            (insert-file-contents-literally template-path nil nil nil t )
-            (else-compile-buffer)
-            )))
+          (beginning-of-buffer)
+          (insert-file-contents-literally template-path nil nil nil t )
+          (else-compile-buffer)
+          ))
       )
   ))
 
