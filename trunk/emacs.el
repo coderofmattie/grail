@@ -490,6 +490,11 @@
 ;;                          tune-programming
 ;;----------------------------------------------------------------------
 
+;; this is insanely great. It displays the function you are "in" in terms
+;; of the point. Really nice for reading long functions.
+
+(which-function-mode)
+
 ;; some mundane asthetics and keybindings plus whatever dwim input
 ;; expansion I can cook up.
 
