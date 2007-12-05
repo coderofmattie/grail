@@ -174,6 +174,10 @@
 
 ;; M-g    = (goto-line)  |  move point to the line number in buffer
 
+;; In emacs 22 M-g became a prefix map, with goto as M-g g.
+;; TODO: look at the prefix map and re-evaluate the usefulness
+;; of my local version.
+
 (global-unset-key "\M-g")
 (global-set-key "\M-g" 'goto-line)
 
@@ -241,14 +245,6 @@
 
   (local-set-key [(tab)] (contextualized-tab completion-context))
   )
-
-;;--------------------------> TODO <----------------------------------
-
-;; I was trying to map ESC to 'execute-extended-command with a single keystroke.
-;; when I unmapped ESC all of the meta sequences were unbound. I would like
-;; to solve this, but until then I will use C-xe which is pretty comfortable.
-
-;; Shift-Tab cycling is not working on Carbon-Emacs
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
