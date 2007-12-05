@@ -45,6 +45,43 @@
 ;; These functions are purely for the XML add-on functionality to else.
 ;;----------------------------------------------------------------------
 
+(defun else-xml-new ()
+  "create a new macro definition"
+  (interactive)
+
+  ;; features
+  ;; * pop a window in which to create a new macro.
+  ;; * enable the "compilation" of a template to try it out.
+  ;; * simple way to then write the new macro to a existing file, or
+  ;;   create one.
+
+  ;; need to make a window pop a new buffer ala diff. need to set it up
+  ;; so that you can enter a macro, evaluate it for the current language
+  ;; and then return to the code file.
+
+  (let
+    ((language source-language)
+     (template-buffer (generate-new-buffer "else-XML macro"))
+     (xml-major-mode (assoc-default "foo.xml" auto-mode-alist
+                       'string-match))
+      )
+
+    (with-current-buffer template-buffer
+      ;; set a emit target for compiling the template so we
+      ;; can compile the template without prompting the user.
+
+      (set (make-local-variable 'else-emit-target) language)
+
+      (if xml-major-mode (funcall xml-major-mode))
+
+      ;; when we kill the buffer get rid of the window associated so the user
+      ;; doesn't have to tediously clean-up.
+      (add-hook 'kill-buffer-hook 'rid-window t t)
+      )
+
+    (pop-to-buffer template-buffer)
+    ))
+
 (defun else-xml-load-language ( language-name )
   ;; create an alternative loading scheme. Instead of a language defining a complete
   ;; or base set of tokens , load only the language settings.
