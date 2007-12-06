@@ -135,25 +135,30 @@
         (message "else-xml-load could not stat template %s" template))
       )))
 
+(defun else-xml-assemble ( lang input-buffer &rest file-list )
+  "run the assemble program and load the resulting templates using else-compile-buffer"
+  (let
+    ((input-list (if input-buffer
+                   "-"                                         ;; assemble should respect - as STDIN
+                   file-list)))
+    (with-temp-buffer
+      (and
+        (= 0 (apply 'call-process
+               (concat else-mode-xml-dir "/assemble")          ;; translater program
+               input-buffer                                    ;; buffer to stdin ?
+               (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
+               nil                                             ;; don't refresh
+               lang input-list))                               ;; arguements are language and input file.
+
+        (progn
+          (beginning-of-buffer)
+          (else-compile-buffer))
+        ))))
+
 (defun else-xml-load-files ( language &rest file-list )
   "load a list of else xml files. Not a interactive function as it blindly loads the given list assuming
    that a wrapper has checked that the files actually exist."
-
-  (with-temp-buffer
-    (if (and
-          (not (null file-list))                                 ;; abort on a empty file list
-
-          (= 0 (apply 'call-process
-                 (concat else-mode-xml-dir "/assemble")          ;; translater program
-                 nil                                             ;; stdin is /dev/null
-                 (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
-                 nil                                             ;; don't refresh
-                 language file-list))                            ;; arguements are language and input file.
-          (progn
-            (beginning-of-buffer)
-            (else-compile-buffer))
-          )
-      (message "else XML auto-load for: %s completed." language)
-      (message "Failed else XML auto-load for: %s" language)
-      ))
-  )
+  (if (apply 'else-xml-assemble language nil file-list)
+    (message "else XML auto-load for: %s completed." language)
+    (message "Failed else XML auto-load for: %s" language)
+    ))
