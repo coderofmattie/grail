@@ -46,6 +46,13 @@ if ( $ARGV[0] eq "-d" ) {
   our %debug_flags = map { ( $_ => 1 ) } @flags;
 }
 
+sub debug {
+  # return true if we have any debugging switches set.
+  our %debug_flags;
+
+  ( scalar %debug_flags ) ? 1 : 0;
+}
+
 sub debug_switch {
   # given a string that should be a debug switch ask if it was
   # enabled by the user.
@@ -841,7 +848,9 @@ sub start_element {
 
   if ( $element->{NamespaceURI} ) {
     unless ( $element->{NamespaceURI} eq $Settings::emit_for_language ) {
-      print STDERR "Notice: Language ", $element->{NamespaceURI}, " is not on the guest list.\n";
+      if ( Settings::debug() ) {
+        print STDERR "Notice: Language ", $element->{NamespaceURI}, " is not on the guest list.\n";
+      }
       PruneFilter::prune( NamespaceURI => $element->{NamespaceURI} );
 
       return;
@@ -877,7 +886,10 @@ sub characters {
     Register::concat( $data->{Data} );
   }
   else {
-    $self->{Handler}->characters( $data );
+    # send any unhandled data on for debugging only if we are debugging.
+    if ( Settings::debug() ) {
+      $self->{Handler}->characters( $data );
+    }
   }
 }
 
