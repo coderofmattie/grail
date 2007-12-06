@@ -9,10 +9,7 @@
   entire config, just keep the else part in the loop when it gets
   fixed.
 
-  Put in some sort of test framework. It should be fairly easy to
-  check against the reference output.
-
-  .. macro translater -> macro assembler.
+*  macro assembler.
 
   A Macro Assembler that compensates for the stateless design of else
   template definition interpretation. The definition language has
@@ -22,13 +19,23 @@
   structure also allows for scoping which allows common names to be
   re-used.
 
+  .. implement optional
+
+  .. implement menu ? ( big one )
+
+  . schema
+
+  need a schema that I can use to validate the documents.
+
 * Short Term
 
-  .. schema
+. Usability
 
-  .. need a schema that I can use to validate the documents.
+  .. complete
 
-  .. usability
+  Tab complete token/placeholder symbols. This would be a nice
+  feature, and it would be a good way to get into the completion
+  API's.
 
   need to be able to create a macro in a buffer and load it.
 
@@ -39,9 +46,12 @@
 
   .. implementation
 
-  implement optional
 
-  implement menu ? ( big one )
+* Medium Term
+
+  .. pre-loader
+
+  split else-load-xml into else-load-xml-{global,local}
 
   .. indent
 
@@ -50,20 +60,12 @@
   neccessary to recompile the templates. Deferred compilation of the
   templates should be considered.
 
-  .. complete
-
-  Tab complete token/placeholder symbols. This would be a nice
-  feature, and it would be a good way to get into the completion
-  API's.
-
-  .. pre-loader
-
-  split else-load-xml into else-load-xml-{global,local}
-
-* Medium Term
-
   implement generation of multiple languages at a time ? ( ponder dropping this
   feature since I can just run the assembler repeatedly.
+
+  settings the mark at the beginning of the template expansion would be nice
+  so that the template can be easily copied. advise looks like a way
+  to do this cleanly.
 
 * Major contributions
 
