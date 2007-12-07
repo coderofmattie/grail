@@ -25,7 +25,15 @@
 
   . schema
 
-  need a schema that I can use to validate the documents.
+  need a schema that I can use to validate the documents. Is it
+  even possible to validate with any schema due to the ability
+  to create arbitrary tag names ? if not then the checking
+  will have to be placed in assembler.
+
+  .. elisp generator
+
+  when the elisp backend is created it should generate auto-loads for
+  all of the templates reducing loading? and memory use.
 
 * Short Term
 
@@ -42,7 +50,7 @@
   .. documentation
 
   continue documenting one component at a time. The next component
-  is Builder:: . Don't forget to mop up extra whitespace in registers.
+  is Builder::.
 
   .. implementation
 
@@ -52,6 +60,25 @@
   .. pre-loader
 
   split else-load-xml into else-load-xml-{global,local}
+
+  Instead of doing a global/local hack it should be designed generally.
+  When loading, files should be loaded into a set, which is basically
+  a division of the search space. There should then be a default
+  set, and a way to set buffer local a set. The search routines
+  would then use a simple API to a more flexible system.
+
+  The default should be a emulation of the existing global/local or
+  as it is called overlay.
+
+  to keep it truly as simple as possible it may be interesting to
+  simply place the entire search space in a single hash table
+  and generate the sets in assemble. Otherwise a hash table per
+  set will likely be necessary. Auto-load tricks may be exploitable
+  to "relink" on load. Doing it as each set is a hash is more
+  like relocatable.
+
+  It may be possible to make sets multi-language. It should be an option.
+  It should also be an option to make a set that is specific to a language :)
 
   .. indent
 
