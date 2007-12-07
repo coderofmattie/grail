@@ -204,13 +204,24 @@
       ;; doesn't have to tediously clean-up.
       (add-hook 'kill-buffer-hook 'rid-window t t)
 
-      (local-set-key "\C-x-s"
+      ;; set keys for saving the buffer, compiling the buffer, and
+      ;; merging the buffer (TODO)
+
+      (local-set-key (kbd "\C-x \C-s")
+        ;; over-ride the usual "save-buffers" command with a custom one
+        ;; that creates a valid xml document before writing to a file.
+        ;; as a nice side-effect the current buffer is not associated
+        ;; with a file. This is a plus since the current buffer is not
+        ;; a valid document.
+
+        ;; if you want to save the document fragment that is the current
+        ;; buffer you can still use C-x-w.
         (lambda ()
           "write the tokens as valid xml to a file"
           (interactive)
           (else-xml-output-valid-xml (current-buffer) (else-xml-to-file))))
 
-      (local-set-key "\C-lc"
+      (local-set-key (kbd "\C-lc")
         (lambda ()
           "compile the buffer using the xml assembler"
           (interactive)
