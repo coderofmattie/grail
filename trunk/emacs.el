@@ -166,6 +166,9 @@
 ;;                    Custom Key Bindings
 ;;----------------------------------------------------------------------
 
+;; this is the best way to figure out how it should be done.
+;; (format-kbd-macro (read-key-sequence "Key? " nil t))
+
 ;; enable ffap bindings so that C-x C-f on things like include directives
 ;; opens the paths. This could be very magical.
 
@@ -178,8 +181,8 @@
 ;; TODO: look at the prefix map and re-evaluate the usefulness
 ;; of my local version.
 
-(global-unset-key "\M-g")
-(global-set-key "\M-gg" 'goto-line)
+(global-unset-key (kbd "M-g"))
+(global-set-key (kbd "M-g g") 'goto-line)
 
 ;; escape = (execute-extended-command)
 
@@ -191,12 +194,12 @@
 
 ;; evaluate the elisp expression given by the user
 
-(global-set-key "\C-xe" 'eval-expression)
+(global-set-key (kbd "C-x e") 'eval-expression)
 
 ;; M-TAB  = switch to the last buffer in the current window. cycles when
 ;;          repeated.
 
-(global-set-key [(meta tab)]
+(global-set-key (kbd "<M-tab>")
   (lambda ()
     (interactive)
     (switch-to-buffer (other-buffer))
@@ -204,7 +207,7 @@
 
 ;; S-TAB  = Shift tab cycles between windows.
 
-(global-set-key [(shift tab)] 'other-window)
+(global-set-key (kbd "<S-tab>") 'other-window)
 
 (defun contextualized-tab (completion-context)
   ;; generate a contextualized flavor of the tab key behavior.
@@ -240,10 +243,10 @@
   ;; key-bindings are unset or replaced with contextualized variations
   ;; of my global defaults.
 
-  (local-unset-key [(meta tab)])
-  (local-unset-key [(shift tab)])
+  (local-unset-key (kbd "<M-tab>"))
+  (local-unset-key (kbd "<S-tab>"))
 
-  (local-set-key [(tab)] (contextualized-tab completion-context))
+  (local-set-key (kbd "<tab>") (contextualized-tab completion-context))
   )
 
 ;;----------------------------------------------------------------------
@@ -296,8 +299,8 @@
     (setq show-trailing-whitespace nil)   ;; disable trailing whitespace highlighting
 
     ;; make up-down go through the history list.
-    (local-set-key [(up)] 'comint-previous-input)
-    (local-set-key [(down)] 'comint-next-input)
+    (local-set-key (kbd "<up>") 'comint-previous-input)
+    (local-set-key (kbd "<down>") 'comint-next-input)
     ))
 
 (add-hook 'term-mode-hook
@@ -329,7 +332,7 @@
 
     ;; I rarely want to quit eshell. when I do I can use quit. map
     ;; the usual kill-buffer keybinding to rid-window.
-    (local-set-key "\C-xk" 'rid-window)
+    (local-set-key (kbd "C-x k") 'rid-window)
     ))
 
 ;;----------------------------------------------------------------------
@@ -477,12 +480,12 @@
         (else-xml-load-language-alist source-language)
 
         ;; here is where C-xe will expand templates
-        (local-set-key "\C-le" 'else-expand-placeholder)
-        (local-set-key "\C-ln" 'else-next-placeholder)
+        (local-set-key (kbd "C-l e") 'else-expand-placeholder)
+        (local-set-key (kbd "C-l n") 'else-next-placeholder)
 
-        (local-set-key "\C-lk" 'else-kill-placeholder)
+        (local-set-key (kbd "C-l k") 'else-kill-placeholder)
 
-        (local-set-key "\C-ll" 'else-show-token-names)
+        (local-set-key (kbd "C-l l") 'else-show-token-names)
         ))
   )
 
@@ -526,19 +529,19 @@
   ;; use Ctrl-l as the prefix for e commands. It's short
   ;; and the usual unix meaning of centering a screen is
   ;; a small loss.
-  (local-unset-key "\C-l")
+  (local-unset-key (kbd "C-l"))
 
-  (local-set-key "\C-ls" 'set-default-register)
-  (local-set-key "\C-lr" 'list-registers)
+  (local-set-key (kbd "C-l s") 'set-default-register)
+  (local-set-key (kbd "C-l r") 'list-registers)
 
-  (local-set-key "\C-lw"
+  (local-set-key (kbd "C-l w")
     (lambda ()
       (interactive)
       (set-register default-register
         (filter-buffer-substring (region-beginning) (region-end)))
       ))
 
-  (local-set-key "\C-li"
+  (local-set-key (kbd "C-l i")
     (lambda ()
       (interactive)
       (insert-register default-register)))
@@ -585,7 +588,7 @@
   (lambda ()
     (tune-programming "perl5")
 
-    (local-set-key "\C-hf" 'cperl-perldoc-at-point)
+    (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
     ))
 
 ;;----------------------------------------------------------------------
