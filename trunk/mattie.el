@@ -21,6 +21,15 @@
       (apply 'map-filter-nil func (cdr seq)))
     ))
 
+(defun file-if-readable ( file )
+  "this function was created because file-readable-p is strangely akward in that it returns t
+   instead of the path it was given which neccesitates this silly wrapper. Consider sending
+   this upstream as a patch or add-on to file-readable-p"
+
+  (if (file-readable-p file)
+    file))
+
+
 (defun show-bad-ws()
   (interactive)
   (highlight-regexp "\t"))
@@ -29,6 +38,14 @@
   "get rid of the current window"
   (interactive)
   (delete-windows-on (current-buffer)))
+
+(defun insert-key-notation ()
+  "inject a complete (kbd "sequence") with key notation for a key sequence given by prompt"
+  (interactive)
+  (insert "(kbd \"")
+  (insert (format-kbd-macro (read-key-sequence "Key? " nil t)))
+  (insert "\")")
+  )
 
 ;;----------------------------------------------------------------------
 ;; repl
