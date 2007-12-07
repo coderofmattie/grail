@@ -21,28 +21,6 @@
 ;; (else-language-spec-p "perl5")  - should be false
 ;; (else-language-spec-p "Empty")  - shoule be true
 
-(defun else-reload-minimal ( &optional language-name )
-  "reload the minimal definition of the else-mode language clearing all defined token expansions."
-
-  ;; This is an alternative search scheme for templates that duplicates alot of the existing
-  ;; loader. The correct way to integrate is to define alternative loading methods called
-  ;; through hooks set by user preference, with reasonable defaults.
-
-  ;; major unchecked assumption that redefining a language clears all the templates
-  (interactive)
-  (let*
-    ((lang (or language-name source-language))
-     (template-path (concat else-mode-xml-dir lang ".lse")))
-
-    (if (file-readable-p template-path)
-      (save-excursion
-        (with-temp-buffer
-          (beginning-of-buffer)
-          (insert-file-contents-literally template-path nil nil nil t)
-          (else-compile-buffer)
-          ))
-      )
-  ))
 
 ;;----------------------------------------------------------------------
 ;; IPC
@@ -132,16 +110,35 @@
 ;; designed enough to integrate into the original mode.
 
 (defun else-xml-load-language ( language-name )
-  ;; try to establish a minimal else language definition for the value
-  ;; of language-name.
+  ;; only attempt to load a minimal language definition if there is no
+  ;; language definition.
 
   (or
     ;; already loaded ?
     (else-language-spec-p language-name)
 
     ;; attempt load from the else directory.
-    (else-reload-minimal language-name)
+    (else-xml-reset-language language-name)
     ))
+
+(defun else-xml-reset-language ( &optional language-name )
+  "reset the language by clearing all templates and re-loading the minimal language defintion."
+
+  ;; major unchecked assumption that redefining a language clears all the templates
+  (interactive)
+  (let*
+    ((lang (or language-name source-language))
+     (template-path (concat else-mode-xml-dir lang ".lse")))
+
+    (if (file-readable-p template-path)
+      (save-excursion
+        (with-temp-buffer
+          (beginning-of-buffer)
+          (insert-file-contents-literally template-path nil nil nil t)
+          (else-compile-buffer)
+          ))
+      )
+  ))
 
 (defun else-xml-load-language-alist ( lang )
   "load all of the xml files listed in else-mode-xml-alist for: language, the sole parameter"
