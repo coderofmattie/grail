@@ -190,6 +190,7 @@
      (template-buffer (generate-new-buffer "else-XML macro"))
      (xml-major-mode (assoc-default "foo.xml" auto-mode-alist
                        'string-match))
+      entry-point  ;; side-effect recording where the point should be positioned.
       )
 
     (with-current-buffer template-buffer
@@ -226,9 +227,18 @@
           "compile the buffer using the xml assembler"
           (interactive)
           (else-xml-output-valid-xml (current-buffer) (else-xml-to-assembler))))
+
+
+      ;; generate some minimal boilder-plate for ergonomics
+      (insert "<token>\n  <name>")
+      ;; the point doesn't really exist, so we use point-max which is end
+      ;; of the buffer.
+      (setq entry-point (point-max))
+      (insert " </name>\n</token>\n")
       )
 
     (pop-to-buffer template-buffer)
+    (goto-char entry-point)
     ))
 
 (defun else-xml-output-valid-xml ( buffer output-method )
