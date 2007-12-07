@@ -3,6 +3,9 @@
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 
+;; This depends on two functions from mattie.el
+;; map-filter-nil,
+
 ;;----------------------------------------------------------------------
 ;; these parts are ugly. Not integrated correctly with exisitng code.
 ;;----------------------------------------------------------------------
@@ -41,16 +44,132 @@
       )
   ))
 
-(defun else-xml-file-if-exists ( file )
-  "this function was created because file-readable-p is brain-damaged in that it returns t
-   instead of the path it was given which neccesitates this silly wrapper. Consider sending
-   this upstream as a patch to file-readable-p"
+;;----------------------------------------------------------------------
+;; IPC
+;;----------------------------------------------------------------------
 
-  (if (file-readable-p file)
-    file))
+;; else mode currently uses a external helper program "assemble" to
+;; translate the XML form to a representation loadable by else-mode/emacs.
+
+(defun else-xml-load ( template )
+  "load a XML else template file."
+
+  (interactive "F else XML file ? ")
+
+  (save-excursion
+    (let
+      ((path (or
+               (file-if-readable (expand-file-name template))
+               (file-if-readable (concat else-mode-xml-dir template ".xml"))
+               ))
+        )
+      (if path
+        (else-xml-load-files source-language path)
+        (message "else-xml-load could not stat template %s" template))
+      )))
+
+(defun else-xml-load-files ( language &rest file-list )
+  "load a list of else xml files. Not a interactive function as it blindly loads the given list assuming
+   that a wrapper has checked that the files actually exist."
+  (if (apply 'else-xml-assemble language nil file-list)
+    (message "else XML auto-load for: %s completed." language)
+    (message "Failed else XML auto-load for: %s" language)
+    ))
+
+(defun else-xml-assemble ( lang input-buffer &rest file-list )
+  "Run the assemble program and load the resulting templates using else-compile-buffer.
+   This is a low-level routine that supports assembling both files and emacs buffers.
+   Higher level wrappers such as else-xml-load,else-xml-new should be used."
+
+  (let
+    ((input-list (if input-buffer
+                   "-"                                         ;; assemble should respect - as STDIN
+                   file-list)))
+    (with-temp-buffer
+      (and
+        (= 0 (apply 'call-process
+               (concat else-mode-xml-dir "/assemble")          ;; translater program
+               input-buffer                                    ;; buffer to stdin ?
+               (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
+               nil                                             ;; don't refresh
+               lang input-list))                               ;; arguements are language and input file.
+
+        (progn
+          (beginning-of-buffer)
+          (else-compile-buffer))
+        ))))
 
 ;;----------------------------------------------------------------------
-;; else-xml
+;; loader
+;;----------------------------------------------------------------------
+
+;; This is the beginning of an alternative loader for else. It is
+;; prototyped as a bolt-on to the existing mode. The high level user
+;; interface is essentially final as a "alist" keyed by language,
+;; where the value is a list of template files to load.
+
+;; The key difference from the original else mode is that a single
+;; file is no longer a complete definition of a language - where a
+;; file contains syntatic elements of the language and all of the
+;; templates for that language.
+
+;; An advantage of XML is that template defintions may be embedded in
+;; a several documents of arbitrary purpose (heterogenous). This
+;; requires a new loader where the alist is not implict ( filename
+;; inferred from mode name ), load-path is not used as a search
+;; mechanism, and multiple files may be given.
+
+;; The new mechanism uses else-mode-xml-alist to key a list of
+;; documents to a language name. The language name is no longer the
+;; mode name which is essential for handling multiple versions of a
+;; language gracefully, which can be redically different (perl5 vs
+;; perl6)
+
+;; TODO
+
+;; a far more advanced loader is described in the TODO, however it is
+;; merely a more flexible version of this concept That potentially is
+;; designed enough to integrate into the original mode.
+
+(defun else-xml-load-language ( language-name )
+  ;; try to establish a minimal else language definition for the value
+  ;; of language-name.
+
+  (or
+    ;; already loaded ?
+    (else-language-spec-p language-name)
+
+    ;; attempt load from the else directory.
+    (else-reload-minimal language-name)
+    ))
+
+(defun else-xml-load-language-alist ( lang )
+  "load all of the xml files listed in else-mode-xml-alist for: language, the sole parameter"
+  (let
+    ((file-list (else-xml-alist-expand lang)))
+    (if file-list
+      (apply 'else-xml-load-files lang file-list)
+      (message "there are no xml files listed in the else-mode-xml-alist for language %s", lang))
+    ))
+
+(defun else-xml-alist-expand ( lang )
+  "expand the list of else XML files."
+  ;; a little nutty ? but it works.
+
+    ;; map-filter-nil the full XML paths with a file exists test.
+    (apply 'map-filter-nil 'file-if-readable
+
+      ;; concat the xml-dir path with the file to form a path to the file.
+      (mapcar (lambda ( xml-file )
+                ;; TODO: the concat is a good default for basname files, however if
+                ;; there is a directory part, or an absolute path it should not expand.
+                (concat else-mode-xml-dir xml-file))
+        ;; fetch the list of xml files
+        (cdr (assoc lang else-mode-xml-alist))))
+  )
+
+;;----------------------------------------------------------------------
+;; create new templates
 ;;----------------------------------------------------------------------
 
 ;; These parts are true extensions of the exisintg codebase.
@@ -104,25 +223,6 @@
     (pop-to-buffer template-buffer)
     ))
 
-(defun else-xml-to-assembler ()
-  "Generate a function that emits a given buffer to the assembler
-   with the buffer's else-emit-target value as the language target."
-
-  (lexical-let
-    ((target else-emit-target))
-
-    (lambda ( buffer )
-      (else-xml-assemble target buffer))
-    ))
-
-(defun else-xml-to-file ()
-  "Generate a function that writes a given buffer to a file"
-
-  (lambda ( buffer )
-    (with-current-buffer buffer
-      (write-file else-mode-xml-dir t))
-    ))
-
 (defun else-xml-output-valid-xml ( buffer output-method )
   "Finalize the tokens as a valid xml document and IPC to a processor."
 
@@ -149,83 +249,22 @@
        (output-method (current-buffer))
        )))
 
-(defun else-xml-load-language ( language-name )
-  ;; create an alternative loading scheme. Instead of a language defining a complete
-  ;; or base set of tokens , load only the language settings.
+(defun else-xml-to-assembler ()
+  "Generate a function that emits a given buffer to the assembler
+   with the buffer's else-emit-target value as the language target."
 
-  ;; try to establish a minimal else language definition for the value of language-name.
-  (or
-    ;; already loaded ?
-    (else-language-spec-p language-name)
+  (lexical-let
+    ((target else-emit-target))
 
-    ;; attempt load from the else directory.
-    (else-reload-minimal language-name)
+    (lambda ( buffer )
+      (else-xml-assemble target buffer))
     ))
 
-(defun else-xml-alist-expand ( lang )
-  "expand the list of else XML files."
-  ;; a little nutty ? but it works.
+(defun else-xml-to-file ()
+  "Generate a function that writes a given buffer to a file"
 
-    ;; map-filter-nil the full XML paths with a file exists test.
-    (apply 'map-filter-nil 'else-xml-file-if-exists
-
-      ;; concat the xml-dir path with the file to form a path to the file.
-      (mapcar (lambda ( xml-file )
-                (concat else-mode-xml-dir xml-file))
-        ;; fetch the list of xml files
-        (cdr (assoc lang else-mode-xml-alist))))
-  )
-
-(defun else-xml-load-language-alist ( lang )
-  "load all of the xml files listed in else-mode-xml-alist for: language, the sole parameter"
-  (let
-    ((file-list (else-xml-alist-expand lang)))
-    (if file-list
-      (apply 'else-xml-load-files lang file-list)
-      (message "there are no xml files listed in the else-mode-xml-alist for language %s", lang))
+  (lambda ( buffer )
+    (with-current-buffer buffer
+      (write-file else-mode-xml-dir t))
     ))
 
-(defun else-xml-load ( template )
-  "load a XML else template."
-
-  (interactive "F else XML file ? ")
-
-  (save-excursion
-    (let
-      ((path (or
-               (else-xml-file-if-exists (expand-file-name template))
-               (else-xml-file-if-exists (concat else-mode-xml-dir template ".xml"))
-               ))
-        )
-      (if path
-        (else-xml-load-files source-language path)
-        (message "else-xml-load could not stat template %s" template))
-      )))
-
-(defun else-xml-assemble ( lang input-buffer &rest file-list )
-  "run the assemble program and load the resulting templates using else-compile-buffer"
-  (let
-    ((input-list (if input-buffer
-                   "-"                                         ;; assemble should respect - as STDIN
-                   file-list)))
-    (with-temp-buffer
-      (and
-        (= 0 (apply 'call-process
-               (concat else-mode-xml-dir "/assemble")          ;; translater program
-               input-buffer                                    ;; buffer to stdin ?
-               (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
-               nil                                             ;; don't refresh
-               lang input-list))                               ;; arguements are language and input file.
-
-        (progn
-          (beginning-of-buffer)
-          (else-compile-buffer))
-        ))))
-
-(defun else-xml-load-files ( language &rest file-list )
-  "load a list of else xml files. Not a interactive function as it blindly loads the given list assuming
-   that a wrapper has checked that the files actually exist."
-  (if (apply 'else-xml-assemble language nil file-list)
-    (message "else XML auto-load for: %s completed." language)
-    (message "Failed else XML auto-load for: %s" language)
-    ))
