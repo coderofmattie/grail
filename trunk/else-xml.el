@@ -52,7 +52,7 @@
 ;; translate the XML form to a representation loadable by else-mode/emacs.
 
 (defun else-xml-load ( template )
-  "load a XML else template file."
+  "load else-XML templates from a document."
 
   (interactive "F else XML file ? ")
 
