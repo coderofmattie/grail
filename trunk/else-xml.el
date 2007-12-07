@@ -234,7 +234,7 @@
       ;; the point doesn't really exist, so we use point-max which is end
       ;; of the buffer.
       (setq entry-point (point-max))
-      (insert " </name>\n</token>\n")
+      (insert "</name>\n</token>\n")
       )
 
     (pop-to-buffer template-buffer)
