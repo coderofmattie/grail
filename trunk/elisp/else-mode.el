@@ -417,6 +417,11 @@ Contains True or False (t or nil) and is indexed by character code")
 (defvar else-placeholder-overlay nil
   "Placeholder overlay is used by the Voice Coder modifications to ELSE.")
 
+(defun else-identifier-for-command ()
+  (if (symbolp this-command)
+    (symbol-name this-command)
+    "other"))
+
 ;; This is the after change function. Its primary purpose is to act in
 ;; situations where the auto-substitute function is active and the change has
 ;; occurred in the specified region. It must repeat the change into each of the
@@ -430,7 +435,7 @@ Contains True or False (t or nil) and is indexed by character code")
     ;; Only duplicate any changes if the change has occurred within the auto-sub
     ;; area.
     (setq else-after-var (append (list begin end length
-                                       (symbol-name this-command))
+                                       (else-identifier-for-command))
                                  else-after-var))
     ;; Xemacs changes here
     (cond (else-in-xemacs
@@ -605,7 +610,7 @@ Contains True or False (t or nil) and is indexed by character code")
         ;; use the undo-in-progress flag in the after-change-function
         ;; to handle things - thanks to Stefan Monnier for this tip.
         (setq else-before-var (append (list begin end
-                                            (symbol-name this-command))
+                                        (else-identifier-for-command))
                                       else-before-var))
         (setq zero-begin (append (list begin end) zero-begin))
         (if (equal 0 (- end begin))
