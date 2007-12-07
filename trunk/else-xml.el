@@ -240,7 +240,7 @@
     ;; and the document root.
 
     (insert "<?xml version=\"1.0\" encoding=\"US-ASCII\"?>")
-    (insert "<else>">)
+    (insert "<else>")
 
     (let
       ((io-buffer (current-buffer)))
