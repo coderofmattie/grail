@@ -249,7 +249,7 @@
     ;; create a buffer with the token definition imbetween the xml declaration
     ;; and the document root.
 
-    (insert "<?xml version=\"1.0\" encoding=\"US-ASCII\"?>")
+    (insert "<?xml version=\"1.0\" encoding=\"US-ASCII\"?>\n")
     (insert "<else>")
 
     (let
@@ -261,7 +261,7 @@
     (insert "</else>")
 
     ;; output this buffer to the assembler
-    (output-method (current-buffer))
+    (funcall output-method (current-buffer))
     ))
 
 (defun else-xml-to-assembler ()
