@@ -3,6 +3,10 @@
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 
+;;----------------------------------------------------------------------
+;; these parts are ugly. Not integrated correctly with exisitng code.
+;;----------------------------------------------------------------------
+
 (setq else-mode-xml-dir (concat (getenv "HOME") "/system/emacs/else/"))
 (setq else-mode-xml-alist '())
 
@@ -17,6 +21,10 @@
 (defun else-reload-minimal ( &optional language-name )
   "reload the minimal definition of the else-mode language clearing all defined token expansions."
 
+  ;; This is an alternative search scheme for templates that duplicates alot of the existing
+  ;; loader. The correct way to integrate is to define alternative loading methods called
+  ;; through hooks set by user preference, with reasonable defaults.
+
   ;; major unchecked assumption that redefining a language clears all the templates
   (interactive)
   (let*
@@ -27,7 +35,7 @@
       (save-excursion
         (with-temp-buffer
           (beginning-of-buffer)
-          (insert-file-contents-literally template-path nil nil nil t )
+          (insert-file-contents-literally template-path nil nil nil t)
           (else-compile-buffer)
           ))
       )
@@ -42,8 +50,10 @@
     file))
 
 ;;----------------------------------------------------------------------
-;; These functions are purely for the XML add-on functionality to else.
+;; else-xml
 ;;----------------------------------------------------------------------
+
+;; These parts are true extensions of the exisintg codebase.
 
 (defun else-xml-new ()
   "create a new macro definition"
@@ -77,10 +87,67 @@
       ;; when we kill the buffer get rid of the window associated so the user
       ;; doesn't have to tediously clean-up.
       (add-hook 'kill-buffer-hook 'rid-window t t)
+
+      (local-set-key "\C-x-s"
+        (lambda ()
+          "write the tokens as valid xml to a file"
+          (interactive)
+          (else-xml-output-valid-xml (current-buffer) (else-xml-to-file))))
+
+      (local-set-key "\C-lc"
+        (lambda ()
+          "compile the buffer using the xml assembler"
+          (interactive)
+          (else-xml-output-valid-xml (current-buffer) (else-xml-to-assembler))))
       )
 
     (pop-to-buffer template-buffer)
     ))
+
+(defun else-xml-to-assembler ()
+  "Generate a function that emits a given buffer to the assembler
+   with the buffer's else-emit-target value as the language target."
+
+  (lexical-let
+    ((target else-emit-target))
+
+    (lambda ( buffer )
+      (else-xml-assemble target buffer))
+    ))
+
+(defun else-xml-to-file ()
+  "Generate a function that writes a given buffer to a file"
+
+  (lambda ( buffer )
+    (with-current-buffer buffer
+      (write-file else-mode-xml-dir t))
+    ))
+
+(defun else-xml-output-valid-xml ( buffer output-method )
+  "Finalize the tokens as a valid xml document and IPC to a processor."
+
+  (let
+    ((target else-emit-target))
+
+     (with-temp-buffer
+
+       ;; create a buffer with the token definition imbetween the xml declaration
+       ;; and the document root.
+
+       (insert "<?xml version=\"1.0\" encoding=\"US-ASCII\"?>")
+       (insert "<else>">)
+
+       (let
+         ((io-buffer (current-buffer)))
+
+         (with-current-buffer buffer
+           (append-to-buffer io-buffer (point-min) (point-max))))
+
+       (insert "</else>")
+
+       ;; output this buffer to the assembler
+       (output-method (current-buffer))
+       )))
 
 (defun else-xml-load-language ( language-name )
   ;; create an alternative loading scheme. Instead of a language defining a complete
