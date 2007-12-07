@@ -190,7 +190,7 @@
      (template-buffer (generate-new-buffer "else-XML macro"))
      (xml-major-mode (assoc-default "foo.xml" auto-mode-alist
                        'string-match))
-      entry-point  ;; side-effect recording where the point should be positioned.
+      entry-point  ;; variable recording where the point should be positioned.
       )
 
     (with-current-buffer template-buffer

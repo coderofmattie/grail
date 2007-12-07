@@ -1,3 +1,15 @@
+* compare with alternatives
+
+  MsfAbbrev
+
+  smart-snippet
+
+  AutoInsertMode
+
+  SkeletonMode
+
+  RecipeForSkeletonMode
+
 * Basic Integration
 
   Ponder over the schema that I am creating for languages. I haven't
@@ -19,9 +31,9 @@
   structure also allows for scoping which allows common names to be
   re-used.
 
-  .. implement optional
+.. implement optional
 
-  .. implement menu ? ( big one )
+.. implement menu ? ( big one )
 
   . schema
 
