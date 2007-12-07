@@ -179,7 +179,7 @@
 ;; of my local version.
 
 (global-unset-key "\M-g")
-(global-set-key "\M-g" 'goto-line)
+(global-set-key "\M-gg" 'goto-line)
 
 ;; escape = (execute-extended-command)
 
@@ -452,7 +452,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;;                          else mode
+;;         else = (E)macs (L)anguage (S)ensitive (E)diting.
 ;;----------------------------------------------------------------------
 (require 'else-mode)
 

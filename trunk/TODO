@@ -1,4 +1,19 @@
 
+
+;; stateful implementation of map-filter-nil.
+
+;; stateful version by fledermous in #emacs (thanks)
+;; (remove nil (mapcar fun (remove nil list)))
+
+;; stateful version by sabetts in #emacs (thanks).
+;;(defun map-reduce (fn &rest list)
+;;  (let (acc v)
+;;    (while list
+;;      (setq v (pop list)
+;;            v (and v (funcall v)))
+;;      (when v (push v acc)))
+;;    acc))
+
 * Bugs
 
 * General

@@ -18,26 +18,10 @@
   (local-set-key "\C-c/p" 'gtags-pop-stack)
   )
 
-
 ;; FROM tune-programming
 (tune-gtags)
 
-;;----------------------------------------------------------------------
-;;          else (L)anguage (S)ensitive (E)diting.
-;;----------------------------------------------------------------------
-(require 'else-mode)
-
-  ;; C-C / is my magic prefix
-  (local-set-key (kbd "<right>") 'else-next-placeholder)
-  (local-set-key (kbd "<left>") 'else-prev-placeholder)
-
-  (local-set-key "\C-c/e" 'else-expand-placeholder)
-  (local-set-key "\C-c/d" 'else-kill-placeholder)
-  )
-
-
 ;; FROM the cperl-mode hook
-;;    (tune-else-language "perl" )
 
 ;;    (cperl-toggle-electric)
 ;;    (cperl-toggle-abbrev)
