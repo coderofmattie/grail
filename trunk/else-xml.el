@@ -234,28 +234,25 @@
 (defun else-xml-output-valid-xml ( buffer output-method )
   "Finalize the tokens as a valid xml document and IPC to a processor."
 
-  (let
-    ((target else-emit-target))
+  (with-temp-buffer
 
-     (with-temp-buffer
+    ;; create a buffer with the token definition imbetween the xml declaration
+    ;; and the document root.
 
-       ;; create a buffer with the token definition imbetween the xml declaration
-       ;; and the document root.
+    (insert "<?xml version=\"1.0\" encoding=\"US-ASCII\"?>")
+    (insert "<else>">)
 
-       (insert "<?xml version=\"1.0\" encoding=\"US-ASCII\"?>")
-       (insert "<else>">)
+    (let
+      ((io-buffer (current-buffer)))
 
-       (let
-         ((io-buffer (current-buffer)))
+      (with-current-buffer buffer
+        (append-to-buffer io-buffer (point-min) (point-max))))
 
-         (with-current-buffer buffer
-           (append-to-buffer io-buffer (point-min) (point-max))))
+    (insert "</else>")
 
-       (insert "</else>")
-
-       ;; output this buffer to the assembler
-       (output-method (current-buffer))
-       )))
+    ;; output this buffer to the assembler
+    (output-method (current-buffer))
+    ))
 
 (defun else-xml-to-assembler ()
   "Generate a function that emits a given buffer to the assembler
