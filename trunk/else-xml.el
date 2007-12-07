@@ -208,7 +208,7 @@
       ;; set keys for saving the buffer, compiling the buffer, and
       ;; merging the buffer (TODO)
 
-      (local-set-key (kbd "\C-x \C-s")
+      (local-set-key (kbd "C-x C-s")
         ;; over-ride the usual "save-buffers" command with a custom one
         ;; that creates a valid xml document before writing to a file.
         ;; as a nice side-effect the current buffer is not associated
@@ -222,7 +222,7 @@
           (interactive)
           (else-xml-output-valid-xml (current-buffer) (else-xml-to-file))))
 
-      (local-set-key (kbd "\C-lc")
+      (local-set-key (kbd "C-l c")
         (lambda ()
           "compile the buffer using the xml assembler"
           (interactive)
@@ -280,6 +280,9 @@
 
   (lambda ( buffer )
     (with-current-buffer buffer
-      (write-file else-mode-xml-dir t))
+      (let
+        ;; set the default directory to the else-mode-dir
+        ((default-directory else-mode-xml-dir))
+        (write-file nil t)))
     ))
 
