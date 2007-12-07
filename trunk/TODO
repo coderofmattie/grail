@@ -1,5 +1,8 @@
 
 
+;; use def-advice to set the mark when insert-key-notation is
+;; used so that it can easily be copied as a region.
+
 ;; stateful implementation of map-filter-nil.
 
 ;; stateful version by fledermous in #emacs (thanks)

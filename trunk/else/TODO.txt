@@ -1,3 +1,42 @@
+* BUG
+
+  my insert command is definitely causing a severe bug. it comes from
+  else-before-change . I think it has to due with the size of the change
+  being zero.
+
+
+  found symbol's function definition is void
+
+  yep, it thinks it is in a placeholder. it is not.
+
+  648 this is where the error is triggering.
+
+  else-in-placeholder looks insane. It is a totally hand hacked depth/regex combo
+  of doom.
+
+  questions:
+    why are the hooks even running ? when we are done with the template we should kill
+    the hooks. no more bugs.
+
+    this kills comment out or any other chronology based revisit template for later,
+    or does it ?
+
+
+  signalling that a template editing session is complete is essential. It simply is *not*
+  going to fly otherwise.
+
+  these change hooks are probably why I am having serious problems with movement, especially
+  when keys are held down.
+
+
+  Need to look at bounding, such as narrowing on expand. Need some firewalls that will
+  contain computations gone bad.
+
+  Need to indicate active expansion and bounding. If Narrowing isn't visual, then it
+  is time to enable a template expansion highlight.
+
+  a fix is in place. It may not be entirely correct but it is holding.
+
 * compare with alternatives
 
   MsfAbbrev
@@ -50,6 +89,29 @@
 * Short Term
 
 . Usability
+
+  .. errors
+
+  error handling needs to be sorted out. If there are serious loading errors
+  in non-interactive parts of else-xml then it needs to go to messages. If
+  it is coming from a interactive function it needs to go on the modeline.
+
+  How do I get the errors from the else define interpreter ? or from assemble
+  for that matter ?
+
+  .. create new
+
+  the compile a buffer command is still not tested.
+
+  merge is yet to be implemented.
+
+  the insertion point needs to be specified as an xpath expression.
+  this way the macros can be inserted into multi-namespace documents
+  where the document root is something other than else. The default
+  should be append to else though.
+
+  something like XSH2 would be pretty slick here. In fact this is
+  definitely XSH2 worthy. Damn.
 
   .. complete
 
