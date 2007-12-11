@@ -31,6 +31,7 @@ HOWTO
 # example: -d s-struct,e-struct
 
 use Data::Dumper;
+use Carp;
 
 #----------------------------------------------------------------------
 # Settings
@@ -341,10 +342,16 @@ sub concat {
 # Traverse the tree form applying transform functions to rewrite the
 # tree.
 
+# Both depth-first and breadth-first traversals are supplied. The
+# traversals can also keep a list of all the vertice "names" during
+# the recursion to generate unique names for vertices.
+
 #----------------------------------------------------------------------
 package Traverse;
 
 sub with_ns {
+  # create a traversal with namespace tracking.
+
   my ( undef , $root ) = splice @_,0,2;
 
   unless ( exists $root->{name} ) {
@@ -358,6 +365,8 @@ sub with_ns {
 }
 
 sub simple {
+  # create a traversal without namespace tracking.
+
   my ( undef , $root ) = splice @_,0,2;
 
   bless {
@@ -371,39 +380,63 @@ sub ns {
   @{ $self->{ns} };
 }
 
+sub pop_ns {
+  my $self = shift();
+
+  return unless( exists $self->{ns} );
+
+  if ( @{ $self->{ns} } > 1 ) {
+    pop @{ $self->{ns} };
+  }
+}
+
+sub is_node {
+  my $v = shift();
+  return ( exists $v->{ptable} ) ? 1 : 0;
+}
+
+sub drop_child {
+  my ( $reason , $tree , $child ) = @_;
+
+  # verbosity control for this message should go here.
+
+  print STDERR "pruning AST tree: $reason\n";
+  print STDERR ::Dumper($tree);
+
+  delete $tree->{$child};
+}
+
 sub apply {
   my ( $self, $vertex ) = splice @_,0,2;
 
-  my $rewrite_flags = 0;
-
   map {
-    $rewrite_flags = &{ $_ }( $self , $vertex );
+    my $drop = &{ $_ }( $self , $vertex );
 
-    if ( defined ( $rewrite_flags ) && $rewrite_flags ) {
-      goto stop_with_flags;
+    if ( defined ( $drop ) && $drop ) {
+      return $drop;
     }
 
   } @{ $self->{apply} };
 
-  stop_with_flags:
-  return $rewrite_flags;
+  undef;
 }
 
-sub apply_depth_first {
-  my $self = shift();
-  $self->{apply} = [ @_ ];
-  $self->depth_first( $self->{root} )
-}
-
-
-sub depth_first {
-  my ( $self , $vertex ) = @_;
+sub walk_children {
+  my ( $self, $vertex, $recursion ) = @_;
 
   # seek depth by recursing first.
   if ( exists $vertex->{ptable} ) {
     my $ptable = $vertex->{ptable};
 
     foreach my $child ( keys %{$ptable} ) {
+
+      if ( $child =~ m/^\s*$/ ) {
+        # getting some weird garbage from keys , filter the crap until I can find the
+        # bug, probably have an odd number of elements in the hash or some such crap.
+
+        drop_child( "warning ! deleting \"$child\" garbage key in ptable", $ptable, $child);
+        next;
+      }
 
       # recurse, updating ns if we are tracking namespaces
       push @{ $self->{ns} } , $child if ( exists $self->{ns} );
@@ -414,19 +447,62 @@ sub depth_first {
 
       # The one thing a function can't do is modify the ptable of
       # the vertex's parent.
-      my $flags = $self->depth_first( $ptable->{$child} , @_ );
-      if ( defined( $flags ) && $flags ) {
-        delete $ptable->{$child};
+
+      my $drop = &{ $recursion }( $self, $ptable->{$child}, @_ );
+
+      if ( defined( $drop ) && $drop ) {
+        drop_child( $drop , $ptable, $child );
       }
+    }
+
+    # if all the children are pruned remove ->ptable, so the is_node test
+    # will work correctly.
+
+    unless ( keys %{$ptable} > 0 ) {
+      delete $vertex->{ptable};
     }
   }
 
-  pop @{ $self->{ns} } if ( exists $self->{ns} );
+  undef;
+}
 
-#  print STDERR "vertex is ", ::Dumper( $vertex ), "\n";
-  ( $self->apply( $vertex ) )
-    ? 1
-    : 0;
+sub depth_first {
+  my ( $self , $vertex ) = @_;
+
+  $self->walk_children( $vertex, \&depth_first );
+
+  my $drop = $self->apply( $vertex );
+
+  $self->pop_ns();
+  $drop;
+}
+
+sub breadth_first {
+  my ( $self , $vertex ) = @_;
+
+  my $drop = $self->apply( $vertex );
+
+  unless ( defined( $drop ) && $drop ) {
+    $self->walk_children( $vertex, \&breadth_first );
+  }
+
+  $self->pop_ns();
+  $drop;
+}
+
+sub apply_depth_first {
+  my $self = shift();
+
+  $self->{apply} = [ @_ ];
+  $self->depth_first( $self->{root} )
+}
+
+
+sub apply_breadth_first {
+  my $self = shift();
+
+  $self->{apply} = [ @_ ];
+  $self->breadth_first( $self->{root} )
 }
 
 #----------------------------------------------------------------------
@@ -520,16 +596,9 @@ sub define_complete {
       sub {
         my ( $t , $v ) = @_;
 
-#        print STDERR "v is ",::Dumper($v), "\n";
-
         # no longer need the data buffer. purely a SAX parsing mechanism.
         if ( exists $v->{data} ) {
           delete $v->{data};
-        }
-
-        # This actually belongs at the beginning of emit.
-        unless ( exists $v->{decl} ) {
-          $v->{decl} = 'placeholder';
         }
 
         undef;
@@ -1111,29 +1180,13 @@ package Syntax;
 
 our @AST = ();
 
-# a namespace stack allows me to avoid doing child -> parent linking
-# in the AST tree.
-
-# I am keeping the namespace generation in Syntax in the hope that I
-# can someday compact the namespace identifiers without making them
-# too ugly.
-
-our @namespace = ();
-
 sub reset {
   our @AST = ();
-  our @namespace = ();
 }
 
 sub queue {
   # add a tree to the AST list.
   push our @AST , shift();
-}
-
-sub reject_tree {
-  my ( $reason , $tree ) = shift();
-  print STDERR "rejecting AST tree: $reason\n";
-  print STDERR ::Dumper($tree);
 }
 
 #----------------------------------------------------------------------
@@ -1144,11 +1197,6 @@ sub reject_tree {
 # not specialized for the parse phase.
 
 *get_placeholder = \*Builder::get_placeholder_for;
-
-sub is_node {
-  my $v = shift();
-  return ( exists $v->{name} ) ? 1 : 0;
-}
 
 sub increment_autosub {
   # if the syntax analysis was a real phase it would be possible
@@ -1166,8 +1214,6 @@ sub increment_autosub {
 }
 
 sub evaluate_macro_body {
-  our @namespace;
-
   # This is a critical design point: where all of the AST rewrites begin.
 
   # All placeholders are generated as unique. The advantage is that
@@ -1191,10 +1237,10 @@ sub evaluate_macro_body {
   # correctness , which is do everything the original else-mode
   # definitions could do.
 
-  my $tree = shift();
+  my $v = shift();
 
-  my $i ; for ( $i = 0 ; $i < @{ $tree->{macro} } ; $i++ ) {
-    my $ref = $tree->{macro}[$i];
+  my $i ; for ( $i = 0 ; $i < @{ $v->{macro} } ; $i++ ) {
+    my $ref = $v->{macro}[$i];
 
     # skip over the literal spans in the macro
     next unless ( 'Builder::Ref' eq ref( $ref ) );
@@ -1203,7 +1249,7 @@ sub evaluate_macro_body {
     my ( $modifier , $deref ) = $ref->{expr} =~ m/([@])?(.*)/;
     # print STDERR "expr: $expr modifier = $modifier  , deref = $deref\n";
 
-    my $p = get_placeholder( $deref , $tree );
+    my $p = get_placeholder( $deref , $v );
 
     # implement autosub computation
     if ( defined( $modifier ) && $modifier eq '@' ) {
@@ -1222,73 +1268,28 @@ sub evaluate_macro_body {
     # replace the AST reference with the syntax reference
 
     delete $ref->{expr};
-    $ref->{namespace} = [ @namespace , $deref ];
+    $ref->{id} = $deref;
 
-    $tree->{macro}[$i] = bless $ref , 'Syntax::Ref';
+    $v->{macro}[$i] = bless $ref , 'Syntax::Ref';
   }
 }
 
 sub rewrite_tree {
-  our @namespace;
-  my $tree = shift();
+  my ( $t , $v ) = @_;
 
-  # even placeholders that aren't really templates with bodies should
-  # have a ->{name} field. Otherwise we are screwed.
-
-  unless ( exists $tree->{name} ) {
-    reject_tree( 'token does not have a name' , $tree );
-    return 0;
+  unless ( exists $v->{description} ) {
+    $v->{description} = "any input";
   }
 
-  # add another level to the namespace, record in the tree
-  push @namespace , $tree->{name};
-  $tree->{namespace} = [ @namespace ];
-
-  # we don't need to distinguish between nodes and leaves anymore
-  # for this vertex.
-  delete $tree->{name};
-
-  unless ( exists $tree->{description} ) {
-    $tree->{description} = "any input";
+  if ( exists $v->{macro} ) {
+    evaluate_macro_body( $v );
   }
 
-  my $ptable = $tree->{ptable};
-
-  foreach my $v ( keys %{$ptable} ) {
-    if ( $v =~ m/^\s*$/ ) {
-      # getting some weird garbage from keys , filter the crap until I can find the
-      # bug, probably have an odd number of elements in the hash or some such crap.
-
-      print STDERR "warning ! deleting \"$v\" garbage key in ptable\n";
-      delete $ptable->{$_};
-      next;
-    }
-
-    if ( is_node( $ptable->{$v} ) ) {
-      unless ( rewrite_tree( $ptable->{$v} ) ) {
-        delete $ptable->{$v};
-      }
-    }
-    else {
-      # add in the fields that are always missing on the leafs,
-      # this keeps the emitter simple.
-      $ptable->{$v}->{decl} = 'placeholder';
-      $ptable->{$v}->{namespace} = [ @namespace , $v ];
-    }
-  }
-
-  if ( exists $tree->{macro} ) {
-    evaluate_macro_body( $tree );
-  }
-
-  # discard the current namespace level
-  pop @namespace;
-
-  return 1;
+  return 0;
 }
 
 sub rewrite {
-  our @AST, $language;
+  our @AST;
 
   if ( Settings::debug_switch( 's-struct' ) ) {
     print STDERR "dumping syntax tree before re-write\n";
@@ -1296,9 +1297,10 @@ sub rewrite {
   }
 
   map {
-    if ( rewrite_tree( $_ ) ) {
-      Emit::queue( $_ );
-    }
+    my $t = simple Traverse( $_ );
+
+    $t->apply_breadth_first( \&rewrite_tree );
+    Emit::queue( $_ );
   } @AST;
 
   if ( Settings::debug_switch( 's-struct' ) ) {
@@ -1356,7 +1358,7 @@ sub quote_context {
 # it should not be difficult to convert a placeholder to a token.
 
 sub open {
-  my ( $namespace , $type , $lang ) = @_;
+  my ( $t , $type , $lang ) = @_;
 
   # tokens are symbols we will enter in the buffer, so keep them lowerspace.
   # placeholders are children of tokens, upper-case them to match the
@@ -1366,8 +1368,8 @@ sub open {
   # be user customizable for a more generic version.
 
   my $name = ( $type eq 'token' )
-    ? join('-', @$namespace )
-    : mk_decl_ident( @$namespace );
+    ? join('-', $t->ns() )
+    : mk_decl_ident( $t->ns() );
 
   # the opening stanza deletes a previous definition and then begins a new
   # declaration.
@@ -1423,11 +1425,11 @@ DUPSPEC
 }
 
 sub pref {
-  my $ref = shift();
+  my ( $t , $ref ) = @_;
 
   my $text =
     quote_context( $ref->{context},
-                   mk_ref_ident( @{ $ref->{namespace} } ) );
+                   mk_ref_ident( $t->ns(), $ref->{id} ) );
 
   if ( $ref->{repeat} ) {
     $text .= "...";
@@ -1446,13 +1448,14 @@ TERMINAL
 }
 
 sub macro {
+  my $t = shift();
   my $description = quote( shift() );
 
   my @lines = split /\n/ ,
     join( '' , map {
       my $text;
       if ( 'Syntax::Ref' eq ref ( $_ ) ) {
-        $text = pref( $_ );
+        $text = pref( $t, $_ );
       }
       else {
         $text = $_;
@@ -1531,7 +1534,11 @@ sub queue {
 sub generate_vertex {
   my ( $t , $v ) = @_;
 
-  gen_open( $v->{namespace}, $v->{decl}, $Settings::emit_for_language );
+  gen_open( $t,
+            ( exists $v->{decl} )
+              ? $v->{decl}
+              : 'placeholder',
+            $Settings::emit_for_language );
 
   gen_autosub( ( exists $v->{autosub} ) ? $v->{autosub} : 0 );
 
@@ -1543,7 +1550,7 @@ sub generate_vertex {
   @description = map { trim_ws( $_ ) } trim_ws_lines( reverse @description);
 
   if ( exists $v->{macro} ) {
-    gen_macro( join('',@description), @{ $v->{macro} } );
+    gen_macro( $t, join('',@description), @{ $v->{macro} } );
   }
   else {
     gen_terminal( join('',@description) );
@@ -1552,14 +1559,23 @@ sub generate_vertex {
   gen_close();
 
   flush();
+
+  undef;
 }
 
 sub generate {
+  our @queue;
+
+  if ( Settings::debug_switch( 'e-struct' ) ) {
+    print STDERR "dumping syntax tree before emit\n";
+    print STDERR ::Dumper( \@queue );
+  }
+
   map {
-    my $t = simple Traverse ( $_ );
+    my $t = with_ns Traverse ( $_ );
 
     $t->apply_depth_first( \&generate_vertex );
-  } our @queue;
+  } @queue;
 }
 
 #----------------------------------------------------------------------
