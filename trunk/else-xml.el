@@ -185,20 +185,22 @@
   ;; so that you can enter a macro, evaluate it for the current language
   ;; and then return to the code file.
 
-  (let
-    ((language source-language)
-     (template-buffer (generate-new-buffer "else-XML macro"))
+  (lexical-let
+    ((template-buffer (generate-new-buffer "else-XML macro"))
      (xml-major-mode (assoc-default "foo.xml" auto-mode-alist
                        'string-match))
+
+      ;; the helpers need to be generated before we switch
+      ;; to the template buffer so they can use the current-buffer
+      ;; variables
+
+      (to-file (else-xml-to-file))
+      (to-asm  (else-xml-to-assembler))
+
       entry-point  ;; variable recording where the point should be positioned.
       )
 
     (with-current-buffer template-buffer
-      ;; set a emit target for compiling the template so we
-      ;; can compile the template without prompting the user.
-
-      (set (make-local-variable 'else-emit-target) language)
-
       (if xml-major-mode (funcall xml-major-mode))
 
       ;; when we kill the buffer get rid of the window associated so the user
@@ -220,13 +222,13 @@
         (lambda ()
           "write the tokens as valid xml to a file"
           (interactive)
-          (else-xml-output-valid-xml (current-buffer) (else-xml-to-file))))
+          (else-xml-output-valid-xml (current-buffer) to-file)))
 
       (local-set-key (kbd "C-l c")
         (lambda ()
           "compile the buffer using the xml assembler"
           (interactive)
-          (else-xml-output-valid-xml (current-buffer) (else-xml-to-assembler))))
+          (else-xml-output-valid-xml (current-buffer) to-asm)))
 
 
       ;; generate some minimal boilder-plate for ergonomics
@@ -269,7 +271,7 @@
    with the buffer's else-emit-target value as the language target."
 
   (lexical-let
-    ((target else-emit-target))
+    ((target source-language))
 
     (lambda ( buffer )
       (else-xml-assemble target buffer))
