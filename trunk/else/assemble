@@ -335,6 +335,101 @@ sub concat {
 }
 
 #----------------------------------------------------------------------
+# Traverse
+#----------------------------------------------------------------------
+
+# Traverse the tree form applying transform functions to rewrite the
+# tree.
+
+#----------------------------------------------------------------------
+package Traverse;
+
+sub with_ns {
+  my ( undef , $root ) = splice @_,0,2;
+
+  unless ( exists $root->{name} ) {
+    die "Traverse::depth_first root does not have a name attached\n";
+  }
+
+  bless {
+    root => $root,
+    ns => [ $root->{name} ],
+  }, 'Traverse';
+}
+
+sub simple {
+  my ( undef , $root ) = splice @_,0,2;
+
+  bless {
+    root => $root,
+    apply => [ @_ ],
+  }, 'Traverse';
+}
+
+sub ns {
+  my $self = shift();
+  @{ $self->{ns} };
+}
+
+sub apply {
+  my ( $self, $vertex ) = splice @_,0,2;
+
+  my $rewrite_flags = 0;
+
+  map {
+    $rewrite_flags = &{ $_ }( $self , $vertex );
+
+    if ( defined ( $rewrite_flags ) && $rewrite_flags ) {
+      goto stop_with_flags;
+    }
+
+  } @{ $self->{apply} };
+
+  stop_with_flags:
+  return $rewrite_flags;
+}
+
+sub apply_depth_first {
+  my $self = shift();
+  $self->{apply} = [ @_ ];
+  $self->depth_first( $self->{root} )
+}
+
+
+sub depth_first {
+  my ( $self , $vertex ) = @_;
+
+  # seek depth by recursing first.
+  if ( exists $vertex->{ptable} ) {
+    my $ptable = $vertex->{ptable};
+
+    foreach my $child ( keys %{$ptable} ) {
+
+      # recurse, updating ns if we are tracking namespaces
+      push @{ $self->{ns} } , $child if ( exists $self->{ns} );
+
+      # the functions applied to the vertices will have a reference
+      # to the vertex they operate on. They can modify the tree
+      # directly.
+
+      # The one thing a function can't do is modify the ptable of
+      # the vertex's parent.
+      my $flags = $self->depth_first( $ptable->{$child} , @_ );
+      if ( defined( $flags ) && $flags ) {
+        delete $ptable->{$child};
+      }
+    }
+  }
+
+  pop @{ $self->{ns} } if ( exists $self->{ns} );
+
+#  print STDERR "vertex is ", ::Dumper( $vertex ), "\n";
+  ( $self->apply( $vertex ) )
+    ? 1
+    : 0;
+}
+
+#----------------------------------------------------------------------
 # Builder
 #----------------------------------------------------------------------
 
@@ -414,9 +509,33 @@ sub define_complete {
   # in the data buffer.
   define_copy_macro( $finish );
 
+  # remove parsing artifacts from the tree.
+
   # if we have reached the root of the tree queue it for Syntax
 
-  unless ( @defines > 0 ) {
+  if ( @defines < 1 ) {
+    my $cleanup = simple Traverse( $finish );
+
+    $cleanup->apply_depth_first(
+      sub {
+        my ( $t , $v ) = @_;
+
+#        print STDERR "v is ",::Dumper($v), "\n";
+
+        # no longer need the data buffer. purely a SAX parsing mechanism.
+        if ( exists $v->{data} ) {
+          delete $v->{data};
+        }
+
+        # This actually belongs at the beginning of emit.
+        unless ( exists $v->{decl} ) {
+          $v->{decl} = 'placeholder';
+        }
+
+        undef;
+      }
+     );
+
     # TODO:
 
     # When it's time to prototype the error checking put it here so it can be
@@ -1129,16 +1248,6 @@ sub rewrite_tree {
   # for this vertex.
   delete $tree->{name};
 
-  # no longer need the data buffer. purely a SAX parsing mechanism.
-  if ( exists $tree->{data} ) {
-    delete $tree->{data};
-  }
-
-  # make sure we always have a decl. default to placeholder unless specified.
-  unless ( exists $tree->{decl} ) {
-    $tree->{decl} = 'placeholder';
-  }
-
   unless ( exists $tree->{description} ) {
     $tree->{description} = "any input";
   }
@@ -1265,7 +1374,7 @@ sub open {
 
   my $kind = mk_decl_ident( $type );
 
-  Emit::push_emit( <<OPEN_DECL );
+  print STDOUT <<OPEN_DECL;
 DELETE $kind $name -
   /LANGUAGE="$lang" -
 DEFINE $kind $name -
@@ -1276,20 +1385,20 @@ OPEN_DECL
 }
 
 sub close {
-  Emit::pop_emit( "END DEFINE\n" );
+  print STDOUT "END DEFINE\n";
 }
 
 sub autosub {
   my $count = shift();
 
   if ( $count ) {
-    Emit::printer( <<SUBSPEC );
+    print STDOUT <<SUBSPEC;
   /AUTO_SUBSTITUTE -
   /SUBSTITUTE_COUNT=$count -
 SUBSPEC
   }
   else {
-    Emit::printer( <<SUBSPEC );
+    print STDOUT <<SUBSPEC;
   /NOAUTO_SUBSTITUTE -
 SUBSPEC
   }
@@ -1307,7 +1416,7 @@ sub repeat {
 
   my $dup = $repeat_abbrev{ $repeat };
 
-  Emit::printer( <<DUPSPEC );
+  print STDOUT <<DUPSPEC;
   /SEPARATOR="$sep" -
   /DUPLICATE="$dup" -
 DUPSPEC
@@ -1330,7 +1439,7 @@ sub pref {
 sub terminal {
   my $description = quote( shift() );
 
-  Emit::printer( <<TERMINAL );
+  print STDOUT <<TERMINAL;
   /TYPE=TERMINAL -
 $description
 TERMINAL
@@ -1354,7 +1463,7 @@ sub macro {
   # get rid of both leading and trailing whitespace lines
   @lines = reverse Emit::trim_ws_lines( reverse Emit::trim_ws_lines( @lines ) );
 
-  Emit::printer(<<MACRO, join("\n", map { quote( $_ ) } @lines ) . "\n" );
+  print STDOUT <<MACRO, join("\n", map { quote( $_ ) } @lines ) . "\n";
   /DESCRIPTION=$description -
   /TYPE=NONTERMINAL -
 MACRO
@@ -1365,33 +1474,8 @@ MACRO
 #----------------------------------------------------------------------
 package Emit;
 
-#----------------------------------------------------------------------
-# emit stack.
-#----------------------------------------------------------------------
-
-# The recursion involved in emitting the trees means that writing
-# output directly to a stream during processing won't work.
-# serialize at complete definitions with a stack.
-
-our @emit_stack = ();
-
-sub push_emit {
-  push our @emit_stack, join('', @_ );
-}
-
-sub printer {
-  our @emit_stack;
-  $emit_stack[-1] .= join('', @_ );
-}
-
-sub pop_emit {
-  our @emit_stack;
-  print STDOUT join('', pop @emit_stack , @_ );
-}
-
 sub flush {
-  our @emit_stack;
-  pop_emit() if ( @emit_stack > 0 );
+  # flush stdout
 }
 
 sub trim_ws {
@@ -1418,7 +1502,6 @@ sub trim_ws_lines {
 our @queue = ();
 
 sub reset {
-  our @emit_stack = ();
   our @queue = ();
 }
 
@@ -1445,38 +1528,38 @@ sub queue {
   push our @queue, shift();
 }
 
-sub generate_tree {
-  my $tree = shift();
+sub generate_vertex {
+  my ( $t , $v ) = @_;
 
-  gen_open( $tree->{namespace}, $tree->{decl}, $Settings::emit_for_language );
+  gen_open( $v->{namespace}, $v->{decl}, $Settings::emit_for_language );
 
-  # Ideally what is in the ptable is all terminal type definitions.
-  # anything that is non-terminal should be outside of ptable.
+  gen_autosub( ( exists $v->{autosub} ) ? $v->{autosub} : 0 );
 
-  map { generate_tree( $_ ) } ( values %{ $tree->{ptable} } );
-
-  gen_autosub( ( exists $tree->{autosub} ) ? $tree->{autosub} : 0 );
-
-  if ( exists $tree->{repeat} ) {
-    gen_repeat( $tree->{separator} , $tree->{repeat} );
+  if ( exists $v->{repeat} ) {
+    gen_repeat( $v->{separator} , $v->{repeat} );
   }
 
-  my @description = trim_ws_lines( split /\n/, $tree->{description} );
+  my @description = trim_ws_lines( split /\n/, $v->{description} );
   @description = map { trim_ws( $_ ) } trim_ws_lines( reverse @description);
 
-  if ( exists $tree->{macro} ) {
-    gen_macro( join('',@description), @{ $tree->{macro} } );
+  if ( exists $v->{macro} ) {
+    gen_macro( join('',@description), @{ $v->{macro} } );
   }
   else {
     gen_terminal( join('',@description) );
   }
 
   gen_close();
+
+  flush();
 }
 
 sub generate {
-  map { generate_tree( $_ ) } our @queue;
-  flush();
+  map {
+    my $t = simple Traverse ( $_ );
+
+    $t->apply_depth_first( \&generate_vertex );
+  } our @queue;
 }
 
 #----------------------------------------------------------------------
