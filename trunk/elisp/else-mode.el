@@ -1,10 +1,12 @@
 ;;; else-mode.el --- Emacs Language Sensitive Editor (ELSE)
 ;;
-;; Copyright (C) 1997 - 2006 Peter Milliken
+;; Copyright (C) 1997 - 2007 Peter Milliken
 ;;
 ;; Author: Peter Milliken <peterm@resmed.com.au>
 ;;                        <peter.milliken@exemail.com.au>
-;; Version: 1.21
+;; $Date: $
+;; $Revision: $
+;; Version: 1.22
 ;; Keywords: language sensitive abbreviation template placeholder token
 ;;
 ;; GNU Emacs is free software; you can redistribute it and/or modify
@@ -46,6 +48,7 @@
 (condition-case nil
     (progn
       (require 'expand-a-word)
+      (expand-create-menu-keymap)
       (setq else-expand-a-word-available t))
   (error
    (setq else-expand-a-word-available nil)))
@@ -96,23 +99,23 @@
 
 ;; XEmacs behaves differently in the before/after change functions than FSF
 ;; Emacs. The following three variables are used in the XEmacs code. All XEmacs
-;; code is differentiated using a 'cond' statement and the
-;; 'else-in-xemacs variable setting.
+;; code is differentiated using a 'cond' statement and the 'else-in-xemacs
+;; variable setting.
 (defvar else-move-change nil)
 (defvar else-move-to-position nil)
 (defvar else-in-xemacs (integerp (string-match "XEmacs\\|Lucid" (emacs-version))))
 
-;; Do some compatability between XEmacs and FSF Emacs - hopefully can
-;; remove this one day when XEmacs matches FSF? If not, then it
-;; doesn't matter as the issue will work either way.
+;; Do some compatibility between XEmacs and FSF Emacs - hopefully can remove
+;; this one day when XEmacs matches FSF? If not, then it doesn't matter as the
+;; issue will work either way.
 (unless (boundp 'undo-in-progress)
   (defvar undo-in-progress nil
-   "Indicate that an indo is in progress to before/after change fns.")
+   "Indicate that an undo is in progress to before/after change fns.")
   (defadvice undo-more (around else-undo-more activate compile)
      (let ((undo-in-progress t)) ad-do-it)))
 
-;; The following constants define the offsets for the nth and nthcdr
-;; functions into the data element which records each line of the 'body' of a
+;; The following constants define the offsets for the nth and nthcdr functions
+;; into the data element which records each line of the 'body' of a
 ;; placeholder/token definition. The meanings are:
 ;;
 ;; else-body-type-ref            - if menu line then /placeholder or /token (?p
@@ -257,15 +260,6 @@
 (defvar else-please-duplicate nil)      ; t when the placeholder was followed
                                         ; by ellipses.
 
-;; This is a flag which is used by the before and after change functions. It
-;; transfers information about whether the "auto-substitute" mode has just gone
-;; active to the after change function. This is because the after change
-;; function receives a confusing begin/end pair (because the before change
-;; function has deleted the placeholder) so it can't work out what has
-;; happened. This flag being set t means that it interprets the change as a
-;; single character insert.
-(defvar else-sub-active-toggle nil)
-
 (defvar else-Mandatory-Placeholder nil) ; Flag used to indicate if current
                                         ; placeholder is mandatory {} or
                                         ; optional [].
@@ -379,14 +373,14 @@ Contains True or False (t or nil) and is indexed by character code")
   "Language character vectors length")
 
 
-;;; Now make these variables buffer local. At the moment, these are just
-;;; buffer local copies that refer to the full language templates, ideally, we
-;;; would want to offer the facility of being able to customise the templates
-;;; of a language for each buffer ie in one program you might be doing a lot
-;;; of case statements and in another buffer there may be more 'if' statements
-;;; so the user may decide it would be nice to have two versions of the
-;;; STATEMENT placeholder. This is currently not available but could easily be
-;;; added. At the moment, change one and all buffers are affected.
+;;; Now make these variables buffer local. At the moment, these are just buffer
+;;; local copies that refer to the full language templates, ideally, we would
+;;; want to offer the facility of being able to customise the templates of a
+;;; language for each buffer ie in one program you might be doing a lot of case
+;;; statements and in another buffer there may be more 'if' statements so the
+;;; user may decide it would be nice to have two versions of the STATEMENT
+;;; placeholder. This is currently not available but could easily be added. At
+;;; the moment, change one and all buffers are affected.
 (make-variable-buffer-local 'Placeholder)
 (make-variable-buffer-local 'Token)
 (make-variable-buffer-local 'Language-Specifics)
@@ -399,16 +393,16 @@ Contains True or False (t or nil) and is indexed by character code")
 
 ;; This variable is used to communicate the "type" of symbols being processed
 ;; during an ELSE compile for fast loading operation ie else-compile-fast-load
-;; and else-store-element use this variable to communicate what the element
-;; type that is being "stored". This is only necessary because the mapatoms
-;; process doesn't allow more that the one argument to the called routine.
+;; and else-store-element use this variable to communicate what the element type
+;; that is being "stored". This is only necessary because the mapatoms process
+;; doesn't allow more that the one argument to the called routine.
 (defvar else-type-of-symbols ?p)
 
 ;; This is the marker that tracks the "read" process used by
 ;; else-compile-fast-load and else-restore. We use a marker into the restore
 ;; file because the 'read' function automatically increments the marker as it
-;; reads each line. Again, the variable is only required to be global because
-;; of the use of 'mapatoms'.
+;; reads each line. Again, the variable is only required to be global because of
+;; the use of 'mapatoms'.
 (defvar else-read-marker nil)
 
 (defconst else-lse-ext "\.lse")
@@ -416,11 +410,6 @@ Contains True or False (t or nil) and is indexed by character code")
 
 (defvar else-placeholder-overlay nil
   "Placeholder overlay is used by the Voice Coder modifications to ELSE.")
-
-(defun else-identifier-for-command ()
-  (if (symbolp this-command)
-    (symbol-name this-command)
-    "other"))
 
 ;; This is the after change function. Its primary purpose is to act in
 ;; situations where the auto-substitute function is active and the change has
@@ -432,35 +421,27 @@ Contains True or False (t or nil) and is indexed by character code")
         (local-begin begin)
         (local-end end))
 
-    ;; Only duplicate any changes if the change has occurred within the auto-sub
-    ;; area.
-    (setq else-after-var (append (list begin end length
-                                       (else-identifier-for-command))
-                                 else-after-var))
     ;; Xemacs changes here
-    (cond (else-in-xemacs
-           (if else-move-change
-               (progn
-                 (setq local-begin (marker-position else-move-to-position))
-                 (setq local-end (+ local-begin (- end begin)))
-                 (goto-char local-begin)
-                 (setq move-text (buffer-substring begin end))
-                 (delete-region begin end)
-                 ;; At this point we need to 'modify' the undo list for the
-                 ;; buffer i.e. to allow the user to perform a seamless undo, we
-                 ;; have to delete the events that have just occurred e.g. the
-                 ;; insert of text into the buffer at the 'wrong' place and the
-                 ;; subsequent deleting of that text. The only event we wish to
-                 ;; remain in the undo list is the insertion of the text into
-                 ;; the 'correct' place in the buffer (which will be
-                 ;; accomplished directly after we remove the two mentioned
-                 ;; events).
-                 (setq buffer-undo-list (cdr (cdr buffer-undo-list)))
-                 ;; Now insert the text where it should have originally
-                 ;; gone. Note that this is the event that will be recorded in
-                 ;; the buffer unto list.
-                 (insert move-text)
-                 (setq else-move-change nil)))))
+    (if (and else-in-xemacs else-move-change)
+        (progn
+          (setq local-begin (marker-position else-move-to-position))
+          (setq local-end (+ local-begin (- end begin)))
+          (goto-char local-begin)
+          (setq move-text (buffer-substring begin end))
+          (delete-region begin end)
+          ;; At this point we need to 'modify' the undo list for the buffer
+          ;; i.e. to allow the user to perform a seamless undo, we have to
+          ;; delete the events that have just occurred e.g. the insert of text
+          ;; into the buffer at the 'wrong' place and the subsequent deleting of
+          ;; that text. The only event we wish to remain in the undo list is the
+          ;; insertion of the text into the 'correct' place in the buffer (which
+          ;; will be accomplished directly after we remove the two mentioned
+          ;; events).
+          (setq buffer-undo-list (cdr (cdr buffer-undo-list)))
+          ;; Now insert the text where it should have originally gone. Note that
+          ;; this is the event that will be recorded in the buffer unto list.
+          (insert move-text)
+          (setq else-move-change nil)))
 
     (if (and (not undo-in-progress)
              else-Auto-Sub-Active
@@ -468,9 +449,6 @@ Contains True or False (t or nil) and is indexed by character code")
              (< local-end (marker-position (cdr (nth 1 else-Auto-Sub-Marker-List)))))
         (progn
           (save-excursion
-            (if else-sub-active-toggle
-                (progn
-                  (setq else-sub-active-toggle nil)))
             ;; want to iterate over all of the active markers in the marker
             ;; list. This starts at the second entry in the marker list.
             (setq marker-index 2)
@@ -496,7 +474,7 @@ Contains True or False (t or nil) and is indexed by character code")
               (setq marker-index (1+ marker-index))))))))
 
 (defun else-after-token ()
-  "Test if string preceeding point is a valid token."
+  "Test if string preceding point is a valid token."
   (let ((here (point))
         (result nil))
     (save-excursion
@@ -534,18 +512,9 @@ Contains True or False (t or nil) and is indexed by character code")
                       (setq result t)))))))
     result))
 
-;; These variables are used for diagnostic purposes only. They will eventually
-;; (?) disappear once I am convinced the before and after change code has all
-;; the wrinkles removed.
-(defvar else-before-var nil)
-(defvar else-after-var nil)
-(defvar zero-diff 0)
-(defvar zero-begin 0)
-(defvar zero-end 0)
-
 ;; The Placeholder and Token variables are obarrays of considerable
-;; length. Rather than take up space in Emacs memory when ELSE is not active,
-;; I don't bother initialising them until they are required. This routine is
+;; length. Rather than take up space in Emacs memory when ELSE is not active, I
+;; don't bother initialising them until they are required. This routine is
 ;; called by the language loading procedures.
 (defun else-check-and-init-globals (language)
   "If language doesn't exist, create a set of variables for it."
@@ -596,36 +565,19 @@ Contains True or False (t or nil) and is indexed by character code")
         (sub-marker-counter-limit))
     (progn
       (cond (else-in-xemacs
-             ;; Make sure that the flag is reset i.e. it is possible
-             ;; (but unlikely) that the variable was not cleared for
-             ;; some reason by the after change function. This is just
-             ;; a precaution...
+             ;; Make sure that the flag is reset i.e. it is possible (but
+             ;; unlikely) that the variable was not cleared for some reason by
+             ;; the after change function. This is just a precaution...
              (setq else-move-change nil)))
-      (save-excursion
-        ;; Ideally we want to detect any advertised-undo commands at
-        ;; this point so that we don't try and duplicate changes in
-        ;; the after-change function. Unfortunately, command
-        ;; processing has apparently set the "this-command" variable
-        ;; to "t" ie it is useless to detect the change here - we will
-        ;; use the undo-in-progress flag in the after-change-function
-        ;; to handle things - thanks to Stefan Monnier for this tip.
-        (setq else-before-var (append (list begin end
-                                        (else-identifier-for-command))
-                                      else-before-var))
-        (setq zero-begin (append (list begin end) zero-begin))
-        (if (equal 0 (- end begin))
-            (progn
-              (setq zero-diff (+ 1 zero-diff))
-              (setq zero-begin 0)))
 
-        ;; check if the change is a keystroke i.e. a "self-insert"
-        ;; character/command. We detect this by checking if the length of the
-        ;; keystrokes is 1 e.g. a single keypress will result in a single length
-        ;; key vector from the "this-command-keys-vector" function.  This is a
-        ;; "safe" test because any "and" will "short-circuit" on the first
-        ;; "evaluation" that equates to "nil". i.e. the compare-strings won't
-        ;; "happen" unless the length of the key vector is 1.
-        (setq zero-diff (1+ zero-diff))
+      (save-excursion
+        ;; Ideally we want to detect any advertised-undo commands at this point
+        ;; so that we don't try and duplicate changes in the after-change
+        ;; function. Unfortunately, command processing has apparently set the
+        ;; "this-command" variable to "t" ie it is useless to detect the change
+        ;; here - we will use the undo-in-progress flag in the
+        ;; after-change-function to handle things - thanks to Stefan Monnier for
+        ;; this tip.
 
         ;; Only process changes in a placeholder if the change region is not
         ;; exactly the boundaries of an existing placeholder i.e. commands such
@@ -639,6 +591,12 @@ Contains True or False (t or nil) and is indexed by character code")
                  (not (= begin else-placeholder-start))
                  (not (= end else-placeholder-end)))
             (progn
+              ;; Protect against the editor being in overwrite mode - it just
+              ;; doesn't make sense to run ELSE in overwrite mode, so toggle the
+              ;; mode back into insert mode.
+              (if overwrite-mode
+                  (overwrite-mode -1))
+
               ;; Check if the template definition contains an "oninsert" elisp
               ;; action - call it if it does.
               (condition-case err
@@ -655,13 +613,11 @@ Contains True or False (t or nil) and is indexed by character code")
                 (error
                  (message "%s" (error-message-string err))))
 
-              (setq zero-diff (1+ zero-diff))
               (setq is-auto-sub (char-equal (get else-current-definition
                                                  'else-substitute-ref)
                                             ?a))
-              ;; In a placeholder it is either an auto-substitute or
-              ;; not, in either case  clear out the substitution
-              ;; markers.
+              ;; In a placeholder it is either an auto-substitute or not, in
+              ;; either case clear out the substitution markers.
               (setq sub-marker-counter-limit
                     (car else-Auto-Sub-Marker-List))
               (setq sub-marker-counter 1)
@@ -673,8 +629,8 @@ Contains True or False (t or nil) and is indexed by character code")
                                       else-Auto-Sub-Marker-List))
                             nil)
                 (setq sub-marker-counter (1+ sub-marker-counter)))
-              ;; The markers aren't "active" yet, must make sure that
-              ;; the secondary markers/placeholders are present!
+              ;; The markers aren't "active" yet, must make sure that the
+              ;; secondary markers/placeholders are present!
               (setq else-Auto-Sub-Active nil)
               (if is-auto-sub
                   (progn
@@ -707,19 +663,18 @@ Contains True or False (t or nil) and is indexed by character code")
               (if is-auto-sub
                   (save-excursion
                     (goto-char else-placeholder-end)
-                    ;; Set up all of the after change sub markers. The
-                    ;; number is controlled by the number of counts in
-                    ;; the placeholder definition. We increment the
-                    ;; following limit number because of list contains
-                    ;; a counter as the first element.
+                    ;; Set up all of the after change sub markers. The number is
+                    ;; controlled by the number of counts in the placeholder
+                    ;; definition. We increment the following limit number
+                    ;; because of list contains a counter as the first element.
                     (setq sub-marker-counter-limit
                           (1+
                            (get else-current-definition
                                 'else-substitute-count-ref)))
-                    ;; Check whether the total number of markers will
-                    ;; be adequate to meet the needs of the
-                    ;; saubstitution count - if not then 'grow' the
-                    ;; list here as the easiest point to do it.
+                    ;; Check whether the total number of markers will be
+                    ;; adequate to meet the needs of the auto-substitution count
+                    ;; - if not then 'grow' the list here as the easiest point
+                    ;; to do it.
                     (if (> (1- sub-marker-counter-limit)
                            (- (car else-Auto-Sub-Marker-List) 2))
                         ;; Grow the list by the required number....
@@ -740,14 +695,13 @@ Contains True or False (t or nil) and is indexed by character code")
                                     (length (cdr else-Auto-Sub-Marker-List))))))
 
                     (setq valid-search t)
-                    ;; Note that the first pair of markers have
-                    ;; already been used to capture the master text
-                    ;; area, so start at the second set of pairs.
+                    ;; Note that the first pair of markers have already been
+                    ;; used to capture the master text area, so start at the
+                    ;; second set of pairs.
                     (setq sub-marker-counter 2)
 
                     ;; Save the global placeholder variables because
-                    ;; kill-placeholder is used within the following
-                    ;; FORMS
+                    ;; kill-placeholder is used within the following FORMS
                     (let ((current-definition else-current-definition)
                           (please-duplicate else-please-duplicate)
                           (deleted-string else-deleted-string)
@@ -755,25 +709,46 @@ Contains True or False (t or nil) and is indexed by character code")
                           (definition-name else-definition-name)
                           (placeholder-start else-placeholder-start)
                           (placeholder-end else-placeholder-end)
-                          (mandatory-placeholder else-Mandatory-Placeholder))
+                          (mandatory-placeholder else-Mandatory-Placeholder)
+                          (auto-sub-search-string else-definition-name)
+                          (case-search case-fold-search)
+                          (search-limit (point-max))
+                          (temp))
+                      ;; Make sure that the searching is not case sensitive
+                      (setq case-fold-search t)
+                      ;; It is possible that the placeholder is actually a
+                      ;; forward reference placeholder requesting
+                      ;; auto-substitution (refer to example in manual on
+                      ;; placeholder x-referencing).
+                      (setq temp (get else-current-definition
+                                      'else-placeholder-ref))
+                      (if (car temp)
+                          ;; The definition does indeed forward reference
+                          ;; another placeholder, so extract that name and use
+                          ;; it for the auto-sub searching.
+                          (setq auto-sub-search-string (car (cdr temp))))
+
+                      ;; Make sure we only detect full placeholders and not
+                      ;; partials i.e. if looking for 'identifier' then don't
+                      ;; match 'defining_identifier' for instance.
+                      (setq auto-sub-search-string
+                            (concat "[[{]" auto-sub-search-string "[]}]"))
                       (while (and valid-search
                                   (<= sub-marker-counter
                                       sub-marker-counter-limit))
-                        ;; Find the matching string, arguments mean
-                        ;; search to end of buffer and don't error if
-                        ;; search fails.
-                        (if (search-forward else-definition-name nil t)
+                        ;; Find the matching string, arguments mean search to
+                        ;; end of buffer and don't error if search fails.
+                        (if (re-search-forward
+                             auto-sub-search-string search-limit t)
                             (progn
-                              ;; position back into the placeholder
-                              ;; and then kill it (even if it is
-                              ;; mandatory).
-                              (backward-char)
-                              ;; Next call just sets up all of the
-                              ;; global variables so that the text can
-                              ;; be deleted - don't use a
-                              ;; kill-placeholder here because it
-                              ;; would destroy the information that is
-                              ;; required to be kept.....
+                              ;; position back into the placeholder and then
+                              ;; kill it (even if it is mandatory).
+                              (goto-char (1+ (match-beginning 0)))
+                              ;; Next call just sets up all of the global
+                              ;; variables so that the text can be deleted -
+                              ;; don't use a kill-placeholder here because it
+                              ;; would destroy the information that is required
+                              ;; to be kept.....
                               (else-in-placeholder)
                               (if else-please-duplicate
                                   (delete-region else-placeholder-start
@@ -801,6 +776,7 @@ Contains True or False (t or nil) and is indexed by character code")
                         (setq sub-marker-counter (1+ sub-marker-counter)))
 
                       ;; Restore the global variables.
+                      (setq case-fold-search case-search)
                       (setq else-current-definition current-definition)
                       (setq else-please-duplicate please-duplicate)
                       (setq else-deleted-string deleted-string)
@@ -811,19 +787,7 @@ Contains True or False (t or nil) and is indexed by character code")
                       (setq else-Mandatory-Placeholder mandatory-placeholder))
 
                     ;; This is not legacy code
-                    (setq else-Auto-Sub-Active t)
-
-                    ;; Set the substitute "toggle" flag. This variable
-                    ;; is only used the first time that the
-                    ;; placeholder is deleted. It is used in the
-                    ;; "after" change function because the begin/end
-                    ;; pair is "screwed" up by what is happening here
-                    ;; ie it receives a "begin" which is after the
-                    ;; "end" and the difference is the difference
-                    ;; between the beginning of the placeholder string
-                    ;; and the current cursor position within the
-                    ;; placeholder.
-                    (setq else-sub-active-toggle t)))
+                    (setq else-Auto-Sub-Active t)))
 
               (if else-please-duplicate
                   (delete-region else-placeholder-start
@@ -839,9 +803,8 @@ Contains True or False (t or nil) and is indexed by character code")
                   (save-excursion
                     (setq this-pos (point))
                     ;; Work out the duplication requirements only if the
-                    ;; placeholder definition is context_dependent i.e. it
-                    ;; is not being overridden explicitly in the
-                    ;; definition.
+                    ;; placeholder definition is context_dependent i.e. it is
+                    ;; not being overridden explicitly in the definition.
                     (setq vert-dup (get else-current-definition
                                         'else-duplication-ref))
                     (if (char-equal vert-dup ?c)
@@ -882,16 +845,15 @@ Contains True or False (t or nil) and is indexed by character code")
                       (setq marker-index (1+ marker-index))))))
 
           (progn
-            ;; This is the point where we have decided that we are not in
-            ;; a placeholder, so therefore it is not a situation of
-            ;; deleting any placeholders etc. for an insertion.
+            ;; This is the point where we have decided that we are not in a
+            ;; placeholder, so therefore it is not a situation of deleting any
+            ;; placeholders etc. for an insertion.
             ;;
-            ;; Check whether auto-substitute should be cancelled (if
-            ;; active).
+            ;; Check whether auto-substitute should be cancelled (if active).
             (if else-Auto-Sub-Active
                 (progn
-                  ;; OK, need to check whether auto-sub mode should
-                  ;; remain active.
+                  ;; OK, need to check whether auto-sub mode should remain
+                  ;; active.
                   (if (not
                        (and (>= begin
                                 (car (nth 1 else-Auto-Sub-Marker-List)))
@@ -909,10 +871,10 @@ Contains True or False (t or nil) and is indexed by character code")
         ;; sessions with no bad side-effects - so it must be OK?
         (if (else-in-placeholder)
             ;; There is at least one command, erase-buffer, that doesn't like
-            ;; the contents of the buffer being changed. So, limit the
-            ;; execution of the kill-placeholder command to the situation
-            ;; where it only occurs if the (begin . end) change area is within
-            ;; the limits of the placeholder.
+            ;; the contents of the buffer being changed. So, limit the execution
+            ;; of the kill-placeholder command to the situation where it only
+            ;; occurs if the (begin . end) change area is within the limits of
+            ;; the placeholder.
             (if (and (> begin else-placeholder-start)
                      (< begin else-placeholder-end))
                 ;; There doesn't seem to be any reason to check the 'end
@@ -974,9 +936,9 @@ Note the emphasis on _line_, so be careful :-)."
           (else-kill-placeholder nil t))))))
 
 
-;; Rip thru' the buffer (or narrowed region) and place comment characters
-;; on each line that has a valid placeholder. Use the 'comment-region
-;; function, so end comments will be placed as well.
+;; Rip thru' the buffer (or narrowed region) and place comment characters on
+;; each line that has a valid placeholder. Use the 'comment-region function, so
+;; end comments will be placed as well.
 (defun else-comment-placeholders ()
   "Comments out every line in the buffer containing a valid placeholder.
 This function uses the 'comment-region' function to achieve this miracle of
@@ -1068,8 +1030,8 @@ of a normal language template file."
           (setq file-ext-start
                 (string-match else-lse-ext-search-string language-file-name))
 
-          ;; Copy the entire language file name to the place where the
-          ;; compiled version of the name will be created.
+          ;; Copy the entire language file name to the place where the compiled
+          ;; version of the name will be created.
           (setq compiled-file-name (substring language-file-name 0))
           ;; create the compiled version
           (store-substring compiled-file-name file-ext-start else-esl-ext)
@@ -1153,11 +1115,10 @@ of a normal language template file."
                                 (unintern (upcase object-name) obarray-name)))
                         (message "This language (%s) has not been defined!"
                                  language-name))
-                      ;; restore the 'original' language i.e. might
-                      ;; have template language enabled for a .lse
-                      ;; file that contains definitions for some other
-                      ;; language - so compiling a definition
-                      ;; shouldn't destroy the current language
+                      ;; restore the 'original' language i.e. might have
+                      ;; template language enabled for a .lse file that contains
+                      ;; definitions for some other language - so compiling a
+                      ;; definition shouldn't destroy the current language
                       ;; settings for the buffer.
                       (else-establish-language current-language)))))))))
 
@@ -1169,9 +1130,9 @@ of a normal language template file."
         (message "Can't delete from obarray!"))))
 
 ;;
-;; Delete a language definition from the Global Template definitions.
-;; Called when the sequence "DELETE LANGUAGE" has been parsed in the
-;; language template definition file.
+;; Delete a language definition from the Global Template definitions.  Called
+;; when the sequence "DELETE LANGUAGE" has been parsed in the language template
+;; definition file.
 ;;
 (defun else-delete-language-definition ()
   (let ((language-name "")
@@ -1195,19 +1156,18 @@ of a normal language template file."
             (if language-assoc
                 (progn
                   ;;
-                  ;; The 'delete' command doesn't seem to work, so I will
-                  ;; adopt a strategy of "emptying" the language entry
-                  ;; Unless I apply logic to "re-use" the slot, then
-                  ;; we will waste the memory allocated to the vectors
-                  ;; but at the moment I don't care.
+                  ;; The 'delete' command doesn't seem to work, so I will adopt
+                  ;; a strategy of "emptying" the language entry Unless I apply
+                  ;; logic to "re-use" the slot, then we will waste the memory
+                  ;; allocated to the vectors but at the moment I don't care.
                   ;;
                   (setq else-Language-Definitions
                         (delete (assoc language-name else-Language-Definitions)
                                 else-Language-Definitions))))))
-      ;; restore the 'original' language i.e. might have template
-      ;; language enabled for a .lse file that contains definitions
-      ;; for some other language - so compiling a definition shouldn't
-      ;; destroy the current language settings for the buffer.
+      ;; restore the 'original' language i.e. might have template language
+      ;; enabled for a .lse file that contains definitions for some other
+      ;; language - so compiling a definition shouldn't destroy the current
+      ;; language settings for the buffer.
       (else-establish-language current-language))))
 
 ;;
@@ -1244,11 +1204,10 @@ of a normal language template file."
       (if (else-in-placeholder)
           (if (or (not else-Mandatory-Placeholder) force)
               (progn
-                ;; Make sure we keep a copy of the text of the
-                ;; placeholder being deleted - this is mainly because
-                ;; of the symbol-name of the definition doesn't
-                ;; reflect the same character casing of the text being
-                ;; deleted.
+                ;; Make sure we keep a copy of the text of the placeholder being
+                ;; deleted - this is mainly because of the symbol-name of the
+                ;; definition doesn't reflect the same character casing of the
+                ;; text being deleted.
                 (setq else-deleted-string (buffer-substring
                                            else-placeholder-start
                                            else-placeholder-end))
@@ -1364,6 +1323,35 @@ of a normal language template file."
                               (delete-char -1)))))))
             (error "Can't delete - mandatory entry required"))))))
 
+(defun else-derive-language-name-from-mode-name (this-mode-name)
+  "The mode name and the language name may be different i.e. Visual
+Basic and Visual-Basic, so modularise the problem and place any
+customisations here."
+  (let ((language-name this-mode-name))
+    ;; Check to see if there is a translation or alternative naming
+    ;; for the mode name i.e. in Emacs 22.1, the mode name for files
+    ;; with a .c extension changed from "C" to "C/l" - which meant
+    ;; either the language template file(s) should have their name
+    ;; changed or ELSE be made to accomodate this 'quirk' - the latter
+    ;; was chosen.
+    (if (assoc language-name else-Alternate-Mode-Names)
+        (setq language-name
+              (cdr (assoc language-name else-Alternate-Mode-Names))))
+    ;; Currently the only 'customisation' is to replace spaces by '-'.
+    ;; Mode name "may" have spaces, modify them to '-' i.e. Visual Basic
+    ;; becomes Visual-Basic.
+    (while (string-match " " language-name)
+      (setq language-name (replace-match "-" t nil language-name)))
+    ;; At this point it is possible that a mode name still doesn't match a
+    ;; (previously loaded) language name i.e. we don't want to make the user
+    ;; keep answering the question of entering the template name! So check an
+    ;; association list of derived names against previously entered template
+    ;; names.
+
+    language-name))
+
+
+
 ;;
 ;; Display the list of possible matches for the expand-a-word function, it is
 ;; not called unless there is more than one possible match
@@ -1381,9 +1369,9 @@ of a normal language template file."
           (setq menu-string (concat menu-string
                                     (else-display-menu-element match-element))))
 
-        ;; Sometimes we end up with an extraneous carriage return at
-        ;; the end of the menu list - this causes a blank line in the
-        ;; menu display. Get rid of it.
+        ;; Sometimes we end up with an extraneous carriage return at the end of
+        ;; the menu list - this causes a blank line in the menu display. Get rid
+        ;; of it.
         (if (= (elt menu-string (1- (length menu-string))) ?\n)
           (aset menu-string (1- (length menu-string)) ?\ ))
         ;; Set the selection item to nothing
@@ -1525,7 +1513,7 @@ else-get-menu-entries. It must work in conjunction with the use of the Overlay
 denoted by else-placeholder-overlay."
   (let ((this-definition nil)
         (origin nil))
-    ;; Protect against inadvertant use
+    ;; Protect against inadvertent use
     (catch 'problem
       (if (not else-mode)
           (progn
@@ -1577,40 +1565,43 @@ denoted by else-placeholder-overlay."
             (error "ELSE mode not enabled.")
             (throw 'problem nil)))
 
-      ;; Reset the definition type and then work out if there is a
-      ;; valid definition to expand - setting this variables as a side
-      ;; effect.
+      ;; Reset the definition type and then work out if there is a valid
+      ;; definition to expand - setting this variables as a side effect.
       (setq else-definition-type nil)
 
       (if (else-in-placeholder)
           (progn
-            ;; Yup, detected a valid placeholder, so just skip
-            ;; straight down and process it.
+            ;; Yup, detected a valid placeholder. All processing depends on
+            ;; global variables set as a by product of calling
+            ;; else-in-placeholder, but if the placeholder definition is a
+            ;; forward reference then actual processing should be dependent on
+            ;; the referenced definition rather than the 'current' definition.
+            (setq else-current-definition
+                  (else-look-up else-definition-name ?p))
             )
         ;; Else - check if it is as a token.
         (if (else-after-token)
             (progn
               ;; yes, it is a token
               )
-          ;; No, not a token either - but it might be a partial token
-          ;; or point might not be positioned at the end of the token
-          ;; - it is 'nice' to handle either of these two cases.
+          ;; No, not a token either - but it might be a partial token or point
+          ;; might not be positioned at the end of the token - it is 'nice' to
+          ;; handle either of these two cases.
           (if else-expand-a-word-available
               (progn
                 (if (or (looking-at "\\s-\\|$")
                         (eq (point) (point-max)))
-                    ;; at the end of a string of text - so try
-                    ;; completion on the name. Note that this
-                    ;; functionality should only be expected to work
-                    ;; for TOKENs! This code does not guaratee
+                    ;; at the end of a string of text - so try completion on the
+                    ;; name. Note that this functionality should only be
+                    ;; expected to work for TOKENs! This code does not guarantee
                     ;; this!!!!
                     (progn
                       (if (expand-a-word (else-return-sorted-list Token))
                           (else-after-token)))
 
-                  ;; else point may be in the middle of a string? If
-                  ;; so then position at the end of the string and
-                  ;; check for token validity again.
+                  ;; else point may be in the middle of a string? If so then
+                  ;; position at the end of the string and check for token
+                  ;; validity again.
                   (setq match-scan (format "\\([^%s]+?\\|$\\)"
                                            (cdr (assoc else-Valid-Idents-ref
                                                        Language-Specifics))))
@@ -1627,16 +1618,16 @@ denoted by else-placeholder-overlay."
             (if (else-process-definition else-current-definition
                                          else-definition-type)
                 (progn
-                  ;; A valid definition was processed, so position back to
-                  ;; the start of it and proceed to the next placeholder.
+                  ;; A valid definition was processed, so position back to the
+                  ;; start of it and proceed to the next placeholder.
                   (goto-char else-placeholder-start)
                   (else-next-placeholder))))
         (progn
           ;; Not a valid placeholder or a token string. Check to see what
           ;; behaviour is required. The following code dealing with
           ;; expand-or-move flag and else-direction flag was added to make ELSE
-          ;; more usable with VoiceCoder. the test for interactiveness is needed
-          ;; because the case no valid placeholder can be found in the
+          ;; more usable with VoiceCoder. the test for inter-activeness is
+          ;; needed because the case no valid placeholder can be found in the
           ;; search-direction results in a crash (endless loop).  This situation
           ;; is quite likely if you use speech recognition and try to expand a
           ;; token.
@@ -1721,10 +1712,9 @@ template."
           (insert "END DEFINE")
           (newline)
           (newline)
-          ;; Extract all the placeholder and token definitions. Do
-          ;; this by getting a alphabetically sorted list of the
-          ;; placeholder/token names and then processing each of the
-          ;; definitions individually
+          ;; Extract all the placeholder and token definitions. Do this by
+          ;; getting a alphabetically sorted list of the placeholder/token names
+          ;; and then processing each of the definitions individually
           (setq sorted-names (else-return-sorted-list Placeholder))
           (mapc '(lambda (element-name)
                    (else-extract-a-placeholder
@@ -1741,8 +1731,8 @@ template."
           (if current-language
               (else-establish-language current-language))))))
 ;;
-;; Extract an individual placeholder definition. (non-interactive form
-;; - see else-extract-placeholder).
+;; Extract an individual placeholder definition. (non-interactive form - see
+;; else-extract-placeholder).
 ;;
 (defun else-extract-a-placeholder (placeholder-definition)
   (let ((selected-definition placeholder-definition)
@@ -1864,7 +1854,8 @@ template."
   (let ((selected-definition token-definition)
         (temp)
         (body)
-        (name))
+        (name)
+        (lang-indent-size (cdr (assoc else-tab-size-ref Language-Specifics))))
     (setq name (get selected-definition 'else-original-name))
     (insert "DELETE TOKEN ")
     (insert (concat name " -"))
@@ -1902,8 +1893,12 @@ template."
       (progn
         (newline)
         (indent-to else-Extract-Column)
-        (insert (concat "\""
-                        (nth else-body-text-ref (car body)) "\"")))
+        (insert "\"")
+        (insert (make-string
+                 (* (nth else-body-indent-ref (car body))
+                    lang-indent-size)
+                 ?\ ))
+        (insert (concat (nth else-body-text-ref (car body)) "\"")))
       (setq body (cdr body)))
     (newline)
     (newline)
@@ -1994,17 +1989,17 @@ template."
                        (and (> (length this-line) 1)
                             (string= (substring this-line 0 2) "\\@"))))
               (progn
-                ;; protect 'real' @'s the tradional way by preceding
-                ;; them with a '\' character - so just strip off that
-                ;; single character and proceed
+                ;; protect 'real' @'s the traditional way by preceding them with
+                ;; a '\' character - so just strip off that single character and
+                ;; proceed
                 (if (string= (substring this-line 0 2) "\\@")
                     (setq this-line (substring this-line 1 (length this-line)))
-                  ;; else the case of @'s being used to designate hard
-                  ;; spaces, so strip the @'s and convert them to
-                  ;; space characters in this-line.
+                  ;; else the case of @'s being used to designate hard spaces,
+                  ;; so strip the @'s and convert them to space characters in
+                  ;; this-line.
                   (let (number-ats)
-                    ;; Not necessary to test the result - can only get
-                    ;; here if there are leading @'s
+                    ;; Not necessary to test the result - can only get here if
+                    ;; there are leading @'s
                     (string-match "@+" this-line)
                     (setq this-line
                           (replace-match (make-string
@@ -2046,8 +2041,8 @@ template."
     ;; that the rule is: if the current buffer is an LSE file then use the
     ;; language that can be calculated from the file name.
     (if (string-match (concat "\\" else-lse-ext) (buffer-name))
-        ;; Case where the user is editing an LSE buffer/file, so calculate
-        ;; the desired language based upon the name of the file/buffer
+        ;; Case where the user is editing an LSE buffer/file, so calculate the
+        ;; desired language based upon the name of the file/buffer
         (let ((file-name-comps (split-string (buffer-name) "\\.")))
           ;; Check if the file is of the form <lang>-cust.lse
           (if (string-match "-cust" (car file-name-comps))
@@ -2056,8 +2051,8 @@ template."
                 (setq file-name-comps (split-string
                                        (car file-name-comps) "-cust"))))
 
-          ;; At this point, the CAR of file-name-comps should be the
-          ;; language name.
+          ;; At this point, the CAR of file-name-comps should be the language
+          ;; name.
           (setq result (else-establish-language (car file-name-comps)))
           (if (not result)
               (error "Language %s is not loaded" (car file-name-comps)))))
@@ -2100,7 +2095,7 @@ template."
           (setq name
                 (completing-read "Placeholder Name: " Placeholder))
           (setq name (upcase name))
-          (setq selected-definition (else-look-up name ?p))
+          (setq selected-definition (else-look-up name ?p t))
           (if selected-definition
               (else-extract-a-placeholder selected-definition)
             (message "Placeholder \`%s\` doesn't exist" name))
@@ -2119,8 +2114,8 @@ defun."
     ;; Do any /RUN_CODE attributes.
     (setq temp (copy-alist (get
                             selected-definition 'else-elisp-action)))
-    ;; If there are run-time encodings then have to handle the fact
-    ;; that one or more phases have the same function pointer.
+    ;; If there are run-time encodings then have to handle the fact that one or
+    ;; more phases have the same function pointer.
     (while temp
       (setq tmp (pop temp))
       (newline)
@@ -2216,7 +2211,7 @@ defun."
    "Create a list from the menu elements in this placeholder.  Note that if
 sub-elements are defined with menu elements, then there are options to follow or
 not follow individual elements in the menu list - but these options can be
-overriden by the 'else-follow-menus and 'else-nofollow-menus flags! By doing
+overridden by the 'else-follow-menus and 'else-nofollow-menus flags! By doing
 this we avoid menus that lead to other menus ad infinitum - very boring :-)."
   (let ((the-list (else-get-body element))
         (temp-list)
@@ -2225,19 +2220,19 @@ this we avoid menus that lead to other menus ad infinitum - very boring :-)."
         (ref-type)
         (this-element-type)
         (new-list))
+
     (setq temp-list the-list)
     (while (> (length temp-list) 0)
-      (setq this-element (car temp-list))
-      (setq temp-list (cdr temp-list))
-      ;; This is a bit weird, but basically we want to put the current element
-      ;; into the new list that will be returned. The only exception to this is
-      ;; if the entry is itself an menu, in which case the values of that item
-      ;; will be substituted (depending upon /follow/nofollow and
-      ;; else-follow-menus settings). All items will be prepended and that way
-      ;; if we have to remove an element it will be easy.
+      (setq this-element (pop temp-list))
+      ;; It is easiest to place/build the entry into the list at this point - if
+      ;; it turns out to be a menu entry that must be "followed" then the code
+      ;; will remove it and replace it with the appropriate information.
       (setq new-list (append (cons this-element '()) new-list))
+
       ;; Check if the element is a placeholder and if so, if it is a menu
-      ;; itself.
+      ;; itself. If it is a menu and the appropriate "follow" conditions are
+      ;; met, then recursively add to the menu list with the entries from that
+      ;; definition.
       (setq this-element-type (elt this-element else-body-type-ref))
       (if (and this-element-type
                (char-equal this-element-type ?p))
@@ -2259,10 +2254,11 @@ this we avoid menus that lead to other menus ad infinitum - very boring :-)."
                       ;; this element with the elements from the referenced
                       ;; placeholder.
                       (progn
-                        ;; Must remove the element at the head of the list as it
-                        ;; is being replaced by this list.
-                        (setq new-list (cdr new-list))
-                        (setq new-list (append (else-get-body this-def)
+                        ;; The head element should be removed and replaced with
+                        ;; the menu definitions.
+                        (pop new-list)
+                        (setq new-list (append (nreverse (else-get-menu-entries
+                                                          this-def))
                                                new-list)))))))))
     (nreverse new-list)))
 
@@ -2279,18 +2275,16 @@ this we avoid menus that lead to other menus ad infinitum - very boring :-)."
         (stop-flag))
     (save-excursion
       ;; Start by determining if invoked in a token or
-      ;; placeholder. Placeholder's are defined as being enclosed by
-      ;; either a [] or {} pair. This is more complicated than it
-      ;; first appears because you have to make sure that any
-      ;; "placeholder" indicators actually enclose `point' ie don't
-      ;; find a placeholder earlier in the same line etc. Also,
-      ;; placeholders may have embedded spaces, so again, more
-      ;; complications.  Search backward for the first occurrence of
-      ;; either '[', '{', whitespace or beginning of line. Things are
-      ;; made really messy because it is possible to have point within
-      ;; a placeholder that also contains another placeholder eg
-      ;; [[abstract] tagged]. So, we perform the scan character by
-      ;; character and use a "counting" system to record the "depth".
+      ;; placeholder. Placeholder's are defined as being enclosed by either a []
+      ;; or {} pair. This is more complicated than it first appears because you
+      ;; have to make sure that any "placeholder" indicators actually enclose
+      ;; `point' ie don't find a placeholder earlier in the same line etc. Also,
+      ;; placeholders may have embedded spaces, so again, more complications.
+      ;; Search backward for the first occurrence of either '[', '{', whitespace
+      ;; or beginning of line. Things are made really messy because it is
+      ;; possible to have point within a placeholder that also contains another
+      ;; placeholder eg [[abstract] tagged]. So, we perform the scan character
+      ;; by character and use a "counting" system to record the "depth".
       ;;
       ;; Then I discovered another complication what about the case:
       ;; [{discriminant_simple_name}... =>]
@@ -2322,16 +2316,16 @@ this we avoid menus that lead to other menus ad infinitum - very boring :-)."
                                 (setq else-definition-name (buffer-substring
                                                             (1+ start-position)
                                                             end-position))
-                                ;; record the definition for any
-                                ;; calling routine to use.
+                                ;; record the definition for any calling routine
+                                ;; to use. Note that we ignore forward reference
+                                ;; checking here
                                 (setq else-current-definition
-                                      (else-look-up else-definition-name ?p))
+                                      (else-look-up else-definition-name ?p t))
                                 (if (char-equal (following-char) ?})
                                     (setq else-Mandatory-Placeholder t)
                                   (setq else-Mandatory-Placeholder nil)
                                   )
-                                ;; Determine if the placeholder is
-                                ;; repeating
+                                ;; Determine if the placeholder is repeating
                                 (goto-char else-placeholder-end)
                                 (setq else-please-duplicate
                                       (looking-at (regexp-quote "...")))
@@ -2380,8 +2374,8 @@ auto-substitute placeholder."
         ;; Only proceed if the conditions are right.....
         (if (or (not else-Mandatory-Placeholder) force)
             (progn
-              ;; If the definition is an "auto-substitute" then we have to
-              ;; find the matching occurrences and delete them also.....
+              ;; If the definition is an "auto-substitute" then we have to find
+              ;; the matching occurrences and delete them also.....
               (setq is-auto-sub (char-equal
                                  (get else-current-definition
                                       'else-substitute-ref)
@@ -2395,14 +2389,14 @@ auto-substitute placeholder."
                                 (> loop-counter 0))
                       (if (search-forward else-definition-name nil t)
                           (progn
-                            ;; position back into the placeholder and then
-                            ;; kill it (even if it is mandatory).
+                            ;; position back into the placeholder and then kill
+                            ;; it (even if it is mandatory).
                             (backward-char)
                             ;; Next call just sets up all of the global
-                            ;; variables so that the text can be deleted -
-                            ;; don't use a kill-placeholder here because
-                            ;; it would destroy the information that is
-                            ;; required to be kept.....
+                            ;; variables so that the text can be deleted - don't
+                            ;; use a kill-placeholder here because it would
+                            ;; destroy the information that is required to be
+                            ;; kept.....
                             (if (else-in-placeholder)
                                 (progn
                                   (else-delete-placeholder leave-spacing
@@ -2414,26 +2408,25 @@ auto-substitute placeholder."
                         ;; name so stop the search.
                         (setq stop-loop t)))))
 
-              ;; Now locate back into the original placeholder and
-              ;; delete it - this returns all global variables to
-              ;; their original state as the same time.
+              ;; Now locate back into the original placeholder and delete it -
+              ;; this returns all global variables to their original state as
+              ;; the same time.
               (goto-char current-location)
               (else-in-placeholder)
               (else-delete-placeholder leave-spacing
                                        force
                                        dont-kill-empty-lines)
-              ;; Check to see whether we should auto-position to the
-              ;; next placeholder or not. This is mainly useful for
-              ;; the VR folks so it is a customisable flag.
+              ;; Check to see whether we should auto-position to the next
+              ;; placeholder or not. This is mainly useful for the VR folks so
+              ;; it is a customisable flag.
               (if (and else-kill-proceed-to-next-placeholder (interactive-p))
                   (if else-only-proceed-within-window
                       (progn
                         (setq here (point))
                         (else-move-n-placeholders 1)
-                        ;; Only move to the new placeholder if it is
-                        ;; visible in the current window i.e. we don't
-                        ;; want the user to become disorientated by a
-                        ;; large jump.
+                        ;; Only move to the new placeholder if it is visible in
+                        ;; the current window i.e. we don't want the user to
+                        ;; become disoriented by a large jump.
                         (if (not (pos-visible-in-window-p))
                             (goto-char here)))
 
@@ -2446,8 +2439,8 @@ auto-substitute placeholder."
       ;; behaviour is to find the next(previous) placeholder and kill that
       ;; instance.
       (if (and else-move-and-execute (interactive-p))
-          ;; User must desire to kill the next placeholder. So save them
-          ;; the trouble of moving and killing as two separate actions.
+          ;; User must desire to kill the next placeholder. So save them the
+          ;; trouble of moving and killing as two separate actions.
           (progn
             (if else-direction
                 (else-next-placeholder)
@@ -2469,22 +2462,17 @@ auto-substitute placeholder."
         (template-file-loaded nil))
     (progn
       (catch 'quit-loading
-        ;; It is possible for the user to have an auto-mode-alist
-        ;; entry for files of .lse type that will enable else-mode and
-        ;; load the language templates for .lse files - this causes a
-        ;; mix-up in the Placeholder/Token definitions if this
-        ;; happens. So temporarily disable the entry if it exists in the
-        ;; auto-mode-alist when we are auto-loading .lse files -
-        ;; re-enable it at the end of this function. Note that this is
-        ;; done using the "let" definition for auto-mode-list above.
+        ;; It is possible for the user to have an auto-mode-alist entry for
+        ;; files of .lse type that will enable else-mode and load the language
+        ;; templates for .lse files - this causes a mix-up in the
+        ;; Placeholder/Token definitions if this happens. So temporarily disable
+        ;; the entry if it exists in the auto-mode-alist when we are
+        ;; auto-loading .lse files - re-enable it at the end of this
+        ;; function. Note that this is done using the "let" definition for
+        ;; auto-mode-list above.
 
-        ;; Extract the mode-name and use that as the default template file
-        ;; name
-        (setq language-name mode-name)
-        ;; Mode name "may" have spaces, modify them to '-' i.e. Visual
-        ;; Basic becomes Visual-Basic.
-        (while (string-match " " language-name)
-          (setq language-name (replace-match "-" t nil language-name)))
+        ;; Extract the mode-name and use that as the default template file name
+        (setq language-name (else-derive-language-name-from-mode-name mode-name))
 
         (setq language-file-name (else-locate-language-file language-name))
         (if (not language-file-name)
@@ -2571,14 +2559,13 @@ auto-substitute placeholder."
 
       (if result
           (progn
-            ;; It is possible that the 'language-name' is actually an
-            ;; entered file name and isn't actually the name of the
-            ;; language template loaded. If this is the case, then the
-            ;; entered language name may be radically case different
-            ;; from the actual language name as defined in the
-            ;; template file i.e. TEMPLATE versus template. So make
-            ;; the basic assumption that there will be only one
-            ;; language name, doesn't matter what the casing is.
+            ;; It is possible that the 'language-name' is actually an entered
+            ;; file name and isn't actually the name of the language template
+            ;; loaded. If this is the case, then the entered language name may
+            ;; be radically case different from the actual language name as
+            ;; defined in the template file i.e. TEMPLATE versus template. So
+            ;; make the basic assumption that there will be only one language
+            ;; name, doesn't matter what the casing is.
             (if (not (cdr (assoc language-name
                                  else-Language-Definitions)))
                 (progn
@@ -2707,8 +2694,8 @@ what might have been there :-)."
 
       (progn               ;; Else case, ie looking for a closing brace
         (setq open-brace match-character)
-        ;; Don't want to include the character we are on when
-        ;; searching starts so move forward one character position.
+        ;; Don't want to include the character we are on when searching starts
+        ;; so move forward one character position.
         (forward-char)
         (setq stop-flag nil)
         (while (and (not (= total-count 0)) (not stop-flag))
@@ -2789,10 +2776,10 @@ description text etc"
   (let ((result "")
         (start-char))
     (save-match-data
-      ;; Get the first character in the line - this will determine
-      ;; what type of information is to be extracted i.e. a
-      ;; placeholder will have a '{' character, a token or direct text
-      ;; substitution will have a quote character
+      ;; Get the first character in the line - this will determine what type of
+      ;; information is to be extracted i.e. a placeholder will have a '{'
+      ;; character, a token or direct text substitution will have a quote
+      ;; character
       (setq start-char (elt menu-text 0))
       (cond ((char-equal start-char ?\")
              ;; Find the last occurrence of a " character.....
@@ -2800,8 +2787,7 @@ description text etc"
              (setq result (substring menu-text 1
                                      (1- (match-end 0)))))
             ((char-equal start-char ?{)
-             ;; The menu item is a placeholder, so select text between
-             ;; {}'s
+             ;; The menu item is a placeholder, so select text between {}'s
              (setq result (substring menu-text 1 (string-match "}" menu-text))))
             (t
              (setq result (substring menu-text 1 (1- (length menu-text))))))
@@ -2875,10 +2861,11 @@ Keybindings:
                   (setq language-assoc (cdr (assoc name
                                                    else-Language-Definitions))))
 
-              ;; Possible that the language is already loaded for another
-              ;; buffer so check using the mode-name.
-              (setq language-assoc (cdr (assoc mode-name
-                                               else-Language-Definitions))))
+              ;; Possible that the language is already loaded for another buffer
+              ;; so check using the mode-name.
+              (setq language-assoc
+                    (cdr (assoc (else-derive-language-name-from-mode-name mode-name)
+                                else-Language-Definitions))))
             (setq did-it-work
                   (catch 'foo
                     (if (not language-assoc)
@@ -2892,9 +2879,10 @@ Keybindings:
                             ;; It didn't work, so bail out
                             (throw 'foo nil)))
 
-                      ;; Yes, the language is already loaded so make
-                      ;; sure we set the following variable!
-                      (setq else-Current-Language mode-name))
+                      ;; Yes, the language is already loaded so make sure we set
+                      ;; the following variable!
+                      (setq else-Current-Language
+                            (else-derive-language-name-from-mode-name mode-name)))
 
                     (setq Placeholder (car language-assoc))
                     (setq Token (car (cdr language-assoc)))
@@ -2938,6 +2926,12 @@ Keybindings:
                                   'previous-line 'else-menu-previous-line)
                 (else-enable-dups else-menu-mode-map 'forward-char 'undefined)
                 (else-enable-dups else-menu-mode-map 'backward-char 'undefined)
+
+                ;; Cross connect the mapping for expand-a-word service as well.
+                (if else-expand-a-word-available
+                    (else-enable-dups expand-menu-mode-map
+                                      'else-expand-placeholder
+                                      'expand-menu-select))
 
                 ;; Now setup the minor mode map. Note the 'or' will
                 ;; "short-circuit" if the first form evaluates to 'true'.
@@ -3071,15 +3065,13 @@ Keybindings:
 
       (setq target-count count)
       ;; This bit of code makes sure that we get out of any "current"
-      ;; placeholder i.e. otherwise we won't move.
-      (if (else-in-placeholder)
-          (progn
-            ;; Find the beginning of a placeholder string
-            (else-scan-for-match "[[{]" nil t)
-            ;; step back onto the actual character of the placeholder in
-            ;; preparation for the next backward search.
-            (if (> (point) (+ (point-min) 2))
-                (backward-char 2))))
+      ;; placeholder i.e. otherwise we won't move. Since we may be in
+      ;; a "nested" placeholder, execute as a repeatative loop until
+      ;; out of the "outer" placeholder.
+      (while (else-in-placeholder)
+        ;; Use the 'side-effect' of else-in-placeholder establishing
+        ;; the start/end position of the placeholder.
+        (goto-char else-placeholder-start))
 
       ;; Now position to the count'th placeholder
       (while (and (> count 0) (not no-more))
@@ -3195,9 +3187,9 @@ Keybindings:
                  ;; Display the prompt string to the user
                  (else-display-menu (else-get-body element) t)
                  (setq result nil))))
-      ;; else case, the definition must be a token. There are two
-      ;; possibilities here, the token may be just referencing a
-      ;; placeholder or it may contain "self-insert" lines of text.
+      ;; else case, the definition must be a token. There are two possibilities
+      ;; here, the token may be just referencing a placeholder or it may contain
+      ;; "self-insert" lines of text.
       (setq placeholder-reference (get element 'else-placeholder-ref))
       ;; Check if there is a forward reference to a placeholder
       (if (car (cdr placeholder-reference))
@@ -3205,8 +3197,8 @@ Keybindings:
             (setq place-name (car (cdr placeholder-reference)))
             (if (else-look-up place-name ?p)
                 (else-process-definition (else-look-up place-name ?p) ?p)))
-        ;; else there is not a forward reference, so process the
-        ;; 'body' of element
+        ;; else there is not a forward reference, so process the 'body' of
+        ;; element
         (else-substitute element def-type)))
     (if result
         ;; Check for /BEFORE processing
@@ -3250,8 +3242,8 @@ Keybindings:
           ((string= defining-type "LANGUAGE")
            (else-read-language-definition))
           (t
-           ;; Note this error will never be thrown as the string
-           ;; matching precludes catching errors in this line...
+           ;; Note this error will never be thrown as the string matching
+           ;; precludes catching errors in this line...
            (throw 'compile "illegal definition type")))
     (if definition-type
         (progn
@@ -3397,8 +3389,8 @@ Keybindings:
 
           ;; restore the 'original' language i.e. might have template language
           ;; enabled for a .lse file that contains definitions for some other
-          ;; language - so compiling a definition shouldn't destroy the
-          ;; current language settings for the buffer.
+          ;; language - so compiling a definition shouldn't destroy the current
+          ;; language settings for the buffer.
           (else-establish-language current-language)))))
 
 ;;
@@ -3414,18 +3406,17 @@ Keybindings:
     (progn
       (setq language-name
             (else-strip-quotes (match-string else-defining-name)))
-      ;; Check if there is a set of existing definitions for this
-      ;; language, if not then create a blank set of variables.
+      ;; Check if there is a set of existing definitions for this language, if
+      ;; not then create a blank set of variables.
       (if (else-check-and-init-globals language-name)
           (message "Language %s exists, assuming attribute modification"
                    language-name))
 
-      ;; The caller may be defining an entirely new language definition or
-      ;; just modifying attributes of a current definition. In both cases we
-      ;; will modify the attributes of the language definition that
-      ;; was set by the previous call. This allows the overriding of
-      ;; attributes such as indentation setting in the users
-      ;; customisation file.
+      ;; The caller may be defining an entirely new language definition or just
+      ;; modifying attributes of a current definition. In both cases we will
+      ;; modify the attributes of the language definition that was set by the
+      ;; previous call. This allows the overriding of attributes such as
+      ;; indentation setting in the users customisation file.
       (else-establish-language language-name)
 
       (forward-line)
@@ -3489,16 +3480,14 @@ Keybindings:
                            (throw 'compile
                                   "language specifier not recognised")))
 
-                  ;; The else case, there is either an error or its the
-                  ;; language definition end command, which is tested
-                  ;; purely by something being in else-body-end slot
-                  ;; of the match-data.
+                  ;; The else case, there is either an error or its the language
+                  ;; definition end command, which is tested purely by something
+                  ;; being in else-body-end slot of the match-data.
                   (if (match-string else-body-end)
                       (progn
                         (setq definition-complete t)
-                        ;; Check to see if a /INDENT_SIZE attribute
-                        ;; was specified or not, issue a warning
-                        ;; message if not
+                        ;; Check to see if a /INDENT_SIZE attribute was
+                        ;; specified or not, issue a warning message if not
                         (if (not tab-size-specified)
                             (message "/INDENT_SIZE not specified assuming %s spaces"
                                      (cdr (assoc else-tab-size-ref
@@ -3506,10 +3495,10 @@ Keybindings:
                     (throw 'compile "Unknown Error"))))))
         (forward-line))             ; Go to the start of the next line.
 
-      ;; restore the 'original' language i.e. might have template
-      ;; language enabled for a .lse file that contains definitions
-      ;; for some other language - so compiling a definition shouldn't
-      ;; destroy the current language settings for the buffer.
+      ;; restore the 'original' language i.e. might have template language
+      ;; enabled for a .lse file that contains definitions for some other
+      ;; language - so compiling a definition shouldn't destroy the current
+      ;; language settings for the buffer.
       (else-establish-language current-language))))
 
 ;; This routine is called after the process has defined a definition which
@@ -3519,8 +3508,8 @@ Keybindings:
 ;;
 ;; Add some basic code here that makes sure Context_dependent work better!
 ;; ie
-;; if <<there is nothing else preceeding the placeholder>> AND
-;;    <<we can locate a separator string immediately preceeding>> then
+;; if <<there is nothing else preceding the placeholder>> AND
+;;    <<we can locate a separator string immediately preceding>> then
 ;;    Vertical substitution is appropriate
 ;; else
 ;;    Perform Horizontal substitution
@@ -3533,10 +3522,10 @@ Keybindings:
         (newline-at-start)
         (cur-column indent-column))
     (progn
-      ;; Extract the separator string, test whether it contains a ^M
-      ;; at the beginning and then split it across any embedded ^M's
-      ;; to create a list of separator texts - I imagine this later
-      ;; case will almost never happen?
+      ;; Extract the separator string, test whether it contains a ^M at the
+      ;; beginning and then split it across any embedded ^M's to create a list
+      ;; of separator texts - I imagine this later case will almost never
+      ;; happen?
       (setq separator-type (get element-def 'else-separator-ref))
 
       ;; Test for leading newline
@@ -3549,9 +3538,8 @@ Keybindings:
              ;; (setq separator-type (get element-def 'else-separator-ref))
              (if (> (length separator-type) 0)
                  (progn
-                   ;; Now split the string around any embedded
-                   ;; newlines - this effectively deletes any leading
-                   ;; newline character.
+                   ;; Now split the string around any embedded newlines - this
+                   ;; effectively deletes any leading newline character.
                    (setq separator-type (split-string separator-type
                                                       (string ?\r)))
                    (if newline-at-start
@@ -3574,8 +3562,8 @@ Keybindings:
                    (insert (concat "[" else-definition-name "]"))
                    (insert "..."))))
 
-            ;; This case 'can't' happen because the duplication
-            ;; requirements are a pre-requisite for this defun.
+            ;; This case 'can't' happen because the duplication requirements are
+            ;; a pre-requisite for this defun.
             ((char-equal duplication-type ?c)
              (message "Invalid duplication in else-replicate-placeholder-string"))))))
 
@@ -3631,10 +3619,48 @@ and return them as a list."
     (setq sorted-list
           (sort sorted-list
                 (lambda (left right)
-                  (< (compare-strings left 0 nil
-                                      right 0 nil
-                                      else-ignore-case-in-name-sorts)
-                     0))))))
+                  (let ((l left)
+                        (r right))
+                    (if else-ignore-case-in-name-sorts
+                        (progn
+                          (setq l (upcase l))
+                          (setq r (upcase r))))
+                    (string< l r)))))))
+
+;; This is used by external callers only i.e. it is not part of the
+;; ELSE code functionality insofar as any ELSE code (currently) uses
+;; it. It is here so that people developing RUN_CODE routines may call
+;; ELSE defuns and not have ELSE state variables 'corrupted' as a side
+;; effect of calls by user code i.e. ELSE uses global variables etc
+;; during the performance of a operation such as expanding a
+;; placeholder, since RUN_CODE can direct user Elisp code to run as
+;; part of this process, any ELSE routines that the user calls may
+;; corrupt values that the else-expand-placeholder process has setup -
+;; this is undesirable. So if a user is going to call ELSE defuns as
+;; part of RUN_CODE operations then they should "wrap" their Elisp
+;; using this macro. This is developmental only at the moment! in the
+;; sense that I think I have captured the variables that are required
+;; for preservation - this may change though.
+(defmacro else-save-excursion (&rest forms)
+  "Save/Restore ELSE global variables so that if the user calls ELSE
+functions there are no nasty side-effects.
+To use this function, do this:
+   (else-save-excursion
+       FORMS)
+Where FORMS is any sequence of Elisp commands i.e.
+   (else-save-excursion
+      (goto-char else-placeholder-start)
+      (else-next-placeholder)
+      (insert (format-time-string '%Y-%m-%d')))"
+  (let ((else-placeholder-start else-placeholder-start)
+        (else-placeholder-end else-placeholder-end)
+        (else-definition-type else-definition-type))
+    (save-excursion
+      (while (car forms)
+        (progn
+          (eval (car forms))
+          (setq forms (cdr forms)))))))
+
 
 ;;
 ;; Generalised search routine that provides access to either regular searches
@@ -3645,10 +3671,10 @@ and return them as a list."
   (let ((current-position) (search-limit))
 
     ;;
-    ;; Find the limit of the search based upon whether it is in the
-    ;; forward (default or reverse direction and provide it as a limit
-    ;; for the search. Note that if the search is successful then point
-    ;; is positioned after the end of the word that has been matched.
+    ;; Find the limit of the search based upon whether it is in the forward
+    ;; (default or reverse direction and provide it as a limit for the
+    ;; search. Note that if the search is successful then point is positioned
+    ;; after the end of the word that has been matched.
     ;;
     (setq current-position (point))
     (if direction-reverse
@@ -3711,15 +3737,14 @@ the hook function."
       (overlay-put else-placeholder-overlay
                    'face 'else-placeholder-face))
 
-    ;; Now check if the placeholder is a menu item, if so then load up
-    ;; the menu information and call the VoiceCoder hook.
+    ;; Now check if the placeholder is a menu item, if so then load up the menu
+    ;; information and call the VoiceCoder hook.
     (setq definition-type (get else-current-definition
                                'else-type-ref))
     (setq possible-choices nil)
     (if (char-equal definition-type ?m)
-        ;; It is a menu, so get all of the possible choices and then
-        ;; send them to the functions that have registered on the
-        ;; hook.
+        ;; It is a menu, so get all of the possible choices and then send them
+        ;; to the functions that have registered on the hook.
         (progn
           (setq possible-choices (else-get-menu-entries
                                   else-current-definition))
@@ -3727,8 +3752,8 @@ the hook function."
             (setq menu-string
                   (concat menu-string
                           (else-display-menu-element match-element)))))
-      ;; the else is an empty menu string i.e. if the placeholder
-      ;; isn't a menu then send a blank string to the hook functions
+      ;; the else is an empty menu string i.e. if the placeholder isn't a menu
+      ;; then send a blank string to the hook functions
       )
     (run-hook-with-args 'else-menu-display-functions
                         menu-string)))
@@ -3795,10 +3820,7 @@ the hook function."
     (add-hook 'after-change-functions
               'else-after-change
               nil
-              t)
-
-    (setq else-before-var nil)
-    (setq else-after-var nil)))
+              t)))
 
 (defun else-show-placeholder-names ()
   "Display names of all of the Placeholders in the current language template
@@ -3818,8 +3840,8 @@ set, sort them alphabetically and display them in a temporary buffer."
         ;; Put all of the placeholder names into an alphabetically sorted list
         (setq placeholder-list (else-return-sorted-list Placeholder))
 
-        ;; Nice to have good formatting for the output - determine the
-        ;; longest placeholder name and incorporate the length into the format
+        ;; Nice to have good formatting for the output - determine the longest
+        ;; placeholder name and incorporate the length into the format
         ;; string. Start with a "default" length of the column header
         (setq list-index 0)
         (setq placeholder-length (length "Placeholder"))
@@ -3849,14 +3871,13 @@ set, sort them alphabetically and display them in a temporary buffer."
           ;; Get the description
           (setq desc (get element 'else-description-ref))
 
-          ;; The placeholder may not have a description because it references
-          ;; a placeholder, so take appropriate action in that
-          ;; situation.
+          ;; The placeholder may not have a description because it references a
+          ;; placeholder, so take appropriate action in that situation.
           (setq forward-ref (get element 'else-placeholder-ref))
 
           (if (and (string= desc "") (car forward-ref))
-              ;; It is a forward reference, so derive the description
-              ;; from that placeholder
+              ;; It is a forward reference, so derive the description from that
+              ;; placeholder
               (setq desc (get (else-look-up (car (cdr forward-ref)) ?p)
                               'else-description-ref)))
           ;; Now format the output string
@@ -3882,9 +3903,9 @@ set, sort them alphabetically and display them in a temporary buffer."
         ;; Put all of the token names into an alphabetically sorted list
         (setq token-list (else-return-sorted-list Token))
 
-        ;; Nice to have good formatting for the output - determine the
-        ;; longest token name and incorporate the length into the format
-        ;; string. Start with a "default" length of the column header
+        ;; Nice to have good formatting for the output - determine the longest
+        ;; token name and incorporate the length into the format string. Start
+        ;; with a "default" length of the column header
         (setq list-index 0)
         (setq token-length (length "Token"))
         (while (< list-index (length token-list))
@@ -3912,14 +3933,13 @@ set, sort them alphabetically and display them in a temporary buffer."
           ;; Get the description
           (setq desc (get element 'else-description-ref))
 
-          ;; The token may not have a description because it references
-          ;; a placeholder, so take appropriate action in that
-          ;; situation.
+          ;; The token may not have a description because it references a
+          ;; placeholder, so take appropriate action in that situation.
           (setq forward-ref (get element 'else-placeholder-ref))
 
           (if (and (string= desc "") (car forward-ref))
-              ;; It is a forward reference, so derive the description
-              ;; from that placeholder
+              ;; It is a forward reference, so derive the description from that
+              ;; placeholder
               (setq desc (get (else-look-up (car (cdr forward-ref)) ?p)
                               'else-description-ref)))
           ;; Now format the output string
@@ -3976,16 +3996,14 @@ The file is indicated by 'else-read-marker'"
                                       else-placeholder-start
                                       else-placeholder-end))
 
-          ;; Delete the element that we are replacing - in both cases
-          ;; we expect the else-placeholder-start/end variables to be
-          ;; setup - this is a precondition of entry to this
-          ;; defun. Note also that the definition type
-          ;; i.e. placeholder or token of what is being deleted is not
-          ;; necessarily the argument value of defn-type to this defun
-          ;; i.e. at this point we may have followed several levels of
-          ;; "indirection" to arrive at an actual point of
-          ;; substitution. So depend on a global variable for the
-          ;; element type of what we are deleting
+          ;; Delete the element that we are replacing - in both cases we expect
+          ;; the else-placeholder-start/end variables to be setup - this is a
+          ;; precondition of entry to this defun. Note also that the definition
+          ;; type i.e. placeholder or token of what is being deleted is not
+          ;; necessarily the argument value of defn-type to this defun i.e. at
+          ;; this point we may have followed several levels of "indirection" to
+          ;; arrive at an actual point of substitution. So depend on a global
+          ;; variable for the element type of what we are deleting
           ;; (else-definition-type).
           (delete-region else-placeholder-start else-placeholder-end)
           (if (char-equal else-definition-type ?p)
@@ -3993,17 +4011,14 @@ The file is indicated by 'else-read-marker'"
                 (if else-please-duplicate
                     (progn
                       (delete-char 3)
-                      ;; What is the context of the duplication?
-                      ;; i.e. if there is only whitespace prior to the
-                      ;; placeholder then the duplication context is
-                      ;; vertical, otherwise it is horizontal - the
-                      ;; only way this can be overridden is if the
-                      ;; placeholder definition contains something
-                      ;; other than CONTEXT_DEPENDENT. So test for
-                      ;; this first.
-                      ;; If it is context dependent, then work out
-                      ;; what the context is otherwise just assume the
-                      ;; value in the definition.
+                      ;; What is the context of the duplication?  i.e. if there
+                      ;; is only whitespace prior to the placeholder then the
+                      ;; duplication context is vertical, otherwise it is
+                      ;; horizontal - the only way this can be overridden is if
+                      ;; the placeholder definition contains something other
+                      ;; than CONTEXT_DEPENDENT. So test for this first. If it
+                      ;; is context dependent, then work out what the context is
+                      ;; otherwise just assume the value in the definition.
                       (setq duplication-direction (get else-current-definition
                                                        'else-duplication-ref))
                       (if (char-equal duplication-direction ?c)
@@ -4018,32 +4033,29 @@ The file is indicated by 'else-read-marker'"
             )
           (setq else-deleted-column (current-column))
 
-          ;; Now take action based upon the target substitution. What
-          ;; we want here is to have a list of text line(s) to
-          ;; insert. In the case of defun argument element being a
-          ;; placeholder, then we need to extract all of the body text
-          ;; into a list, when the defun argument is a single line
-          ;; (line from a menu selection) then place that into the
-          ;; same list element - this way we can process both cases
-          ;; using the same code. Note that the resultant list, no
-          ;; matter where the source came from has to contain elements
-          ;; that have the same structure as each line of the body of
-          ;; a placeholder.
+          ;; Now take action based upon the target substitution. What we want
+          ;; here is to have a list of text line(s) to insert. In the case of
+          ;; defun argument element being a placeholder, then we need to extract
+          ;; all of the body text into a list, when the defun argument is a
+          ;; single line (line from a menu selection) then place that into the
+          ;; same list element - this way we can process both cases using the
+          ;; same code. Note that the resultant list, no matter where the source
+          ;; came from has to contain elements that have the same structure as
+          ;; each line of the body of a placeholder.
           (if (symbolp element)
               (setq text-to-insert (get element 'else-body-ref))
-            ;; object must be a string, so construct a standard single
-            ;; line entry for the list i.e. it should have a structure
-            ;; as defined in else-extract-body. This is easy because
-            ;; we know that the element is a string for direct
-            ;; insertion, so it is not a /PLACEHOLDER or /TOKEN, has a
-            ;; zero level indent and the line is the string text.
+            ;; object must be a string, so construct a standard single line
+            ;; entry for the list i.e. it should have a structure as defined in
+            ;; else-extract-body. This is easy because we know that the element
+            ;; is a string for direct insertion, so it is not a /PLACEHOLDER or
+            ;; /TOKEN, has a zero level indent and the line is the string text.
             (setq text-to-insert (list (list nil 0 element))))
 
           (setq cur-column (current-column))
           (while text-to-insert
             (progn
-              ;; Insert the correct number of spaces for the
-              ;; indentation of the line.
+              ;; Insert the correct number of spaces for the indentation of the
+              ;; line.
               (insert (make-string
                        (* (nth else-body-indent-ref (car text-to-insert))
                           lang-indent-size)
@@ -4060,8 +4072,8 @@ The file is indicated by 'else-read-marker'"
       (error nil)) ;; end of the condition-case
     (add-hook 'before-change-functions 'else-before-change t t)
     (add-hook 'after-change-functions  'else-after-change  nil t)
-    ;; If the item just expanded was a placeholder and it should be
-    ;; replicated then do it.
+    ;; If the item just expanded was a placeholder and it should be replicated
+    ;; then do it.
     (if (and (char-equal else-definition-type ?p) else-please-duplicate)
         (else-replicate-placeholder-string duplication-direction
                                            else-deleted-column
@@ -4127,10 +4139,9 @@ This function reverses the effects of else-comment-placeholders."
              (if (equal (length match-data)
                         (length matched-string))
                  (progn
-                   ;; The two match, so therefore we have matched up
-                   ;; until the unique portion but still not finished
-                   ;; the completion i.e. there is more than one
-                   ;; possible completion.
+                   ;; The two match, so therefore we have matched up until the
+                   ;; unique portion but still not finished the completion
+                   ;; i.e. there is more than one possible completion.
                    (with-output-to-temp-buffer "*Completions*"
                      (display-completion-list
                       (all-completions matched-string Placeholder)))
@@ -4274,7 +4285,7 @@ menu's leads to huge menu selections)."
   "If true then menu definitions are *not* 'followed'. If nil,
 'else-follow-menus and then /NOFOLLOW or /FOLLOW attributes are tested to
 determine the behaviour of menu displays. If set to t then this flag has
-precedence over all other settings dealing with this bechaviour."
+precedence over all other settings dealing with this behaviour."
   :type 'boolean
   :group 'ELSE)
 
@@ -4313,6 +4324,16 @@ else-show-token-names"
   :type 'boolean
   :group 'ELSE)
 
+(defcustom else-Alternate-Mode-Names '(("C/l" . "C"))
+  "With Emacs 22.1 we started to see 'mixed' mode names such as C/l
+  for C extension files. This variable allows users to add their own
+  translations - else-derive-language-name-from-mode-name will look in
+  this alist first before checking the mode-name variable."
+  :type '(repeat (cons string string))
+  :group 'ELSE)
+
+
+
 ;; make a unique copy for this buffer
 (make-variable-buffer-local 'else-placeholder-overlay)
 
@@ -4325,4 +4346,6 @@ else-show-token-names"
 ;; LocalWords:  fName Unintern cdr assoc NOAUTO NOLIST Placeholder's lineno VR
 ;; LocalWords:  regexp cust Keybindings dir ARG uit revious placeholders struct
 ;; LocalWords:  VoiceCoder count'th barfing XEmacs cond xemacs fns Monnier wrt
-;; LocalWords:  setnu
+;; LocalWords:  setnu placeholder ONINSERT FSF ref zA NOFOLLOW ie Stefan elisp
+;; LocalWords:  oninsert yuk vetted TOKENs Jun comps nofollow refs def pre defn
+;; LocalWords:  ext DimGray LightGray RosyBrown LightSalmon
