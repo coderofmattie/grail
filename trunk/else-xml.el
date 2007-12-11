@@ -59,23 +59,34 @@
    This is a low-level routine that supports assembling both files and emacs buffers.
    Higher level wrappers such as else-xml-load,else-xml-new should be used."
 
-  (let
-    ((input-list (if input-buffer
-                   "-"                                         ;; assemble should respect - as STDIN
-                   file-list)))
     (with-temp-buffer
       (and
-        (= 0 (apply 'call-process
-               (concat else-mode-xml-dir "/assemble")          ;; translater program
-               input-buffer                                    ;; buffer to stdin ?
-               (list (current-buffer) nil)                     ;; discard stderr , stdout -> current-buffer
-               nil                                             ;; don't refresh
-               lang input-list))                               ;; arguements are language and input file.
+        (= 0 (if input-buffer
+               ;; this turned fugly because of the difference between call-process-region
+               ;; and call-process. hygenic macros may help clean this up.
+               (let
+                 ((output-buffer (current-buffer)))
 
+                 (with-current-buffer input-buffer
+                   (apply 'call-process-region
+                     (point-min) (point-max)                 ;; send the entire buffer to STDIN
+                     (concat else-mode-xml-dir "/assemble")  ;; translater program.
+                     nil                                     ;; don't delete the buffer contents
+                     (list output-buffer nil)                ;; discard stderr, stdout -> current-buffer
+                     nil                                     ;; display is irrelevant.
+                     lang (list "-"))))                      ;; program arguments.
+
+               (apply 'call-process
+                 (concat else-mode-xml-dir "/assemble")      ;; translater program
+                 nil                                         ;; no stdin
+                 (list (current-buffer) nil)                 ;; discard stderr , stdout -> current-buffer
+                 nil                                         ;; don't refresh
+                 lang file-list)                             ;; arguements are language and input files.
+               ))
         (progn
           (beginning-of-buffer)
           (else-compile-buffer))
-        ))))
+        )))
 
 ;;----------------------------------------------------------------------
 ;; loader
