@@ -22,11 +22,75 @@
 ;; (else-language-spec-p "Empty")  - shoule be true
 
 ;;----------------------------------------------------------------------
-;; IPC
+;; IPC assembly
 ;;----------------------------------------------------------------------
 
 ;; else mode currently uses a external helper program "assemble" to
 ;; translate the XML form to a representation loadable by else-mode/emacs.
+
+;; the two stages of loading are assembly and actual loading. On a internal
+;; level the functions that perform translation through IPC are called
+;; else-xml-assemble-? , while the part that performs the actual loading
+;; are else-xml-load-?
+
+(defun else-xml-load-dec ( buffer )
+  "load a else macro definition into emacs, currently using the DEC template syntax"
+  (progn
+    (goto-char (point-min))
+    (else-compile-buffer))
+  )
+
+(defun else-xml-assemble-files ( lang &rest file-list )
+  "assemble the given files and load using the given loader"
+    (with-temp-buffer
+      (and
+        (= 0 (apply 'call-process
+               (concat else-mode-xml-dir "/assemble")      ;; translater program
+               nil                                         ;; no stdin
+               (list (current-buffer) nil)                 ;; discard stderr , stdout -> current-buffer
+               nil                                         ;; don't refresh
+               lang file-list))                            ;; arguements are language and input files.
+
+        (else-xml-load-dec (current-buffer))
+        )))
+
+(defun else-xml-assemble-region ( lang buffer start end )
+  "assemble a given region"
+
+  (with-temp-buffer
+    (let ((load-buffer (current-buffer)))
+
+      (and
+        (= 0 (with-current-buffer buffer
+               (apply 'call-process-region
+                 start end                               ;; send the entire buffer to STDIN
+                 (concat else-mode-xml-dir "/assemble")  ;; translater program.
+                 nil                                     ;; don't delete the buffer contents
+                 (list load-buffer nil)                  ;; discard stderr, stdout -> current-buffer
+                 nil                                     ;; display is irrelevant.
+                 lang (list "-"))))                      ;; program arguments.
+        (else-xml-load-dec load-buffer)
+      ))))
+
+(defun else-xml-assemble-buffer ( lang buffer )
+  "assemble an entire buffer"
+
+  (with-current-buffer buffer
+    (else-xml-assemble-region lang buffer (point-min) (point-max))))
+
+;; the user does not need to care about internal abstractions, so load
+;; at the user level means given the name of a document, construct a
+;; path, assemble the templates, and load the templates.
+
+(defun else-xml-load-files ( language &rest file-list )
+  "load a list of else xml files. Not a interactive function as
+   it blindly loads the given list assuming that a wrapper has
+   checked that the files actually exist."
+
+  (if (apply 'else-xml-assemble-files language file-list)
+    (message "else XML auto-load for: %s completed." language)
+    (message "Failed else XML auto-load for: %s" language)
+    ))
 
 (defun else-xml-load ( template )
   "load else-XML templates from a document."
@@ -41,51 +105,9 @@
                ))
         )
       (if path
-        (else-xml-load-files source-language path)
+        (else-xml-assemble-files source-language path)
         (message "else-xml-load could not stat template %s" template))
       )))
-
-(defun else-xml-load-files ( language &rest file-list )
-  "load a list of else xml files. Not a interactive function as it blindly loads the given list assuming
-   that a wrapper has checked that the files actually exist."
-  (if (apply 'else-xml-assemble language nil file-list)
-    (message "else XML auto-load for: %s completed." language)
-    (message "Failed else XML auto-load for: %s" language)
-    ))
-
-(defun else-xml-assemble ( lang input-buffer &rest file-list )
-  "Run the assemble program and load the resulting templates using else-compile-buffer.
-   This is a low-level routine that supports assembling both files and emacs buffers.
-   Higher level wrappers such as else-xml-load,else-xml-new should be used."
-
-    (with-temp-buffer
-      (and
-        (= 0 (if input-buffer
-               ;; this turned fugly because of the difference between call-process-region
-               ;; and call-process. hygenic macros may help clean this up.
-               (let
-                 ((output-buffer (current-buffer)))
-
-                 (with-current-buffer input-buffer
-                   (apply 'call-process-region
-                     (point-min) (point-max)                 ;; send the entire buffer to STDIN
-                     (concat else-mode-xml-dir "/assemble")  ;; translater program.
-                     nil                                     ;; don't delete the buffer contents
-                     (list output-buffer nil)                ;; discard stderr, stdout -> current-buffer
-                     nil                                     ;; display is irrelevant.
-                     lang (list "-"))))                      ;; program arguments.
-
-               (apply 'call-process
-                 (concat else-mode-xml-dir "/assemble")      ;; translater program
-                 nil                                         ;; no stdin
-                 (list (current-buffer) nil)                 ;; discard stderr , stdout -> current-buffer
-                 nil                                         ;; don't refresh
-                 lang file-list)                             ;; arguements are language and input files.
-               ))
-        (progn
-          (beginning-of-buffer)
-          (else-compile-buffer))
-        )))
 
 ;;----------------------------------------------------------------------
 ;; loader
@@ -155,7 +177,7 @@
   (let
     ((file-list (else-xml-alist-expand lang)))
     (if file-list
-      (apply 'else-xml-load-files lang file-list)
+      (apply 'else-xml-assemble-files lang file-list)
       (message "there are no xml files listed in the else-mode-xml-alist for language %s", lang))
     ))
 
@@ -284,7 +306,7 @@
     ((target source-language))
 
     (lambda ( buffer )
-      (else-xml-assemble target buffer))
+      (else-xml-assemble-buffer target buffer))
     ))
 
 (defun else-xml-to-file ()
