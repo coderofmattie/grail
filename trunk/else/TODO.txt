@@ -1,64 +1,30 @@
-* BUG
+* Paper
 
-  my insert command is definitely causing a severe bug. it comes from
-  else-before-change . I think it has to due with the size of the change
-  being zero.
+  How much use is a template system really ?
 
+  do templates promote creating bulky code rather than fixing it ?
 
-  found symbol's function definition is void
+  how many keystrokes are really saved ?
 
-  yep, it thinks it is in a placeholder. it is not.
+  can templates lower the number of defects entered ?
 
-  648 this is where the error is triggering.
+  can templates help "recall" a language you haven't used for a while ?
 
-  else-in-placeholder looks insane. It is a totally hand hacked depth/regex combo
-  of doom.
+.* compare with alternatives
 
-  questions:
-    why are the hooks even running ? when we are done with the template we should kill
-    the hooks. no more bugs.
+.. MsfAbbrev
 
-    this kills comment out or any other chronology based revisit template for later,
-    or does it ?
+.. smart-snippet
 
+.. AutoInsertMode
 
-  signalling that a template editing session is complete is essential. It simply is *not*
-  going to fly otherwise.
+.. SkeletonMode
 
-  these change hooks are probably why I am having serious problems with movement, especially
-  when keys are held down.
+.. RecipeForSkeletonMode
 
+.* create a video of else in action
 
-  Need to look at bounding, such as narrowing on expand. Need some firewalls that will
-  contain computations gone bad.
-
-  Need to indicate active expansion and bounding. If Narrowing isn't visual, then it
-  is time to enable a template expansion highlight.
-
-  a fix is in place. It may not be entirely correct but it is holding.
-
-* compare with alternatives
-
-  MsfAbbrev
-
-  smart-snippet
-
-  AutoInsertMode
-
-  SkeletonMode
-
-  RecipeForSkeletonMode
-
-* Basic Integration
-
-  Ponder over the schema that I am creating for languages. I haven't
-  put much thought in so it is probably pretty cruddy.
-
-  create an autoconf file for dealing with host configuration and
-  emacs version issues. The compilation problem with .esl files has
-  brought this to light. This is a more general problem with the
-  entire config, just keep the else part in the loop when it gets
-  fixed.
+  have a first draft video now.
 
 *  macro assembler.
 
@@ -70,9 +36,56 @@
   structure also allows for scoping which allows common names to be
   re-used.
 
+.. implement non-local placeholder references
+
+   going to have to make a major change here. Currently only local
+   placeholders can be used. This will not work long term.
+
+   add a g="" that is "global". This needs to use the token expansion
+   which is lower cased and dashed.
+
+   can global placeholders be "contextualized ?", this is an interesting
+   question. say you want to repeat, can you wrap a existing placeholder
+   with new options in a sensible way ?
+
 .. implement optional
 
 .. implement menu ? ( big one )
+
+.. implement prefix
+
+  This should be alot easier to add now as another rewrite during
+  traverse.
+
+  .. elisp generator
+
+  when the elisp backend is created it should generate auto-loads for
+  all of the templates reducing loading? and memory use.
+
+.* cleanups
+
+.. use carp
+
+   convert all of the die statements to carp statements, so that a backtrace is
+   supplied on such severe errors.
+
+.. TODO items
+
+   systematically review the BROWN BAG and TODO markers in the code.
+
+* packaging/integration.
+
+  Ponder over the schema that I am creating for languages. I haven't
+  put much thought in so it is probably pretty cruddy.
+
+  create an autoconf file for dealing with host configuration and
+  emacs version issues. The compilation problem with .esl files has
+  brought this to light. This is a more general problem with the
+  entire config, just keep the else part in the loop when it gets
+  fixed.
+
+  Think about a gentoo ebuild once the files are sanitized as clean
+  emacs libraries.
 
   . schema
 
@@ -81,10 +94,24 @@
   to create arbitrary tag names ? if not then the checking
   will have to be placed in assembler.
 
-  .. elisp generator
 
-  when the elisp backend is created it should generate auto-loads for
-  all of the templates reducing loading? and memory use.
+* going beyond repeating, and injecting syntatic sugar between
+  typed text, what good is a templating system as far as code
+  generation goes ?
+
+  for example:
+
+  my ( $foo , $bar ) = splice @_,0,2
+
+  in this case a good templating system would count the number
+  of list entries and adjust the length of the splice accordingly.
+
+  how could else-mode deal with something like this ? is it even
+  possible with the current design ?
+
+  how about translaters ? things like making regex in lisp doable
+  by translating something decent like pcre into lisp ? sed ? etc ?
+  that way you only have to learn one syntax for basic expressions.
 
 * Short Term
 
@@ -101,8 +128,6 @@
 
   .. create new
 
-  the compile a buffer command is still not tested.
-
   merge is yet to be implemented.
 
   the insertion point needs to be specified as an xpath expression.
@@ -112,6 +137,11 @@
 
   something like XSH2 would be pretty slick here. In fact this is
   definitely XSH2 worthy. Damn.
+
+  do a really simple merge for starters that appends at the document
+  root. The whole xpath thing is for generalized insert into abitrary
+  XML which is 1.0 , but we are still in alpha. keep it simple to
+  keep progressing.
 
   .. complete
 
