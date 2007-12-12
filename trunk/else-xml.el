@@ -21,7 +21,6 @@
 ;; (else-language-spec-p "perl5")  - should be false
 ;; (else-language-spec-p "Empty")  - shoule be true
 
-
 ;;----------------------------------------------------------------------
 ;; IPC
 ;;----------------------------------------------------------------------
@@ -144,7 +143,7 @@
     (if (file-readable-p template-path)
       (save-excursion
         (with-temp-buffer
-          (beginning-of-buffer)
+          (goto-char (point-min))
           (insert-file-contents-literally template-path nil nil nil t)
           (else-compile-buffer)
           ))
