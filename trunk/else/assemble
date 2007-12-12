@@ -1,10 +1,25 @@
 #! /usr/bin/env perl
+
 #----------------------------------------------------------------------
 # Assemble
 # Primary Author: Mike Mattie
 # copyright: Mike Mattie (2007)
 # License: GPLv3
 #----------------------------------------------------------------------
+
+# Assemble is a program that translates else-mode macros in a XML document
+# form to forms that are interpretable by Emacs. To do this it needs to
+# filter the template definitions from the document and generate the
+# templates.
+
+# My two practical XML choices are either DOM or SAX. Both of these
+# choices are horrible. DOM is redicilous for the task because it is
+# not necessary to have the entire document in memory. SAX is horrible
+# because it is state-less and event driven.
+
+# SAX is the lesser of the two evils in this case. In fact the right
+# thing would be coupling the parser and the consumer with co-routines
+# but evidently that makes stack based brains explode.
 
 unless ( @ARGV > 0 ) {
   print STDERR <<HOWTO;
