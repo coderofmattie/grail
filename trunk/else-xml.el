@@ -41,7 +41,7 @@
   )
 
 (defun else-xml-assemble-files ( lang &rest file-list )
-  "assemble the given files and load using the given loader"
+  "assemble and load the given files"
     (with-temp-buffer
       (and
         (= 0 (apply 'call-process
@@ -262,6 +262,7 @@
           (interactive)
           (else-xml-output-valid-xml (current-buffer) to-asm)))
 
+      (local-set-key (kbd "C-l m") 'else-xml-to-merge)
 
       ;; generate some minimal boilder-plate for ergonomics
       (insert "<token>\n  <name>")
@@ -286,7 +287,7 @@
     (insert "<?xml version=\"1.0\" encoding=\"US-ASCII\"?>\n")
     (insert "<else>")
 
-    (let
+    (lexical-let
       ((io-buffer (current-buffer)))
 
       (with-current-buffer buffer
@@ -320,3 +321,14 @@
         (write-file nil t)))
     ))
 
+(defun else-xml-to-merge ( document )
+  "merge the contents of a given buffer with a existing xml document by appending before
+   the closing tag of the document root"
+  (interactive "fXML Document? ")
+  (lexical-let
+    ((merge-from (current-buffer)))
+    (if (and (find-file document) (xml-before-doc-close))
+      (progn
+        (open-line 2)
+        (insert-buffer-substring merge-from)
+        ))))
