@@ -104,6 +104,8 @@
                      (+ (point) 1))
 
                    position 0)))
+      ;; Keep the returned position within the delimiters if the
+      ;; scan moved beyond the starting position.
       (if (> close-at position)
         (- close-at 1)
         position)
@@ -135,6 +137,8 @@
                     (- (point) 1))
 
                   position 0)))
+      ;; Keep the returned position within the delimiters if the
+      ;; scan moved beyond the starting position.
       (if (< open-at position)
         (+ open-at 1)
         position)
