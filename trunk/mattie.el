@@ -48,6 +48,120 @@
   )
 
 ;;----------------------------------------------------------------------
+;; a nifty little implementation of scanning for the span bounded
+;; by a pair of delimiters that allows nested delimiters.
+;;----------------------------------------------------------------------
+
+(defun bounds-scan ( seek-bounds open-bound-p close-bound-p restart-position position level )
+  "scan for the delimitation of a region. This is a general form of a
+   simple algorithm that counts opening and closing delimiters to scan
+   past nested delimited spans."
+  (progn
+    (goto-char position) ;; move to the starting position before scanning.
+    (funcall seek-bounds)
+
+    (cond
+      ((funcall open-bound-p)
+        (bounds-scan seek-bounds open-bound-p close-bound-p restart-position
+          (funcall restart-position) (+ level 1)))
+
+      ((funcall close-bound-p)
+        (if (> level 0)
+          ;; when we have a positive level to start with
+          ;; scan again with a decremented level.
+          (bounds-scan seek-bounds open-bound-p close-bound-p restart-position
+            (funcall restart-position) (- level 1))
+
+          ;; return point as we are done
+          (point)
+          ))
+      ;; error ?
+      )))
+
+(defun bounds-scan-forward ( delimiters position )
+  "entry point for bounds-scan forward. given delimiters: a
+   string containing a pair of delimiting characters, which must
+   be in \"open close\" order, scan forward for the bounding
+   delimiter returning the position before the delimiter"
+
+  (lexical-let
+    ((open-delimiter (aref delimiters 0))
+     (close-delimiter (aref delimiters 1)))
+
+    (bounds-scan
+      (lambda ()
+        (skip-chars-forward (concat "^" delimiters)))
+
+      (lambda ()
+        (char-equal open-delimiter (char-after)))
+
+      (lambda ()
+        (char-equal close-delimiter (char-after)))
+
+      (lambda ()
+        (+ (point) 1))
+
+      position 0)))
+
+(defun bounds-scan-backward ( delimiters position)
+  "entry point for bounds-scan backward. given delimiters: a
+   string containing a pair of delimiting characters, which must
+   be in \"open close\" order, scan backward for the bounding
+   delimiter returning the position after the delimiter"
+
+  (lexical-let
+    ;; note the inversion of the order since we are looking backwards
+    ((open-delimiter (aref delimiters 1))
+     (close-delimiter (aref delimiters 0)))
+
+    (bounds-scan
+      (lambda ()
+        (skip-chars-backward (concat "^" delimiters)))
+
+      (lambda ()
+        (char-equal open-delimiter (char-before)))
+
+      (lambda ()
+        (char-equal close-delimiter (char-before)))
+
+      (lambda ()
+        (- (point) 1))
+
+      position 0)))
+
+
+(defun scan-lisp-list-close ()
+  "wrapper for bounds-scan that searches for the closing delimiter of a lisp list"
+  (let*
+    ((start-at (point))
+      (close-at (bounds-scan-forward "()" start-at)))
+
+    (if (> close-at start-at)
+      (- close-at 1)
+      start-at)
+    ))
+
+(defun scan-lisp-list-open ()
+  "wrapper for bounds-scan that searches for the opening delimiter of a lisp list"
+  (let*
+    ((start-at (point))
+      (open-at (bounds-scan-backward "()" start-at)))
+
+    (if (< open-at start-at)
+      (+ open-at 1)
+      start-at)
+    ))
+
+(defun lisp-list-delete-body ()
+  "delete the body of a lisp list including any nested lists"
+  (interactive)
+  (let
+    ((open-pos (scan-lisp-list-open))
+     (close-pos (scan-lisp-list-close)))
+
+    (delete-backward-char (- close-pos open-pos))))
+
+;;----------------------------------------------------------------------
 ;; repl
 ;;
 ;; Handy tool for exploratory programming. pops a new frame with the
