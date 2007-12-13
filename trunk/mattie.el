@@ -47,6 +47,13 @@
   (insert "\")")
   )
 
+(defun visit-url ( url )
+  "visit a url in a new buffer"
+  (interactive "sURL? ")
+  (progn
+    (switch-to-buffer (generate-new-buffer url))
+    (url-insert-file-contents url)))
+
 ;;----------------------------------------------------------------------
 ;; a nifty little implementation of scanning for the span bounded
 ;; by a pair of delimiters that allows nested delimiters.
