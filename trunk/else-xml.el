@@ -174,7 +174,7 @@
 
 (defun else-xml-load-language-alist ( lang )
   "load all of the xml files listed in else-mode-xml-alist for: language, the sole parameter"
-  (let
+  (lexical-let
     ((file-list (else-xml-alist-expand lang)))
     (if file-list
       (apply 'else-xml-assemble-files lang file-list)
