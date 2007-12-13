@@ -52,6 +52,7 @@
 ;; by a pair of delimiters that allows nested delimiters.
 ;;----------------------------------------------------------------------
 
+;; BUG: this doesn't handle quoted delimiters, which should not be that hard.
 (defun bounds-scan ( seek-bounds open-bound-p close-bound-p restart-position position level )
   "scan for the delimitation of a region. This is a general form of a
    simple algorithm that counts opening and closing delimiters to scan
