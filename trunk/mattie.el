@@ -59,7 +59,7 @@
 ;;----------------------------------------------------------------------
 
 ;; BUG: this doesn't handle quoted delimiters, which should not be that hard.
-(defun bounds-scan ( seek-bounds open-bound-p close-bound-p restart-position position level )
+(defun bounds-scan ( position level )
   "scan for the delimitation of a region. This is a general form of a
    simple algorithm that counts opening and closing delimiters to scan
    past nested delimited spans."
@@ -69,15 +69,13 @@
 
     (cond
       ((funcall open-bound-p)
-        (bounds-scan seek-bounds open-bound-p close-bound-p restart-position
-          (funcall restart-position) (+ level 1)))
+        (bounds-scan (funcall restart-position) (+ level 1)))
 
       ((funcall close-bound-p)
         (if (> level 0)
           ;; when we have a positive level to start with
           ;; scan again with a decremented level.
-          (bounds-scan seek-bounds open-bound-p close-bound-p restart-position
-            (funcall restart-position) (- level 1))
+          (bounds-scan (funcall restart-position) (- level 1))
 
           ;; return point as we are done
           (point)
@@ -92,24 +90,21 @@
    delimiter returning the position before the delimiter"
 
   (lexical-let
-    ((open-delimiter (aref delimiters 0))
-     (close-delimiter (aref delimiters 1)))
+    ((delimiter-re (concat "^" delimiters))
+      (open-delimiter (aref delimiters 0))
+      (close-delimiter (aref delimiters 1)))
 
-    (let
-      ((close-at (bounds-scan
-                   (lambda ()
-                     (skip-chars-forward (concat "^" delimiters)))
+    (let*
+      ((seek-bounds       (lambda ()
+                            (skip-chars-forward delimiter-re)))
+        (open-bound-p     (lambda ()
+                            (char-equal open-delimiter (char-after))))
+        (close-bound-p    (lambda ()
+                            (char-equal close-delimiter (char-after))))
+        (restart-position (lambda ()
+                            (+ (point) 1)))
 
-                   (lambda ()
-                     (char-equal open-delimiter (char-after)))
-
-                   (lambda ()
-                     (char-equal close-delimiter (char-after)))
-
-                   (lambda ()
-                     (+ (point) 1))
-
-                   position 0)))
+        (close-at (bounds-scan position 0)))
       ;; Keep the returned position within the delimiters if the
       ;; scan moved beyond the starting position.
       (if (> close-at position)
@@ -125,24 +120,22 @@
 
   (lexical-let
     ;; note the inversion of the order since we are looking backwards
-    ((open-delimiter (aref delimiters 1))
-     (close-delimiter (aref delimiters 0)))
+    ((delimiter-re (concat "^" delimiters))
+      (open-delimiter (aref delimiters 1))
+      (close-delimiter (aref delimiters 0)))
 
-    (let
-      ((open-at (bounds-scan
-                  (lambda ()
-                    (skip-chars-backward (concat "^" delimiters)))
+    (let*
+      ((seek-bounds       (lambda ()
+                            (skip-chars-backward delimiter-re)))
+        (open-bound-p     (lambda ()
+                            (char-equal open-delimiter (char-before))))
+        (close-bound-p    (lambda ()
+                            (char-equal close-delimiter (char-before))))
+        (restart-position (lambda ()
+                            (- (point) 1)))
 
-                  (lambda ()
-                    (char-equal open-delimiter (char-before)))
+        (open-at (bounds-scan position 0)))
 
-                  (lambda ()
-                    (char-equal close-delimiter (char-before)))
-
-                  (lambda ()
-                    (- (point) 1))
-
-                  position 0)))
       ;; Keep the returned position within the delimiters if the
       ;; scan moved beyond the starting position.
       (if (< open-at position)
@@ -171,7 +164,7 @@
   "move the point immediately before the closing of the document"
   (interactive)
   (end-of-buffer)
-  (re-search-backward "</"))
+  (re-search-backward "</" nil t))
 
 ;;----------------------------------------------------------------------
 ;; repl
