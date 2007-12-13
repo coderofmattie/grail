@@ -166,14 +166,10 @@
 ;;                    Custom Key Bindings
 ;;----------------------------------------------------------------------
 
-;; this is the best way to figure out how it should be done.
-;; (format-kbd-macro (read-key-sequence "Key? " nil t))
-
 ;; enable ffap bindings so that C-x C-f on things like include directives
 ;; opens the paths. This could be very magical.
 
 (ffap-bindings)
-
 
 ;; M-g    = (goto-line)  |  move point to the line number in buffer
 
