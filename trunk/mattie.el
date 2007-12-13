@@ -55,8 +55,7 @@
     (url-insert-file-contents url)))
 
 ;;----------------------------------------------------------------------
-;; a nifty little implementation of scanning for the span bounded
-;; by a pair of delimiters that allows nested delimiters.
+;; fragile regex tricks
 ;;----------------------------------------------------------------------
 
 ;; BUG: this doesn't handle quoted delimiters, which should not be that hard.
@@ -167,6 +166,12 @@
      (close-pos (scan-lisp-list-close)))
 
     (delete-backward-char (- close-pos open-pos))))
+
+(defun xml-before-doc-close ()
+  "move the point immediately before the closing of the document"
+  (interactive)
+  (end-of-buffer)
+  (re-search-backward "</"))
 
 ;;----------------------------------------------------------------------
 ;; repl
