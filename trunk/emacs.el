@@ -283,6 +283,9 @@
                                         ;; an unprivelaged user.
 (server-start)
 
+(custom-set-variables                   ;; customize ffap to open urls in a buffer
+  '(ffap-url-fetcher 'visit-url))
+
 ;;----------------------------------------------------------------------
 ;;                 IPC shell:  comint/term mode
 ;;----------------------------------------------------------------------
