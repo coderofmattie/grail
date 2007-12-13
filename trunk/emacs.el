@@ -422,8 +422,10 @@
 ;; tune font-lock, important for hairy files.
 (setq jit-lock-contextually nil          ;; only refontify modified lines
       jit-lock-defer-contextually t      ;; until 5 seconds has passed
-      jit-lock-stealth-time 10           ;; refontify 10 seconds after no input
-      jit-lock-stealth-time 15)          ;; how long to wait to start deferred fontification
+      jit-lock-stealth-time 10)          ;; refontify 10 seconds after no input
+
+
+(auto-composition-mode 0) ;; 23.x this is buggy, definitely for 23.0.60
 
 ;;----------------------------------------------------------------------
 ;;                          GUD
