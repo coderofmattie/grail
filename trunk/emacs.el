@@ -219,6 +219,7 @@
        ;; just a string selecting what is hardwired in here.
 
        (cond
+         ((symbolp completion-context) completion-context)
          ;; use lisp-complete-symbol for elisp
          ((string-equal completion-context "elisp") 'lisp-complete-symbol)
 
@@ -388,6 +389,21 @@
 ;; (allout-init 'report)
 ;; not sure I like this. I can always use allout-minor-mode when I need
 ;; it.
+
+;;----------------------------------------------------------------------
+;;                    xml/html
+;;----------------------------------------------------------------------
+
+(setq auto-mode-alist (append '( ("\\.html$"    . nxml-mode)
+				 ("\\.xhtml$"   . nxml-mode)
+				 ("\\.xml$"     . nxml-mode)
+				 ) auto-mode-alist ))
+
+(add-hook 'nxml-mode-hook
+  (lambda ()
+    ;; the allout mode keybindings are found with C-c C-h
+    (apply-my-keybindings 'nxml-complete)
+    ))
 
 ;;======================================================================
 ;;                  Phase 4: Programming
