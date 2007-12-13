@@ -89,22 +89,27 @@
     ((open-delimiter (aref delimiters 0))
      (close-delimiter (aref delimiters 1)))
 
-    (bounds-scan
-      (lambda ()
-        (skip-chars-forward (concat "^" delimiters)))
+    (let
+      ((close-at (bounds-scan
+                   (lambda ()
+                     (skip-chars-forward (concat "^" delimiters)))
 
-      (lambda ()
-        (char-equal open-delimiter (char-after)))
+                   (lambda ()
+                     (char-equal open-delimiter (char-after)))
 
-      (lambda ()
-        (char-equal close-delimiter (char-after)))
+                   (lambda ()
+                     (char-equal close-delimiter (char-after)))
 
-      (lambda ()
-        (+ (point) 1))
+                   (lambda ()
+                     (+ (point) 1))
 
-      position 0)))
+                   position 0)))
+      (if (> close-at position)
+        (- close-at 1)
+        position)
+      )))
 
-(defun bounds-scan-backward ( delimiters position)
+(defun bounds-scan-backward ( delimiters position )
   "entry point for bounds-scan backward. given delimiters: a
    string containing a pair of delimiting characters, which must
    be in \"open close\" order, scan backward for the bounding
@@ -115,43 +120,33 @@
     ((open-delimiter (aref delimiters 1))
      (close-delimiter (aref delimiters 0)))
 
-    (bounds-scan
-      (lambda ()
-        (skip-chars-backward (concat "^" delimiters)))
+    (let
+      ((open-at (bounds-scan
+                  (lambda ()
+                    (skip-chars-backward (concat "^" delimiters)))
 
-      (lambda ()
-        (char-equal open-delimiter (char-before)))
+                  (lambda ()
+                    (char-equal open-delimiter (char-before)))
 
-      (lambda ()
-        (char-equal close-delimiter (char-before)))
+                  (lambda ()
+                    (char-equal close-delimiter (char-before)))
 
-      (lambda ()
-        (- (point) 1))
+                  (lambda ()
+                    (- (point) 1))
 
-      position 0)))
-
+                  position 0)))
+      (if (< open-at position)
+        (+ open-at 1)
+        position)
+      )))
 
 (defun scan-lisp-list-close ()
   "wrapper for bounds-scan that searches for the closing delimiter of a lisp list"
-  (let*
-    ((start-at (point))
-      (close-at (bounds-scan-forward "()" start-at)))
-
-    (if (> close-at start-at)
-      (- close-at 1)
-      start-at)
-    ))
+  (bounds-scan-forward "()" (point)))
 
 (defun scan-lisp-list-open ()
   "wrapper for bounds-scan that searches for the opening delimiter of a lisp list"
-  (let*
-    ((start-at (point))
-      (open-at (bounds-scan-backward "()" start-at)))
-
-    (if (< open-at start-at)
-      (+ open-at 1)
-      start-at)
-    ))
+  (bounds-scan-backward "()" (point)))
 
 (defun lisp-list-delete-body ()
   "delete the body of a lisp list including any nested lists"
