@@ -31,9 +31,6 @@
 ;;----------------------------------------------------------------------
 
 (setq auto-mode-alist (append '( ("\\.xsl$"     . xsl-mode)
-				 ("\\.html$"    . nxml-mode)
-				 ("\\.xhtml$"   . nxml-mode)
-				 ("\\.xml$"     . nxml-mode)
 				 ("\\.scheme$"  . scheme-mode)
 				 ) auto-mode-alist ))
 
