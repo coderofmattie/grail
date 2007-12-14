@@ -11,6 +11,9 @@
   (with-current-buffer "*Messages*"
     (backtrace)))
 
+(defun custom-save-customized ()
+  (backtrace-on-custom))
+
 (defun custom-save-all ()
   (backtrace-on-custom))
 
