@@ -569,6 +569,13 @@
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
     (tune-programming "elisp")
+
+    ;; make the parentheses a bit easier to type, less shifting.
+    (local-set-key (kbd "[") (lambda () (interactive) (insert-char ?\( 1 nil)))
+    (local-set-key (kbd "]") (lambda () (interactive) (insert-char ?\) 1 nil)))
+
+    (local-set-key (kbd "(") (lambda () (interactive) (insert-char ?\[ 1 nil)))
+    (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil)))
     ))
 
 ;;----------------------------------------------------------------------
