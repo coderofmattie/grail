@@ -58,7 +58,7 @@
     (cons my-localized-dir load-path)
 
     ;; add the extras to the end of the list.
-    (list my-extras-dir (mapcar
+    (cons my-extras-dir (mapcar
                           (lambda ( dir )
                             (concat my-extras-dir dir))
                           (subdirs-of-path my-extras-dir nil)))
