@@ -296,7 +296,9 @@
 (require 'eshell)
 
 (custom-set-variables
-  '(eshell-windowed t))   ;; enable windowing
+  '(eshell-windowed t)              ;; enable windowing
+  '(eshell-save-history-on-exit nil);; kill the prompt to save history
+  )
 
 (add-hook 'eshell-mode-hook
   (lambda ()
@@ -384,6 +386,11 @@
     ;; the allout mode keybindings are found with C-c C-h
     (apply-my-keybindings 'nxml-complete)
     ))
+
+;;----------------------------------------------------------------------
+;;                    icicles
+;;----------------------------------------------------------------------
+(require 'icicles)
 
 ;;======================================================================
 ;;                  Phase 4: Programming
