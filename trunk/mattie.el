@@ -5,22 +5,6 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
-(defun map-filter-nil ( func &rest seq )
-  "map-filter-nil. apply the function to the arguements ala mapcar.
-   Filter any nil elements of the sequence before the function is
-   applied, and after the function is applied."
-
-  (if (car seq)
-    (let
-      ((result (funcall func (car seq))))
-      (if result
-        (cons result (apply 'map-filter-nil func (cdr seq)))
-        (apply 'map-filter-nil func (cdr seq))
-        ))
-    (if (cdr seq)
-      (apply 'map-filter-nil func (cdr seq)))
-    ))
-
 (defun file-if-readable ( file )
   "this function was created because file-readable-p is strangely akward in that it returns t
    instead of the path it was given which neccesitates this silly wrapper. Consider sending
@@ -28,7 +12,6 @@
 
   (if (file-readable-p file)
     file))
-
 
 (defun show-bad-ws()
   (interactive)

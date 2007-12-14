@@ -10,84 +10,62 @@
 ;;======================================================================
 
 ;;----------------------------------------------------------------------
-;; String handling functions oriented towards manipulating path lists.
-;; These are essential for the earliest part of the init process,
-;; modifying the library loading path.
-;;----------------------------------------------------------------------
-
-(defun string-join (prefix list)
-  ;; This is analgous to the perl5 join function.
-  ;; given a <prefix> and a <list> of strings join the
-  ;; strings with <prefix> as a seperator between the
-  ;; list values.
-  ;;
-  ;; The result is a single string value.
-  (concat
-    prefix (car list)
-    (if (cdr list) (string-join prefix (cdr list)))
-    ))
-
-(defun string-prefix-list (prefix list)
-  (cons
-    (concat prefix (car list))
-
-    (cond
-      ((cdr list) (string-prefix-list prefix (cdr list)))
-       ('()))
-      ))
-
-(defun path-join (list)
-  (concat
-    (car list) ":"
-    (if (cdr list) (string-join (cdr list)))
-    ))
-
-;;----------------------------------------------------------------------
 ;; extend the library search space with local changes and third pary
 ;; extensions
 ;;----------------------------------------------------------------------
+
 
 ;; This code will assume a FS structure like this:
 ;;
 ;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
 ;;                              it like /var
 ;;
+;; $HOME/system/              | root of my emacs extension tree.
+
 ;; $HOME/system/emacs/emacs.el| entry point for emacs initialization
 ;; $HOME/system/emacs/*.el    | other libraries.
 
 ;; $HOME/system/emacs/local   | distributed files that have been locally modified
+
 ;; $HOME/system/emacs/elisp   | Third party extensions that are not distributed by
 ;;                              emacs and not integrated through host package management.
 ;;                              This is the highest maintenance burden.
-
-(setq localized-source-dir (concat (getenv "HOME") "/system/emacs/local/"))
-(setq extras-source-dir    (concat (getenv "HOME") "/system/emacs/elisp/"))
-
 ;; $HOME/system/emacs/patches | patches against upstream
-
-;; only system/emacs/local is currently placed in the path. the files in system/emacs
-;; are assumed to chain manually.
 
 ;; The config files are relocated to the $HOME/system/emacs so the config/code
 ;; under version control is not stomped on or cluttered by all the traffic
 ;; into the standard location: session and intra-session state.
 
-;; the handling of extras source-dir could be alot nicer, such as automatically
-;; doing a mapcar like thing along a list of directories.
+;; only system/emacs/{local,elisp} are placed in the path. the files in system/emacs
+;; are assumed to chain manually.
+
+(setq my-emacs-dir (concat (getenv "HOME") "/system/emacs/"))
+
+;; first load a small file containing only the functions that are essential
+;; to constructing the load path. Once the load-path, system adaptation,
+;; site-file have been loaded we can be less paranoid.
+
+(load-file (concat my-emacs-dir "mattie-boot.el"))
+
+(setq my-localized-dir (concat my-emacs-dir "local/"))
+(setq my-extras-dir    (concat my-emacs-dir "elisp/"))
 
 (setq load-path
   (append
     ;; overide distributed elisp with local modifications by
     ;; inserting a "local" directory at the beginning of the
     ;; load list
-    (cons localized-source-dir load-path)
+    (cons my-localized-dir load-path)
 
     ;; add the extras to the end of the list.
-    (list extras-source-dir (concat extras-source-dir "icicles"))
+    (list my-extras-dir (mapcar
+                          (lambda ( dir )
+                            (concat my-extras-dir dir))
+                          (subdirs-of-path my-extras-dir nil)))
     ))
 
 ;;----------------------------------------------------------------------
-;; Host specific customization.
+;; Host specific adapation
 ;;
 ;; each host system has a customization file that normalizes the platform
 ;; and extends the library search space for extra libraries it manages.
@@ -100,7 +78,7 @@
 
   ;; on darwin assume carbon-emacs.
   ((string-equal "darwin" system-type)
-    (load-file (concat (getenv "HOME") "/system/emacs/darwin.el")))
+    (load-file (concat my-emacs-dir "darwin.el")))
   )
 
 ;;----------------------------------------------------------------------
@@ -265,7 +243,7 @@
 ;;                     Personal ELisp Library.
 ;;----------------------------------------------------------------------
 
-(load-file (concat (getenv "HOME") "/system/emacs/mattie.el"))
+(load-file (concat my-emacs-dir "mattie.el"))
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
