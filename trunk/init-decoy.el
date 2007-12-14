@@ -5,6 +5,8 @@
 ;; the entire purpose of this file is to decoy any attempts by customize
 ;; to destroy my code.
 
+(setq custom-file "/dev/null")
+
 (defun backtrace-on-custom ()
   (message "!CRITICAL! trapped attempt to modify emacs initialization file")
 
