@@ -402,6 +402,7 @@
 ;; this is the kind of tab completion that mortals only dream of.
 
 (require 'icicles)
+(setq icicle-generic-S-tab-keys (cons (kbd "<C-tab>") nil))
 (icy-mode)
 
 ;;======================================================================
