@@ -40,7 +40,7 @@
   (delete-windows-on (current-buffer)))
 
 (defun insert-key-notation ()
-  "inject a complete (kbd "sequence") with key notation for a key sequence given by prompt"
+  "inject a complete \(kbd \"sequence\"\) with key notation for a key sequence given by prompt"
   (interactive)
   (insert "(kbd \"")
   (insert (format-kbd-macro (read-key-sequence "Key? " nil t)))
