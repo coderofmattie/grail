@@ -161,6 +161,14 @@
 (global-unset-key (kbd "M-g"))
 (global-set-key (kbd "M-g g") 'goto-line)
 
+;; reverse the regex/regular isearch
+
+(global-set-key (kbd "C-s") 'isearch-forward-regexp)
+(global-set-key (kbd "C-r") 'isearch-backward-regexp)
+
+(global-set-key (kbd "M-C-s") 'isearch-forward)
+(global-set-key (kbd "M-C-r") 'isearch-backward)
+
 ;; escape = (execute-extended-command)
 
 ;; standard emacs prompt for a interactive command
@@ -540,7 +548,7 @@
   ;; a small loss.
   (local-unset-key (kbd "C-l"))
 
-  (local-set-key (kbd "M-f") 'foward-sexp)
+  (local-set-key (kbd "M-f") 'forward-sexp)
   (local-set-key (kbd "M-b") 'backward-sexp)
 
   (local-set-key (kbd "C-l s") 'set-default-register)
