@@ -61,7 +61,7 @@
 ;;                              This is the highest maintenance burden.
 
 (setq localized-source-dir (concat (getenv "HOME") "/system/emacs/local/"))
-(setq extras-source-dir    (concat (getenv "HOME") "/system/emacs/elisp"))
+(setq extras-source-dir    (concat (getenv "HOME") "/system/emacs/elisp/"))
 
 ;; $HOME/system/emacs/patches | patches against upstream
 
@@ -72,6 +72,9 @@
 ;; under version control is not stomped on or cluttered by all the traffic
 ;; into the standard location: session and intra-session state.
 
+;; the handling of extras source-dir could be alot nicer, such as automatically
+;; doing a mapcar like thing along a list of directories.
+
 (setq load-path
   (append
     ;; overide distributed elisp with local modifications by
@@ -80,7 +83,7 @@
     (cons localized-source-dir load-path)
 
     ;; add the extras to the end of the list.
-    (list extras-source-dir)
+    (list extras-source-dir (concat extras-source-dir "icicles"))
     ))
 
 ;;----------------------------------------------------------------------
@@ -547,6 +550,9 @@
   ;; and the usual unix meaning of centering a screen is
   ;; a small loss.
   (local-unset-key (kbd "C-l"))
+
+  (local-set-key (kbd "M-f") 'foward-sexp)
+  (local-set-key (kbd "M-b") 'backward-sexp)
 
   (local-set-key (kbd "C-l s") 'set-default-register)
   (local-set-key (kbd "C-l r") 'list-registers)
