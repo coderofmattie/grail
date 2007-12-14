@@ -461,7 +461,7 @@
   '(else-kill-proceed-to-next-placeholder t)
   )
 
-(load-file (concat (getenv "HOME") "/system/emacs/else-xml.el"))
+(load-file (concat my-emacs-dir "else-xml.el"))
 
 ;; else-mode is definitely the crown jewel of my input expansion. Sets
 ;; the standard for macro expansion.
