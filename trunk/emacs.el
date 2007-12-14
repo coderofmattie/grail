@@ -85,14 +85,13 @@
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
 
-(custom-set-variables
- '(tool-bar-mode nil))                     ;; disable the toolbar ; waste of space
+(tool-bar-mode)                           ;; cannot be set with setq ?
 
 (setq inhibit-splash-screen t)
 
-(custom-set-variables
-  '(case-fold-search t)
-  '(current-language-environment "ASCII"))
+(setq
+  case-fold-search t
+  current-language-environment "ASCII")
 
 ;;======================================================================
 ;;         Phase 2: Visual Asthethics & Global Key Bindings
@@ -100,9 +99,7 @@
 
 (message "%s" "init Phase: 1 complete")
 
-(custom-set-variables
-  '(require-final-newline t)              ;; always require a final newline.
-  '(show-paren-mode t nil (paren)))
+(setq require-final-newline t)             ;; some programs fail without a newline terminator
 
 ;; the cursor
 (blink-cursor-mode -1)
@@ -252,15 +249,15 @@
 
 (require 'server)
 
-(custom-set-variables
-  '(server-use-tcp t))                  ;; when tcp is turned on a auth file
+(setq
+  server-use-tcp t)                     ;; when tcp is turned on a auth file
                                         ;; is created - root can use emacsclient
                                         ;; to connect to a session running as
                                         ;; an unprivelaged user.
 (server-start)
 
-(custom-set-variables                   ;; customize ffap to open urls in a buffer
-  '(ffap-url-fetcher 'visit-url))
+(setq                   ;; customize ffap to open urls in a buffer
+  ffap-url-fetcher 'visit-url)
 
 ;;----------------------------------------------------------------------
 ;;                 IPC shell:  comint/term mode
@@ -270,9 +267,8 @@
                                           ;; to this regex that captures
                                           ;; my shell prompt.
 
-(custom-set-variables
-  '(comint-prompt-read-only t)            ;; make everything before the prompt RO
-  )
+(setq
+  comint-prompt-read-only t)              ;; make everything before the prompt RO
 
 (add-hook 'comint-mode-hook
   (lambda ()
@@ -294,10 +290,9 @@
 
 (require 'eshell)
 
-(custom-set-variables
-  '(eshell-windowed t)              ;; enable windowing
-  '(eshell-save-history-on-exit nil);; kill the prompt to save history
-  )
+(setq
+  eshell-windowed t                ;; enable windowing
+  eshell-save-history-on-exit nil) ;; kill the prompt to save history
 
 (add-hook 'eshell-mode-hook
   (lambda ()
@@ -332,12 +327,11 @@
 ;; emacs IRC client is handy when on #emacs ...
 
 (eval-after-load "erc"
-  (custom-set-variables
-    '(erc-default-server "irc.freenode.net")
-    '(erc-default-port "6667")
-    '(erc-nick "codermattie")
-    )
-  )
+  (setq
+    erc-default-server "irc.freenode.net"
+    erc-default-port "6667"
+    erc-nick "codermattie"
+    ))
 
 ;;----------------------------------------------------------------------
 ;;                           Diff
@@ -345,8 +339,8 @@
 
 (require 'diff)
 
-(custom-set-variables
-  '(diff-switches "-U3"))                 ;; turn on standard context diffs,
+(setq
+  diff-switches "-U3")                 ;; turn on standard context diffs,
 
 (add-hook 'diff-mode-hook
 
@@ -393,7 +387,11 @@
 ;; this is the kind of tab completion that mortals only dream of.
 
 (require 'icicles)
-(setq icicle-generic-S-tab-keys (cons (kbd "<C-tab>") nil))
+(setq
+  icicle-generic-S-tab-keys (cons (kbd "<C-tab>") nil)   ;; I use S-tab already
+  icicle-customize-save-flag nil                         ;; disable auto-save of customize
+  )
+
 (icy-mode)
 
 ;;======================================================================
@@ -440,8 +438,8 @@
 
 ;; (require 'speedbar)                       ;; the speedbar is handy for GUD
 
-(custom-set-variables                     ;; cmd window + src
-  '(gdb-show-main t))
+(setq                     ;; cmd window + src
+  gdb-show-main t)
 
 ;;----------------------------------------------------------------------
 ;;                          Ediff
@@ -453,14 +451,14 @@
 (require 'ediff)		          ;; 2-3 way merge tool, can be used
 					  ;; for cherry picking and splitting
 
-(custom-set-variables
-  '(ediff-custom-diff-options "-U3")      ;; same for ediff
+(setq
+  ediff-custom-diff-options "-U3"         ;; same for ediff
 
-  '(ediff-split-window-function 'split-window-horizontally)
-  '(ediff-merge-split-window-function 'split-window-horizontally)
+  ediff-split-window-function 'split-window-horizontally
+  ediff-merge-split-window-function 'split-window-horizontally
 
-  '(ediff-use-toolbar-p nil)              ;; doesnt work ? disable the toolbar in ediff
-  '(ediff-window-setup-function 'ediff-setup-windows-plain) ;; this should work.
+  ediff-use-toolbar-p nil              ;; doesnt work ? disable the toolbar in ediff
+  ediff-window-setup-function 'ediff-setup-windows-plain ;; this should work.
   )
 
 ;;----------------------------------------------------------------------
@@ -468,9 +466,8 @@
 ;;----------------------------------------------------------------------
 (require 'else-mode)
 
-(custom-set-variables
-  '(else-kill-proceed-to-next-placeholder t)
-  )
+(setq
+  else-kill-proceed-to-next-placeholder t)
 
 (load-file (concat my-emacs-dir "else-xml.el"))
 
