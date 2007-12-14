@@ -152,15 +152,6 @@
 
 (ffap-bindings)
 
-;; M-g    = (goto-line)  |  move point to the line number in buffer
-
-;; In emacs 22 M-g became a prefix map, with goto as M-g g.
-;; TODO: look at the prefix map and re-evaluate the usefulness
-;; of my local version.
-
-(global-unset-key (kbd "M-g"))
-(global-set-key (kbd "M-g g") 'goto-line)
-
 ;; reverse the regex/regular isearch
 
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
