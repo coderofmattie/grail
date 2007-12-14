@@ -1,10 +1,26 @@
+* Design
+
+.. What is the value of a template system ?
+
+. , Template systems save keystrokes
+
+    how many keystrokes are saved with the overhead of keymaps ?
+
+    can a large set of templates be used without having to type
+    really long names ?
+
+
+. , template systems promote bad code
+
+
+
+* else mode needs to be able to use easier commands than the usual expansions.
+  It should be able to do this with the core functionality behind hyperlinks.
+  In the region of a placeholder that has not been expanded yet.
+
 * Paper
 
-  How much use is a template system really ?
 
-  do templates promote creating bulky code rather than fixing it ?
-
-  how many keystrokes are really saved ?
 
   can templates lower the number of defects entered ?
 
@@ -112,6 +128,15 @@
   how about translaters ? things like making regex in lisp doable
   by translating something decent like pcre into lisp ? sed ? etc ?
   that way you only have to learn one syntax for basic expressions.
+
+  this can be done with the emacs hooks I think. The important part
+  would be state for a placeholder. Maybe this could be done by
+  attaching the state to text properties. can you put a variable
+  in properties ?
+
+  simple signals and receivers, make it easy to generate various
+  signals without alot of elisp, simple elisp way to recieve the
+  signals and update state. expand on signal ?
 
 * Short Term
 

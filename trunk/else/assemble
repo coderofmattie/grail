@@ -1010,6 +1010,7 @@ our %defined = (
   body => [ 'macro_start', undef ],
   prefix => [ 'prefix_start' , undef ],
   r => [ 'required_start' , undef ],
+  o => [ 'optional_start' , undef ],
  );
 
 #----------------------------------------------------------------------
