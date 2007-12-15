@@ -190,8 +190,7 @@
 
   (lexical-let
     ((completion-function
-       ;; this cond should be the tail of an if special form that
-       ;; would allow the caller to pass a lambda() instead of
+       ;; TODO, handle a lambda coming in.
        ;; just a string selecting what is hardwired in here.
 
        (cond
@@ -394,6 +393,14 @@
   icicle-generic-S-tab-keys (cons (kbd "<C-tab>") nil)   ;; I use S-tab already
   icicle-customize-save-flag nil                         ;; disable auto-save of customize
   )
+
+;; noticed a bug where the cursor was always positioned at the beginning
+;; of the prompt instead of at the end of the input prefix. This is
+;; a work-around.
+
+(add-hook 'icicle-minibuffer-setup-hook
+  (lambda ()
+    (goto-char (point-max))))
 
 (icy-mode)
 
