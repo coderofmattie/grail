@@ -573,6 +573,11 @@
 ;;----------------------------------------------------------------------
 (setq lisp-indent-offset 2)
 
+(show-paren-mode t)                        ; highlight matching parens, etc
+(setq
+  show-paren-style 'parenthesis
+  show-paren-delay 2)
+
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
     (tune-programming "elisp")
