@@ -106,7 +106,6 @@
 (set-cursor-color "yellow")
 
 ;; mode-line customization
-
 (display-time)                            ;; display the time on the modeline
 
 (column-number-mode 1)		          ;; handy guides when following
@@ -148,6 +147,10 @@
 ;; opens the paths. This could be very magical.
 
 (ffap-bindings)
+
+;; this used to be minimize window, now it exits recursive editing
+;; which is handy and safer.
+(global-set-key (kbd "C-z") 'top-level)
 
 ;; reverse the regex/regular isearch
 
