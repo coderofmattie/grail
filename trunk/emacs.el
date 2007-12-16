@@ -394,19 +394,6 @@
   icicle-customize-save-flag nil                         ;; disable auto-save of customize
   )
 
-;; icicles defaults to positioning the cursor before the input. This
-;; is definitely a conveinance for unleashing the power of regex
-;; on completion, but it is less optimal personally for completing
-;; paths.
-
-;; the hook below has a global effect. It would be nice to restrict this
-;; positioning of the cursor at the end to file completion only so
-;; programming symbols can be completed with the default icicles behavior.
-
-(add-hook 'icicle-minibuffer-setup-hook
-  (lambda ()
-    (goto-char (point-max))))
-
 (icy-mode)
 
 ;;======================================================================
