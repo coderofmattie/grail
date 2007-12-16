@@ -386,7 +386,10 @@
 ;;                    icicles
 ;;----------------------------------------------------------------------
 
-;; this is the kind of tab completion that mortals only dream of.
+;; icicles is not just tab completion. It is a powerful experiment
+;; in solving some fundamental problems in computer human interaction.
+;; This rabbit hole is worthy of a book. A study of the ideas behind
+;; icicles could easily win a award.
 
 (require 'icicles)
 (setq
