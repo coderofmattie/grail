@@ -164,7 +164,7 @@
 
 ;; standard emacs prompt for a interactive command
 
-(global-set-key [(escape)] 'execute-extended-command)
+(global-set-key (kbd "<escape>") 'execute-extended-command)
 
 ;; C-xe   = (eval-expression)
 
@@ -539,7 +539,7 @@
   (apply-my-keybindings lang)               ;; use my keybindings
 
   ;; better return key for programming
-  (local-set-key [(return)] 'newline-and-indent)
+  (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (set (make-local-variable 'source-language) lang)
 
