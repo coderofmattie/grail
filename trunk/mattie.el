@@ -66,6 +66,21 @@
       ;; error ?
       )))
 
+(defmacro match-char-property ( name &rest p )
+  "match against char properties with a form of \(property regex...\)"
+  `(lexical-let ((property (get-text-property (point) ',name)))
+       (if property
+         (or
+           ,@(mapcar (lambda (m) `(string-match ,m (symbol-name property))) (cdr p))
+           ))
+       ))
+
+;; implement the chartext region stuff as a macro here that
+;; bounds a given operation, like narrowing ? next-property-change
+;; will be at the core of the iterator.
+
+;; how do we implement delayed eval ?
+
 (defun bounds-scan-forward ( delimiters position )
   "entry point for bounds-scan forward. given delimiters: a
    string containing a pair of delimiting characters, which must
@@ -78,12 +93,13 @@
       (close-delimiter (aref delimiters 1)))
 
     (let*
-      ((seek-bounds       (lambda ()
-                            (skip-chars-forward delimiter-re)))
+      (
         (open-bound-p     (lambda ()
                             (char-equal open-delimiter (char-after))))
         (close-bound-p    (lambda ()
                             (char-equal close-delimiter (char-after))))
+        (seek-bounds      (skip-over (next delimiter-re)
+                              (face ".*comment.*" ".*string.*" ".*doc.*")))
         (restart-position (lambda ()
                             (+ (point) 1)))
 
