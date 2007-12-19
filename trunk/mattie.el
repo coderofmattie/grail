@@ -71,7 +71,7 @@
   `(lexical-let ((property (get-text-property (point) ',name)))
        (if property
          (or
-           ,@(mapcar (lambda (m) `(string-match ,m (symbol-name property))) (cdr p))
+           ,@(mapcar (lambda (m) `(string-match ,m (symbol-name property))) p)
            ))
        ))
 
