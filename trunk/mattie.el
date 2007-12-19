@@ -98,9 +98,12 @@
                    )))
      )
 
-     (or
-       (funcall prop-p)
-       (funcall iter))
+     (cond
+       ((funcall prop-p)
+         (progn
+           (next-property-change (point))
+           t))
+       ((funcall iter) t))
   ))
 
 ;; implement the chartext region stuff as a macro here that
