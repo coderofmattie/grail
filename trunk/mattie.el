@@ -98,22 +98,27 @@
                  ;; select the correct skip-chars based on direction
                  (symbol-for-direction (car iterator) 'skip-chars-forward 'skip-chars-backward)
 
-                 ;; get the regex delimiter in place, supply the inversion
-                 ;; since skip-chars wraps given regex  in a []
+                 ;; construct the regex given to skip-chars-, all we need to add is
+                 ;; the inversion since skip-chars wraps given regex  in a []
                  (concat "^" (cadr iterator)))
               ))
 
-       ;; create a predicate to bound the iterator. since we are using inverted matching
-       ;; we need to check the char after.
+       ;; we need to bound the iterator which a special predicate. The iterator always stops
+       ;; before the delimiter it seeks, so we need a predicate that uses char-{before,after}
        (iter-stop-p (lambda ()
                       (string-match
                         ,(concat "[" (cadr iterator) "]")
                         (char-to-string ( ,(symbol-for-direction (car iterator) 'char-after 'char-before) )
                         ))))
 
-       ;; we need a predicate to determine when we are in a region
+       ;; determine if where we have stopped is blacklisted by virtue of it's
+       ;; text properties.
        (prop-skip-p (lambda ()
                       (or
+                        ;; each attribute that can be examined goes inside the or
+                        ;; so that mutliple attributes can be examined.
+
+                        ;; the predicate for a specific property is built with mach-char-property.
                         ,@(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
                         )))
      )
