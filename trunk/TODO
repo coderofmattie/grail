@@ -1,4 +1,6 @@
 
+* look at replace-regex being able to call lisp code. that is insanely
+  great.
 
 ;; use def-advice to set the mark when insert-key-notation is
 ;; used so that it can easily be copied as a region.
@@ -21,13 +23,11 @@
 
 * General
 
-.. It would be nice if the major mode was loaded from the buffer
-   name so that I could make up temporary code buffers and get
-   the correct environment
-
 .. the C-xe binding should be a general execute emacs code concept.
    in interactive mode it should replace C-u-x-e as a much shorter
    binding. In any other sort of buffer it should run eval-expression.
+
+   how could this be taken advantage of in non-elisp buffers ?
 
    .. Options
 
@@ -50,17 +50,19 @@
    in read-only mode. When I turn it writable it needs to copy the file
    to my local dir and do a write-file to switch the buffer.
 
-* input completion
+   .. this should encode version information in the diff, so you know
+      the common ancestor.
 
-  tab completion needs cycling
+* input completion
 
   .. ultimate template refactor system
 
 * code navigation
 
-.. navigate by terms
+.. navigate by terms,tokens (for imperative languages)
 
-Move forwards and backwards in syntax by terms.
+Move forwards and backwards in syntax by terms. This is only needed in
+imperative languages.
 
 * Better template modes
 
