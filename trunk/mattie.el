@@ -67,7 +67,10 @@
       )))
 
 (defmacro match-char-property ( name &rest p )
-  "match against char properties with a form of \(property regex...\)"
+  "Match against char properties with the form: \(property regex...\).
+   If any of the regex's match against the property value non-nil is
+   returned, nil otherwise."
+
   `(lexical-let ((property (get-text-property (point) ',name)))
        (if property
          (or
@@ -75,36 +78,51 @@
            ))
        ))
 
+(defun symbol-for-direction ( direction forward backward )
+  "little helper function to choose a symbol based on direction
+   given where I can bury some error handling later"
+  (cond
+    ((string-equal "next" direction) forward)
+    ((string-equal "prev" direction) backward))
+  )
+
 (defmacro skip-over-properties ( iterator &rest predicates )
   "almost works"
   `(lexical-let
-     ;; bind the iterator as a lambda so we can eval more than once
+     ;; bind the iterator as a lambda so we can eval more than once.
      ((iter (lambda ()
               ,(list
                  ;; select the correct skip-chars based on direction
-                 (cond
-                   ((string-equal "next" (car iterator)) 'skip-chars-forward)
-                   ((string-equal "prev" (car iterator)) 'skip-chars-backward))
+                 (symbol-for-direction (car iterator) 'skip-chars-forward 'skip-chars-backward)
 
                  ;; get the regex delimiter in place, supply the inversion
                  ;; since skip-chars wraps given regex  in a []
                  (concat "^" (cadr iterator)))
               ))
 
+       ;; create a predicate to bound the iterator. since we are using inverted matching
+       ;; we need to check the char after.
+       (iter-stop-p (lambda ()
+                      (string-match
+                        ,(concat "[" (cadr iterator) "]")
+                        (char-to-string ( ,(symbol-for-direction (car iterator) 'char-after 'char-before) )
+                        ))))
+
        ;; we need a predicate to determine when we are in a region
-       (prop-p (lambda ()
-                 (or
-                   ,@(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
-                   )))
+       (prop-skip-p (lambda ()
+                      (or
+                        ,@(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
+                        )))
      )
 
-     (cond
-       ((funcall prop-p)
-         (progn
-           (next-property-change (point))
-           t))
-       ((funcall iter) t))
-  ))
+     (while (cond
+       ;; first check if the character properties at the point are blacklisted
+       ;; with the prop-p predicate, scan past those properties.
+       ((while (funcall prop-skip-p)
+          (goto-char ( ,(symbol-for-direction (car iterator) '+ '-) (point) 1))) t)
+       ;; first bound the iterator with iter-stop-p, otherwise search as necessary.
+       ((and (not (funcall iter-stop-p)) (funcall iter)) t)
+     ))))
 
 ;; implement the chartext region stuff as a macro here that
 ;; bounds a given operation, like narrowing ? next-property-change
