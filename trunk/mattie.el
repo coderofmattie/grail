@@ -75,6 +75,34 @@
            ))
        ))
 
+(defmacro skip-over-properties ( iterator &rest predicates )
+  "almost works"
+  `(lexical-let
+     ;; bind the iterator as a lambda so we can eval more than once
+     ((iter (lambda ()
+              ,(list
+                 ;; select the correct skip-chars based on direction
+                 (cond
+                   ((string-equal "next" (car iterator)) 'skip-chars-forward)
+                   ((string-equal "prev" (car iterator)) 'skip-chars-backward))
+
+                 ;; get the regex delimiter in place, supply the inversion
+                 ;; since skip-chars wraps given regex  in a []
+                 (concat "^" (cadr iterator)))
+              ))
+
+       ;; we need a predicate to determine when we are in a region
+       (prop-p (lambda ()
+                 (or
+                   ,@(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
+                   )))
+     )
+
+     (or
+       (funcall prop-p)
+       (funcall iter))
+  ))
+
 ;; implement the chartext region stuff as a macro here that
 ;; bounds a given operation, like narrowing ? next-property-change
 ;; will be at the core of the iterator.
