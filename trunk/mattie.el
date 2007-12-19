@@ -196,12 +196,16 @@
       (close-delimiter (aref delimiters 0)))
 
     (let*
-      ((seek-bounds       (lambda ()
-                            (skip-chars-backward delimiter-re)))
-        (open-bound-p     (lambda ()
-                            (char-equal open-delimiter (char-before))))
+      ((open-bound-p     (lambda ()
+                           (char-equal open-delimiter (char-before))))
         (close-bound-p    (lambda ()
                             (char-equal close-delimiter (char-before))))
+        (seek-bounds      (lambda ()
+                            (skip-over-properties (prev delimiters) (face
+                                                                      ".*comment.*"
+                                                                      ".*string.*"
+                                                                      ".*doc.*"))))
+
         (restart-position (lambda ()
                             (- (point) 1)))
 
