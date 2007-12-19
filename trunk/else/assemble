@@ -1154,7 +1154,6 @@ sub extract_repeat_controls {
     if ( $element->{Attributes}->{'{}' . $spec}->{Value} ) {
 
       # set separator and duplicate for repeated placeholders.
-
       return (
         separator => $element->{Attributes}->{'{}' . $spec}->{Value},
         repeat => $spec,
@@ -1165,23 +1164,32 @@ sub extract_repeat_controls {
   return ();
 }
 
+sub extract_placeholder_expr {
+  my $element = shift();
+
+  # currently implements p="" only
+  $element->{Attributes}->{'{}p'}->{Value};
+}
+
 sub required_start {
   my $element = shift();
 
-  # need to extract the p attribute. This is our expression.
-  my $expr = $element->{Attributes}->{'{}p'}->{Value};
+  # gather the attributes in the element into keys recognized by
+  # Builder::Ref
 
-  # Builder::Ref collects the specification for how the placeholder is
-  # expanded. This spec is inserted into the ->macro sequence for
-  # deferred evaluation during the syntax phase.
+  Builder::define_insert( new Builder::Ref( context => 'required',
+                                            expr => extract_placeholder_expr( $element ),
+                                            extract_repeat_controls( $element ),
+                                           ));
+}
 
-  # At this point the specification of the placeholder needs to be complete
-  # aside from affects like auto-substitute which are computed by collision.
+sub optional_start {
+  my $element = shift();
 
-  my $term = Builder::define_insert( new Builder::Ref( context => 'required',
-                                                       expr => $expr,
-                                                       extract_repeat_controls( $element ),
-                                                      ));
+  Builder::define_insert( new Builder::Ref( context => 'optional',
+                                            expr => extract_placeholder_expr( $element ),
+                                            extract_repeat_controls( $element ),
+                                           ));
 }
 
 sub prefix_start {
@@ -1366,6 +1374,9 @@ sub quote_context {
 
   if ( $context eq 'required' ) {
     @wrap = ( '{' , '}' );
+  }
+  elsif ( $context eq 'optional' ) {
+    @wrap = ( '[' , ']' );
   }
 
   return join('',$wrap[0],$text,$wrap[1]);
