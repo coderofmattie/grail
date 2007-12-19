@@ -4,6 +4,61 @@
 ;; and fixing.
 ;;----------------------------------------------------------------------
 
+(defmacro skip-over (iterator &rest predicates )
+  "skip a iterator over spans of text properties"
+  `(lambda () (lexical-let
+     ((iter (lambda () ,(list (cond
+                                ((string-equal "next" (car iterator)) 'skip-chars-forward)
+                                ((string-equal "prev" (car iterator)) 'skip-chars-backward))
+
+                          (cadr iterator))
+              ))
+       (skip-p (lambda ()
+                 (or
+                   ,(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
+                   )))
+       )
+     (while (cond
+              ((funcall skip-p)
+                (progn
+                  (,(concat (symbol-name (car iterator)) "-property-change") (point))
+                  t))
+              ((funcall iter) t))
+       nil)
+     )))
+
+
+(defmacro skip-over-properties ( iterator &rest predicates )
+  `(lexical-let
+     ;; bind the iterator as a lambda so we can eval more than once
+     ((iter (lambda ()
+              ,(list
+                 ;; select the correct skip-chars based on direction
+                 (cond
+                   ((string-equal "next" (car iterator)) 'skip-chars-forward)
+                   ((string-equal "prev" (car iterator)) 'skip-chars-backward))
+
+                 ;; get the regex delimiter in place, supply the inversion
+                 ;; since skip-chars wraps given regex  in a []
+                 (concat "^" (cadr iterator)))
+              ))
+     )
+     (funcall iter)
+  ))
+
+;;                   ,(mapcar (lambda ( p )
+;;                              ;;                                 (or
+;;                                   ,(mapcar (lambda ( match ) ) (cdr p))
+;;                                   ))) predicates)
+
+
+;; another experiment
+(defmacro gen-seek ( count )
+  `(let
+     ((iter (lambda () (goto-char (+ (point) ,count))))
+       (funcall 'iter)))
+  )
+
 ;;----------------------------------------------------------------------
 ;;          tags source code indexing
 ;;----------------------------------------------------------------------
