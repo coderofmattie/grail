@@ -87,7 +87,10 @@
   )
 
 (defmacro skip-over-properties ( iterator &rest predicates )
-  "almost works"
+  "skip-over-properties starts from the point searching for a position before
+   the given delimiters. To ignore text at a syntantic level such as comments
+   and literals where the delimiters may be embedded, properties of text to
+   skip over can be given."
   `(lexical-let
      ;; bind the iterator as a lambda so we can eval more than once.
      ((iter (lambda ()
@@ -142,8 +145,7 @@
       (close-delimiter (aref delimiters 1)))
 
     (let*
-      (
-        (open-bound-p     (lambda ()
+      ((open-bound-p     (lambda ()
                             (char-equal open-delimiter (char-after))))
         (close-bound-p    (lambda ()
                             (char-equal close-delimiter (char-after))))
