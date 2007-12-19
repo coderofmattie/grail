@@ -58,10 +58,7 @@
     (cons my-localized-dir load-path)
 
     ;; add the extras to the end of the list.
-    (cons my-extras-dir (mapcar
-                          (lambda ( dir )
-                            (concat my-extras-dir dir))
-                          (subdirs-of-path my-extras-dir nil)))
+    (cons my-extras-dir (subdirs-of-path my-extras-dir t))
     ))
 
 ;;----------------------------------------------------------------------
@@ -85,7 +82,7 @@
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
 
-(tool-bar-mode)                           ;; cannot be set with setq
+(tool-bar-mode nil)                           ;; cannot be set with setq
 
 (setq inhibit-splash-screen t)
 
