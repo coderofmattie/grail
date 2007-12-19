@@ -80,57 +80,62 @@
 
 (defun symbol-for-direction ( direction forward backward )
   "little helper function to choose a symbol based on direction
-   given where I can bury some error handling later"
+   given. I can bury some error handling later"
   (cond
     ((string-equal "next" direction) forward)
     ((string-equal "prev" direction) backward))
   )
 
 (defmacro skip-over-properties ( iterator &rest predicates )
-  "skip-over-properties starts from the point searching for a position before
+  "skip-over-properties starts from the point, searching for a position before
    the given delimiters. To ignore text at a syntantic level such as comments
    and literals where the delimiters may be embedded, properties of text to
    skip over can be given."
-  `(lexical-let
-     ;; bind the iterator as a lambda so we can eval more than once.
-     ((iter (lambda ()
-              ,(list
-                 ;; select the correct skip-chars based on direction
-                 (symbol-for-direction (car iterator) 'skip-chars-forward 'skip-chars-backward)
+  (lexical-let
+    ((direction (car iterator))
+      (delimiters (cadr iterator)))
 
-                 ;; construct the regex given to skip-chars-, all we need to add is
-                 ;; the inversion since skip-chars wraps given regex  in a []
-                 (concat "^" (cadr iterator)))
-              ))
+    `(lexical-let
+       ;; bind the iterator as a lambda so we can eval more than once.
+       ((iter (lambda ()
+                ,(list
+                   ;; select the correct skip-chars based on direction
+                   (symbol-for-direction direction 'skip-chars-forward 'skip-chars-backward)
 
-       ;; we need to bound the iterator which a special predicate. The iterator always stops
-       ;; before the delimiter it seeks, so we need a predicate that uses char-{before,after}
-       (iter-stop-p (lambda ()
-                      (string-match
-                        ,(concat "[" (cadr iterator) "]")
-                        (char-to-string ( ,(symbol-for-direction (car iterator) 'char-after 'char-before) )
-                        ))))
+                   ;; construct the regex given to skip-chars-, all we need to add is
+                   ;; the inversion since skip-chars wraps given regex  in a []
+                   `(concat "^" ,delimiters))
+                ))
 
-       ;; determine if where we have stopped is blacklisted by virtue of it's
-       ;; text properties.
-       (prop-skip-p (lambda ()
-                      (or
-                        ;; each attribute that can be examined goes inside the or
-                        ;; so that mutliple attributes can be examined.
+         ;; we need to bound the iterator which a special predicate. The iterator always stops
+         ;; before the delimiter it seeks, so we need a predicate that uses char-{before,after}
+         (iter-stop-p (lambda ()
+                        (string-match
+                          (concat "[" ,delimiters "]")
+                          (char-to-string ( ,(symbol-for-direction direction 'char-after 'char-before) ))
+                            )))
 
-                        ;; the predicate for a specific property is built with mach-char-property.
-                        ,@(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
-                        )))
-     )
+         ;; determine if where we have stopped is blacklisted by virtue of it's
+         ;; text properties.
+         (prop-skip-p (lambda ()
+                        (or
+                          ;; each attribute that can be examined goes inside the or
+                          ;; so that mutliple attributes can be examined.
+
+                          ;; the predicate for a specific property is built with mach-char-property.
+                          ,@(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
+                          )))
+         )
 
      (while (cond
        ;; first check if the character properties at the point are blacklisted
        ;; with the prop-p predicate, scan past those properties.
        ((while (funcall prop-skip-p)
-          (goto-char ( ,(symbol-for-direction (car iterator) '+ '-) (point) 1))) t)
+          (goto-char ( ,(symbol-for-direction direction '+ '-) (point) 1))) t)
        ;; first bound the iterator with iter-stop-p, otherwise search as necessary.
        ((and (not (funcall iter-stop-p)) (funcall iter)) t)
-     ))))
+     )))
+    ))
 
 ;; (defun my-test ()
 ;;  "foo"
@@ -162,8 +167,11 @@
                             (char-equal open-delimiter (char-after))))
         (close-bound-p    (lambda ()
                             (char-equal close-delimiter (char-after))))
-        (seek-bounds      (skip-over (next delimiter-re)
-                              (face ".*comment.*" ".*string.*" ".*doc.*")))
+        (seek-bounds      (lambda ()
+                            (skip-over-properties (next delimiters) (face
+                                                                      ".*comment.*"
+                                                                      ".*string.*"
+                                                                      ".*doc.*"))))
         (restart-position (lambda ()
                             (+ (point) 1)))
 
