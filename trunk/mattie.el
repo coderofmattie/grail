@@ -127,6 +127,14 @@
        ((and (not (funcall iter-stop-p)) (funcall iter)) t)
      ))))
 
+;; (defun my-test ()
+;;  "foo"
+;;  (interactive)
+;;  (if (skip-over-properties (next "\(\)") (face ".*comment.*" ".*string.*" ".*doc.*"))
+;;    (message "it worked !")
+;;    (message "it failed !")
+;;    ))
+
 ;; implement the chartext region stuff as a macro here that
 ;; bounds a given operation, like narrowing ? next-property-change
 ;; will be at the core of the iterator.
