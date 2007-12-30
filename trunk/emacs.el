@@ -3,80 +3,10 @@
 ;; written by: Mike Mattie
 ;;
 ;; configuration for versions 22.1 and 23.x
-;;----------------------------------------------------------------------
-
-;;======================================================================
-;;         Phase 1: Library loading and host init/normalization
-;;======================================================================
-
-;;----------------------------------------------------------------------
-;; extend the library search space with local changes and third pary
-;; extensions
-;;----------------------------------------------------------------------
-
-
-;; This code will assume a FS structure like this:
 ;;
-;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
-;;                              it like /var
-;;
-;; $HOME/system/              | root of my emacs extension tree.
-
-;; $HOME/system/emacs/emacs.el| entry point for emacs initialization
-;; $HOME/system/emacs/*.el    | other libraries.
-
-;; $HOME/system/emacs/local   | distributed files that have been locally modified
-
-;; $HOME/system/emacs/elisp   | Third party extensions that are not distributed by
-;;                              emacs and not integrated through host package management.
-;;                              This is the highest maintenance burden.
-;; $HOME/system/emacs/patches | patches against upstream
-
-;; The config files are relocated to the $HOME/system/emacs so the config/code
-;; under version control is not stomped on or cluttered by all the traffic
-;; into the standard location: session and intra-session state.
-
-;; only system/emacs/{local,elisp} are placed in the path. the files in system/emacs
-;; are assumed to chain manually.
-
-(setq my-emacs-dir (concat (getenv "HOME") "/system/emacs/"))
-
-;; first load a small file containing only the functions that are essential
-;; to constructing the load path. Once the load-path, system adaptation,
-;; site-file have been loaded we can be less paranoid.
-
-(load-file (concat my-emacs-dir "mattie-boot.el"))
-
-(setq my-localized-dir (concat my-emacs-dir "local/"))
-(setq my-extras-dir    (concat my-emacs-dir "elisp/"))
-
-(setq load-path
-  (append
-    ;; overide distributed elisp with local modifications by
-    ;; inserting a "local" directory at the beginning of the
-    ;; load list
-    (cons my-localized-dir load-path)
-
-    ;; add the extras to the end of the list.
-    (cons my-extras-dir (subdirs-of-path my-extras-dir t))
-    ))
-
+;; this file is designed to be robust unlike adapt.el which should
+;; fail if basic assumptions such as load-path cannot be established.
 ;;----------------------------------------------------------------------
-;; Host specific adapation
-;;
-;; each host system has a customization file that normalizes the platform
-;; and extends the library search space for extra libraries it manages.
-;;----------------------------------------------------------------------
-(cond
-  ;; Gentoo has a file that tunes emacs and loads the third party
-  ;; components managed by the package manager.
-  ((string-equal "gnu/linux" system-type)
-    (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
-
-  ;; on darwin assume carbon-emacs.
-  ((string-equal "darwin" system-type)
-    (load-file (concat my-emacs-dir "darwin.el")))
-  )
 
 ;;----------------------------------------------------------------------
 ;; basic startup tuning.
@@ -107,7 +37,6 @@
 
 (column-number-mode 1)		          ;; handy guides when following
 (line-number-mode 1)			  ;; errors
-
 
 (simple-set-theme user
   ;; default
@@ -333,6 +262,7 @@
 ;;----------------------------------------------------------------------
 
 (require 'tramp)
+
 (setq tramp-default-method "scp2")
 (setq tramp-terminal-type "eterm-color")
 
@@ -382,36 +312,17 @@
 ;; it.
 
 ;;----------------------------------------------------------------------
-;;                    xml/html
+;; undistributed features.
 ;;----------------------------------------------------------------------
 
-(setq auto-mode-alist (append '( ("\\.html$"    . nxml-mode)
-				 ("\\.xhtml$"   . nxml-mode)
-				 ("\\.xml$"     . nxml-mode)
-				 ) auto-mode-alist ))
+(defmacro load-guard ( file error )
+  "trap errors from loading a file for robustness while initializing"
+  `(if (not (load-file (concat my-emacs-dir ,file)))
+     (message "initialization failed %s" error)
+     ))
 
-(add-hook 'nxml-mode-hook
-  (lambda ()
-    ;; the allout mode keybindings are found with C-c C-h
-    (apply-my-keybindings 'nxml-complete)
-    ))
-
-;;----------------------------------------------------------------------
-;;                    icicles
-;;----------------------------------------------------------------------
-
-;; icicles is not just tab completion. It is a powerful experiment
-;; in solving some fundamental problems in computer human interaction.
-;; This rabbit hole is worthy of a book. A study of the ideas behind
-;; icicles could easily win a award.
-
-(require 'icicles)
-(setq
-  icicle-generic-S-tab-keys (cons (kbd "<C-tab>") nil)   ;; I use S-tab already
-  icicle-customize-save-flag nil                         ;; disable auto-save of customize
-  )
-
-(icy-mode)
+(load-guard "xml.el" "nxml will not be avaialable, xml document handling may be damaged")
+(load-guard "complete.el" "icicles will not be avialable, minibuffer will be degraded")
 
 ;;======================================================================
 ;;                  Phase 4: Programming
@@ -582,15 +493,7 @@
 ;;----------------------------------------------------------------------
 (setq lisp-indent-offset 2)
 
-(require 'mic-paren)
-
-(setq
-  paren-showing t
-  show-paren-style 'parenthesis
-  show-paren-delay nil
-  )
-
-(paren-activate)
+(load-guard "paren.el" "parentheses highlighting will not be available")
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
