@@ -29,18 +29,30 @@
 ;;
 ;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
 ;;                              it like /var
+;;  my-emacs-dir =
+;;   $HOME/system/emacs       | keep my emacs configuration under version
+;;                              control seperate from any emacs default path
+;;                              so that odd files don't show up from emacs
+;;                              sessions.
 ;;
-;; $HOME/system/emacs         | root of my emacs extension tree.
-
-;; $HOME/system/emacs/emacs.el| entry point for emacs initialization
-;; $HOME/system/emacs/*.el    | other libraries.
-
-;; $HOME/system/emacs/local   | distributed files that have been locally modified
-
-;; $HOME/system/emacs/elisp   | Third party extensions that are not distributed by
+;; adapt.el                   | entry point for emacs startup and phase #1
+;;                              of the configuration.
+;;
+;; emacs.el                   | contains customization of emacs that is
+;;                              robust
+;; mattie-boot.el             | library essential to phase #1
+;;
+;; *.el                       | my libraries,code, and parts of the customization
+;;                              that may fail.
+;;
+;; patches/                   | patches against distributed emacs files required
+;;                              by my config.
+;;
+;; local/                     | distributed files that have been locally modified
+;;
+;; elisp/                     | Third party extensions that are not distributed by
 ;;                              emacs and not integrated through host package management.
 ;;                              This is the highest maintenance burden.
-;; $HOME/system/emacs/patches | patches against upstream
 
 ;; The config files are relocated to the $HOME/system/emacs so the config/code
 ;; under version control is not stomped on or cluttered by all the traffic
