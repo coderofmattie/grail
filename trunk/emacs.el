@@ -319,7 +319,7 @@
   "trap errors from loading a file for robustness while initializing"
   `(condition-case nil
      (load (concat my-emacs-dir ,file))
-     (error (message "initialization failed %s" error))
+     (error (message "initialization failed %s" ,error))
      ))
 
 (load-guard "xml.el" "nxml will not be avaialable, xml document handling may be damaged")
