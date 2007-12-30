@@ -318,7 +318,7 @@
 (defmacro load-guard ( file error )
   "trap errors from loading a file for robustness while initializing"
   `(condition-case nil
-     (if (not (load (concat my-emacs-dir ,file) t))
+     (if (not (load (concat my-emacs-dir ,file)))
        (message "initialization failed %s" error))
      (error nil)
      ))
