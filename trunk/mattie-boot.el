@@ -84,3 +84,29 @@
               (cons (car attr-list) (nth 9 attr-list)))
       ;; get the list of files.
       (directory-files-and-attributes path path-type))))
+
+(defun simple-set-expand-prop ( set-op spec )
+  "beta"
+  (if (string-equal (symbol-name set-op) "splice")
+    ;; when multiple properties are specified splice them in.
+    spec
+
+    ;; when a single property is specified create the property
+    ;; syntax. The property name is constructed with read. The
+    ;; specification is eval'd to render it essentially
+    ;; typeless. Symbols now require quoting.
+    (list (read (concat ":" (symbol-name set-op))) (eval spec))))
+
+(defmacro simple-set-theme ( theme &rest given-forms )
+  "create the syntax for custom-theme-set-faces"
+  (append
+    `(custom-theme-set-faces ',theme)
+
+     (mapcar
+       (lambda (form)
+         `'(,(car form)
+             ((t
+                ,(simple-set-expand-prop (cadr form) (caddr form))
+                )))
+         ) given-forms)
+    ))

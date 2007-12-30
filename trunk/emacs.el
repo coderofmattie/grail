@@ -108,32 +108,50 @@
 (column-number-mode 1)		          ;; handy guides when following
 (line-number-mode 1)			  ;; errors
 
-(custom-set-faces
-  ;; default font.
-  '(default ((t
-	      (:stipple nil
-	       :background "black"
-	       :foreground "grey70"
-	       :inverse-video nil
-	       :box nil
-	       :strike-through nil
-	       :overline nil
-	       :underline nil
-	       :slant normal
-	       :weight normal
-	       :height 110
-	       :width normal
-	       :family "Courier New"))))
 
-  '(font-lock-comment-face ((((class color) (background dark)) (:foreground "green4"))))
-  '(font-lock-keyword-face ((((class color) (background dark)) (:foreground "royalblue3"))))
-  '(font-lock-string-face ((((class color) (background dark)) (:foreground "grey80"))))
-  '(font-lock-type-face ((((class color) (background dark)) (:foreground "grey60"))))
-  '(font-lock-variable-name-face ((((class color) (background dark)) (:foreground "grey70"))))
+(simple-set-theme user
+  ;; default
+  (default splice (:stipple nil
+                    :background "black"
+                    :foreground "grey70"
+                    :inverse-video nil
+                    :box nil
+                    :strike-through nil
+                    :overline nil
+                    :underline nil
+                    :slant normal
+                    :weight normal
+                    :height 110
+                    :width normal
+                    :family "Courier New"))
 
-  '(cperl-array-face ((((class color) (background dark)) (:foreground "grey70"))))
-  '(cperl-hash-face ((((class color) (background dark)) (:foreground "grey70"))))
-  '(cperl-nonoverridable-face ((((class color) (background dark)) (:foreground "grey70"))))
+  ;; comments are set off-tempature to distingiush them better.
+  ;; orange was chosen as a red that wasn't harsh.
+
+  ;; (font-lock-comment-face splice (:foreground "orange"))
+  (font-lock-comment-face foreground "orange3")
+
+  ;; language syntax is the darkest shade of blue
+  (font-lock-keyword-face foreground "DeepSkyBlue4")
+  (cperl-nonoverridable-face foreground "DeepSkyBlue4")
+
+  ;; grammar is the lightest shade of blue
+  (font-lock-builtin-face foreground "SkyBlue3")
+
+  (paren-face-match-light background "grey20")
+
+  ;; this should be for any form of literal value in code medium contrast.
+  (font-lock-string-face  foreground "grey50")
+  (font-lock-constant-face foreground "grey50")
+
+  ;; decl is dark green
+  (font-lock-type-face foreground "green4")
+  (font-lock-function-name-face foreground "aquamarine4")
+  (font-lock-variable-name-face foreground "aquamarine3")
+
+  ;; perl misc
+  (cperl-array-face slant 'italic)
+  (cperl-hash-face  slant 'italic)
 )
 
 ;;----------------------------------------------------------------------
@@ -565,10 +583,15 @@
 ;;----------------------------------------------------------------------
 (setq lisp-indent-offset 2)
 
-(show-paren-mode t)                        ; highlight matching parens, etc
+(require 'mic-paren)
+
 (setq
+  paren-showing t
   show-paren-style 'parenthesis
-  show-paren-delay 2)
+  show-paren-delay 2
+  )
+
+(paren-activate)
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
