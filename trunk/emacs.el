@@ -6,6 +6,10 @@
 ;;
 ;; this file is designed to be robust unlike adapt.el which should
 ;; fail if basic assumptions such as load-path cannot be established.
+;;
+;; the code in this file should depend only on reliable features
+;; distributed with emacs. Any third party or risky features should
+;; be gaurded with load-guard.
 ;;----------------------------------------------------------------------
 
 ;;----------------------------------------------------------------------
