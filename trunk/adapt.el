@@ -1,6 +1,10 @@
 ;;----------------------------------------------------------------------
 ;; adapt.el
 ;; Primary Author: Mike Mattie
+;;
+;; This file does two important things at boot. First it disables
+;; customize. Second it performs phase #1 of the initialization
+;; which is host adaptation.
 ;;----------------------------------------------------------------------
 
 ;; disable customization, automatic persistence of configuration changes.
@@ -70,7 +74,7 @@
 ;;----------------------------------------------------------------------
 ;; Host specific adapation
 ;;
-;; each host system has a customization file that normalizes the platform
+;; each host system has a site file that normalizes the platform
 ;; and extends the library search space for extra libraries it manages.
 ;;----------------------------------------------------------------------
 (cond
