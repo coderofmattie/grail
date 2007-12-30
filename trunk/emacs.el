@@ -317,8 +317,10 @@
 
 (defmacro load-guard ( file error )
   "trap errors from loading a file for robustness while initializing"
-  `(if (not (load (concat my-emacs-dir ,file) t))
-     (message "initialization failed %s" error)
+  `(condition-case nil
+     (if (not (load (concat my-emacs-dir ,file) t))
+       (message "initialization failed %s" error))
+     (error nil)
      ))
 
 (load-guard "xml.el" "nxml will not be avaialable, xml document handling may be damaged")
