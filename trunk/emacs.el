@@ -137,6 +137,7 @@
   (font-lock-builtin-face foreground "SkyBlue3")
 
   (paren-face-match-light background "grey20")
+  (paren-face-match foreground "red")
 
   ;; this should be for any form of literal value in code medium contrast.
   (font-lock-string-face  foreground "grey50")
@@ -586,7 +587,7 @@
 (setq
   paren-showing t
   show-paren-style 'parenthesis
-  show-paren-delay 2
+  show-paren-delay nil
   )
 
 (paren-activate)
