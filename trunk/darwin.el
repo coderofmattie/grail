@@ -21,6 +21,10 @@
   '(ediff-diff3-options "--diff-program=gdiff")
   )
 
+;; set the exec path for the mac-ports in case it was not set normally.
+(setq exec-path (append         '( "/opt/local/bin"
+                                   "/opt/local/sbin") exec-path))
+
 (setenv "PATH"
   ;; adjust PATH to locate commands
   (concat
