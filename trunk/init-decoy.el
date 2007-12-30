@@ -1,37 +1,89 @@
 ;;----------------------------------------------------------------------
-;; .emacs.el
+;; adapt.el
+;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 
-;; Any of the functions custom- are subject to rewrite by customize.
-;; This is not optimal for me as I am still migrating a few things
-;; over to setq.
+;; disable customization, automatic persistence of configuration changes.
+;; I personally don't like customize as I prefer emacs to start with
+;; a state I have personally defined and reviewed.
 
-;; When this work is finished the better approach would be to put
-;; the customization settings in .emacs.d . Until that is complete
-;; this file protects my config from rewrites by essentially disabling
-;; any customization modifications.
+;; this line is a nasty way of disabling customize, simply specify the
+;; customize file as /dev/null.
 
 (setq custom-file "/dev/null")
 
-(defun backtrace-on-custom ()
-  (message "!CRITICAL! trapped attempt to modify emacs initialization file")
+;;======================================================================
+;;         Phase 1: Library loading and host init/normalization
+;;======================================================================
 
-  (with-current-buffer "*Messages*"
-    (backtrace)))
+;;----------------------------------------------------------------------
+;; extend the library search space with local changes and third pary
+;; extensions
+;;----------------------------------------------------------------------
 
-;; This is a good canidate for defadvise.
+;; This code will assume a FS structure like this:
+;;
+;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
+;;                              it like /var
+;;
+;; $HOME/system/emacs         | root of my emacs extension tree.
 
-(defun custom-save-customized ()
-  (backtrace-on-custom))
+;; $HOME/system/emacs/emacs.el| entry point for emacs initialization
+;; $HOME/system/emacs/*.el    | other libraries.
 
-(defun custom-save-all ()
-  (backtrace-on-custom))
+;; $HOME/system/emacs/local   | distributed files that have been locally modified
 
-(defun custom-save-faces ()
-  (backtrace-on-custom))
+;; $HOME/system/emacs/elisp   | Third party extensions that are not distributed by
+;;                              emacs and not integrated through host package management.
+;;                              This is the highest maintenance burden.
+;; $HOME/system/emacs/patches | patches against upstream
 
-(defun custom-save-variables ()
-  (backtrace-on-custom))
+;; The config files are relocated to the $HOME/system/emacs so the config/code
+;; under version control is not stomped on or cluttered by all the traffic
+;; into the standard location: session and intra-session state.
 
-;; load the real emacs file.
-(load-file (concat (getenv "HOME") "/system/emacs/emacs.el"))
+;; only system/emacs/{local,elisp} are placed in the path. the files in system/emacs
+;; are assumed to chain manually.
+
+(setq my-emacs-dir (concat (getenv "HOME") "/system/emacs/"))
+
+;; first load a small file containing only the functions that are essential
+;; to constructing the load path. Once the load-path, system adaptation,
+;; site-file have been loaded we can be less paranoid.
+
+(load-file (concat my-emacs-dir "mattie-boot.el"))
+
+(setq my-localized-dir (concat my-emacs-dir "local/"))
+(setq my-extras-dir    (concat my-emacs-dir "elisp/"))
+
+(setq load-path
+  (append
+    ;; overide distributed elisp with local modifications by
+    ;; inserting a "local" directory at the beginning of the
+    ;; load list
+    (cons my-localized-dir load-path)
+
+    ;; add the extras to the end of the list.
+    (cons my-extras-dir (subdirs-of-path my-extras-dir t))
+    ))
+
+;;----------------------------------------------------------------------
+;; Host specific adapation
+;;
+;; each host system has a customization file that normalizes the platform
+;; and extends the library search space for extra libraries it manages.
+;;----------------------------------------------------------------------
+(cond
+  ;; Gentoo has a file that tunes emacs and loads the third party
+  ;; components managed by the package manager.
+  ((string-equal "gnu/linux" system-type)
+    (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
+
+  ;; on darwin assume carbon-emacs.
+  ((string-equal "darwin" system-type)
+    (load-file (concat my-emacs-dir "darwin.el")))
+  )
+
+;; load the real emacs file. It would be nice if errors were trapped or
+;; ignored.
+(load-file (concat my-emacs-dir "emacs.el"))
