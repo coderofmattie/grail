@@ -127,8 +127,6 @@
 
   ;; comments are set off-tempature to distingiush them better.
   ;; orange was chosen as a red that wasn't harsh.
-
-  ;; (font-lock-comment-face splice (:foreground "orange"))
   (font-lock-comment-face foreground "orange3")
 
   ;; language syntax is the darkest shade of blue

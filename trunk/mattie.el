@@ -13,6 +13,10 @@
   (if (file-readable-p file)
     file))
 
+(defun print-hex ( number )
+  "print the hex of a number, faster than firing up calc mode"
+  (message "the hex is %x" number))
+
 (defun show-bad-ws()
   (interactive)
   (highlight-regexp "\t"))
@@ -38,14 +42,21 @@
     (url-insert-file-contents url)))
 
 ;;----------------------------------------------------------------------
-;; fragile regex tricks
+;; bounds-scan. Scan for the bounds indicated by delimiters. This
+;; is aimed at code so allow ignored nested delimiters.
+;;
+;; The goal of this hack is to see if I can grow the sophistication
+;; of the implementation without compromising the simplicity of the
+;;
+;; BUG: this doesn't handle quoted delimiters, which should not be that
+;;      hard.
 ;;----------------------------------------------------------------------
 
-;; BUG: this doesn't handle quoted delimiters, which should not be that hard.
 (defun bounds-scan ( position level )
-  "scan for the delimitation of a region. This is a general form of a
-   simple algorithm that counts opening and closing delimiters to scan
-   past nested delimited spans."
+  "scan for the delimitation of a region. This is the core algorithm
+   that counts opening and closing delimiters to track the nesting
+   of delimiters. The algorithm terminates when a closing delimiter
+   is encountered on level 0."
   (progn
     (goto-char position) ;; move to the starting position before scanning.
     (funcall seek-bounds)
@@ -120,9 +131,9 @@
          (prop-skip-p (lambda ()
                         (or
                           ;; each attribute that can be examined goes inside the or
-                          ;; so that mutliple attributes can be examined.
+                          ;; so that multiple attributes can be examined.
 
-                          ;; the predicate for a specific property is built with mach-char-property.
+                          ;; the predicate for a specific property are built with mach-char-property.
                           ,@(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
                           )))
          )
@@ -144,12 +155,6 @@
 ;;    (message "it worked !")
 ;;    (message "it failed !")
 ;;    ))
-
-;; implement the chartext region stuff as a macro here that
-;; bounds a given operation, like narrowing ? next-property-change
-;; will be at the core of the iterator.
-
-;; how do we implement delayed eval ?
 
 (defun bounds-scan-forward ( delimiters position )
   "entry point for bounds-scan forward. given delimiters: a
