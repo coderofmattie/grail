@@ -1,34 +1,56 @@
 
+---> Grok List <---
+
 * look at replace-regex being able to call lisp code. that is insanely
   great.
 
-;; use def-advice to set the mark when insert-key-notation is
-;; used so that it can easily be copied as a region.
+* saw some fella using union to merge alists in his emacs. Evidently it's
+  in the cl package. Very interesting. I should look at doing this in my
+  config to avoid dups.
 
-;; stateful implementation of map-filter-nil.
+* explore vc group commits which may be very similar to what I want
+  with my merge mode.
 
-;; stateful version by fledermous in #emacs (thanks)
-;; (remove nil (mapcar fun (remove nil list)))
+---> BUGS <---
 
-;; stateful version by sabetts in #emacs (thanks).
-;;(defun map-reduce (fn &rest list)
-;;  (let (acc v)
-;;    (while list
-;;      (setq v (pop list)
-;;            v (and v (funcall v)))
-;;      (when v (push v acc)))
-;;    acc))
+* highlighting sexp is still not working on linux. why ? it works
+  on emacs.app 0.9.x
 
-* Bugs
-
- hihglighting sexp is still not working on linux. why ? it works
- on emacs.app 0.9.x
-
-  simple-set-theme doesn't clear properties before setting. a good example
+* simple-set-theme doesn't clear properties before setting. a good example
   is the flyspell underline. because it is merging instead of replacing it
   is displaying in the orange specified by flyspell.
 
-* badly need flyspell on comments.
+* tool-bar-mode nil has no effect on Emacs.app
+
+* flypsell in comments only seems to analyze the text after I pass over the
+  word with the cursor. This is probably a configuration issue.
+
+---> TODO <---
+
+* examine-library has a terrible prompt and no completion.
+  Fix the prompting and completion so it can exit alpha.
+
+* use def-advice to set the mark when insert-key-notation is
+  used so that it can easily be copied as a region.
+
+* setq-default is far more apropo than the vanilla setq used throughout
+  most of emacs.el currently. review the use of setq in emacs.el and
+  convert to setq-default as appropriate.
+
+* There should be two arguements to tune-programming, a language, and
+  a keybinding. The keybinding if nil should be derived from the value
+  of language. This way the language can be set independent of some
+  uber-dwim completion scheme.
+
+* localize-distrib works in a crude way, in that it creates the right
+  file, but it does not keep track of version information. At the least
+  it should store in a buffer local variable so that diffing can be
+  performed and the ancestor information can be inserted into the diff
+  header.
+
+  where the fuck is the standard for diff ?
+
+---> Planned <---
 
 * load gaurd could be extended into something pretty interesting. If it used dl-elisp
   it could compile a defun that would download necessary files, and re-execute the
@@ -43,7 +65,17 @@
   simply placing the generation of install options before the require to kill eval
   if it cannot load works pretty well.
 
+* Spelling
+
+  PredictiveMode http://www.emacswiki.org/cgi-bin/wiki/PredictiveMode
+
+  This mode is what I will want inside of comments eventually, and for text jobs.
+
 * Documentation.
+
+  tame the info browser. I need it to not always full-screen, and to be able
+  to narrow the searches by criteria, say restrict a java function to the 1.4
+  spec etc.
 
   I need to use google less as a documentation system. It is not as efficient
   as using some info based facility in emacs, and it does not work when I am
@@ -78,22 +110,39 @@
 
   awesome ! kawa docs are supplied in info format. truly awesome.
 
-  PredictiveMode http://www.emacswiki.org/cgi-bin/wiki/PredictiveMode
+* Icicles uber-dwim
 
-  This mode is what I will want inside of comments eventually, and for text jobs.
+  map the cycle keys to something that works decently on the happy hacker keyboard.
+  also look into the more advanced matching techniques and map those so I can use
+  them.
+
+  look at turning contextualized-tab into a flexible coupling with icicles. the
+  key ability of something like contextualized-tab would be the ability to
+  add multiple domains/completion functions in a way that is intelligable to
+  icicles. Then integrating icicles would be easy. contextualized-tab would
+  be responsible for establishing the domain first.
+
+* Slime/Sepia
+
+.. Sepia
+
+   need to attempt install after the gentoo local repository is moved.
+
+.. Slime
+
+  enable slime mode
+
+* JVM ?
+
+  have it send function definitions to the via interpreter comint-invisible
+  or other methods ala slime
+
+---> JUNK <--- misc notes from the old TODO file.
 
 * General
 
-.. saw some fella using union to merge alists in his emacs. Evidently it's
-   in the cl package. Very interesting. I should look at doing this in my
-   config to avoid dups.
-
-.. setq-default is far more apropo than the vanilla setq used throughout
-   most of emacs.el currently. review the use of setq in emacs.el and
-   convert to setq-default as appropriate.
-
-.. explore vc group commits which may be very similar to what I want
-   with my merge mode.
+.. check out paren-edit. I don't know what the feature list is, but
+   it is rumored to be quite handy.
 
 .. the C-xe binding should be a general execute emacs code concept.
    in interactive mode it should replace C-u-x-e as a much shorter
@@ -101,40 +150,12 @@
 
    how could this be taken advantage of in non-elisp buffers ?
 
-   .. Options
-
-   (done) hook it into else for epanding templates
-
-   have it send function defintions to the interpeter via comint-invisible
-   or other methods ala slime
-
-.. general cleanup of bindings in the source file, so that it is somewhat
-   apparent how things are bound without C-h-b.
-
-  1. There should be two arguements to tune-programming, a language, and
-     a keybinding. The keybinding if nil should be derived from the value
-     of language. This way the language can be set independent of some
-     uber-dwim completion scheme.
-
-.. examine-library has a terrible prompt and no completion.
-
-.. I should have a command that allows me to look through any lisp file
-   in read-only mode. When I turn it writable it needs to copy the file
-   to my local dir and do a write-file to switch the buffer.
-
-   .. this should encode version information in the diff, so you know
-      the common ancestor.
-
-* input completion
-
-  .. ultimate template refactor system
-
 * code navigation
 
-.. navigate by terms,tokens (for imperative languages)
+  navigate by terms,tokens (for imperative languages)
 
-Move forwards and backwards in syntax by terms. This is only needed in
-imperative languages.
+  Move forwards and backwards in syntax by terms. This is only needed in
+  imperative languages.
 
 * Better template modes
 
@@ -148,20 +169,12 @@ imperative languages.
 
 ** Co-process interpreters
 
-.. Sepia
-
-   need to attempt install after the gentoo local repository is moved.
-
-.. Slime
-
-  enable slime mode
-
 * Debugger
 
 .. gud does not have a common hook. It should for things like fixing
    the keybindings for input history. Make the appropriate hook.
 
-* Pure Evil
+* Just for Fun
 
   build a foreign function interface that allows parrot closures
   to be created and called from emacs by embedding parrot ( insane+ ).
@@ -172,7 +185,7 @@ imperative languages.
   push up syntax trees into the invisible annotations of a buffer.
   be able to sync via a function.
 
-  code name: Babel :) they will run screaming.
+  is it the mythical Babel :) they will run screaming.
 
 * glasses-mode can be used for langauges that use case-change
   as a word seperator e.g: FooBar
