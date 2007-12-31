@@ -4,65 +4,27 @@
 ;; and fixing.
 ;;----------------------------------------------------------------------
 
-(defmacro skip-over (iterator &rest predicates )
-  "skip a iterator over spans of text properties"
-  `(lambda () (lexical-let
-     ((iter (lambda () ,(list (cond
-                                ((string-equal "next" (car iterator)) 'skip-chars-forward)
-                                ((string-equal "prev" (car iterator)) 'skip-chars-backward))
+;; stateful implementation of map-filter-nil.
 
-                          (cadr iterator))
-              ))
-       (skip-p (lambda ()
-                 (or
-                   ,(mapcar (lambda (p) `(match-char-property ,@p)) predicates)
-                   )))
-       )
-     (while (cond
-              ((funcall skip-p)
-                (progn
-                  (,(concat (symbol-name (car iterator)) "-property-change") (point))
-                  t))
-              ((funcall iter) t))
-       nil)
-     )))
+;; stateful version by fledermous in #emacs (thanks)
+;; (remove nil (mapcar fun (remove nil list)))
 
-
-(defmacro skip-over-properties ( iterator &rest predicates )
-  `(lexical-let
-     ;; bind the iterator as a lambda so we can eval more than once
-     ((iter (lambda ()
-              ,(list
-                 ;; select the correct skip-chars based on direction
-                 (cond
-                   ((string-equal "next" (car iterator)) 'skip-chars-forward)
-                   ((string-equal "prev" (car iterator)) 'skip-chars-backward))
-
-                 ;; get the regex delimiter in place, supply the inversion
-                 ;; since skip-chars wraps given regex  in a []
-                 (concat "^" (cadr iterator)))
-              ))
-     )
-     (funcall iter)
-  ))
-
-;;                   ,(mapcar (lambda ( p )
-;;                              ;;                                 (or
-;;                                   ,(mapcar (lambda ( match ) ) (cdr p))
-;;                                   ))) predicates)
-
-
-;; another experiment
-(defmacro gen-seek ( count )
-  `(let
-     ((iter (lambda () (goto-char (+ (point) ,count))))
-       (funcall 'iter)))
-  )
+;; stateful version by sabetts in #emacs (thanks).
+;;(defun map-reduce (fn &rest list)
+;;  (let (acc v)
+;;    (while list
+;;      (setq v (pop list)
+;;            v (and v (funcall v)))
+;;      (when v (push v acc)))
+;;    acc))
 
 ;;----------------------------------------------------------------------
 ;;          tags source code indexing
 ;;----------------------------------------------------------------------
-;; (require 'gtags)
+
+;; this may be obsolete with how cedet does a database of multiple files.
+
+(obsoloted 'gtags)
 (defun tune-gtags ()
   (gtags-mode)
 
@@ -75,11 +37,6 @@
 
 ;; FROM tune-programming
 (tune-gtags)
-
-;; FROM the cperl-mode hook
-
-;;    (cperl-toggle-electric)
-;;    (cperl-toggle-abbrev)
 
 ;;----------------------------------------------------------------------
 ;; Map modes to file formats
