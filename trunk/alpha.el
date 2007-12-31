@@ -1,45 +1,72 @@
 ;;----------------------------------------------------------------------
-;; mattie.el
+;; alpha.el
 ;; Primary Author: Mike Mattie
 ;; Copyright: Mike Mattie (2007)
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
-(defun file-if-readable ( file )
-  "this function was created because file-readable-p is strangely akward in that it returns t
-   instead of the path it was given which neccesitates this silly wrapper. Consider sending
-   this upstream as a patch or add-on to file-readable-p"
+;;----------------------------------------------------------------------
+;; stable-track  - canidate for inclusion in mattie.el
+;;----------------------------------------------------------------------
 
-  (if (file-readable-p file)
-    file))
+(defun dl-elisp ( url file )
+  "download the url into the extras path as library file"
+  (with-temp-buffer
+    ;; download without modifying the buffer-name
+    (and
+      (condition-case nil
+        (url-insert-file-contents url nil)
+        (error (progn
+                 (message "download of %s failed" file)
+                 nil)))
 
-(defun print-hex ( number )
-  "print the hex of a number, faster than firing up calc mode"
-  (message "the hex is %x" number))
+      ;; write out to the appropriate file.
+      (write-file (concat my-extras-dir file ".el")))
+      ))
 
-(defun show-bad-ws()
-  (interactive)
-  (highlight-regexp "\t"))
+;; a interactive command I still use. Just a quick way to pull up the
+;; source in a read-only buffer. Once the completion is fixed to search
+;; the load-path and use icicles for completion it can go into mattie.el.
 
-(defun rid-window ()
-  "get rid of the current window"
-  (interactive)
-  (delete-windows-on (current-buffer)))
+(defun examine-library (library-name)
+  "examine the source of a library. Type the library name without
+   any extension. If the library exists the source will be
+   loaded"
 
-(defun insert-key-notation ()
-  "inject a complete \(kbd \"sequence\"\) with key notation for a key sequence given by prompt"
-  (interactive)
-  (insert "(kbd \"")
-  (insert (format-kbd-macro (read-key-sequence "Key? " nil t)))
-  (insert "\")")
+  (interactive "F")
+  (find-file-read-only (locate-library (concat library-name ".el")))
   )
 
-(defun visit-url ( url )
-  "visit a url in a new buffer"
-  (interactive "sURL? ")
-  (progn
-    (switch-to-buffer (generate-new-buffer url))
-    (url-insert-file-contents url)))
+;; This is a handy little function that allows you to localize
+;; a distributed elisp source file. It assumes that the current
+;; buffer is a distributed elisp file, and that localized-source-dir
+;; points to a real directory.
+
+;; This function needs to at least temporarily preserve version information
+;; so that good diffs ( with ancestor information ) can be produced easily
+
+(defun localize-distrib ()
+  "localize a distributed lisp file by writing a copy of the file
+   to a directory searched before the distributed lisp files"
+  (interactive)
+
+  (let
+    ((new-name (file-name-nondirectory (buffer-file-name))))
+
+    (let
+      ((new-path
+        (concat localized-source-dir
+          (if (string-equal "gz" (file-name-extension new-name))
+            (file-name-sans-extension new-name)
+            (new-name)))))
+      (if (yes-or-no-p (concat "localize distributed file " new-name " to " new-path))
+        (write-file new-path)
+        (message "aborted localizing distributed file"))
+    )))
+
+;;----------------------------------------------------------------------
+;; experimental - interesting
+;;----------------------------------------------------------------------
 
 ;;----------------------------------------------------------------------
 ;; bounds-scan. Scan for the bounds indicated by delimiters. This
@@ -240,83 +267,6 @@
 
     (delete-backward-char (- close-pos open-pos))))
 
-(defun xml-before-doc-close ()
-  "move the point immediately before the closing of the document"
-  (interactive)
-  (end-of-buffer)
-  (re-search-backward "</" nil t))
-
-;;----------------------------------------------------------------------
-;; repl
-;;
-;; Handy tool for exploratory programming. pops a new frame with the
-;; interpreter for the language running in a REPL loop.
-;;----------------------------------------------------------------------
-
-(defun repl ( lang )
-  "start a REPL interpreter interface in a new frame based upon a
-  given or inferred language parameter"
-
-  (interactive "MLanguage: ")
-
-  (lexical-let
-    ((repl-frame (make-frame))
-      )
-
-    (select-frame-set-input-focus repl-frame)
-
-    (cond
-      ((string-equal "perl5" lang)
-	(switch-to-buffer (make-comint "perl5 REPL" "/usr/bin/perl" nil "-d" "-e shell")))
-      ((string-equal "elisp" lang)
-        (ielm))
-      (else
-        (message "I don't support language %s" lang)))
-
-  (add-hook 'kill-buffer-hook
-    (lambda ()
-      (delete-frame repl-frame))
-    t t)
-    ))
-
-(defun examine-library (library-name)
-  "examine the source of a library. Type the library name without
-   any extension. If the library exists the source will be
-   loaded"
-
-  (interactive "F")
-  (find-file-read-only (locate-library (concat library-name ".el")))
-  )
-
-;; This is a handy little function that allows you to localize
-;; a distributed elisp source file. It assumes that the current
-;; buffer is a distributed elisp file, and that localized-source-dir
-;; points to a real directory.
-
-(defun localize-distrib ()
-  "localize a distributed lisp file by writing a copy of the file
-   to a directory searched before the distributed lisp files"
-  (interactive)
-
-  (let
-    ((new-name (file-name-nondirectory (buffer-file-name))))
-
-    (let
-      ((new-path
-        (concat localized-source-dir
-          (if (string-equal "gz" (file-name-extension new-name))
-            (file-name-sans-extension new-name)
-            (new-name)))))
-      (if (yes-or-no-p (concat "localize distributed file " new-name " to " new-path))
-        (write-file new-path)
-        (message "aborted localizing distributed file"))
-    )))
-
-;; required for my patched em-unix, note: merged upstream, may collide
-;; on a update.
-(defun nil-blank-string ( string )
-  "if a string is all blanks return nil, if there are non-blank characters return the string"
-  (if (string-match "[^[:blank:]]" string ) string))
 
 ;;----------------------------------------------------------------------
 ;; local function library.
@@ -331,6 +281,8 @@
   (while list
     (message "debug: element %s" (car list))
     (setq list (cdr list))))
+
+;; the first stab at a better merging system.
 
 (defun merge-changes ()
   "Merge latest changes against the last checkout."
