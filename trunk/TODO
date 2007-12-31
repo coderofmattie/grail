@@ -21,7 +21,79 @@
 
 * Bugs
 
+ hihglighting sexp is still not working on linux. why ? it works
+ on emacs.app 0.9.x
+
+  simple-set-theme doesn't clear properties before setting. a good example
+  is the flyspell underline. because it is merging instead of replacing it
+  is displaying in the orange specified by flyspell.
+
+* badly need flyspell on comments.
+
+* load gaurd could be extended into something pretty interesting. If it used dl-elisp
+  it could compile a defun that would download necessary files, and re-execute the
+  failed configuration.
+
+  where it would get complex is choosing the best available method. paludis ? macports ?
+  url fetch with dl-elisp ?
+
+  currently the idea is simmering as a defun in spell.el. I tried the install-flyspell
+  command and it worked pretty well.
+
+  simply placing the generation of install options before the require to kill eval
+  if it cannot load works pretty well.
+
+* Documentation.
+
+  I need to use google less as a documentation system. It is not as efficient
+  as using some info based facility in emacs, and it does not work when I am
+  offline.
+
+  Java reference
+
+  susv3
+
+  various darwin API's
+
+  elisp manual
+
+  common lisp hyperspec
+
+  unique feature:
+
+  for a given API create a screen that combines various versions into a single
+  document. This way you can see the "standard" and various implementations/versions
+
+  when reading on a particular API.
+
+  apple is using docbook for darwin. Definitely will need a toolchain that targets
+  texinfo ?
+
+  what is the ideal documentation browser in emacs ?
+
+  what about using the w3 browser ?
+
+  What I am thinking at the moment is a package manager tree that installs documents
+  as texinfo.
+
+  awesome ! kawa docs are supplied in info format. truly awesome.
+
+  PredictiveMode http://www.emacswiki.org/cgi-bin/wiki/PredictiveMode
+
+  This mode is what I will want inside of comments eventually, and for text jobs.
+
 * General
+
+.. saw some fella using union to merge alists in his emacs. Evidently it's
+   in the cl package. Very interesting. I should look at doing this in my
+   config to avoid dups.
+
+.. setq-default is far more apropo than the vanilla setq used throughout
+   most of emacs.el currently. review the use of setq in emacs.el and
+   convert to setq-default as appropriate.
+
+.. explore vc group commits which may be very similar to what I want
+   with my merge mode.
 
 .. the C-xe binding should be a general execute emacs code concept.
    in interactive mode it should replace C-u-x-e as a much shorter
