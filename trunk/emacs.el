@@ -328,7 +328,7 @@
 ;;       signal was included in the message output.
 
 (defmacro load-guard ( file error )
-  "trap errors from loading a file for robustness while initializing"
+  "Trap errors from loading a file for robustness while initializing."
   `(condition-case nil
      (load (concat my-emacs-dir ,file))
      (error (progn
