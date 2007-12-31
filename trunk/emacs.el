@@ -332,7 +332,7 @@
 ;; undistributed features.
 ;;----------------------------------------------------------------------
 
-(load-guard "xml.el" "nxml not be avaialable")
+(load-guard "xml.el" "nxml not be available")
 (load-guard "complete.el" "icicles not be available - minibuffer extremely degraded.")
 (load-guard "spell.el" "enhanced spell-check not available, must run spell-check manually.")
 
