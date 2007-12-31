@@ -400,11 +400,12 @@
   ediff-window-setup-function 'ediff-setup-windows-plain ;; this should work.
   )
 
-(load-guard "template.el" "XML enhanced else template mode not available.")
-
 ;;----------------------------------------------------------------------
 ;;                          tune-programming
 ;;----------------------------------------------------------------------
+
+;; latest and greatest template facility.
+(load-guard "template.el" "XML enhanced else template mode not available.")
 
 ;; this is insanely great. It displays the function you are "in" in terms
 ;; of the point. Really nice for reading long functions.
