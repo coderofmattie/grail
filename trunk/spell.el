@@ -14,6 +14,9 @@
   aspell-program-name "aspell"                     ;; use aspell.
   flyspell-issue-message-flag nil)                 ;; don't bog down in bad english.
 
+(add-hook 'text-mode-hook 'flyspell-mode)          ;; turn on regular flyspell mode text
+                                                   ;; mode buffers.
+
 (add-hook 'cperl-mode-hook 'flyspell-prog-mode)         ;; works quite nicely with cperl.
 (add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)    ;; works nicely as well with elisp
 
