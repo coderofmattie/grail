@@ -332,10 +332,12 @@
   `(condition-case nil
      (load (concat my-emacs-dir ,file))
      (error (progn
+              ;; duplicate the message to both *Messages* as a log
+              ;; and to the *scratch* buffer where it is highly visible.
               (message "initialization failed %s" ,error)
               (with-current-buffer "*scratch*"
                 (goto-char (point-max))
-                (insert (format ";degraded configuration! %s\n" ,error)))
+                (insert (format "; !degraded configuration! %s\n" ,error)))
               ))
      ))
 
