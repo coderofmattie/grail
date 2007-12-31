@@ -342,7 +342,7 @@
      ))
 
 (load-guard "xml.el" "nxml not be avaialable")
-(load-guard "complete.el" "icicles not be avialable - minibuffer extremely degraded.")
+(load-guard "complete.el" "icicles not be available - minibuffer extremely degraded.")
 
 ;;======================================================================
 ;;                  Phase 4: Programming
