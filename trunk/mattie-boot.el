@@ -2,10 +2,9 @@
 ;; mattie-boot.el
 ;; Primary Author: Mike Mattie
 ;;
-;; definitions that are eseential to the emacs boot. This was split
+;; definitions that are essential to the Emacs boot. This was split
 ;; from my general utility collection so that the risk of introducing
-;; bugs/complexity early in the boot process could be reduced to the
-;; minimum.
+;; bugs/complexity early in the boot process could be minimized.
 ;;----------------------------------------------------------------------
 
 ;;----------------------------------------------------------------------
