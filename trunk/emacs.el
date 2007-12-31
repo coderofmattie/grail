@@ -331,11 +331,16 @@
   "trap errors from loading a file for robustness while initializing"
   `(condition-case nil
      (load (concat my-emacs-dir ,file))
-     (error (message "initialization failed %s" ,error))
+     (error (progn
+              (message "initialization failed %s" ,error)
+              (with-current-buffer "*scratch*"
+                (goto-char (point-max))
+                (insert (format ";degraded configuration! %s\n" ,error)))
+              ))
      ))
 
-(load-guard "xml.el" "nxml will not be avaialable, xml document handling may be damaged")
-(load-guard "complete.el" "icicles will not be avialable, minibuffer will be degraded")
+(load-guard "xml.el" "nxml not be avaialable")
+(load-guard "complete.el" "icicles not be avialable - minibuffer extremely degraded.")
 
 ;;======================================================================
 ;;                  Phase 4: Programming
