@@ -13,7 +13,7 @@
 # templates.
 
 # My two practical XML choices are either DOM or SAX. Both of these
-# choices are horrible. DOM is redicilous for the task because it is
+# choices are horrible. DOM is ridiculous for the task because it is
 # not necessary to have the entire document in memory. SAX is horrible
 # because it is state-less and event driven.
 
@@ -28,9 +28,9 @@ assemble [language,...] [input-file]....
 Assemble translates a XML input format to else-mode template
 definitions.
 
-The first arguement is the language to generate. the XML format
+The first argument is the language to generate. the XML format
 allows more than one language definition for a given template,
-this arguement chooses which language will be emitted.
+this argument chooses which language will be emitted.
 
 input-file... is a list of XML input files to process.
 HOWTO
@@ -41,7 +41,7 @@ HOWTO
 #----------------------------------------------------------------------
 
 # currently the user can pass a list of debug switches as the first
-# arguement seperated by ','
+# argument separated by ','
 #
 # example: -d s-struct,e-struct
 
@@ -56,7 +56,7 @@ package Settings;
 our %debug_flags = ();
 
 if ( $ARGV[0] eq "-d" ) {
-  # take each of the comma seperated debug flags and make a hash pair
+  # take each of the comma separated debug flags and make a hash pair
   # out of them
   my @flags = split /,/, ( splice @ARGV,0,2 )[1];
   our %debug_flags = map { ( $_ => 1 ) } @flags;
@@ -219,7 +219,7 @@ sub replace_default {
 
   # A much better solution: Store an ElementMatch instance along with
   # the recursion level. This issue should be addressed when
-  # ElementMatch is weilded seriously to deal with NamespaceURI.
+  # ElementMatch is wielded seriously to deal with NamespaceURI.
 
   # from the top of the register stack search down for a pointer that
   # matches the data-key.
@@ -272,7 +272,7 @@ sub ready {
 sub push {
   # push a new pointer onto @registers. The element is given along
   # with the key to write to. data_ref is either specified as a third
-  # arguement or when undef the reference of the previous pointer on
+  # argument or when undef the reference of the previous pointer on
   # stack is aliased.
 
   my ( $element , $data_key , $data_ref ) = @_;
@@ -754,7 +754,7 @@ sub new {
   # assembler.  Things like menus should be generated from a minimal
   # spec given by the user, not coded by the user.
 
-  # To cleanly seperate the gathering of spec (parsing) from
+  # To cleanly separate the gathering of spec (parsing) from
   # generation (AST rewrite) An abstraction barrier is implemented here.
 
   # The specification is gathered up in a list of pairs. The keys must
@@ -763,7 +763,7 @@ sub new {
   # The context is whatever part of the placeholder specification is
   # orthogonal to the definition of a placeholder.
 
-  # Currently this is wether it is optional or not (killable in
+  # Currently this is whether it is optional or not (killable in
   # emacs-else parlance)
 
   # this used to be a real constructor , but now it's been gutted.
@@ -1128,8 +1128,8 @@ sub name_start {
 }
 
 sub name_end {
-  # we cannot attatch a nested define to the parent define until we have the name.
-  # so we need to capture the event of </name>, and attatch the child to the parent.
+  # we cannot attach a nested define to the parent define until we have the name.
+  # so we need to capture the event of </name>, and attach the child to the parent.
 
   if( Builder::recursion_level() > 1 ) {
     my $def = Builder::define();
@@ -1658,7 +1658,7 @@ input_file: foreach my $file ( @ARGV ) {
     $tr->parse_uri( $file );
   }
 
-  # rewrite the AST generating the defitions
+  # rewrite the AST generating the definitions
   Syntax::rewrite();
 
   # emit the definitions we have queued
