@@ -188,6 +188,8 @@
 ;;                     Personal ELisp Library.
 ;;----------------------------------------------------------------------
 
+;; this file is suppost to be for stable versions of the functions only.
+;; stable functions are both mature and documented.
 (load-file (concat my-emacs-dir "mattie.el"))
 
 ;;----------------------------------------------------------------------
@@ -316,6 +318,13 @@
 ;; it.
 
 ;;----------------------------------------------------------------------
+;; alpha features.
+;;----------------------------------------------------------------------
+
+;; load in-development features.
+(load-file (concat my-emacs-dir "alpha.el"))
+
+;;----------------------------------------------------------------------
 ;; undistributed features.
 ;;----------------------------------------------------------------------
 
@@ -343,6 +352,7 @@
 
 (load-guard "xml.el" "nxml not be avaialable")
 (load-guard "complete.el" "icicles not be available - minibuffer extremely degraded.")
+(load-guard "spell.el" "enhanced spell-check not available, must run spell-check manually.")
 
 ;;======================================================================
 ;;                  Phase 4: Programming
@@ -411,39 +421,7 @@
   ediff-window-setup-function 'ediff-setup-windows-plain ;; this should work.
   )
 
-;;----------------------------------------------------------------------
-;;         else = (E)macs (L)anguage (S)ensitive (E)diting.
-;;----------------------------------------------------------------------
-(require 'else-mode)
-
-(setq
-  else-kill-proceed-to-next-placeholder t)
-
-(load-file (concat my-emacs-dir "else-xml.el"))
-
-;; else-mode is definitely the crown jewel of my input expansion. Sets
-;; the standard for macro expansion.
-
-(defun else-xml-init ()
-    (if (else-xml-load-language source-language)
-      (progn
-
-        ;; localize the current language to the buffer and set it properly
-        (else-establish-language source-language)
-
-        (else-mode)
-
-        (else-xml-load-language-alist source-language)
-
-        ;; here is where C-xe will expand templates
-        (local-set-key (kbd "C-l e") 'else-expand-placeholder)
-        (local-set-key (kbd "C-l n") 'else-next-placeholder)
-
-        (local-set-key (kbd "C-l k") 'else-kill-placeholder)
-
-        (local-set-key (kbd "C-l l") 'else-show-token-names)
-        ))
-  )
+(load-guard "template.el" "XML enhanced else template mode not available.")
 
 ;;----------------------------------------------------------------------
 ;;                          tune-programming
