@@ -24,6 +24,32 @@
       (write-file (concat my-extras-dir file ".el")))
       ))
 
+;; undistributed or experimental features need to be loaded without
+;; aborting the entire config at the point of the error. This macro
+;; loads a file that contains the risky code with error trapping to
+;; protect the rest of the configuration from any error.
+
+;; TODO: it would be nice if any information apart of the error
+;;       signal was included in the message output.
+
+;; load-gaurd needs additional forms to generate check and install
+;; functions. along with methods to accomplish the install. more
+;; in the TODO.
+
+(defmacro load-guard ( file error )
+  "Trap errors from loading a file for robustness while initializing."
+  `(condition-case nil
+     (load (concat my-emacs-dir ,file))
+     (error (progn
+              ;; duplicate the message to both *Messages* as a log
+              ;; and to the *scratch* buffer where it is highly visible.
+              (message "initialization failed %s" ,error)
+              (with-current-buffer "*scratch*"
+                (goto-char (point-max))
+                (insert (format "; !degraded configuration! %s\n" ,error)))
+              ))
+     ))
+
 ;; a interactive command I still use. Just a quick way to pull up the
 ;; source in a read-only buffer. Once the completion is fixed to search
 ;; the load-path and use icicles for completion it can go into mattie.el.

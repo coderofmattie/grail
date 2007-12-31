@@ -321,34 +321,13 @@
 ;; alpha features.
 ;;----------------------------------------------------------------------
 
-;; load in-development features.
+;; load in-development features. if it is partial or completely broken
+;; use broken.el
 (load-file (concat my-emacs-dir "alpha.el"))
 
 ;;----------------------------------------------------------------------
 ;; undistributed features.
 ;;----------------------------------------------------------------------
-
-;; undistributed or experimental features need to be loaded without
-;; aborting the entire config at the point of the error. This macro
-;; loads a file that contains the risky code with error trapping to
-;; protect the rest of the configuration from any error.
-
-;; TODO: it would be nice if any information apart of the error
-;;       signal was included in the message output.
-
-(defmacro load-guard ( file error )
-  "Trap errors from loading a file for robustness while initializing."
-  `(condition-case nil
-     (load (concat my-emacs-dir ,file))
-     (error (progn
-              ;; duplicate the message to both *Messages* as a log
-              ;; and to the *scratch* buffer where it is highly visible.
-              (message "initialization failed %s" ,error)
-              (with-current-buffer "*scratch*"
-                (goto-char (point-max))
-                (insert (format "; !degraded configuration! %s\n" ,error)))
-              ))
-     ))
 
 (load-guard "xml.el" "nxml not be avaialable")
 (load-guard "complete.el" "icicles not be available - minibuffer extremely degraded.")
