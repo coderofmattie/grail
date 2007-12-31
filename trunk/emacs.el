@@ -84,6 +84,9 @@
   ;; perl misc
   (cperl-array-face slant 'italic)
   (cperl-hash-face  slant 'italic)
+
+  ;; flyspell.
+  (flyspell-incorrect underline t)
 )
 
 ;;----------------------------------------------------------------------
