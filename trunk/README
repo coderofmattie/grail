@@ -1,0 +1,40 @@
+Welcome to Mike Mattie's emacs configuration.
+
+My emacs configuration is weighted towards development in various
+languages and of course emacs hacking. This file consists of
+integration instructions followed by a brief set of key features and
+differences from a standard emacs.
+
+Integration
+
+  1. unpack the tarball or checkout from the repository containing the
+     configuration.
+
+  2. at the toplevel of the configuration tree modify adapt.el by
+     changing the my-emacs-dir path to the absolute path of the
+     configuration tree (where this document resides).
+
+  3. create a link $HOME/.emacs to adapt.el at the root of the
+     configuration tree.
+
+  My configuration will then be the default for your user.
+
+Major differences:
+
+tab is the dwim completion in as many modes as possible.
+
+() characters are rebound in lisp modes to the [] keys
+while shift-() is bound as []. This is only in lisp
+modes. It is strange at first but truly awesome in a lisp
+mode.
+
+esc        -> is bound like alt-x for easier access.
+
+shift-tab  -> switches to the other window.
+
+alt-tab    -> switches buffers
+
+ctrl-z     -> terminates recursion instead of signalling the window manager
+              to minimize emacs.
+
+the search functions are regex by default.
