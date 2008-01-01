@@ -26,7 +26,7 @@
 ;;----------------------------------------------------------------------
 
 ;; else mode currently uses a external helper program "assemble" to
-;; translate the XML form to a representation loadable by else-mode/emacs.
+;; translate the XML form to a representation loadable by else-mode/Emacs.
 
 ;; the two stages of loading are assembly and actual loading. On a internal
 ;; level the functions that perform translation through IPC are called
@@ -45,11 +45,11 @@
     (with-temp-buffer
       (and
         (= 0 (apply 'call-process
-               (concat else-mode-xml-dir "/assemble")      ;; translater program
+               (concat else-mode-xml-dir "/assemble")      ;; translator program
                nil                                         ;; no stdin
                (list (current-buffer) nil)                 ;; discard stderr , stdout -> current-buffer
                nil                                         ;; don't refresh
-               lang file-list))                            ;; arguements are language and input files.
+               lang file-list))                            ;; arguments are language and input files.
 
         (else-xml-load-dec (current-buffer))
         )))
