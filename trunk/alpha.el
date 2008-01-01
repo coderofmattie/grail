@@ -122,9 +122,11 @@
         ;; need an error path here.
         )
 
-        ;; when we kill the buffer get rid of the window associated so the user
-        ;; doesn't have to tediously clean-up.
-        (add-hook 'kill-buffer-hook 'rid-window t t)
+      (setq show-trailing-whitespace nil)   ;; disable trailing whitespace
+
+      ;; when we kill the buffer get rid of the window associated so the user
+      ;; doesn't have to tediously clean-up.
+      (add-hook 'kill-buffer-hook 'rid-window t t)
       )
 
     (pop-to-buffer search-buffer)
