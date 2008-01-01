@@ -130,6 +130,41 @@
     (pop-to-buffer search-buffer)
     ))
 
+(defun filter-ls-attributes ( filter-form )
+  "implement the various attribute filters for the filter-ls form"
+  (lexical-let
+    ((attr-name (symbol-name (car filter-form)))
+      (attr-match (cadr filter-form)))
+
+    (cond
+      ((string-equal "type" attr-name) (list 'char-equal attr-match  '(aref (cdr path-pair) 0)))
+      ((string-equal "path" attr-name) (list 'string-match-p attr-match '(car path-pair)))
+    ;; error path
+    )))
+
+(defmacro filter-ls (path path-type &rest filters)
+  "a form for flexibly filtering the result of listing a directory with attributes"
+  `(apply 'map-filter-nil
+     (lambda ( path-pair )
+       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
+         (car path-pair)))
+
+     ;; reduce the attributes to a pair of the path, and the mode string
+     (mapcar (lambda ( attr-list )
+               (cons (car attr-list) (nth 9 attr-list)))
+       ;; get the list of files.
+       (directory-files-and-attributes ,path ,path-type))
+     ))
+
+;; this is definitely a macro candidate, look at the duplication. it's obvious.
+
+(defun elisp-in-path ( path path-type )
+  "return a list of elisp files in the path"
+
+  (filter-ls path path-type
+    (type ?-)
+    (path "\\.el$")))
+
 ;;----------------------------------------------------------------------
 ;; bounds-scan. Scan for the bounds indicated by delimiters. This
 ;; is aimed at code so allow ignored nested delimiters.
