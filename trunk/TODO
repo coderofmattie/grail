@@ -52,7 +52,7 @@
 
 ---> Planned <---
 
-* load gaurd could be extended into something pretty interesting. If it used dl-elisp
+* load guard could be extended into something pretty interesting. If it used dl-elisp
   it could compile a defun that would download necessary files, and re-execute the
   failed configuration.
 
@@ -65,6 +65,11 @@
   simply placing the generation of install options before the require to kill eval
   if it cannot load works pretty well.
 
+  If this gets developed further it will eventually turn into a wrapper around
+  a broad spectrum of package managers, much like how vc provides a common
+  interface for a range of vcs systems. This is a medium sized project that
+  needs to go on the back-burner.
+
 * Spelling
 
   PredictiveMode http://www.emacswiki.org/cgi-bin/wiki/PredictiveMode
@@ -72,6 +77,8 @@
   This mode is what I will want inside of comments eventually, and for text jobs.
 
 * Documentation.
+
+  high priority.
 
   tame the info browser. I need it to not always full-screen, and to be able
   to narrow the searches by criteria, say restrict a java function to the 1.4
@@ -106,9 +113,26 @@
   what about using the w3 browser ?
 
   What I am thinking at the moment is a package manager tree that installs documents
-  as texinfo.
+  as Texinfo.
 
   awesome ! kawa docs are supplied in info format. truly awesome.
+
+  I can definitely use the docbook approach when the upstream is in docbook. What
+  I am looking at now is how to integrate into the package manager.
+
+  I need to support multiple package managers. I probably need to do something
+  like create a makefile for each one. Basically download and unpack the docbook
+  source, Then have my makefile do the conversion to Texinfo.
+
+  how that conversion gets specified is interesting. I know little about either format.
+  This is going to be a major stumbling block, more so than tangling with the various
+  package managers.
+
+  need to create a way to compute the position of the document tree in a "catalog"
+  that allows efficient navigation. This is definitely a library science domain
+  that I need to shortcut across quickly.
+
+  Need to specify the conversion, probably very specific to a source document ?
 
 * Icicles uber-dwim
 
