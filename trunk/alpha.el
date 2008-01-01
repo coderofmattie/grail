@@ -9,8 +9,8 @@
 ;; stable-track  - canidate for inclusion in mattie.el
 ;;----------------------------------------------------------------------
 
-(defun dl-elisp ( url file )
-  "download the url into the extras path as library file"
+(defun deploy-url-elisp ( url file )
+  "deploy the elisp on the host via url installing in the extras path"
   (with-temp-buffer
     ;; download without modifying the buffer-name
     (and
