@@ -107,7 +107,7 @@
   (interactive "MPackage? ")
 
   (lexical-let
-    ((search-buffer (generate-new-buffer "deploy-inquisitio")))
+    ((search-buffer (generate-new-buffer "deploy-paludis")))
 
     (with-current-buffer search-buffer
       (unless (= 0 (apply 'call-process "inquisitio"     ;; search program
