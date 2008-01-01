@@ -115,6 +115,7 @@
                                                          ;; is slow to moribund.
                      (deploy-query-inquisitio-search package) ;; construct search arguments
                      ))
+        ;; need an error path here.
         )
 
         ;; when we kill the buffer get rid of the window associated so the user
