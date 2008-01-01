@@ -102,7 +102,7 @@
 ;; method ?
 
 ;; can I extract available versions ? , installed versions ? , matching packages ?
-(defun deploy-search-inquisitio ( package )
+(defun deploy-paludis ( package )
   "search for an Emacs package with Paludis's inquisitio search tool."
   (interactive "MPackage? ")
 
