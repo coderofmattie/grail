@@ -1,0 +1,82 @@
+---> Ruminations <---
+
+my own interest in Emacs development is essentially self-interest in
+that I want features I consider necessary tools for development.
+I believe that I can create unique tools. The scope of the tools
+can be limited to things like a template, and templates that
+can morph code intelligently.
+
+Imagining the use of these tools without considering the creativity
+of the end-user constrains the value of the tools to my limitations.
+If I expand my thinking, my perspective of value, so that I see
+my tools as a distribution of my expertise in a form that can be
+used by another without aquiring my domain knowledge, it is merely
+a program or feature. There is no usefulness beyond what I add to
+it.
+
+If I imagine that I can create a vehicle that others can use to
+develop and effectively distribute their expertise I have created
+a system vastly more powerful than a feature alone.
+
+Could templates on a much higher level of conception be used as a way
+to distribute technique, expertise, knowledge ? Could it both teach
+and automate ?
+
+Such a thing would be powerful indeed.
+
+--> old <--
+
+* Just for Fun
+
+  build a foreign function interface that allows parrot closures
+  to be created and called from emacs by embedding parrot ( insane+ ).
+
+  allow parrot code to callback into emacs, analyze risk of
+  changing semantics,side-effects etc.
+
+  push up syntax trees into the invisible annotations of a buffer.
+  be able to sync via a function.
+
+  is it the mythical Babel :) they will run screaming.
+
+* glasses-mode can be used for langauges that use case-change
+  as a word seperator e.g: FooBar
+
+  A. the main part is done. I need to copy the original as well for
+     diffing against.  It also needs to have version information
+     encoded !!!!! I should be able to get the strings of the current
+     emacs version, and then encode that. How to ensure that further
+     diffs work ? possibly emit a script to perform the diff.
+
+* use comint 'send-invisible' to dump a function into the interperter,
+  for this to be really cool , it would need to copy the function by tags lookup
+  automatically reformatting as necessary.
+
+* env-tree needs to be modified to work with the env program. Simply
+  executing a subshell will not work with things like eshell which I
+  use on emacs, other systems like windows where the shell is not fully
+  intergrated will rely on a program like env as well.
+
+* vc stuff
+
+  -> vc-before-checkin-hook is run right before the pop-to-buffer
+     command in vc-start-entry. As long as there are no side effects
+     changing the current-buffer to a read-only diff between the
+     working-copy and the current version should work. No cleanup
+     would be performed though :( TODO
+
+     -> needs to get the file value for the current buffer: the working copy.
+
+     -> diff against last checkin
+
+     -> make the diff read-only
+
+     -> make the current buffer the diff.
+
+* Things needed:
+
+   hunk recovery. The ability to scrub all the plus and minuses to
+   restore the text encompassed by a hunk to it's original content.
+
+
+
