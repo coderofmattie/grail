@@ -98,6 +98,10 @@
   (list "-s" package)
   )
 
+;; within this window can I make hyperlinks where the hyperlink triggers an install
+;; method ?
+
+;; can I extract available versions ? , installed versions ? , matching packages ?
 (defun deploy-search-inquisitio ( package )
   "search for an Emacs package with Paludis's inquisitio search tool."
   (interactive "MPackage? ")
