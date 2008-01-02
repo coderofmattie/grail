@@ -1,9 +1,9 @@
 Welcome to Mike Mattie's emacs configuration.
 
-My emacs configuration is weighted towards development in various
-languages and of course emacs hacking. This file consists of
+My Emacs configuration is weighted towards development in various
+languages and of course Emacs hacking. This file consists of
 integration instructions followed by a brief set of key features and
-differences from a standard emacs.
+differences from a standard Emacs.
 
 Integration
 
@@ -35,6 +35,9 @@ shift-tab  -> switches to the other window.
 alt-tab    -> switches buffers
 
 ctrl-z     -> terminates recursion instead of signalling the window manager
-              to minimize emacs.
+              to minimize Emacs.
 
 the search functions are regex by default.
+
+you may see comments and literal strings underlined. This is the
+spell-checker. Ignore or fix as you choose.
