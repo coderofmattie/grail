@@ -31,6 +31,10 @@
   `((t (:inherit default :underline t)))
   "deploy face for package names")
 
+(defface deploy-repository-face
+  `((t (:inherit default :foreground "SkyBlue3")))
+  "deploy face for package names")
+
 (defface deploy-package-stable-face
   `((t (:inherit default :bold t)))
   "deploy face for package names")
@@ -52,6 +56,7 @@
   "show what packages will be installed by paludis assuming the cursor is over
    a package name, repository, or version"
   (interactive)
+  (overlays-at
   (message "show it !")
   )
 
@@ -62,10 +67,16 @@
   (message "install it !")
   )
 
+(defmacro paludis-type-p ( type )
+  `(eq ,type (overlay-get 'paludis 'paludis-type)))
+
+
+
 (defun paludis-show-at-point ()
   "show what packages will be installed by paludis"
   (interactive)
-  (message "show it !")
+  (cond
+    ((paludis-type-p name) (message "show it !")))
   )
 
 (defun paludis-install-at-point ()
@@ -75,23 +86,30 @@
   (message "install it !")
   )
 
+;;; (defun test-toke ()
+;;;   "just one little one"
+;;;   (interactive)
+;;;   (message "tokenized as %s"
+;;;     (toke-table
+;;;        ("[[:blank:]]" 'whitespace)
+;;;        ("\\([^[:blank:]].*\\):" 'repository ('ignore "installed" "License" "Installed time"))
+;;;        ))
+;;;   )
+
+(defun paludis-properties ()
+  (goto-char (point-min))
+
+  (let
+    ((span-start (point))
+      )
+
+    ))
+
 ;; need a local-map
 (defun paludis-mode ()
   "turn on paludis mode"
   (interactive)
-
-  (auto-overlay-unload-regexp 'paludis)
-  (auto-overlay-load-regexp
-    `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
-       (face . deploy-package-name-face)
-       (paludis-package-name . t)
-       (local-map . ,paludis-keymap)
-       (read-only . t) ;; still doesn't work
-       )
-    'paludis
-    )
-
-  (auto-overlay-start 'paludis)
+  (paludis-overlay)
   )
 
 (provide 'paludis)
