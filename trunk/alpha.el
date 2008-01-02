@@ -11,6 +11,9 @@
 
 ;; these need documentation, and they will be ready to go into mattie-boot.el
 
+;; before it hits stable need to add a ! inversion to the form. Should be
+;; general, when encountered, strip, and nest the predicate in a not list.
+
 (defun filter-ls-attributes ( filter-form )
   "implement the various attribute filters for the filter-ls form"
   (lexical-let
