@@ -46,6 +46,21 @@
   (interactive "Ssymbol? ")
   (pp (auto-overlay-local-binding symbol)))
 
+;; much like easy-mmode-define-keymap macro but with a little more
+;; juice doing the defvar part as well.
+
+(defmacro def-sparse-map ( symbol docstring &rest keys )
+  "make it easy to define a keymap give the symbol, a docstring, followed by
+   the usual (key 'symbol) lists."
+  `(defvar ,symbol
+     (let
+       ((map (make-sparse-keymap)))
+       ,@(mapcar (lambda (binding)
+                   (list 'define-key 'map (car binding) (cadr binding))) keys)
+       map)
+     ,docstring)
+  )
+
 ;; a interactive command I still use. Just a quick way to pull up the
 ;; source in a read-only buffer. Once the completion is fixed to search
 ;; the load-path and use icicles for completion it can go into mattie.el.
