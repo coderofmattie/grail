@@ -27,8 +27,20 @@
 (require 'auto-overlays)
 (require 'auto-overlay-word)
 
-(defface deploy-package-face
+(defface deploy-package-name-face
   `((t (:inherit default :underline t)))
+  "deploy face for package names")
+
+(defface deploy-package-stable-face
+  `((t (:inherit default :bold t)))
+  "deploy face for package names")
+
+(defface deploy-package-beta-face
+  `((t (:inherit default :sytle italic)))
+  "deploy face for package names")
+
+(defface deploy-package-alpha-face
+  `((t (:inherit default :strikethrough t)))
   "deploy face for package names")
 
 (def-sparse-map paludis-keymap
@@ -36,10 +48,18 @@
   ("s" 'paludis-show-at-point)
   ("i" 'paludis-install-at-point))
 
-(defun paludis-test ()
+(defun paludis-show ()
+  "show what packages will be installed by paludis assuming the cursor is over
+   a package name, repository, or version"
   (interactive)
-;;  (highlight-regexp "^\\\*[[:blank:]]+")
-  (highlight-regexp "^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$")
+  (message "show it !")
+  )
+
+(defun paludis-install ()
+  "install packages with paludis assuming the cursor is over a package name,
+   repository name, or version"
+  (interactive)
+  (message "install it !")
   )
 
 (defun paludis-show-at-point ()
@@ -63,10 +83,10 @@
   (auto-overlay-unload-regexp 'paludis)
   (auto-overlay-load-regexp
     `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
-       (face . deploy-package-face)
+       (face . deploy-package-name-face)
        (paludis-package-name . t)
        (local-map . ,paludis-keymap)
-       (read-only . t)
+       (read-only . t) ;; still doesn't work
        )
     'paludis
     )
