@@ -11,7 +11,7 @@
 (require 'flyspell)
 
 (setq-default
-  aspell-program-name "aspell"                     ;; use aspell.
+  ispell-program-name "aspell"                     ;; use aspell.
   flyspell-issue-message-flag nil)                 ;; don't bog down in bad english.
 
 (add-hook 'text-mode-hook 'flyspell-mode)          ;; turn on regular flyspell mode text
