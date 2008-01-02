@@ -40,6 +40,12 @@
        (directory-files-and-attributes ,path ,path-type))
      ))
 
+;; this can go in once it does the right thing outside of a overlay.
+(defun show-overlay-binding ( symbol )
+  "show the overlay binding value of the symbol at the point"
+  (interactive "Ssymbol? ")
+  (pp (auto-overlay-local-binding symbol)))
+
 ;; a interactive command I still use. Just a quick way to pull up the
 ;; source in a read-only buffer. Once the completion is fixed to search
 ;; the load-path and use icicles for completion it can go into mattie.el.
