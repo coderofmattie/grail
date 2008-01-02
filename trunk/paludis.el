@@ -1,3 +1,29 @@
+;;----------------------------------------------------------------------
+;; paludis.el
+;; Primary Author: Mike Mattie
+;;----------------------------------------------------------------------
+
+;; Summary
+;;
+;; Interface to the paludis package manager typically used with Gentoo
+;; Linux.
+
+;; provides a mechanism to search the repositories. From the resulting
+;; repository list they can preview or install a package
+
+;; There are three variations on install. The first is simply by name
+;; where the package manager chooses a default repository and version.
+
+;; The second is by repository, version is default or latest.
+
+;; the third install variation consists of installing a particular
+;; version of a package.
+
+;; The user simply sees hyperlink like names and versions. The three
+;; variations should be presented, but should not as variations on
+;; the interface. Just more than one place they can execute install
+;; related commands.
+
 (require 'auto-overlays)
 (require 'auto-overlay-word)
 
@@ -15,6 +41,7 @@
   (auto-overlay-load-regexp
     `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
        (face . (underline . t))
+       (paludis-package-name . t)
        )
     'paludis
     )
