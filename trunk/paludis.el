@@ -27,8 +27,12 @@
 (require 'auto-overlays)
 (require 'auto-overlay-word)
 
-(def-sparse-map deploy-package-keymap
-  "keymap for deploying packages"
+(defface deploy-package-face
+  `((t (:inherit default :underline t)))
+  "deploy face for package names")
+
+(def-sparse-map paludis-keymap
+  "paludis package manager keymap"
   ("s" 'paludis-show)
   ("i" 'paludis-install))
 
@@ -59,9 +63,9 @@
   (auto-overlay-unload-regexp 'paludis)
   (auto-overlay-load-regexp
     `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
-       (face . (underline . t))
+       (face . deploy-package-face)
        (paludis-package-name . t)
-       (local-map . ,deploy-package-keymap)
+       (local-map . ,paludis-keymap)
        (read-only . t)
        )
     'paludis
