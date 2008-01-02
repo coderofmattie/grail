@@ -18,31 +18,6 @@
 ;;      (when v (push v acc)))
 ;;    acc))
 
-(defun paludis-overlay ()
-  (auto-overlay-unload-regexp 'paludis)
-  (auto-overlay-load-regexp
-    `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
-       (face . deploy-package-name-face)
-       (paludis-type . name)
-       (local-map . ,paludis-keymap)
-       (read-only . t) ;; still doesn't work
-       )
-    'paludis
-    )
-
-  (auto-overlay-load-regexp
-    `(word ("^[[:blank:]]+\\([^[:blank:]]+:\\)[[:blank:]]*" . 1)
-       (face . deploy-repository-face)
-       (paludis-type . name)
-       (local-map . ,paludis-keymap)
-       (read-only . t) ;; still doesn't work
-       )
-    'paludis
-    )
-
-  (auto-overlay-start 'paludis)
-  )
-
 ;;----------------------------------------------------------------------
 ;;          tags source code indexing
 ;;----------------------------------------------------------------------
@@ -89,3 +64,34 @@
 ;;  (define-key paredit-mode-map (kbd ")") 'paredit-close-parenthesis)
 
 ;;  (local-set-key "\C-c/r" 'query-replace-regexp)
+
+
+;;----------------------------------------------------------------------
+;; old experiments that worked but did not pan out.
+;;----------------------------------------------------------------------
+
+(defun paludis-overlay ()
+  (auto-overlay-unload-regexp 'paludis)
+  (auto-overlay-load-regexp
+    `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
+       (face . deploy-package-name-face)
+       (paludis-type . name)
+       (local-map . ,paludis-keymap)
+       (read-only . t) ;; still doesn't work
+       )
+    'paludis
+    )
+
+  (auto-overlay-load-regexp
+    `(word ("^[[:blank:]]+\\([^[:blank:]]+:\\)[[:blank:]]*" . 1)
+       (face . deploy-repository-face)
+       (paludis-type . name)
+       (local-map . ,paludis-keymap)
+       (read-only . t) ;; still doesn't work
+       )
+    'paludis
+    )
+
+  (auto-overlay-start 'paludis)
+  )
+
