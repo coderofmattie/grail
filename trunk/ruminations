@@ -24,6 +24,35 @@ and automate ?
 
 Such a thing would be powerful indeed.
 
+What if I looked at a package manger hooked up to Emacs as a deployment mechanism.
+With a modern package manager you can merge multiple repositories ala paludis.
+This sort of arrangement is ideal for merging Global tools such as the ones distributed
+with Emacs, with "shop" tools distributed within a particular organization.
+
+If I apply this line of thought to my template system then It comes to mind that
+the templates could be managed with a system like this. The problem then becomes
+how do you associate a given buffer with the templates ?
+
+Could the various tests, debugging methods, refactor techniques, and idioms
+be distributed as both knowledge and tool throughout the project through
+such a system ?
+
+could I have a directory called kung-fu, where I could move styles into
+that directory, have those features autoload as part of the config ?
+
+basically automate the hell out of that loop ?
+
+--> interface for deploy.
+
+one key should generate the install dependencies, run with -p. It should integrate
+nicely with the existing display. create a marker for the region. Another key
+should perform the install.
+
+the search program can place the markers and give them the generic name of the
+install region. The install part is orthogonal as it can simply operate within
+the region defined by the markers. Both the install dependencies and the actual
+installation log can go in that region.
+
 --> old <--
 
 * Just for Fun
