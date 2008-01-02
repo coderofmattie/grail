@@ -18,6 +18,31 @@
 ;;      (when v (push v acc)))
 ;;    acc))
 
+(defun paludis-overlay ()
+  (auto-overlay-unload-regexp 'paludis)
+  (auto-overlay-load-regexp
+    `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
+       (face . deploy-package-name-face)
+       (paludis-type . name)
+       (local-map . ,paludis-keymap)
+       (read-only . t) ;; still doesn't work
+       )
+    'paludis
+    )
+
+  (auto-overlay-load-regexp
+    `(word ("^[[:blank:]]+\\([^[:blank:]]+:\\)[[:blank:]]*" . 1)
+       (face . deploy-repository-face)
+       (paludis-type . name)
+       (local-map . ,paludis-keymap)
+       (read-only . t) ;; still doesn't work
+       )
+    'paludis
+    )
+
+  (auto-overlay-start 'paludis)
+  )
+
 ;;----------------------------------------------------------------------
 ;;          tags source code indexing
 ;;----------------------------------------------------------------------
