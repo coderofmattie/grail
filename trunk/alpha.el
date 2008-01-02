@@ -9,45 +9,32 @@
 ;; stable-track  - canidate for inclusion in mattie.el
 ;;----------------------------------------------------------------------
 
-(defun deploy-url-elisp ( url file )
-  "deploy the elisp on the host via url installing in the extras path"
-  (with-temp-buffer
-    ;; download without modifying the buffer-name
-    (and
-      (condition-case nil
-        (url-insert-file-contents url nil)
-        (error (progn
-                 (message "download of %s failed" file)
-                 nil)))
+;; these need documentation, and they will be ready to go into mattie-boot.el
 
-      ;; write out to the appropriate file.
-      (write-file (concat my-extras-dir file ".el")))
-      ))
+(defun filter-ls-attributes ( filter-form )
+  "implement the various attribute filters for the filter-ls form"
+  (lexical-let
+    ((attr-name (symbol-name (car filter-form)))
+      (attr-match (cadr filter-form)))
 
-;; undistributed or experimental features need to be loaded without
-;; aborting the entire config at the point of the error. This macro
-;; loads a file that contains the risky code with error trapping to
-;; protect the rest of the configuration from any error.
+    (cond
+      ((string-equal "type" attr-name) (list 'char-equal attr-match  '(aref (cdr path-pair) 0)))
+      ((string-equal "path" attr-name) (list 'string-match-p attr-match '(car path-pair)))
+    ;; error path
+    )))
 
-;; TODO: it would be nice if any information apart of the error
-;;       signal was included in the message output.
+(defmacro filter-ls (path path-type &rest filters)
+  "a form for flexibly filtering the result of listing a directory with attributes"
+  `(apply 'map-filter-nil
+     (lambda ( path-pair )
+       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
+         (car path-pair)))
 
-;; load-gaurd needs additional forms to generate check and install
-;; functions. along with methods to accomplish the install. more
-;; in the TODO.
-
-(defmacro load-guard ( file error )
-  "Trap errors from loading a file for robustness while initializing."
-  `(condition-case nil
-     (load (concat my-emacs-dir ,file))
-     (error (progn
-              ;; duplicate the message to both *Messages* as a log
-              ;; and to the *scratch* buffer where it is highly visible.
-              (message "initialization failed %s" ,error)
-              (with-current-buffer "*scratch*"
-                (goto-char (point-max))
-                (insert (format "; !degraded configuration! %s\n" ,error)))
-              ))
+     ;; reduce the attributes to a pair of the path, and the mode string
+     (mapcar (lambda ( attr-list )
+               (cons (car attr-list) (nth 9 attr-list)))
+       ;; get the list of files.
+       (directory-files-and-attributes ,path ,path-type))
      ))
 
 ;; a interactive command I still use. Just a quick way to pull up the
@@ -90,9 +77,50 @@
         (message "aborted localizing distributed file"))
     )))
 
+;; undistributed or experimental features need to be loaded without
+;; aborting the entire config at the point of the error. This macro
+;; loads a file that contains the risky code with error trapping to
+;; protect the rest of the configuration from any error.
+
+;; TODO: it would be nice if any information apart of the error
+;;       signal was included in the message output.
+
+;; load-gaurd needs additional forms to generate check and install
+;; functions. along with methods to accomplish the install. more
+;; in the TODO.
+
+(defmacro load-guard ( file error )
+  "Trap errors from loading a file for robustness while initializing."
+  `(condition-case nil
+     (load (concat my-emacs-dir ,file))
+     (error (progn
+              ;; duplicate the message to both *Messages* as a log
+              ;; and to the *scratch* buffer where it is highly visible.
+              (message "initialization failed %s" ,error)
+              (with-current-buffer "*scratch*"
+                (goto-char (point-max))
+                (insert (format "; !degraded configuration! %s\n" ,error)))
+              ))
+     ))
+
 ;;----------------------------------------------------------------------
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
+
+(defun deploy-url-elisp ( url file )
+  "deploy the elisp on the host via url installing in the extras path"
+  (with-temp-buffer
+    ;; download without modifying the buffer-name
+    (and
+      (condition-case nil
+        (url-insert-file-contents url nil)
+        (error (progn
+                 (message "download of %s failed" file)
+                 nil)))
+
+      ;; write out to the appropriate file.
+      (write-file (concat my-extras-dir file ".el")))
+      ))
 
 (defun deploy-query-inquisitio-search ( package )
   (list "-s" package)
@@ -131,34 +159,6 @@
 
     (pop-to-buffer search-buffer)
     ))
-
-(defun filter-ls-attributes ( filter-form )
-  "implement the various attribute filters for the filter-ls form"
-  (lexical-let
-    ((attr-name (symbol-name (car filter-form)))
-      (attr-match (cadr filter-form)))
-
-    (cond
-      ((string-equal "type" attr-name) (list 'char-equal attr-match  '(aref (cdr path-pair) 0)))
-      ((string-equal "path" attr-name) (list 'string-match-p attr-match '(car path-pair)))
-    ;; error path
-    )))
-
-(defmacro filter-ls (path path-type &rest filters)
-  "a form for flexibly filtering the result of listing a directory with attributes"
-  `(apply 'map-filter-nil
-     (lambda ( path-pair )
-       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
-         (car path-pair)))
-
-     ;; reduce the attributes to a pair of the path, and the mode string
-     (mapcar (lambda ( attr-list )
-               (cons (car attr-list) (nth 9 attr-list)))
-       ;; get the list of files.
-       (directory-files-and-attributes ,path ,path-type))
-     ))
-
-;; this is definitely a macro candidate, look at the duplication. it's obvious.
 
 (defun elisp-in-path ( path path-type )
   "return a list of elisp files in the path"
