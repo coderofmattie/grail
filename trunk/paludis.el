@@ -27,12 +27,31 @@
 (require 'auto-overlays)
 (require 'auto-overlay-word)
 
+(def-sparse-map deploy-package-keymap
+  "keymap for deploying packages"
+  ("s" 'paludis-show)
+  ("i" 'paludis-install))
+
 (defun paludis-test ()
   (interactive)
 ;;  (highlight-regexp "^\\\*[[:blank:]]+")
   (highlight-regexp "^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$")
   )
 
+(defun paludis-show ()
+  "show what packages will be installed by paludis"
+  (interactive)
+  (message "show it !")
+  )
+
+(defun paludis-install ()
+  "install packages with paludis, installation is recursive with regards to
+   dependencies so you may want to try paludis-show first."
+  (interactive)
+  (message "install it !")
+  )
+
+;; need a local-map
 (defun paludis-mode ()
   "turn on paludis mode"
   (interactive)
@@ -42,6 +61,8 @@
     `(word ("^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$" . 1)
        (face . (underline . t))
        (paludis-package-name . t)
+       (local-map . ,deploy-package-keymap)
+       (read-only . t)
        )
     'paludis
     )
