@@ -127,6 +127,31 @@
               ))
      ))
 
+(defun toke-table-exception ( exception-form )
+  "create a exception form suitable for dropping into cond"
+  (list
+    (cons 'or (mapcar
+                (lambda ( excep ) `(looking-at ,excep))
+                (cdr exception-form)))
+
+    (car exception-form)
+    ))
+
+(defmacro toke-table ( &rest forms )
+  "create a tokenizing table"
+  `(cond
+     ,@(mapcar
+         (lambda (form)
+           (list
+             `(looking-at ,(car form))
+
+             (if (cddr form)
+               (list 'cond (apply 'toke-table-exception (cddr form)) (cons (cadr form) nil))
+               (cadr form))
+             ))
+         forms)
+     ))
+
 ;;----------------------------------------------------------------------
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
