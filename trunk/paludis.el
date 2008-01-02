@@ -33,8 +33,8 @@
 
 (def-sparse-map paludis-keymap
   "paludis package manager keymap"
-  ("s" 'paludis-show)
-  ("i" 'paludis-install))
+  ("s" 'paludis-show-at-point)
+  ("i" 'paludis-install-at-point))
 
 (defun paludis-test ()
   (interactive)
@@ -42,13 +42,13 @@
   (highlight-regexp "^\\\*[[:blank:]]+\\([^[:blank:]]+\\)[[:blank:]]*$")
   )
 
-(defun paludis-show ()
+(defun paludis-show-at-point ()
   "show what packages will be installed by paludis"
   (interactive)
   (message "show it !")
   )
 
-(defun paludis-install ()
+(defun paludis-install-at-point ()
   "install packages with paludis, installation is recursive with regards to
    dependencies so you may want to try paludis-show first."
   (interactive)
