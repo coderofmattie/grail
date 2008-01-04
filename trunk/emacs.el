@@ -144,8 +144,8 @@
 (defun eval-tab-context ()
   "evaluate the tab context via the tab-context list of functions"
   (if tab-context
-    (or-function-list tab-context))
-  nil)
+    (try-list tab-context)
+    nil))
 
 (defun contextualized-tab (completion-context)
   ;; generate a contextualized flavor of the tab key behavior.
@@ -168,12 +168,14 @@
       "Complete if point is at end of a word, otherwise indent line."
       (interactive)
 
-      (if (looking-at "\\>")
-        ;; first see if we have a context, if not try the mode specific
-        ;; completion functions.
-
-        (or (eval-tab-context) (funcall completion-function))
-        (indent-for-tab-command))
+      ;; first try the tab context which should override the
+      ;; general tab behavior only when the text or properties
+      ;; essentially guarantee to DTRT
+      (unless (eval-tab-context)
+        (if (looking-at "\\>")
+          ;; fall back on completion or indentation
+          (funcall completion-function)
+          (indent-for-tab-command)))
       ))
   )
 
