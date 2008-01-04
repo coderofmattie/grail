@@ -15,7 +15,6 @@
   "iterate through the list of functions. If a function returns t for
    success terminate the iteration. It's a fancy or."
   (catch 'terminate
-
     (dolist (func list)
       (if (funcall func)
         (throw 'terminate t)))
