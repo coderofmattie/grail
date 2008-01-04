@@ -36,15 +36,19 @@
               ))
     )))
 
+(defun correct-over-flyspell ()
+  "auto-correct the word if over a flyspell region, return t only
+   if over a fly-spell region"
+  (interactive)
+
+  (if (flyspell-at-point-p)
+    (progn
+      (flyspell-auto-correct-word)
+      t)))
+
 ;; create a tab context where tab will invoke flyspell-auto-correct-word
 ;; at the point.
-(setq tab-context (cons
-                    (lambda ()
-                      (if (flyspell-at-point-p)
-                        (progn
-                          (flyspell-auto-correct-word)
-                          t)))
-                    tab-context))
+(setq tab-context (cons 'correct-over-flyspell tab-context))
 
 
 
