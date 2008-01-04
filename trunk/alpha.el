@@ -11,6 +11,17 @@
 
 ;; these need documentation, and they will be ready to go into mattie-boot.el
 
+(defun or-function-list (list)
+  "iterate through the list of functions. If a function returns t for
+   success terminate the iteration. It's a fancy or."
+  (catch 'terminate
+
+    (dolist (func list)
+      (if (funcall func)
+        (throw 'terminate t)))
+    nil
+    ))
+
 ;; before it hits stable need to add a ! inversion to the form. Should be
 ;; general, when encountered, strip, and nest the predicate in a not list.
 
@@ -125,31 +136,6 @@
                 (goto-char (point-max))
                 (insert (format "; !degraded configuration! %s\n" ,error)))
               ))
-     ))
-
-(defun toke-table-exception ( exception-form )
-  "create a exception form suitable for dropping into cond"
-  (list
-    (cons 'or (mapcar
-                (lambda ( excep ) `(looking-at ,excep))
-                (cdr exception-form)))
-
-    (car exception-form)
-    ))
-
-(defmacro toke-table ( &rest forms )
-  "create a tokenizing table"
-  `(cond
-     ,@(mapcar
-         (lambda (form)
-           (list
-             `(looking-at ,(car form))
-
-             (if (cddr form)
-               (list 'cond (apply 'toke-table-exception (cddr form)) (cons (cadr form) nil))
-               (cadr form))
-             ))
-         forms)
      ))
 
 ;;----------------------------------------------------------------------

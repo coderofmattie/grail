@@ -9,7 +9,7 @@
 ;;
 ;; the code in this file should depend only on reliable features
 ;; distributed with emacs. Any third party or risky features should
-;; be gaurded with load-guard.
+;; be guarded with load-guard.
 ;;----------------------------------------------------------------------
 
 ;;----------------------------------------------------------------------
@@ -18,7 +18,8 @@
 
 (tool-bar-mode nil)                           ;; cannot be set with setq
 
-(setq inhibit-splash-screen t)
+(setq inhibit-splash-screen t)                ;; definitely not a fan of the splash screen.
+(transient-mark-mode nil)                     ;; not a big fan of transient mark mode.
 
 (setq
   case-fold-search t
@@ -135,6 +136,17 @@
 
 (global-set-key (kbd "<S-tab>") 'other-window)
 
+(defvar tab-context
+  nil
+  "a list of functions for contextualized-tab to try. These functions need to return t only
+   if they are certain their dwim is the right dwim.")
+
+(defun eval-tab-context ()
+  "evaluate the tab context via the tab-context list of functions"
+  (if tab-context
+    (or-function-list tab-context))
+  nil)
+
 (defun contextualized-tab (completion-context)
   ;; generate a contextualized flavor of the tab key behavior.
 
@@ -157,8 +169,10 @@
       (interactive)
 
       (if (looking-at "\\>")
-        ;; geting wrong argument, symbol.
-        (funcall completion-function)
+        ;; first see if we have a context, if not try the mode specific
+        ;; completion functions.
+
+        (or (eval-tab-context) (funcall completion-function))
         (indent-for-tab-command))
       ))
   )
@@ -486,6 +500,18 @@
 
     (local-set-key (kbd "(") (lambda () (interactive) (insert-char ?\[ 1 nil)))
     (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil)))
+
+    ;; this binding is very important. normal evaluation of defuns such as defvar
+    ;; and defcustom do not change the default value because the form only sets
+    ;; the value if nil.
+
+    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
+    ;; this function/keybinding should be used exclusively to avoid frustrating
+    ;; errors.
+    (local-set-key (kbd "C-x e") 'eval-defun)
+
+    ;; replace dired at point, far less useful to me than instrumenting a function.
+    (local-set-key (kbd "C-x d") 'edebug-defun)
     ))
 
 ;;----------------------------------------------------------------------
