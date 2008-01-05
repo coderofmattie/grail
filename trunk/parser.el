@@ -70,7 +70,7 @@
 ;; diagnostics
 ;;----------------------------------------------------------------------
 (defun parser-expr-diagnostic ( form )
-  (format "type %s: %s" (symbol-name (type-of form)) (pp form)))
+  (format "type(%s) %s" (symbol-name (type-of form)) (pp form)))
 
 (defmacro parser-diagnostic ( form from expected )
   "syntax: (parser-diagnostic form from expected)
@@ -79,3 +79,38 @@
    and expected is a message describing what the component expected"
   `(concat (format "[%s] expected: " ,from)  ,expected " not: " ,(parser-expr-diagnostic form)))
 
+;;----------------------------------------------------------------------
+;; compiler
+;;----------------------------------------------------------------------
+(defun parser-compile-action ( identifier constructor )
+  "compile the action part of a parse clause consisting of an identifier
+   and a constructor for AST."
+
+  (unless (symbolp identifier)
+    (throw 'syntax-error (parser-diagnostic identifier
+                           "parser compile token"
+                           "identifier: An unbound symbol used as an identifier"
+                           )))
+  (cond
+    ((eq nil constructor) `(parser-build-token ',identifier))
+    ((functionp constructor) `(,constructor (match-beginning) (match-end)))
+
+    ;; all other constructor types are unhandled.
+    (throw 'syntax-error (parser-diagnostic identifier
+                           "parser token: identifier" "A symbol")))
+  )
+
+(defun parser-compile-token ( syntax )
+  "compile a token into a match function"
+
+  (lexical-let
+    ((identifier (car syntax))
+     (regex (cadr syntax))
+     (constructor (cddr syntax)))
+
+    `(lambda ()
+       (if (looking-at ,regex)
+         (cons t ,(parser-compile-action identifier constructor))
+         (cons nil nil)
+         ))
+    ))

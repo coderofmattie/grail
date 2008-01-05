@@ -17,3 +17,17 @@
         "test"
         "the right thing"))))
 
+(defmacro test-parser ( &rest syntax )
+  (lexical-let
+    ((compile (catch 'syntax-error
+                (parser-compile-token (cdr syntax)))))
+
+    (if (stringp compile)
+      (message "%s" compile)
+      compile)
+    ))
+
+(pp (macroexpand
+      (test-parser token whitespace "[[:blank:]]")))
+
+(test-token 'whitespace "[[:blank:]]")
