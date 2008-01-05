@@ -122,7 +122,34 @@
 ;; compiler runtime
 ;;----------------------------------------------------------------------
 
-(defun parser-runtime-or ( match-list )
+(defun parser-pos ()
+  "return the current position of the parser in the buffer"
+  (car parser-position))
+
+(defun parser-push ()
+  "copy the parser position to a new stack level"
+  (setq parser-position (cons (car parser-position) parser-position)))
+
+(defun parser-pop ()
+  "copy the parser position to a previous stack level"
+  (let
+    ((current (parser-pos)))
+    (setq parser-position (cons (car parser-position) (cddr parser-position)))
+    ))
+
+(defun parser-backtrack ()
+  "restore the previous parser position"
+  (setq parser-position (cdr parser-position)))
+
+(defun parser-advance ( distance )
+  "add distance to the parsing position without changing the stack level"
+  (setq parser-position (cons (+ distance (car parser-position)) (cdr parser-position))))
+
+(defun parser-next ()
+  "compute the next position for the parser as the length of the match plus one"
+  (+ 1 (- (match-end 0) (match-beginning 0))))
+
+(defun parser-or ( match-list )
   "return the match pair of the first match object that indicates a match in the text,
    nil is returned if no matches are found"
 
@@ -131,14 +158,35 @@
       (lexical-let
         ((match-result (funcall match)))
         (if (car match-result)
-          (throw 'terminate match-result))
+          (progn
+            (parser-advance (car match-result))
+            (throw 'terminate match-result)))
         ))
     ))
 
-(defun parser-runtime-and ( match-list )
-  ;; this will get a bit hairy because we need to implement the
-  ;; match criteria, and also create a list of the AST objects.
-  (signal error "parser-runtime-and not implemented yet")
+(defun parser-and ( match-list )
+  (parser-push (parser-pos))
+
+  (catch 'terminate
+    (mapcar
+      (lambda (match)
+        (lexical-let
+          ((match-result (funcall match)))
+
+          (if (car match-result)
+            (progn
+              ;; ?matches need to compensate for this calculation
+              (parser-advance (+ 1 (car match-result)))
+              (cdr match-result))
+
+            (progn
+              (parser-backtrack)
+              (throw 'terminate match-result)))
+
+    (dolist (match match-list)
+
+        ))
+    ))
   )
 
 ;;----------------------------------------------------------------------
@@ -177,7 +225,7 @@
 
     `(lambda ()
        (if (looking-at ,regex)
-         (cons t ,(parser-interp-token-action identifier constructor))
+         (cons (parser-next) ,(parser-interp-token-action identifier constructor))
          (cons nil nil)
          ))
     ))
@@ -208,9 +256,9 @@
       (cond
         ((eq keyword 'token) (parser-compile-token syntax))
         ((eq keyword 'first) (parser-compile-term
-                               (car syntax) 'parser-runtime-or (parser-interpret-definition (cdr syntax))))
+                               (car syntax) 'parser-or (parser-interpret-definition (cdr syntax))))
         ((eq keyword 'term)) (parser-compile-term
-                               (car syntax) 'parser-runtime-and (parser-interpret-definition (cdr syntax)))
+                               (car syntax) 'parser-and (parser-interpret-definition (cdr syntax)))
         ))
     ))
 
@@ -233,7 +281,7 @@
       "match identifier"))
 
   (parser-make-match identifier (eval `(lambda ()
-                                         (,combine-operator ,grammar)))))
+                                         (,combine-operator ,@grammar)))))
 
 (defmacro parser-compile ( &rest definition )
   "compile a LL parser from the given grammar definition"
@@ -241,6 +289,13 @@
     ((match-table (make-vector LENGTH 0))) ;; create a symbol table to store
                                            ;; compiled terminal and non-terminal match functions
 
+    `(lambda ( start-pos )
+       (let
+         ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+         (save-excursion
+           (goto-char start-pos)
+           ,(parser-compile-term 'start 'parser-or (parser-compile-definition definition)))
+         ))
+
     ;; compile the grammar to the start match.
-    (parser-compile-term 'start 'parser-runtime-or (parser-compile-definition definition))
     ))
