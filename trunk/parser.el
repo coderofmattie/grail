@@ -89,12 +89,45 @@
   (cons identifier (cons (match-beginning 0) (match-end 0))))
 
 ;;----------------------------------------------------------------------
-;; compiler
+;; compiler internals
 ;;----------------------------------------------------------------------
 
-(defun parser-compile-action ( identifier constructor )
-  "compile the action part of a parse clause consisting of an identifier
-   and a constructor for AST."
+(defun parser-make-match ( symbol function )
+  "parser-make-match takes ( symbol function ) and returns a symbol
+   stored in the parser's match-table with the evaluated lambda
+   bound"
+  (lexical-let
+    ((new-name (symbol-name symbol)))
+
+    (if (soft-intern new-name match-table)
+      (throw 'semantic-error (format "illegal redefinition of match %s" new-name)))
+
+    (lexical-let
+      ((compiled-match (intern new-name match-table)))
+      (fset compiled-match (eval function))
+      (compiled-match)
+    )))
+
+(defun parser-get-match ( symbol )
+  "return the compiled match for symbol, or throw a semantic-error if it does not
+   exist"
+  (lexical-let
+    ((existing-name (symbol-name symbol)))
+
+    (unless (soft-intern new-name match-table)
+      (throw 'semantic-error (format "unkown match %s" existing-name)))
+
+    (intern existing-name match-table)))
+
+;;----------------------------------------------------------------------
+;; syntax interpretation
+;;----------------------------------------------------------------------
+
+;; interpretation as expansion of a form into lisp is separated from
+;; compilation to make the parser easier to debug.
+
+(defun parser-interp-token-action ( identifier constructor )
+  "assemble the AST constructor for a token"
 
   (unless (symbolp identifier)
     (throw 'syntax-error (parser-diagnostic identifier
@@ -110,8 +143,8 @@
                            "parser token: identifier" "A symbol")))
   )
 
-(defun parser-compile-token ( syntax )
-  "compile a token into a match function"
+(defun parser-interp-token ( syntax )
+  "assemble a token definition into a match object"
 
   ;; syntax issues: it may be necessary to specify sub-captures in regex's
   ;; this particular feature is deferred for now.
@@ -122,7 +155,25 @@
 
     `(lambda ()
        (if (looking-at ,regex)
-         (cons t ,(parser-compile-action identifier constructor))
+         (cons t ,(parser-interp-token-action identifier constructor))
          (cons nil nil)
          ))
+    ))
+
+;;----------------------------------------------------------------------
+;; compilation
+;;----------------------------------------------------------------------
+
+;; after definitions are interpreted they are evaluated or compiled and
+;; stored as match functions.
+
+(defun parser-compile-token ( syntax )
+  "compile a token definition into a match object"
+  (parser-make-match (car syntax) (parser-interp-token syntax)))
+
+(defun parser-compile
+  (let
+    ((match-table (make-vector LENGTH 0))) ;; create a symbol table to store
+                                           ;; compiled terminal and non-terminal match functions
+
     ))
