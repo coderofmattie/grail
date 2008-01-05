@@ -17,7 +17,7 @@
         "test"
         "the right thing"))))
 
-(defmacro test-parser ( &rest syntax )
+(defmacro test-compile-token ( &rest syntax )
   (lexical-let
     ((compile (catch 'syntax-error
                 (parser-compile-token (cdr syntax)))))
@@ -28,6 +28,23 @@
     ))
 
 (pp (macroexpand
-      (test-parser token whitespace "[[:blank:]]")))
+      (test-compile-token token whitespace "[[:blank:]]")))
 
+(defun run-test-token ( match-function )
+  (lexical-let
+    ((result (funcall match-function)))
+    (message "match? %s AST %s" (if (car result) "yes" "no") (pp (cdr result)))
+    ))
+
+(defun run-test ()
+  (interactive)
+  (let
+    (result (funcall (test-compile-token token whitespace "[[:blank:]]")))
+    (message "%s" (pp result))))
+
+(defun run-test ()
+  (interactive)
+  (run-test-token (test-compile-token token whitespace "[[:blank:]]+")))
+
+(match-fun 
 (test-token 'whitespace "[[:blank:]]")

@@ -80,8 +80,18 @@
   `(concat (format "[%s] expected: " ,from)  ,expected " not: " ,(parser-expr-diagnostic form)))
 
 ;;----------------------------------------------------------------------
+;; AST constructors
+;;----------------------------------------------------------------------
+
+(defun parser-build-token ( identifier )
+  "parser-make-token is a built-in constructor that records the analysis
+   and the location of the text (id . (begin . end))"
+  (cons identifier (cons (match-beginning 0) (match-end 0))))
+
+;;----------------------------------------------------------------------
 ;; compiler
 ;;----------------------------------------------------------------------
+
 (defun parser-compile-action ( identifier constructor )
   "compile the action part of a parse clause consisting of an identifier
    and a constructor for AST."
@@ -93,7 +103,7 @@
                            )))
   (cond
     ((eq nil constructor) `(parser-build-token ',identifier))
-    ((functionp constructor) `(,constructor (match-beginning) (match-end)))
+    ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
 
     ;; all other constructor types are unhandled.
     (throw 'syntax-error (parser-diagnostic identifier
