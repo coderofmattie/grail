@@ -1,6 +1,6 @@
 ;;----------------------------------------------------------------------
 ;; parser.el
-;; Primary Author: Mike Mattie
+;; Primary Author: Mike Mattie (codermattie@gmail.com)
 ;;----------------------------------------------------------------------
 
 ;; ->Summary
@@ -30,13 +30,13 @@
 ;;    text properties and overlays making analysis extremely
 ;;    modular and robust while editing.
 
-;; 4. CEDET.
+;; CEDET.
 ;;
-;;    CEDET appears to be a parser generator implemented on-top of a
-;;    CLOS emulation. The fact that this sort of design is not "lispy"
-;;    does not negate it's value, but limits it IMHO. This tool-set
-;;    has also "grown around" the problem of analyzing source code as
-;;    a project which is bloat for simpler requirements.
+;; CEDET appears to be a parser generator implemented on-top of a
+;; CLOS emulation. The fact that this sort of design is not "lispy"
+;; does not negate it's value, but limits it IMHO. This tool-set
+;; has also "grown around" the problem of analyzing source code as
+;; a project which is bloat for simpler requirements.
 
 ;; ->Concept
 
@@ -56,19 +56,18 @@
 ;;    This allows the user to choose between positions, markers, overlays
 ;;    according to the requirements.
 
-;; ->Conventions
+;; -> Naming Conventions
 
-;; parser-build-*
-;;
-;; Construct the data structures returned by the parser.
-
-;; parser-compile-*
-;;
-;; Compile the parser syntax.
+;; parser-*          internal functions
+;; parser-runtime-*  runtime functions
+;; parser-build-*    Construct the AST structures returned by the parser.
+;; parser-interp-*   expand definition syntax into lisp
+;; parser-compile-*  compile the expanded definitions into functions.
 
 ;;----------------------------------------------------------------------
 ;; diagnostics
 ;;----------------------------------------------------------------------
+
 (defun parser-expr-diagnostic ( form )
   (format "type(%s) %s" (symbol-name (type-of form)) (pp form)))
 
@@ -120,6 +119,29 @@
     (intern existing-name match-table)))
 
 ;;----------------------------------------------------------------------
+;; compiler runtime
+;;----------------------------------------------------------------------
+
+(defun parser-runtime-or ( match-list )
+  "return the match pair of the first match object that indicates a match in the text,
+   nil is returned if no matches are found"
+
+  (catch 'terminate
+    (dolist (match match-list)
+      (lexical-let
+        ((match-result (funcall match)))
+        (if (car match-result)
+          (throw 'terminate match-result))
+        ))
+    ))
+
+(defun parser-runtime-and ( match-list )
+  ;; this will get a bit hairy because we need to implement the
+  ;; match criteria, and also create a list of the AST objects.
+  (signal error "parser-runtime-and not implemented yet")
+  )
+
+;;----------------------------------------------------------------------
 ;; syntax interpretation
 ;;----------------------------------------------------------------------
 
@@ -131,7 +153,7 @@
 
   (unless (symbolp identifier)
     (throw 'syntax-error (parser-diagnostic identifier
-                           "parser compile token"
+                           "parser token"
                            "identifier: An unbound symbol used as an identifier"
                            )))
   (cond
@@ -160,6 +182,38 @@
          ))
     ))
 
+(defun parser-interpret-definition ( syntax )
+  (mapcar
+    (lambda ( statement )
+      (cond
+        ((listp statement) (parser-compile-definition statement))
+        ((symbolp statement) (parser-get-match statement))
+        (throw 'syntax-error
+          (parser-daignostic statement
+            "interpret definition"
+            "expected a definition as a list, or a symbol as a production/token reference"))
+        ))
+    syntax))
+
+(defun parser-compile-definition ( definition )
+  (dolist (term definition)
+    (unless (listp term)
+      (throw 'syntax-error (parser-diagnostic term
+                             "parser definition"
+                             "expected a definition token|first|term")))
+    (lexical-let
+      ((keyword (car term))
+        (syntax (cdr term)))
+
+      (cond
+        ((eq keyword 'token) (parser-compile-token syntax))
+        ((eq keyword 'first) (parser-compile-term
+                               (car syntax) 'parser-runtime-or (parser-interpret-definition (cdr syntax))))
+        ((eq keyword 'term)) (parser-compile-term
+                               (car syntax) 'parser-runtime-and (parser-interpret-definition (cdr syntax)))
+        ))
+    ))
+
 ;;----------------------------------------------------------------------
 ;; compilation
 ;;----------------------------------------------------------------------
@@ -171,9 +225,22 @@
   "compile a token definition into a match object"
   (parser-make-match (car syntax) (parser-interp-token syntax)))
 
-(defun parser-compile
+(defun parser-compile-term ( identifier combine-operator grammar )
+  "compile a term into a match object"
+  (unless (symbolp identifier)
+    (parser-diagnostic identifier
+      "compile term"
+      "match identifier"))
+
+  (parser-make-match identifier (eval `(lambda ()
+                                         (,combine-operator ,grammar)))))
+
+(defmacro parser-compile ( &rest definition )
+  "compile a LL parser from the given grammar definition"
   (let
     ((match-table (make-vector LENGTH 0))) ;; create a symbol table to store
                                            ;; compiled terminal and non-terminal match functions
 
+    ;; compile the grammar to the start match.
+    (parser-compile-term 'start 'parser-runtime-or (parser-compile-definition definition))
     ))
