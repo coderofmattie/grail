@@ -113,6 +113,8 @@
 (defun parser-compile-token ( syntax )
   "compile a token into a match function"
 
+  ;; syntax issues: it may be necessary to specify sub-captures in regex's
+  ;; this particular feature is deferred for now.
   (lexical-let
     ((identifier (car syntax))
      (regex (cadr syntax))
