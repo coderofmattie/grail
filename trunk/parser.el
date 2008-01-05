@@ -105,7 +105,7 @@
     ((eq nil constructor) `(parser-build-token ',identifier))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
 
-    ;; all other constructor types are unhandled.
+    ;; all other constructor types are un-handled.
     (throw 'syntax-error (parser-diagnostic identifier
                            "parser token: identifier" "A symbol")))
   )
