@@ -88,7 +88,7 @@
 ;;----------------------------------------------------------------------
 
 (defun parser-expr-diagnostic ( form ) ;; tested
-  (format "type(%s) %s" (symbol-name (type-of form)) (pp form)))
+  (format "type(%s) %s" (symbol-name (type-of form)) (pp (eval form))))
 
 (defmacro parser-diagnostic ( form from expected ) ;; tested
   "syntax: (parser-diagnostic form from expected)
@@ -129,6 +129,7 @@
       (throw 'semantic-error (format "illegal redefinition of match %s" new-name)))
 
     (fset (intern new-name match-table) (eval function))
+    (intern new-name match-table)
     ))
 
 (defun parser-get-match ( symbol )
@@ -217,6 +218,7 @@
         ((match-result (funcall match)))
         (if (car match-result)
           (progn
+            (message "match is %s" (pp match-result))
             (parser-advance (car match-result))
             (throw 'match (cons 0 (cdr match-result)))))
         ))
@@ -336,37 +338,37 @@
       "compile production"
       "match identifier"))
 
-  ;; a little messed up. we need to return the identifier here in the
-  ;; AST or we have a problem.
-  (parser-make-match identifier (eval `(lambda ()
-                                         (lexical-let
-                                           ((result (,combine-operator ,@grammar)))
-                                           (if (car result)
-                                             (cons (car result) (cons ,identifier (cdr result)))
-                                             result)
-                                           )))
-                                  ))
+  (parser-make-match identifier
+    `(lambda ()
+       (lexical-let
+         ((result (,combine-operator ,@grammar)))
+         (if (car result)
+           (cons (car result) (cons ,identifier (cdr result)))
+           result)
+         )))
+    )
 
 (defun parser-compile-definition ( definition )
-  (dolist (term definition)
-    (unless (listp term)
-      (throw 'syntax-error (parser-diagnostic term
-                             "parser definition"
-                             "expected a definition token|first|term")))
+  (mapcar
+    (lambda ( term )
+      (unless (listp term)
+        (throw 'syntax-error (parser-diagnostic term
+                               "parser definition"
+                               "expected a definition token|first|term")))
 
-    ;; this sexp is a macro candidate
-    (lexical-let
-      ((keyword (car term))
-        (syntax (cdr term)))
+      ;; this sexp is a macro candidate
+      (lexical-let
+        ((keyword (car term))
+          (syntax (cdr term)))
 
-      (cond
-        ((eq keyword 'token) (parser-compile-token syntax))
-        ((eq keyword 'first) (parser-compile-production
-                               (car syntax) 'parser-or (parser-interp-production (cdr syntax))))
-        ((eq keyword 'term)) (parser-compile-production
-                               (car syntax) 'parser-and (parser-interp-production (cdr syntax)))
-        ))
-    ))
+        (cond
+          ((eq keyword 'token) (parser-compile-token syntax))
+          ((eq keyword 'first) (parser-compile-production
+                                 (car syntax) 'parser-or (parser-interp-production (cdr syntax))))
+          ((eq keyword 'term)) (parser-compile-production
+                                 (car syntax) 'parser-and (parser-interp-production (cdr syntax)))
+          )))
+    definition))
 
 (defvar parser-mtable-init-size 13
   "initial size of the match-table objarray for storing match functions. the value
@@ -379,15 +381,24 @@
     ;; non-terminal match functions
     ((match-table (make-vector parser-mtable-init-size 0)))
 
-    `(lambda ( start-pos )
-       (let
-         ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
-         (save-excursion
-           (goto-char start-pos)
-           ;; note that the start symbol of the grammar is built in as an or combination
-           ;; of the top-level definitions.
-           ,(parser-compile-production 'start 'parser-or (parser-compile-definition definition)))
+    (lexical-let
+      ((compiled (catch 'syntax-error
+                   `(lambda ( start-pos )
+                      (let
+                        ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+                        (save-excursion
+                          (goto-char start-pos)
+                          ;; note that the start symbol of the grammar is built in as an or combination
+                          ;; of the top-level definitions.
+                          (message "before error ?")
+                          (funcall ,@(parser-compile-production 'start 'parser-or
+                                       (parser-compile-definition definition)))
+                          (message "after error ?")
+                          ))))
          ))
-
-    ;; compile the grammar to the start match.
+      (if (stringp compiled)
+        (progn
+          (message "parser-compile failed! %s" compiled)
+          nil)
+        compiled))
     ))
