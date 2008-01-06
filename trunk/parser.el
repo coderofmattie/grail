@@ -41,10 +41,15 @@
 
 ;; ->Concept
 
-;; A parser compiler that combines lexical (regex) analysis with
-;; parsing built by a recursive macro.
+;; A parser compiler that combines lexical (regex) analysis with LL
+;; parsing compiled by recursive macro expansion.
 
-;; The compiled form is essentially a tree of nested cond forms.
+;; The concept started out as an idea to build a parser as nested cond
+;; forms. The matches would go in the predicate part of the clause
+;; while the action part would go in the body.
+
+;; This idea is expressed here with cond forms mutated into lambdas so
+;; that previously defined matches can be referenced by productions.
 
 ;; -> Requirements
 
@@ -76,16 +81,16 @@
 ;; a failure to match.
 
 ;; AST is the data returned from the match ( production . ( start . end ) | list )
-;; the car of the pair (production) is the production's symbol. 
+;; the car of the pair (production) is the production's symbol.
 
 ;;----------------------------------------------------------------------
 ;; diagnostics
 ;;----------------------------------------------------------------------
 
-(defun parser-expr-diagnostic ( form )
+(defun parser-expr-diagnostic ( form ) ;; tested
   (format "type(%s) %s" (symbol-name (type-of form)) (pp form)))
 
-(defmacro parser-diagnostic ( form from expected )
+(defmacro parser-diagnostic ( form from expected ) ;; tested
   "syntax: (parser-diagnostic form from expected)
 
    Where form is the expr received, from is the component issuing the diagnostic,
@@ -96,7 +101,7 @@
 ;; AST constructors
 ;;----------------------------------------------------------------------
 
-(defun parser-build-token ( identifier )
+(defun parser-build-token ( identifier ) ;; tested
   "parser-make-token is a built-in constructor that records the analysis
    and the location of the text (id . (begin . end))"
   (cons identifier (cons (match-beginning 0) (match-end 0))))
@@ -113,21 +118,18 @@
 ;; match-table is dynamically scoped by the macro, and does not appear
 ;; in the compiled form.
 
-(defun parser-make-match ( symbol function )
+(defun parser-make-match ( symbol function ) ;; tested
   "parser-make-match takes ( symbol function ) and returns a symbol
    stored in the parser's match-table with the evaluated lambda
    bound"
   (lexical-let
     ((new-name (symbol-name symbol)))
 
-    (if (soft-intern new-name match-table)
+    (if (intern-soft new-name match-table)
       (throw 'semantic-error (format "illegal redefinition of match %s" new-name)))
 
-    (lexical-let
-      ((compiled-match (intern new-name match-table)))
-      (fset compiled-match (eval function))
-      (compiled-match)
-    )))
+    (fset (intern new-name match-table) (eval function))
+    ))
 
 (defun parser-get-match ( symbol )
   "return the compiled match for symbol, or throw a semantic-error if it does not
@@ -135,7 +137,7 @@
   (lexical-let
     ((existing-name (symbol-name symbol)))
 
-    (unless (soft-intern new-name match-table)
+    (unless (intern-soft new-name match-table)
       (throw 'semantic-error (format "unkown match %s" existing-name)))
 
     (intern existing-name match-table)))
@@ -155,7 +157,7 @@
 ;; position to a next or previous stack position. backtrack discards
 ;; the top of the stack.
 
-(defun parser-pos ()
+(defun parser-pos () ;; tested
   "Return the current position of the parser in the buffer"
   (car parser-position))
 
@@ -197,6 +199,14 @@
   "Compute the next parser position from the length of the entire regex's current match, plus one."
   (+ 1 (- (match-end 0) (match-beginning 0))))
 
+;; parser combination operators
+
+;; the combination operators group matches by and,or operators as the
+;; underlying mechanics of non-terminal productions. As these
+;; functions are not compiled into the generated parser they have no
+;; knowledge of the symbol associated with the match list, only the
+;; match list itself.
+
 (defun parser-or ( match-list )
   "Combine match objects by or where the first successful match is returned.
    nil is returned if no matches are found"
@@ -208,8 +218,6 @@
         (if (car match-result)
           (progn
             (parser-advance (car match-result))
-            ;; tokens advance the parser, not combination operators. This keeps
-            ;; meta-symbols from complicating the code.
             (throw 'match (cons 0 (cdr match-result)))))
         ))
     (throw 'match (cons nil nil)) ;; this is what failure looks like :)
@@ -222,7 +230,6 @@
 
   (lexical-let
     ((ast (catch 'backtrack
-
             ;; we want to gather all the matches, so mapcar across the match objects.
             (mapcar
               (lambda (match)
@@ -254,9 +261,14 @@
 ;;----------------------------------------------------------------------
 
 ;; interpretation as expansion of a form into lisp is separated from
-;; compilation to make the parser easier to debug.
+;; compilation to make the parser easier to debug and verify by
+;; phase.
 
-(defun parser-interp-token-action ( identifier constructor )
+;; the token interpreter was split into two functions to separate the
+;; flexibility of tokens (user functions or return values for
+;; constructing AST) from the hard-wired matching part.
+
+(defun parser-interp-token-action ( identifier constructor ) ;; tested
   "assemble the AST constructor for a token"
 
   (unless (symbolp identifier)
@@ -273,14 +285,12 @@
                            "parser token: identifier" "A symbol")))
   )
 
-(defun parser-interp-token ( syntax )
+(defun parser-interp-token ( syntax ) ;; tested
   "assemble a token definition into a match object"
 
-  ;; syntax issues: it may be necessary to specify sub-captures in regex's
-  ;; this particular feature is deferred for now.
   (lexical-let
     ((identifier (car syntax))
-     (regex (cadr syntax))
+     (regex (cadr syntax)) ;; eval ? many regexs are stored in variables.
      (constructor (cddr syntax)))
 
     `(lambda ()
@@ -289,6 +299,10 @@
          (cons nil nil)
          ))
     ))
+
+;; this function is special in that the recursion of macro expansion
+;; is implemented as calls between parser-interp-production and
+;; parser-compile-definition.
 
 (defun parser-interp-production ( syntax )
   "interpret a production"
@@ -311,7 +325,7 @@
 ;; after definitions are interpreted they are evaluated or compiled and
 ;; stored as match functions.
 
-(defun parser-compile-token ( syntax )
+(defun parser-compile-token ( syntax ) ;; tested
   "compile a token definition into a match object"
   (parser-make-match (car syntax) (parser-interp-token syntax)))
 
@@ -354,17 +368,24 @@
         ))
     ))
 
+(defvar parser-mtable-init-size 13
+  "initial size of the match-table objarray for storing match functions. the value
+   was chosen based on the recommendation of prime numbers for good hashing.")
+
 (defmacro parser-compile ( &rest definition )
   "compile a LL parser from the given grammar definition"
   (let
-    ((match-table (make-vector LENGTH 0))) ;; create a symbol table to store
-                                           ;; compiled terminal and non-terminal match functions
+    ;; create a symbol table to store compiled terminal and
+    ;; non-terminal match functions
+    ((match-table (make-vector parser-mtable-init-size 0)))
 
     `(lambda ( start-pos )
        (let
          ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
          (save-excursion
            (goto-char start-pos)
+           ;; note that the start symbol of the grammar is built in as an or combination
+           ;; of the top-level definitions.
            ,(parser-compile-production 'start 'parser-or (parser-compile-definition definition)))
          ))
 
