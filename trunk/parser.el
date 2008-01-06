@@ -9,7 +9,8 @@
 
 ;; My requirements involve building/extracting a data structure from
 ;; analysis of a given text. For this purpose a "top-down" parse
-;; makes it easier to assemble a data structure. [TODO why ?]
+;; makes it easier to assemble a data structure. [TODO: why is it easier
+;; this way ?]
 
 ;; ->Related Works
 
@@ -59,10 +60,23 @@
 ;; -> Naming Conventions
 
 ;; parser-*          internal functions
-;; parser-runtime-*  runtime functions
 ;; parser-build-*    Construct the AST structures returned by the parser.
-;; parser-interp-*   expand definition syntax into lisp
-;; parser-compile-*  compile the expanded definitions into functions.
+;; parser-interp-*   expand definitions of terminals and non-terminals into lisp
+;; parser-compile-*  compile the expanded definitions into interchangeable match functions.
+
+;; -> Key data structures
+
+;; Matches
+
+;; matches are a cons pair of ( parser . AST ).
+
+;; Parser is used internally to indicate match success or failure. It
+;; should be the distance matched from the current parser position.
+;; It can, and often will be zero for a successful match. nil indicates
+;; a failure to match.
+
+;; AST is the data returned from the match ( production . ( start . end ) | list )
+;; the car of the pair (production) is the production's symbol. 
 
 ;;----------------------------------------------------------------------
 ;; diagnostics
@@ -90,6 +104,14 @@
 ;;----------------------------------------------------------------------
 ;; compiler internals
 ;;----------------------------------------------------------------------
+
+;; make-match and get-match implement a table of productions and
+;; tokens. Both production and tokens are interchangeable as far as
+;; matching and referencing is concerned. This table gives the ability
+;; to reference previously defined matches in other productions.
+
+;; match-table is dynamically scoped by the macro, and does not appear
+;; in the compiled form.
 
 (defun parser-make-match ( symbol function )
   "parser-make-match takes ( symbol function ) and returns a symbol
@@ -119,75 +141,113 @@
     (intern existing-name match-table)))
 
 ;;----------------------------------------------------------------------
-;; compiler runtime
+;; compiler run-time
 ;;----------------------------------------------------------------------
 
+;; these functions are defined independent of the compilation of a parser
+;; for simplicity, and to avoid wasteful duplication in the macro expansion.
+
+;; parser-position
+
+;; The position of the parser in the input stream is maintained as a
+;; stack of indexes into the buffer. As matching progresses the top of
+;; the stack (car) is updated. The push and pop operations copy a
+;; position to a next or previous stack position. backtrack discards
+;; the top of the stack.
+
 (defun parser-pos ()
-  "return the current position of the parser in the buffer"
+  "Return the current position of the parser in the buffer"
   (car parser-position))
 
 (defun parser-push ()
-  "copy the parser position to a new stack level"
+  "Copy the parser position to a new stack level so the parser can backtrack when necessary."
   (setq parser-position (cons (car parser-position) parser-position)))
 
 (defun parser-pop ()
-  "copy the parser position to a previous stack level"
+  "Copy the parser position to a previous stack level When the possibility of a backtrack
+   has been eliminated by matching."
   (let
     ((current (parser-pos)))
     (setq parser-position (cons (car parser-position) (cddr parser-position)))
     ))
 
 (defun parser-backtrack ()
-  "restore the previous parser position"
-  (setq parser-position (cdr parser-position)))
+  "Restore the previous parser position by discarding the top of the parser-position stack."
+  (setq parser-position (cdr parser-position))
+  (goto-char (parser-pos)))
 
 (defun parser-advance ( distance )
-  "add distance to the parsing position without changing the stack level"
-  (setq parser-position (cons (+ distance (car parser-position)) (cdr parser-position))))
+  "Add distance to the parsing position on the current stack level.
+   The advancing of the parser is done relative to the current
+   position so that a successful match can advance 0 characters.
+   This is important for optional matches such as the \"?\" meta-symbol.
+   They want to indicate a successful match without moving the parser position."
+
+  ;; we are going to get zero's as a unfortunate side-effect of
+  ;; keeping the nesting of combination operators simple. Avoid NOP
+  ;; work with a quick test.
+
+  (if (> distance 0)
+    (progn
+      (setq parser-position (cons (+ distance (car parser-position)) (cdr parser-position)))
+      (goto-char (parser-pos)))
+    ))
 
 (defun parser-next ()
-  "compute the next position for the parser as the length of the match plus one"
+  "Compute the next parser position from the length of the entire regex's current match, plus one."
   (+ 1 (- (match-end 0) (match-beginning 0))))
 
 (defun parser-or ( match-list )
-  "return the match pair of the first match object that indicates a match in the text,
+  "Combine match objects by or where the first successful match is returned.
    nil is returned if no matches are found"
 
-  (catch 'terminate
+  (catch 'match
     (dolist (match match-list)
       (lexical-let
         ((match-result (funcall match)))
         (if (car match-result)
           (progn
             (parser-advance (car match-result))
-            (throw 'terminate match-result)))
+            ;; tokens advance the parser, not combination operators. This keeps
+            ;; meta-symbols from complicating the code.
+            (throw 'match (cons 0 (cdr match-result)))))
         ))
+    (throw 'match (cons nil nil)) ;; this is what failure looks like :)
     ))
 
 (defun parser-and ( match-list )
-  (parser-push (parser-pos))
+  "combine the matches with and. all of the match objects must return non-nil
+   or it backtracks."
+  (parser-push)
 
-  (catch 'terminate
-    (mapcar
-      (lambda (match)
-        (lexical-let
-          ((match-result (funcall match)))
+  (lexical-let
+    ((ast (catch 'backtrack
 
-          (if (car match-result)
-            (progn
-              ;; ?matches need to compensate for this calculation
-              (parser-advance (+ 1 (car match-result)))
-              (cdr match-result))
+            ;; we want to gather all the matches, so mapcar across the match objects.
+            (mapcar
+              (lambda (match)
+                (lexical-let
+                  ((match-result (funcall match)))
 
-            (progn
-              (parser-backtrack)
-              (throw 'terminate match-result)))
+                  (if (car match-result)
+                    (progn
+                      ;; on match advance the parser and return the AST
+                      (parser-advance (car match-result))
+                      (cdr match-result))
 
-    (dolist (match match-list)
-
-        ))
-    ))
-  )
+                    ;; on fail backtrack and return nil
+                    (progn
+                      (parser-backtrack)
+                      (throw 'backtrack nil)))
+                  ))
+              match-list)
+            (parser-pop)
+            )))
+   (if ast
+     ;; would be nice to run map-filter-nil on ast.
+     (cons 0 ast)
+     (cons nil nil))
+   ))
 
 ;;----------------------------------------------------------------------
 ;; syntax interpretation
@@ -230,7 +290,8 @@
          ))
     ))
 
-(defun parser-interpret-definition ( syntax )
+(defun parser-interp-production ( syntax )
+  "interpret a production"
   (mapcar
     (lambda ( statement )
       (cond
@@ -243,25 +304,6 @@
         ))
     syntax))
 
-(defun parser-compile-definition ( definition )
-  (dolist (term definition)
-    (unless (listp term)
-      (throw 'syntax-error (parser-diagnostic term
-                             "parser definition"
-                             "expected a definition token|first|term")))
-    (lexical-let
-      ((keyword (car term))
-        (syntax (cdr term)))
-
-      (cond
-        ((eq keyword 'token) (parser-compile-token syntax))
-        ((eq keyword 'first) (parser-compile-term
-                               (car syntax) 'parser-or (parser-interpret-definition (cdr syntax))))
-        ((eq keyword 'term)) (parser-compile-term
-                               (car syntax) 'parser-and (parser-interpret-definition (cdr syntax)))
-        ))
-    ))
-
 ;;----------------------------------------------------------------------
 ;; compilation
 ;;----------------------------------------------------------------------
@@ -273,15 +315,44 @@
   "compile a token definition into a match object"
   (parser-make-match (car syntax) (parser-interp-token syntax)))
 
-(defun parser-compile-term ( identifier combine-operator grammar )
-  "compile a term into a match object"
+(defun parser-compile-production ( identifier combine-operator grammar )
+  "compile a production into a match object"
   (unless (symbolp identifier)
     (parser-diagnostic identifier
-      "compile term"
+      "compile production"
       "match identifier"))
 
+  ;; a little messed up. we need to return the identifier here in the
+  ;; AST or we have a problem.
   (parser-make-match identifier (eval `(lambda ()
-                                         (,combine-operator ,@grammar)))))
+                                         (lexical-let
+                                           ((result (,combine-operator ,@grammar)))
+                                           (if (car result)
+                                             (cons (car result) (cons ,identifier (cdr result)))
+                                             result)
+                                           )))
+                                  ))
+
+(defun parser-compile-definition ( definition )
+  (dolist (term definition)
+    (unless (listp term)
+      (throw 'syntax-error (parser-diagnostic term
+                             "parser definition"
+                             "expected a definition token|first|term")))
+
+    ;; this sexp is a macro candidate
+    (lexical-let
+      ((keyword (car term))
+        (syntax (cdr term)))
+
+      (cond
+        ((eq keyword 'token) (parser-compile-token syntax))
+        ((eq keyword 'first) (parser-compile-production
+                               (car syntax) 'parser-or (parser-interp-production (cdr syntax))))
+        ((eq keyword 'term)) (parser-compile-production
+                               (car syntax) 'parser-and (parser-interp-production (cdr syntax)))
+        ))
+    ))
 
 (defmacro parser-compile ( &rest definition )
   "compile a LL parser from the given grammar definition"
@@ -294,7 +365,7 @@
          ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
          (save-excursion
            (goto-char start-pos)
-           ,(parser-compile-term 'start 'parser-or (parser-compile-definition definition)))
+           ,(parser-compile-production 'start 'parser-or (parser-compile-definition definition)))
          ))
 
     ;; compile the grammar to the start match.
