@@ -211,14 +211,12 @@
 (defun parser-or ( match-list )
   "Combine match objects by or where the first successful match is returned.
    nil is returned if no matches are found"
-
   (catch 'match
     (dolist (match match-list)
       (lexical-let
         ((match-result (funcall match)))
         (if (car match-result)
           (progn
-            (message "match is %s" (pp match-result))
             (parser-advance (car match-result))
             (throw 'match (cons 0 (cdr match-result)))))
         ))
@@ -279,7 +277,7 @@
                            "identifier: An unbound symbol used as an identifier"
                            )))
   (cond
-    ((eq nil constructor) `(parser-build-token ',identifier))
+    ((eq nil constructor) `(parser-build-token (quote ',identifier)))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
 
     ;; all other constructor types are un-handled.
@@ -298,6 +296,7 @@
     `(lambda ()
        (if (looking-at ,regex)
          (cons (parser-next) ,(parser-interp-token-action identifier constructor))
+         (cons (parser-next) 'foo)
          (cons nil nil)
          ))
     ))
@@ -341,9 +340,10 @@
   (parser-make-match identifier
     `(lambda ()
        (lexical-let
-         ((result (,combine-operator ,@grammar)))
+         ((result (,combine-operator ',grammar)))
          (if (car result)
-           (cons (car result) (cons ,identifier (cdr result)))
+           (cons (car result) (cons ',identifier (cdr result)))
+;;           (cons (car result) (cons ,identifier (cdr result)))
            result)
          )))
     )
@@ -390,15 +390,12 @@
                           (goto-char start-pos)
                           ;; note that the start symbol of the grammar is built in as an or combination
                           ;; of the top-level definitions.
-                          (message "before error ?")
-                          (funcall ,@(parser-compile-production 'start 'parser-or
-                                       (parser-compile-definition definition)))
-                          (message "after error ?")
-                          ))))
-         ))
+                          (,(parser-compile-production 'start 'parser-or (parser-compile-definition definition)))
+                          )))
+                   )))
       (if (stringp compiled)
         (progn
           (message "parser-compile failed! %s" compiled)
           nil)
-        compiled))
-    ))
+        compiled)
+    )))
