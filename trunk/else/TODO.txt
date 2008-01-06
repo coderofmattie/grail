@@ -12,15 +12,11 @@
 
 . , template systems promote bad code
 
-
-
 * else mode needs to be able to use easier commands than the usual expansions.
   It should be able to do this with the core functionality behind hyperlinks.
   In the region of a placeholder that has not been expanded yet.
 
 * Paper
-
-
 
   can templates lower the number of defects entered ?
 
@@ -224,6 +220,21 @@
   to do this cleanly.
 
 * Major contributions
+
+  .. merge mode
+
+
+  group commits is what I need to extend. Start by having a persistent
+  set of changes called the queue. The queue is organized as a changelog,
+  a list of files, and a tree of changes. that is the utlimate goal.
+
+  evolutionary path:
+
+  a split window where the vc-directory browser is on-top, basically working
+  like dired.
+
+  the bottom window is either the log, the diff, or the file. It is easy to toggle
+  between the three from the change buffer.
 
   .. Toolbox ideas
 
