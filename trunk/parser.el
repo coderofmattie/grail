@@ -281,8 +281,8 @@
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
 
     ;; all other constructor types are un-handled.
-    (throw 'syntax-error (parser-diagnostic identifier
-                           "parser token: identifier" "A symbol")))
+    ((throw 'syntax-error (parser-diagnostic identifier
+                           "parser token: identifier" "A symbol"))))
   )
 
 (defun parser-interp-token ( syntax ) ;; tested
@@ -343,7 +343,6 @@
          ((result (,combine-operator ',grammar)))
          (if (car result)
            (cons (car result) (cons ',identifier (cdr result)))
-;;           (cons (car result) (cons ,identifier (cdr result)))
            result)
          )))
     )
@@ -375,7 +374,7 @@
    was chosen based on the recommendation of prime numbers for good hashing.")
 
 (defmacro parser-compile ( &rest definition )
-  "compile a LL parser from the given grammar definition"
+  "compile a LL parser from the given grammar."
   (let
     ;; create a symbol table to store compiled terminal and
     ;; non-terminal match functions
@@ -390,6 +389,9 @@
                           (goto-char start-pos)
                           ;; note that the start symbol of the grammar is built in as an or combination
                           ;; of the top-level definitions.
+
+                          ;; as a special case we want to insert the final parser-position so when it is used
+                          ;; in a loop it can start the parser again from the next position
                           (,(parser-compile-production 'start 'parser-or (parser-compile-definition definition)))
                           )))
                    )))
