@@ -31,9 +31,6 @@
       compile)
     ))
 
-(pp (macroexpand
-      (test-interp-token token whitespace "[[:blank:]]")))
-
 (defun run-test-interp-token ( match-function )
   (lexical-let
     ((result (funcall match-function)))
@@ -44,35 +41,75 @@
   (interactive)
   (run-test-interp-token (test-interp-token token whitespace "[[:blank:]]+")))
 
+
 ;;----------------------------------------------------------------------
-;; token compile phase
+;; combination operators interpretation
 ;;----------------------------------------------------------------------
 
-;; this is the top-level of the compiler without the recursion and other
-;; complexity to isolate a specific component for testing.
-(defmacro test-compile ( test-syntax )
-  (let
-    ((match-table (make-vector parser-mtable-init-size 0)))
+(pp (macroexpand
+      (test-interp-token token whitespace "[[:blank:]]")))
 
-    `(defun run-test-token ()
-       (interactive)
-       (let*
-         ((parser-position (cons (point) nil)) ;; initialize parser-position to the cursor.
-           (test-match ,(parser-compile-token (cdr test-syntax)))
-           (test-result (funcall test-match)))
-
-         (message "TC match? %s AST %s" (if (car test-result) "yes" "no") (pp (cdr test-result)))
-         ))
-  ))
+;;----------------------------------------------------------------------
+;; combination operators compilation
+;;----------------------------------------------------------------------
 
 
 (test-compile
-  (token whitespace "[[:blank:]]*"))
+  (token whitespace "[[:blank:]]+"))
+
+(test-compile
+  (token whitespace "[[:blank:]]*" (lambda ( start stop ) (message "bar by far"))))
+
+(test-compile
+  (token whitespace "[[:blank:]]*" bingo))
 
 ;; will need a test-comp-token that defines the match-table so that I can
 ;; test the token compiler independently.
 
-(parser-compile
-  (token whitespace "[[:blank:]]*")
-  (token word "[[:alpha:]]+")
-  (term whitespace? word whitespace?))
+(setq test-parser (parser-compile
+                     (token whitespace "[[:blank:]]+")
+                     (token word "[[:alpha:]]+")))
+
+(setq test-parser (parser-compile
+                    (token word "[[:alpha:]]+")))
+
+
+(pp (macroexpand '(parser-compile
+                     (token word "[[:alpha:]]+"))))
+
+
+(setq foo (eval (lambda () (message "foo!"))))
+
+(type-of foo)
+(funcall foo)
+
+(defun test-prod ()
+  (let
+    ;; create a symbol table to store compiled terminal and
+    ;; non-terminal match functions
+    ((match-table (make-vector parser-mtable-init-size 0)))
+    (parser-compile-production 'start 'parser-or (parser-compile-definition '((token word "[[:alpha:]]+"))))
+    ))
+
+(setq test-parser (test-prod))
+
+(pp test-parser)
+
+(defun run-prod ()
+  (interactive)
+  (let*
+    ((parser-position (cons (point) nil))
+      (test-result (test-parser)))
+    (message "PROD match? %s AST %s" (if (car test-result) "yes" "no") (pp (cdr test-result)))
+    ))
+
+(defun run-parser ()
+  (interactive)
+  (let
+    ((test-result (funcall test-parser (point))))
+    (message "TFC match? %s AST %s" (if (car test-result) "yes" "no") (pp (cdr test-result)))
+    ))
+
+(defun shit ()
+  (interactive)
+  (funcall foo (point)))
