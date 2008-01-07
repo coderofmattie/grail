@@ -284,9 +284,10 @@
                            "identifier: An unbound symbol used as an identifier"
                            )))
   (cond
-    ((eq nil constructor) `(parser-build-token (quote ',identifier)))
-    ((listp constructor) `(,(parser-make-anon-func constructor) (match-beginning 0) (match-end 0)))
+    ((eq nil constructor)    `(parser-build-token (quote ',identifier)))
+    ((listp constructor)     `(,(parser-make-anon-func constructor) (match-beginning 0) (match-end 0)))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
+    ((symbolp constructor)   `(quote ',constructor))
 
     ;; all other constructor types are un-handled.
     ((throw 'syntax-error (parser-diagnostic identifier
@@ -304,7 +305,6 @@
     `(lambda ()
        (if (looking-at ,regex)
          (cons (parser-next) ,(parser-interp-token-action identifier constructor))
-         (cons (parser-next) 'foo)
          (cons nil nil)
          ))
     ))
