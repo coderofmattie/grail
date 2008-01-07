@@ -38,6 +38,8 @@
 
 (defun visit-url ( url )
   "visit a url in a new buffer"
+
+  ;; it would be cooler if the default was the last item from the clipboard.
   (interactive "sURL? ")
   (progn
     (switch-to-buffer (generate-new-buffer url))
