@@ -132,6 +132,13 @@
     (intern new-name match-table)
     ))
 
+(defun parser-make-anon-func ( sexp )
+  "bind an un-evaluated anonymous function to an un-interned symbol"
+  (let
+    ((anon-func (make-symbol "parser-lambda")))
+    (fset anon-func (eval sexp))
+    anon-func))
+
 (defun parser-get-match ( symbol )
   "return the compiled match for symbol, or throw a semantic-error if it does not
    exist"
@@ -278,6 +285,7 @@
                            )))
   (cond
     ((eq nil constructor) `(parser-build-token (quote ',identifier)))
+    ((listp constructor) `(,(parser-make-anon-func constructor) (match-beginning 0) (match-end 0)))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
 
     ;; all other constructor types are un-handled.
@@ -291,7 +299,7 @@
   (lexical-let
     ((identifier (car syntax))
      (regex (cadr syntax)) ;; eval ? many regexs are stored in variables.
-     (constructor (cddr syntax)))
+     (constructor (caddr syntax)))
 
     `(lambda ()
        (if (looking-at ,regex)
