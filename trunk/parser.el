@@ -132,7 +132,7 @@
     (intern new-name match-table)
     ))
 
-(defun parser-make-anon-func ( sexp )
+(defun parser-make-anon-func ( sexp ) ;; tested
   "bind an un-evaluated anonymous function to an un-interned symbol"
   (let
     ((anon-func (make-symbol "parser-lambda")))
@@ -361,8 +361,7 @@
          (if (car result)
            (cons (car result) (cons ',identifier (cdr result)))
            result)
-         )))
-    )
+         ))))
 
 (defun parser-compile-definition ( definition )
   (mapcar
@@ -390,7 +389,7 @@
   "initial size of the match-table objarray for storing match functions. the value
    was chosen based on the recommendation of prime numbers for good hashing.")
 
-(defmacro parser-compile ( &rest definition )
+(defmacro parser-compile ( parser &rest definition )
   "compile a LL parser from the given grammar."
   (let
     ;; create a symbol table to store compiled terminal and
@@ -406,15 +405,26 @@
                           (goto-char start-pos)
                           ;; note that the start symbol of the grammar is built in as an or combination
                           ;; of the top-level definitions.
+                          (lexical-let
+                            ((parse (,(parser-compile-production 'start 'parser-or
+                                        (parser-compile-definition definition)))))
 
-                          ;; as a special case we want to insert the final parser-position so when it is used
-                          ;; in a loop it can start the parser again from the next position
-                          (,(parser-compile-production 'start 'parser-or (parser-compile-definition definition)))
+                            (message "parse is %s" (pp parse))
+                            (if (car parse)
+                              ;; if we have a production return the position at which the
+                              ;; parser stopped along with the AST.
+                              (cons (car parser-position) (cdr parse))
+                              nil))
                           )))
                    )))
       (if (stringp compiled)
+        ;; error path, print a message and return nil.
         (progn
           (message "parser-compile failed! %s" compiled)
           nil)
-        compiled)
-    )))
+
+        ;; success path, bind the compiled parser to the parser symbol and return t.
+        (progn
+          (fset parser (eval compiled))
+          t))
+      )))
