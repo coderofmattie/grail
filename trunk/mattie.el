@@ -230,7 +230,7 @@
       ;; Keep the returned position within the delimiters if the
       ;; scan moved beyond the starting position.
       (if (> close-at position)
-        (- close-at 1)
+        close-at
         position)
       )))
 
@@ -265,7 +265,7 @@
       ;; Keep the returned position within the delimiters if the
       ;; scan moved beyond the starting position.
       (if (< open-at position)
-        (+ open-at 1)
+        open-at
         position)
       )))
 
@@ -276,4 +276,19 @@
 (defun scan-lisp-list-open ()
   "wrapper for bounds-scan that searches for the opening delimiter of a lisp list"
   (bounds-scan-backward "()" (point)))
+
+(defun do-lisp-list ( func )
+  "apply the function to the bounds of the lisp list under the point"
+  (lexical-let
+    ((from (point)))
+    (funcall func (- (bounds-scan-backward "()" from) 1) (+ 1 (bounds-scan-forward "()" from)))
+    ))
+
+(defun copy-lisp-list ()
+  "copy the list at the point to the kill ring"
+  (interactive)
+  (save-excursion
+    (do-lisp-list 'copy-region-as-kill)
+    ))
+
 
