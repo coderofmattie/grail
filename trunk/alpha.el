@@ -11,8 +11,18 @@
 
 ;; these need documentation, and they will be ready to go into mattie-boot.el
 
-;; before it hits stable need to add a ! inversion to the form. Should be
-;; general, when encountered, strip, and nest the predicate in a not list.
+;; ready to go now, just needs review for documentation and old code cleanup
+
+;; (filter-ls "~/system/emacs/elisp" nil
+;;   (type ?d)
+;;   (!path "^\\.\\.?")))
+
+(defun filter-ls-predicate ( attr-name attr-match )
+  "create predicate filters for path/mode values"
+  (cond
+    ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
+    ((string-equal "path" attr-name) `(string-match-p ,attr-match (car path-pair)))
+  ))
 
 (defun filter-ls-attributes ( filter-form )
   "implement the various attribute filters for the filter-ls form"
@@ -20,11 +30,10 @@
     ((attr-name (symbol-name (car filter-form)))
       (attr-match (cadr filter-form)))
 
-    (cond
-      ((string-equal "type" attr-name) (list 'char-equal attr-match  '(aref (cdr path-pair) 0)))
-      ((string-equal "path" attr-name) (list 'string-match-p attr-match '(car path-pair)))
-    ;; error path
-    )))
+    (if (char-equal ?! (aref attr-name 0))
+      (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
+      (filter-ls-predicate attr-name attr-match))
+    ))
 
 (defmacro filter-ls (path path-type &rest filters)
   "a form for flexibly filtering the result of listing a directory with attributes"
