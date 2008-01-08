@@ -318,26 +318,20 @@
 ;; is implemented as calls between parser-interp-production and
 ;; parser-compile-definition.
 
-(defun parser-interp-production ( syntax )
+(defun parser-interp-production ( production )
   "Translate the definition of a production that is independent of a combination
    operator into a serious of match objects bound to symbols, by translating
    or looking up the match functions."
 
-  (mapcar
-    (lambda ( statement )
-      (cond
-        ((listp statement)
-          ;; the car is a necessary evil ? at this point we can always expect
-          ;; a single match function, elsewhere 
-          (car (parser-compile-definition statement)))
-        ((symbolp statement) (parser-get-match statement))
+  (cond
+    ((listp production) (parser-compile-definition production))
+    ((symbolp production) (parser-get-match production))
 
-        (throw 'syntax-error
-          (parser-daignostic statement
-            "interpret definition"
-            "expected a definition as a list, or a symbol as a production/token reference"))
-        ))
-    syntax))
+    (throw 'syntax-error
+      (parser-daignostic production
+        "interpret definition"
+        "expected a definition as a list, or a symbol as a production/token reference"))
+    ))
 
 ;;----------------------------------------------------------------------
 ;; compilation
@@ -369,8 +363,7 @@
 ;;         ((result (apply ,combine-operator ',grammar)))
            ((result (apply ',combine-operator
 ;;                      ,match-list
-                      ',(mapcar 'car grammar)
-                      )))
+                      ',grammar)))
          (if (car result)
            (cons (car result) (cons ',identifier (cdr result)))
            result)
@@ -378,32 +371,34 @@
       ))
 ;; )
 
-(defun parser-compile-definition ( &rest definition )
-  "compile definition lists"
-  (mapcar
-    (lambda ( term )
-      (unless (listp term)
-        (throw 'syntax-error (parser-diagnostic term
-                               "parser definition"
-                               "expected a definition of token|or|and")))
+(defun parser-compile-definition ( term )
+  "compile a definition list"
+  (unless (listp term)
+    (throw 'syntax-error (parser-diagnostic term
+                           "parser definition"
+                           "expected a definition of token|or|and")))
 
-      ;; this sexp is a macro candidate
-      (lexical-let
-        ((keyword (car term))
-          (syntax (cdr term)))
+  ;; this sexp is a macro candidate
+  (lexical-let
+    ((keyword (car term))
+      (syntax (cdr term)))
 
-        (cond
-          ((eq keyword 'token) (parser-compile-token syntax))
-          ((eq keyword 'or)    (parser-compile-production
-                                 (car syntax) 'parser-or  (parser-interp-production (cdr syntax))))
-          ((eq keyword 'and)   (parser-compile-production
-                                 (car syntax) 'parser-and (parser-interp-production (cdr syntax))))
+    (if (listp keyword)
+      (parser-compile-definition keyword)
 
-          ((throw 'syntax-error (parser-diagnostic term
-                                  "parser definition"
-                                  "expected a definition keyword token|or|and")))
-          )))
-    definition))
+      (cond
+        ((eq keyword 'token) (parser-compile-token syntax))
+        ((eq keyword 'or)    (apply 'parser-compile-production
+;;                               (car syntax) 'parser-or  (appy 'parser-interp-production (cdr syntax))))
+                               (car syntax) 'parser-or  (mapcar 'parser-interp-production (cdr syntax))))
+        ((eq keyword 'and)   (apply 'parser-compile-production
+;;                               (car syntax) 'parser-and (apply 'parser-interp-production (cdr syntax))))
+                               (car syntax) 'parser-and (mapcar 'parser-interp-production (cdr syntax))))
+        ((throw 'syntax-error (parser-diagnostic term
+                                "parser definition"
+                                "definition keyword token|or|and")))
+        ))
+    ))
 
 (defvar parser-mtable-init-size 13
   "initial size of the match-table objarray for storing match functions. the value
@@ -430,7 +425,7 @@
                                         (mapcar 'parser-compile-definition definition))
                                       )))
 
-                            (message "parse is %s" (pp parse))
+;;                            (message "parse is %s" (pp parse))
                             (if (car parse)
                               ;; if we have a production return the position at which the
                               ;; parser stopped along with the AST.
