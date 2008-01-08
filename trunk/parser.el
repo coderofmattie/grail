@@ -344,32 +344,34 @@
   "compile a token definition into a match object"
   (parser-make-match (car syntax) (parser-interp-token syntax)))
 
-(defun parser-compile-production ( identifier combine-operator &rest grammar )
-  "compile a production into a match object"
+(defun parser-curry-production ( identifier combine-operator &rest grammar )
+  "Compile a match object with a combine operator and a match function list.
+   I think curry is applicable, but largely it was named curry so I could
+   create the parser-compile-production macro."
   (unless (symbolp identifier)
     (parser-diagnostic identifier
       "compile production"
       "match identifier"))
 
-;;  (let
-    ;; This is pretty-- , untangling it will require meditation
-    ;; with global mind-meld.
-;;    ((match-list (mapcar (lambda (m) `',(car m))  grammar)))
-;;    ((match-list (mapcar (lambda (m) `,(car m))  grammar)))
-
     (parser-make-match identifier
       `(lambda ()
          (lexical-let
-;;         ((result (apply ,combine-operator ',grammar)))
-           ((result (apply ',combine-operator
-;;                      ,match-list
-                      ',grammar)))
+           ((result (apply ',combine-operator ',grammar)))
          (if (car result)
            (cons (car result) (cons ',identifier (cdr result)))
            result)
            ))
       ))
-;; )
+
+(defmacro parser-compile-production ( combine-function production-list )
+  "parser-production simplifies the syntax of interpreting and compiling
+   a production. The construct looks hairy because it combines two operations
+   with quoting necessitated by apply. This macro mechanizes the tricky part
+   to enhance code readability."
+  `(apply 'parser-curry-production
+     (car ,production-list)
+     ',combine-function
+     (mapcar 'parser-interp-production (cdr ,production-list))))
 
 (defun parser-compile-definition ( term )
   "compile a definition list"
@@ -378,7 +380,6 @@
                            "parser definition"
                            "expected a definition of token|or|and")))
 
-  ;; this sexp is a macro candidate
   (lexical-let
     ((keyword (car term))
       (syntax (cdr term)))
@@ -388,12 +389,9 @@
 
       (cond
         ((eq keyword 'token) (parser-compile-token syntax))
-        ((eq keyword 'or)    (apply 'parser-compile-production
-;;                               (car syntax) 'parser-or  (appy 'parser-interp-production (cdr syntax))))
-                               (car syntax) 'parser-or  (mapcar 'parser-interp-production (cdr syntax))))
-        ((eq keyword 'and)   (apply 'parser-compile-production
-;;                               (car syntax) 'parser-and (apply 'parser-interp-production (cdr syntax))))
-                               (car syntax) 'parser-and (mapcar 'parser-interp-production (cdr syntax))))
+        ((eq keyword 'or)    (parser-compile-production parser-or syntax))
+        ((eq keyword 'and)   (parser-compile-production parser-and syntax))
+
         ((throw 'syntax-error (parser-diagnostic term
                                 "parser definition"
                                 "definition keyword token|or|and")))
@@ -421,11 +419,9 @@
                           ;; note that the start symbol of the grammar is built in as an or combination
                           ;; of the top-level definitions.
                           (lexical-let
-                            ((parse (,(apply 'parser-compile-production 'start 'parser-or
+                            ((parse (,(apply 'parser-curry-production 'start 'parser-or
                                         (mapcar 'parser-compile-definition definition))
                                       )))
-
-;;                            (message "parse is %s" (pp parse))
                             (if (car parse)
                               ;; if we have a production return the position at which the
                               ;; parser stopped along with the AST.
