@@ -7,6 +7,8 @@
 ;; bugs/complexity early in the boot process could be minimized.
 ;;----------------------------------------------------------------------
 
+(require 'cl) ;; need the common-lisp macros such as lexical-let
+
 ;;----------------------------------------------------------------------
 ;; String handling functions oriented towards manipulating path lists.
 ;; These are essential for the earliest part of the init process,
@@ -61,28 +63,41 @@
       (apply 'map-filter-nil func (cdr seq)))
     ))
 
-(defun subdirs-of-path ( path path-type )
-  "return a list of the subdirectories for a given path,
-  excluding any directory that begins with a \".\".
-  The two arguments are path and flag to choose relative (nil)
-  or absolute (t) paths."
+;;----------------------------------------------------------------------
+;; filter-ls: a general purpose tools for filtering directory listings.
+;;----------------------------------------------------------------------
 
-  ;; it is easier to read this from the bottom up.
+(defun filter-ls-predicate ( attr-name attr-match )
+  "create predicate filters for path/mode values"
+  (cond
+    ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
+    ((string-equal "path" attr-name) `(string-match-p ,attr-match (car path-pair)))
+  ))
 
-  (apply 'map-filter-nil (lambda ( path-pair )
-                           (if (and
-                                 ;; only match directories
-                                 (char-equal ?d (aref (cdr path-pair) 0))
-                                 ;; exclude directories that start with "."
-                                 (not (char-equal ?. (aref (car path-pair) 0))))
-                             ;; when the criteria is met return the path only
-                             (car path-pair)))
+(defun filter-ls-attributes ( filter-form )
+  "implement the various attribute filters for the filter-ls form"
+  (lexical-let
+    ((attr-name (symbol-name (car filter-form)))
+      (attr-match (cadr filter-form)))
 
-    ;; reduce the attributes to a pair of the path, and the mode string
-    (mapcar (lambda ( attr-list )
-              (cons (car attr-list) (nth 9 attr-list)))
-      ;; get the list of files.
-      (directory-files-and-attributes path path-type))))
+    (if (char-equal ?! (aref attr-name 0))
+      (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
+      (filter-ls-predicate attr-name attr-match))
+    ))
+
+(defmacro filter-ls (path path-type &rest filters)
+  "a form for flexibly filtering the result of listing a directory with attributes"
+  `(apply 'map-filter-nil
+     (lambda ( path-pair )
+       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
+         (car path-pair)))
+
+     ;; reduce the attributes to a pair of the path, and the mode string
+     (mapcar (lambda ( attr-list )
+               (cons (car attr-list) (nth 9 attr-list)))
+       ;; get the list of files.
+       (directory-files-and-attributes ,path ,path-type))
+     ))
 
 (defun simple-set-expand-prop ( set-op spec )
   "beta"

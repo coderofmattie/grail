@@ -80,7 +80,10 @@
     (cons my-localized-dir load-path)
 
     ;; add the extras to the end of the list.
-    (cons my-extras-dir (subdirs-of-path my-extras-dir t))
+    (cons my-extras-dir
+      (filter-ls my-extras-dir t
+        (type ?d)
+        (!path "^\\.\\.?")))
     ))
 
 ;;----------------------------------------------------------------------
