@@ -41,75 +41,48 @@
   (interactive)
   (run-test-interp-token (test-interp-token token whitespace "[[:blank:]]+")))
 
-
-;;----------------------------------------------------------------------
-;; combination operators interpretation
-;;----------------------------------------------------------------------
-
 (pp (macroexpand
       (test-interp-token token whitespace "[[:blank:]]")))
 
 ;;----------------------------------------------------------------------
-;; combination operators compilation
+;; test tokens
 ;;----------------------------------------------------------------------
 
-
-(test-compile
-  (token whitespace "[[:blank:]]+"))
-
-(test-compile
-  (token whitespace "[[:blank:]]*" (lambda ( start stop ) (message "bar by far"))))
-
-(test-compile
-  (token whitespace "[[:blank:]]*" bingo))
-
-;; will need a test-comp-token that defines the match-table so that I can
-;; test the token compiler independently.
-
-(setq test-parser (parser-compile
-                     (token whitespace "[[:blank:]]+")
-                     (token word "[[:alpha:]]+")))
-
-(setq test-parser (parser-compile
-                    (token word "[[:alpha:]]+")))
-
-
-(pp (macroexpand '(parser-compile
-                     (token word "[[:alpha:]]+"))))
-
-
-(setq foo (eval (lambda () (message "foo!"))))
-
-(type-of foo)
-(funcall foo)
-
-(defun test-prod ()
-  (let
-    ;; create a symbol table to store compiled terminal and
-    ;; non-terminal match functions
-    ((match-table (make-vector parser-mtable-init-size 0)))
-    (parser-compile-production 'start 'parser-or (parser-compile-definition '((token word "[[:alpha:]]+"))))
-    ))
-
-(setq test-parser (test-prod))
-
-(pp test-parser)
-
-(defun run-prod ()
-  (interactive)
-  (let*
-    ((parser-position (cons (point) nil))
-      (test-result (test-parser)))
-    (message "PROD match? %s AST %s" (if (car test-result) "yes" "no") (pp (cdr test-result)))
-    ))
+;; eval this, then eval various tests.
 
 (defun run-parser ()
+  "run test-parser interactively for testing and debugging."
   (interactive)
-  (let
-    ((test-result (funcall test-parser (point))))
-    (message "TFC match? %s AST %s" (if (car test-result) "yes" "no") (pp (cdr test-result)))
+  (lexical-let
+    ((parse-result (test-parser (point))))
+
+    (message "PROD match? %s AST %s"
+      (if (car parse-result)
+        (format "matched to: %s" (car parse-result))
+        "no")
+      (pp (cdr parse-result)))
     ))
 
-(defun shit ()
-  (interactive)
-  (funcall foo (point)))
+(parser-compile test-parser
+  (token whitespace "[[:blank:]]+"))
+
+(parser-compile test-parser
+  (token whitespace "[[:blank:]]+" (lambda ( start stop ) (message "bar by far"))))
+
+(parser-compile test-parser
+  (token whitespace "[[:blank:]]+" bingo))
+
+;;----------------------------------------------------------------------
+;; test productions
+;;----------------------------------------------------------------------
+
+(parser-compile test-parser
+  (token whitespace "[[:blank:]]+")
+  (token word "[[:alpha:]]+"))
+
+(parser-compile test-parser
+  (and indented (token whitespace "[[:blank:]]+") (token word "[[:alpha:]]+"))
+  (and inverted word whitespace))
+
+fooo   bar
+
