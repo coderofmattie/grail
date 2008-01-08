@@ -19,12 +19,19 @@
   is the flyspell underline. because it is merging instead of replacing it
   is displaying in the orange specified by flyspell.
 
-* tool-bar-mode nil has no effect on Emacs.app
+* tool-bar-mode nil has no effect on Emacs.app (might be fixed now with a negative argument)
+
 
 * flypsell in comments only seems to analyze the text after I pass over the
   word with the cursor. This is probably a configuration issue.
 
 ---> TODO <---
+
+* create a toggle for the menu-bar for when I need to browse it.
+
+* find a way to auto-raise the mini-buffer or go to a dedicated mini-buffer.
+
+* finish up filter-ls so it can get cleaned up.
 
 * examine-library has a terrible prompt and no completion.
   Fix the prompting and completion so it can exit alpha.
@@ -40,6 +47,17 @@
   a keybinding. The keybinding if nil should be derived from the value
   of language. This way the language can be set independent of some
   uber-dwim completion scheme.
+
+  In fact I can finally fix my insane lambda problem. All of emacs expects
+  a symbol name for a command, tons of code breaks unless it can use a symbol
+  name as a unique identifer. Examples include determining if the last command
+  was repeated.
+
+  What I should do is eval the lambda, then setf bind it to a un-interned symbol,
+  which then gets bound to the key. that will work.
+
+  get rid of that silly text arguement as well hardwiring "elisp" as an option.
+  that should be done in the mode hook.
 
 * localize-distrib works in a crude way, in that it creates the right
   file, but it does not keep track of version information. At the least
