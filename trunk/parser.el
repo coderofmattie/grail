@@ -139,13 +139,13 @@
     (fset anon-func (eval sexp))
     anon-func))
 
-(defun parser-get-match ( symbol )
+(defun parser-get-match ( symbol ) ;; tested
   "return the compiled match for symbol, or throw a semantic-error if it does not
    exist"
   (lexical-let
     ((existing-name (symbol-name symbol)))
 
-    (unless (intern-soft new-name match-table)
+    (unless (intern-soft existing-name match-table)
       (throw 'semantic-error (format "unkown match %s" existing-name)))
 
     (intern existing-name match-table)))
@@ -257,7 +257,7 @@
               match-list)
             (parser-pop)
             )))
-   (if ast
+   (if (car ast)
      ;; would be nice to run map-filter-nil on ast.
      (cons 0 ast)
      (cons nil nil))
@@ -326,7 +326,7 @@
   (mapcar
     (lambda ( statement )
       (cond
-        ((listp statement) (parser-compile-definition statement))
+        ((listp statement) (parser-compile-definition (list statement)))
         ((symbolp statement) (parser-get-match statement))
 
         (throw 'syntax-error
@@ -357,7 +357,8 @@
   (parser-make-match identifier
     `(lambda ()
        (lexical-let
-         ((result (,combine-operator ',grammar)))
+         ((result (apply ,combine-operator ',grammar)))
+;;         ((result (apply ,combine-operator ',grammar)))
          (if (car result)
            (cons (car result) (cons ',identifier (cdr result)))
            result)
@@ -380,9 +381,9 @@
         (cond
           ((eq keyword 'token) (parser-compile-token syntax))
           ((eq keyword 'or)    (parser-compile-production
-                                 (car syntax) 'parser-or (parser-interp-production (cdr syntax))))
-          ((eq keyword 'and))  (parser-compile-production
-                                 (car syntax) 'parser-and (parser-interp-production (cdr syntax)))
+                                 (car syntax) 'parser-or  (parser-interp-production (cdr syntax))))
+          ((eq keyword 'and)   (parser-compile-production
+                                 (car syntax) 'parser-and (parser-interp-production (cdr syntax))))
 
           ((throw 'syntax-error (parser-diagnostic term
                                   "parser definition"
