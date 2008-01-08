@@ -16,8 +16,6 @@
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
 
-(tool-bar-mode nil)                           ;; cannot be set with setq
-
 (setq inhibit-splash-screen t)                ;; definitely not a fan of the splash screen.
 (transient-mark-mode nil)                     ;; not a big fan of transient mark mode.
 
@@ -28,6 +26,12 @@
 ;;======================================================================
 ;;         Phase 2: Visual Asthethics & Global Key Bindings
 ;;======================================================================
+
+;; disable things I don't use from eating screen-space
+
+(tool-bar-mode -1)                            ;; cannot be set with setq
+(scroll-bar-mode -1)                          ;; disable the scrollbar
+(menu-bar-mode -1)                            ;; disable the menu bar as well
 
 (message "%s" "init Phase: 1 complete")
 
@@ -515,6 +519,9 @@
 
     ;; replace dired at point, far less useful to me than instrumenting a function.
     (local-set-key (kbd "C-x d") 'edebug-defun)
+
+    ;; elisp doesn't need tags, find-function works just fine.
+    (local-set-key (kbd "M-.") 'find-function)
     ))
 
 ;;----------------------------------------------------------------------
