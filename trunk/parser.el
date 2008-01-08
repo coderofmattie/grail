@@ -363,10 +363,10 @@
    a production. The construct looks hairy because it combines two operations
    with quoting necessitated by apply. This macro mechanizes the tricky part
    to enhance code readability."
-  `(apply 'parser-curry-production
-     (car ,production-list)
-     ',combine-function
-     (mapcar 'parser-interp-production (cdr ,production-list))))
+  `(apply 'parser-curry-production      ;; make a match function
+     (car ,production-list)             ;; the identifier of the production
+     ',combine-function                 ;; the combine operator
+     (mapcar 'parser-interp-production (cdr ,production-list)))) ;; interpret the matching definition.
 
 (defun parser-compile-definition ( term )
   "parser-compile-definition is the recursive heart of the compiler."
