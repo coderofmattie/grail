@@ -46,6 +46,23 @@
   (interactive "Ssymbol? ")
   (pp (auto-overlay-local-binding symbol)))
 
+
+(defun mode-overlay-at-point-p ( mode-symbol )
+  "determine if the point is in a flyspell overlay. given a overlay list
+   which may be nil, translate via predicate into boolean values which
+   are then evaluated by or."
+  (interactive)
+  (let
+    ((overlay-list (overlays-at (point))))
+
+    (if overlay-list
+      (eval (cons 'or
+              (mapcar
+                (lambda ( overlay )
+                  (if (overlay-get overlay mode-symbol) t)) overlay-list)
+              ))
+    )))
+
 ;; much like easy-mmode-define-keymap macro but with a little more
 ;; juice doing the defvar part as well.
 
@@ -130,6 +147,27 @@
 ;;----------------------------------------------------------------------
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
+
+(defun maximize-frame ()
+  "toggle maximization the current frame"
+  (interactive)
+  (cond
+    ((eq 'x (window-system))
+
+      (progn
+        (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
+          '(2 "_NET_WM_STATE_MAXIMIZED_HORZ" 0))
+
+        (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
+          '(2 "_NET_WM_STATE_MAXIMIZED_VERT" 0))
+        ))
+      ((message "window system %s is not supported by maximize" (symbol-name (window-system))))
+    ))
+
+(defun fullscreen ()
+  (interactive)
+  (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
+    '(2 "_NET_WM_STATE_FULLSCREEN" 0)))
 
 (defun deploy-url-elisp ( url file )
   "deploy the elisp on the host via url installing in the extras path"
