@@ -215,7 +215,7 @@
 ;; knowledge of the symbol associated with the match list, only the
 ;; match list itself.
 
-(defun parser-or ( match-list )
+(defun parser-or ( &rest match-list )
   "Combine match objects by or where the first successful match is returned.
    nil is returned if no matches are found"
   (catch 'match
@@ -230,7 +230,7 @@
     (throw 'match (cons nil nil)) ;; this is what failure looks like :)
     ))
 
-(defun parser-and ( match-list )
+(defun parser-and ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
    in the parser part or the parser will backtrack and return nil."
   (parser-push)
@@ -326,7 +326,8 @@
   (mapcar
     (lambda ( statement )
       (cond
-        ((listp statement) (parser-compile-definition (list statement)))
+;;        ((listp statement) (parser-compile-definition (list statement)))
+        ((listp statement) (parser-compile-definition statement))
         ((symbolp statement) (parser-get-match statement))
 
         (throw 'syntax-error
@@ -347,24 +348,35 @@
   "compile a token definition into a match object"
   (parser-make-match (car syntax) (parser-interp-token syntax)))
 
-(defun parser-compile-production ( identifier combine-operator grammar )
+(defun parser-compile-production ( identifier combine-operator &rest grammar )
   "compile a production into a match object"
   (unless (symbolp identifier)
     (parser-diagnostic identifier
       "compile production"
       "match identifier"))
 
-  (parser-make-match identifier
-    `(lambda ()
-       (lexical-let
-         ((result (apply ,combine-operator ',grammar)))
+;;  (let
+    ;; This is pretty-- , untangling it will require meditation
+    ;; with global mind-meld.
+;;    ((match-list (mapcar (lambda (m) `',(car m))  grammar)))
+;;    ((match-list (mapcar (lambda (m) `,(car m))  grammar)))
+
+    (parser-make-match identifier
+      `(lambda ()
+         (lexical-let
 ;;         ((result (apply ,combine-operator ',grammar)))
+           ((result (apply ',combine-operator
+;;                      ,match-list
+                      ',(mapcar 'car grammar)
+                      )))
          (if (car result)
            (cons (car result) (cons ',identifier (cdr result)))
            result)
-         ))))
+           ))
+      ))
+;; )
 
-(defun parser-compile-definition ( definition )
+(defun parser-compile-definition ( &rest definition )
   "compile definition lists"
   (mapcar
     (lambda ( term )
@@ -412,8 +424,9 @@
                           ;; note that the start symbol of the grammar is built in as an or combination
                           ;; of the top-level definitions.
                           (lexical-let
-                            ((parse (,(parser-compile-production 'start 'parser-or
-                                        (parser-compile-definition definition)))))
+                            ((parse (,(apply 'parser-compile-production 'start 'parser-or
+                                        (mapcar 'parser-compile-definition definition))
+                                      )))
 
                             (message "parse is %s" (pp parse))
                             (if (car parse)
