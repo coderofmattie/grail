@@ -76,6 +76,23 @@
 ;; old experiments that worked but did not pan out.
 ;;----------------------------------------------------------------------
 
+;; (defun my-test ()
+;;  "foo"
+;;  (interactive)
+;;  (if (skip-over-properties (next "\(\)") (face ".*comment.*" ".*string.*" ".*doc.*"))
+;;    (message "it worked !")
+;;    (message "it failed !")
+;;    ))
+
+(defun lisp-list-delete-body ()
+  "delete the body of a lisp list including any nested lists"
+  (interactive)
+  (let
+    ((open-pos (scan-lisp-list-open))
+     (close-pos (scan-lisp-list-close)))
+
+    (delete-backward-char (- close-pos open-pos))))
+
 (defun paludis-overlay ()
   (auto-overlay-unload-regexp 'paludis)
   (auto-overlay-load-regexp
