@@ -314,14 +314,9 @@
          ))
     ))
 
-;; this function is special in that the recursion of macro expansion
-;; is implemented as calls between parser-interp-production and
-;; parser-compile-definition.
-
 (defun parser-interp-production ( production )
-  "Translate the definition of a production that is independent of a combination
-   operator into a serious of match objects bound to symbols, by translating
-   or looking up the match functions."
+  "Translate the definition of a production, or a reference to a production
+   into a match object symbol."
 
   (cond
     ((listp production) (parser-compile-definition production))
@@ -364,7 +359,7 @@
       ))
 
 (defmacro parser-compile-production ( combine-function production-list )
-  "parser-production simplifies the syntax of interpreting and compiling
+  "parser-compile-production simplifies the syntax of interpreting and compiling
    a production. The construct looks hairy because it combines two operations
    with quoting necessitated by apply. This macro mechanizes the tricky part
    to enhance code readability."
@@ -374,7 +369,7 @@
      (mapcar 'parser-interp-production (cdr ,production-list))))
 
 (defun parser-compile-definition ( term )
-  "compile a definition list"
+  "parser-compile-definition is the recursive heart of the compiler."
   (unless (listp term)
     (throw 'syntax-error (parser-diagnostic term
                            "parser definition"
