@@ -164,6 +164,7 @@
          ((lambda () (dabbrev-expand nil)))
          )))
 
+    ;; If I create a un-interned symbol I think my problems will go away.
     (lambda ()
       "Complete if point is at end of a word, otherwise indent line."
       (interactive)
