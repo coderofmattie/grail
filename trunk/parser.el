@@ -326,8 +326,10 @@
   (mapcar
     (lambda ( statement )
       (cond
-;;        ((listp statement) (parser-compile-definition (list statement)))
-        ((listp statement) (parser-compile-definition statement))
+        ((listp statement)
+          ;; the car is a necessary evil ? at this point we can always expect
+          ;; a single match function, elsewhere 
+          (car (parser-compile-definition statement)))
         ((symbolp statement) (parser-get-match statement))
 
         (throw 'syntax-error
