@@ -103,6 +103,9 @@
 
 (ffap-bindings)
 
+;; don't need compose mail right now, prefer maximize frame
+(global-set-key (kbd "C-x m") 'maximize-frame)
+
 ;; this used to be minimize window, now it exits recursive editing
 ;; which is handy and safer.
 (global-set-key (kbd "C-z") 'top-level)
