@@ -229,11 +229,6 @@
     (type ?-)
     (path "\\.el$")))
 
-(defun copy-lisp-list ()
-  "copy the list at the point to the kill ring"
-  (interactive)
-  (copy-region-as-kill (scan-lisp-list-open) (scan-lisp-list-close)))
-
 ;;----------------------------------------------------------------------
 ;; local function library.
 ;;----------------------------------------------------------------------
