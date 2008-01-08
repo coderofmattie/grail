@@ -364,12 +364,13 @@
          ))))
 
 (defun parser-compile-definition ( definition )
+  "compile definition lists"
   (mapcar
     (lambda ( term )
       (unless (listp term)
         (throw 'syntax-error (parser-diagnostic term
                                "parser definition"
-                               "expected a definition token|first|term")))
+                               "expected a definition of token|or|and")))
 
       ;; this sexp is a macro candidate
       (lexical-let
@@ -378,10 +379,14 @@
 
         (cond
           ((eq keyword 'token) (parser-compile-token syntax))
-          ((eq keyword 'first) (parser-compile-production
+          ((eq keyword 'or)    (parser-compile-production
                                  (car syntax) 'parser-or (parser-interp-production (cdr syntax))))
-          ((eq keyword 'term)) (parser-compile-production
+          ((eq keyword 'and))  (parser-compile-production
                                  (car syntax) 'parser-and (parser-interp-production (cdr syntax)))
+
+          ((throw 'syntax-error (parser-diagnostic term
+                                  "parser definition"
+                                  "expected a definition keyword token|or|and")))
           )))
     definition))
 
