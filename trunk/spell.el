@@ -20,28 +20,12 @@
 (add-hook 'cperl-mode-hook 'flyspell-prog-mode)         ;; works quite nicely with cperl.
 (add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)    ;; works nicely as well with elisp
 
-(defun flyspell-at-point-p ()
-  "determine if the point is in a flyspell overlay. given a overlay list
-   which may be nil, translate via predicate into boolean values which
-   are then evaluated by or."
-  (interactive)
-  (let
-    ((overlay-list (overlays-at (point))))
-
-    (if overlay-list
-      (eval (cons 'or
-              (mapcar
-                (lambda ( overlay )
-                  (if (overlay-get overlay 'flyspell-overlay) t)) overlay-list)
-              ))
-    )))
-
 (defun correct-over-flyspell ()
   "auto-correct the word if over a flyspell region, return t only
    if over a fly-spell region"
   (interactive)
 
-  (if (flyspell-at-point-p)
+  (if (mode-overlay-at-point-p 'flyspell-overlay)
     (progn
       (flyspell-auto-correct-word)
       t)))
