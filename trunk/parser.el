@@ -232,7 +232,7 @@
 
 (defun parser-and ( match-list )
   "combine the matches with and. all of the match objects must return non-nil
-   or it backtracks."
+   in the parser part or the parser will backtrack and return nil."
   (parser-push)
 
   (lexical-let
@@ -271,18 +271,23 @@
 ;; compilation to make the parser easier to debug and verify by
 ;; phase.
 
-;; the token interpreter was split into two functions to separate the
+;; the token interpreter was split into two functions to isolate the
 ;; flexibility of tokens (user functions or return values for
-;; constructing AST) from the hard-wired matching part.
+;; constructing AST) from the hard-wired parser part.
 
 (defun parser-interp-token-action ( identifier constructor ) ;; tested
-  "assemble the AST constructor for a token"
+  "Translate the AST constructor definition for a token into Elisp."
 
   (unless (symbolp identifier)
     (throw 'syntax-error (parser-diagnostic identifier
                            "parser token"
                            "identifier: An unbound symbol used as an identifier"
                            )))
+
+  ;; Warning: this code is very touchy, double quotation of AST
+  ;; symbols is required. the saving grace is that the symbols don't
+  ;; have a variable value bound so it fails noisily when the
+  ;; quotation is incorrect.
   (cond
     ((eq nil constructor)    `(parser-build-token (quote ',identifier)))
     ((listp constructor)     `(,(parser-make-anon-func constructor) (match-beginning 0) (match-end 0)))
@@ -295,11 +300,11 @@
   )
 
 (defun parser-interp-token ( syntax ) ;; tested
-  "assemble a token definition into a match object"
+  "Translate a token definition into a parser match function."
 
   (lexical-let
-    ((identifier (car syntax))
-     (regex (cadr syntax)) ;; eval ? many regexs are stored in variables.
+    ((identifier  (car syntax))
+     (regex       (cadr syntax))    ;; eval ? many regexs are stored in variables.
      (constructor (caddr syntax)))
 
     `(lambda ()
@@ -314,12 +319,16 @@
 ;; parser-compile-definition.
 
 (defun parser-interp-production ( syntax )
-  "interpret a production"
+  "Translate the definition of a production that is independent of a combination
+   operator into a serious of match objects bound to symbols, by translating
+   or looking up the match functions."
+
   (mapcar
     (lambda ( statement )
       (cond
         ((listp statement) (parser-compile-definition statement))
         ((symbolp statement) (parser-get-match statement))
+
         (throw 'syntax-error
           (parser-daignostic statement
             "interpret definition"
