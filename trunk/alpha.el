@@ -17,38 +17,6 @@
 ;;   (type ?d)
 ;;   (!path "^\\.\\.?")))
 
-(defun filter-ls-predicate ( attr-name attr-match )
-  "create predicate filters for path/mode values"
-  (cond
-    ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
-    ((string-equal "path" attr-name) `(string-match-p ,attr-match (car path-pair)))
-  ))
-
-(defun filter-ls-attributes ( filter-form )
-  "implement the various attribute filters for the filter-ls form"
-  (lexical-let
-    ((attr-name (symbol-name (car filter-form)))
-      (attr-match (cadr filter-form)))
-
-    (if (char-equal ?! (aref attr-name 0))
-      (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
-      (filter-ls-predicate attr-name attr-match))
-    ))
-
-(defmacro filter-ls (path path-type &rest filters)
-  "a form for flexibly filtering the result of listing a directory with attributes"
-  `(apply 'map-filter-nil
-     (lambda ( path-pair )
-       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
-         (car path-pair)))
-
-     ;; reduce the attributes to a pair of the path, and the mode string
-     (mapcar (lambda ( attr-list )
-               (cons (car attr-list) (nth 9 attr-list)))
-       ;; get the list of files.
-       (directory-files-and-attributes ,path ,path-type))
-     ))
-
 ;; this can go in once it does the right thing outside of a overlay.
 (defun show-overlay-binding ( symbol )
   "show the overlay binding value of the symbol at the point"
