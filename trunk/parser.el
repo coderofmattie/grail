@@ -15,6 +15,8 @@
 
 ;; ->Related Works
 
+;; Emacs regex tables.
+;;
 ;; Much of the parsing facilities that I have seen so far in Emacs
 ;; have been various forms of regex tables.
 
@@ -436,3 +438,5 @@
           (fset parser (eval compiled))
           t))
       )))
+
+(provide 'parser)
