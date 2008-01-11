@@ -68,7 +68,7 @@
 ;; to constructing the load path. Once the load-path, system adaptation,
 ;; site-file have been loaded we can be less paranoid.
 
-(load-file (concat my-emacs-dir "mattie-boot.el"))
+(load-file (concat my-emacs-dir "load-library.el"))
 
 (setq my-localized-dir (concat my-emacs-dir "local/"))
 (setq my-extras-dir    (concat my-emacs-dir "elisp/"))
