@@ -56,11 +56,11 @@
   (lexical-let
     ((parse-result (test-parser (point))))
 
-    (message "PROD match? %s AST %s"
-      (if (car parse-result)
-        (format "matched to: %s" (car parse-result))
-        "no")
-      (pp (cdr parse-result)))
+    (message "PROD match? %s"
+      (if parse-result
+        (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
+        "No")
+      ))
     ))
 
 (parser-compile test-parser
