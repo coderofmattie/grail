@@ -223,12 +223,12 @@
     (dolist (match match-list)
       (lexical-let
         ((match-result (funcall match)))
-        (if (car match-result)
+        (if match-result
           (progn
             (parser-advance (car match-result))
             (throw 'match (cons 0 (cdr match-result)))))
         ))
-    (throw 'match (cons nil nil)) ;; this is what failure looks like :)
+    (throw 'match nil) ;; this is what failure looks like :)
     ))
 
 (defun parser-and ( &rest match-list )
@@ -244,24 +244,25 @@
                 (lexical-let
                   ((match-result (funcall match)))
 
-                  (if (car match-result)
+                  (if match-result
                     (progn
                       ;; on match advance the parser and return the AST
                       (parser-advance (car match-result))
-                      (cdr match-result))
+                      match-result)
 
                     ;; on fail backtrack and return nil
-                    (progn
-                      (parser-backtrack)
-                      (throw 'backtrack nil)))
+                    (throw 'backtrack nil))
                   ))
               match-list)
-            (parser-pop)
             )))
-   (if (car ast)
+   (if ast
      ;; would be nice to run map-filter-nil on ast.
-     (cons 0 ast)
-     (cons nil nil))
+     (progn
+       (parser-pop)
+       (cons 0 ast))
+     (progn
+       (parser-backtrack)
+       nil))
    ))
 
 ;;----------------------------------------------------------------------
@@ -311,7 +312,7 @@
     `(lambda ()
        (if (looking-at ,regex)
          (cons (parser-next) ,(parser-interp-token-action identifier constructor))
-         (cons nil nil)
+         nil
          ))
     ))
 
@@ -353,9 +354,9 @@
       `(lambda ()
          (lexical-let
            ((result (apply ',combine-operator ',grammar)))
-         (if (car result)
+         (if result
            (cons (car result) (cons ',identifier (cdr result)))
-           result)
+           nil)
            ))
       ))
 
@@ -418,10 +419,10 @@
                             ((parse (,(apply 'parser-curry-production 'start 'parser-or
                                         (mapcar 'parser-compile-definition definition))
                                       )))
-                            (if (car parse)
+                            (if parse
                               ;; if we have a production return the position at which the
                               ;; parser stopped along with the AST.
-                              (cons (car parser-position) (cdr parse))
+                              (cons (car parser-position) parse)
                               nil))
                           )))
                    )))
