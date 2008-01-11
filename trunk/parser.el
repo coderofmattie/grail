@@ -248,7 +248,7 @@
                     (progn
                       ;; on match advance the parser and return the AST
                       (parser-advance (car match-result))
-                      match-result)
+                      (cdr match-result))
 
                     ;; on fail backtrack and return nil
                     (throw 'backtrack nil))
@@ -256,10 +256,9 @@
               match-list)
             )))
    (if ast
-     ;; would be nice to run map-filter-nil on ast.
      (progn
        (parser-pop)
-       (cons 0 ast))
+       (cons 0 ast)) ;; would be nice to filter optional matches here.
      (progn
        (parser-backtrack)
        nil))
@@ -422,7 +421,7 @@
                             (if parse
                               ;; if we have a production return the position at which the
                               ;; parser stopped along with the AST.
-                              (cons (car parser-position) parse)
+                              (cons (car parser-position) (cdr parse))
                               nil))
                           )))
                    )))
