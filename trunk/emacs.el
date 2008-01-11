@@ -23,6 +23,9 @@
   case-fold-search t
   current-language-environment "ASCII")
 
+(toggle-uniquify-buffer-names)                ;; more intelligent unique buffer names, will automatically
+                                              ;; simplify buffer names when collisions are reduced.
+
 ;;======================================================================
 ;;         Phase 2: Visual Asthethics & Global Key Bindings
 ;;======================================================================
