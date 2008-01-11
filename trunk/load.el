@@ -36,12 +36,13 @@
 ;;                              so that odd files don't show up from emacs
 ;;                              sessions.
 ;;
-;; adapt.el                   | entry point for emacs startup and phase #1
+;; load.el                    | entry point for emacs startup and phase #1
 ;;                              of the configuration.
 ;;
+;; load-library.el            | library of functions essential to phase #1
+;;
 ;; emacs.el                   | contains customization of emacs that is
-;;                              robust
-;; mattie-boot.el             | library essential to phase #1
+;;                              robust, starts phase #2
 ;;
 ;; *.el                       | my libraries,code, and parts of the customization
 ;;                              that may fail.
@@ -49,9 +50,9 @@
 ;; patches/                   | patches against distributed emacs files required
 ;;                              by my config.
 ;;
-;; local/                     | distributed files that have been locally modified
+;; local/(*)                  | distributed files that have been locally modified
 ;;
-;; elisp/                     | Third party extensions that are not distributed by
+;; elisp/(*)                  | Third party extensions that are not distributed by
 ;;                              emacs and not integrated through host package management.
 ;;                              This is the highest maintenance burden.
 
@@ -59,8 +60,8 @@
 ;; under version control is not stomped on or cluttered by all the traffic
 ;; into the standard location: session and intra-session state.
 
-;; only system/emacs/{local,elisp} are placed in the path. the files in system/emacs
-;; are assumed to chain manually.
+;; * only system/emacs/{local,elisp} are placed in the path. the files in system/emacs
+;;   are assumed to chain manually.
 
 (setq my-emacs-dir (concat (getenv "HOME") "/system/emacs/"))
 
