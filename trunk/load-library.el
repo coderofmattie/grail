@@ -1,5 +1,5 @@
 ;;----------------------------------------------------------------------
-;; mattie-boot.el
+;; load-library.el
 ;; Primary Author: Mike Mattie
 ;;
 ;; definitions that are essential to the Emacs boot. This was split
