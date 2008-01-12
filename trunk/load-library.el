@@ -7,7 +7,26 @@
 ;; bugs/complexity early in the boot process could be minimized.
 ;;----------------------------------------------------------------------
 
+;;----------------------------------------------------------------------
+;; utilities.
+;;----------------------------------------------------------------------
 (require 'cl) ;; need the common-lisp macros such as lexical-let
+
+(defun map-filter-nil ( func &rest seq )
+  "map-filter-nil. apply the function to the arguements ala mapcar.
+   Filter any nil elements of the sequence before the function is
+   applied, and after the function is applied."
+
+  (if (car seq)
+    (let
+      ((result (funcall func (car seq))))
+      (if result
+        (cons result (apply 'map-filter-nil func (cdr seq)))
+        (apply 'map-filter-nil func (cdr seq))
+        ))
+    (if (cdr seq)
+      (apply 'map-filter-nil func (cdr seq)))
+    ))
 
 ;;----------------------------------------------------------------------
 ;; String handling functions oriented towards manipulating path lists.
@@ -50,22 +69,6 @@
   "load a path relative to the configuration directory"
   (load-file (concat my-emacs-dir path)))
 
-(defun map-filter-nil ( func &rest seq )
-  "map-filter-nil. apply the function to the arguements ala mapcar.
-   Filter any nil elements of the sequence before the function is
-   applied, and after the function is applied."
-
-  (if (car seq)
-    (let
-      ((result (funcall func (car seq))))
-      (if result
-        (cons result (apply 'map-filter-nil func (cdr seq)))
-        (apply 'map-filter-nil func (cdr seq))
-        ))
-    (if (cdr seq)
-      (apply 'map-filter-nil func (cdr seq)))
-    ))
-
 ;;----------------------------------------------------------------------
 ;; filter-ls: a general purpose tools for filtering directory listings.
 ;;----------------------------------------------------------------------
@@ -101,29 +104,3 @@
        ;; get the list of files.
        (directory-files-and-attributes ,path ,path-type))
      ))
-
-(defun simple-set-expand-prop ( set-op spec )
-  "beta"
-  (if (string-equal (symbol-name set-op) "splice")
-    ;; when multiple properties are specified splice them in.
-    spec
-
-    ;; when a single property is specified create the property
-    ;; syntax. The property name is constructed with read. The
-    ;; specification is eval'd to render it essentially
-    ;; typeless. Symbols now require quoting.
-    (list (read (concat ":" (symbol-name set-op))) (eval spec))))
-
-(defmacro simple-set-theme ( theme &rest given-forms )
-  "create the syntax for custom-theme-set-faces"
-  (append
-    `(custom-theme-set-faces ',theme)
-
-     (mapcar
-       (lambda (form)
-         `'(,(car form)
-             ((t
-                ,(simple-set-expand-prop (cadr form) (caddr form))
-                )))
-         ) given-forms)
-    ))
