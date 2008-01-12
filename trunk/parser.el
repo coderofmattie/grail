@@ -358,8 +358,18 @@
         "expected a definition as a list, or a symbol as a production/token reference"))
     ))
 
-;; after definitions are interpreted they are evaluated or compiled and
-;; stored as match functions.
+(defun list-filter-nil ( list )
+  "filter nil symbols from a list"
+  (if (consp list)
+    (lexical-let
+      ((head (car list)))
+
+      (if (eq head 'nil)
+        (list-filter-nil (cdr list))
+        (cons head (list-filter-nil (cdr list)))
+        ))
+    nil
+    ))
 
 (defun parser-curry-production ( identifier combine-operator &rest grammar )
   "Compile a match object with a combine operator and a match function list.
@@ -373,14 +383,13 @@
     (parser-make-match identifier
       `(lambda ()
          (lexical-let
-           ((result (apply ',combine-operator ',grammar)))
+           ((result (apply ',combine-operator (list-filter-nil ',grammar))))
          (if result
            (cons (car result) (cons ',identifier (cdr result)))
            nil)
            ))
       ))
 
-;; filter function in devel @ broken.el
 (defmacro parser-compile-production ( combine-function production-list )
   "parser-compile-production simplifies the syntax of interpreting and compiling
    a production. The construct looks hairy because it combines two operations
@@ -389,7 +398,6 @@
   `(apply 'parser-curry-production      ;; make a match function
      (car ,production-list)             ;; the identifier of the production
      ',combine-function                 ;; the combine operator
-     ;; need to filter nil from define lists here
      (mapcar 'parser-interp-production (cdr ,production-list)))) ;; interpret the matching definition.
 
 (defun parser-compile-definition ( term )
