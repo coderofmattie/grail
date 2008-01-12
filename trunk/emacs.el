@@ -69,9 +69,8 @@
 ;;                     Personal ELisp Library.
 ;;----------------------------------------------------------------------
 
-;; this file is suppost to be for stable versions of the functions only.
-;; stable functions are both mature and documented.
-(load-config "mattie.el")
+;; this file is for stable versions of the functions only.
+(load-config "stable.el")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
