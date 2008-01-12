@@ -5,7 +5,7 @@ languages and of course Emacs hacking. This file consists of
 integration instructions followed by a brief set of key features and
 differences from a standard Emacs.
 
-Integration
+Installation
 
   1. unpack the tarball or checkout from the repository containing the
      configuration.
@@ -41,3 +41,18 @@ the search functions are regex by default.
 
 you may see comments and literal strings underlined. This is the
 spell-checker. Ignore or fix as you choose.
+
+Integration:
+
+The usual recommendation for a Emacs user is to learn a default
+configuration, incorperating useful bits from others over time.
+
+This configuration allows a user to benefit from the features of
+an advanced configuration that is also modular.
+
+It is straightfoward to disable the entirety of my configuration by
+changing load-config in load.el to "[name].el" and incorperating the
+useful parts bit by bit while benefitting from some basic features
+such as extending load-path and normalizing platforms such as
+darwin.el.
+
