@@ -41,8 +41,8 @@
 ;;
 ;; load-library.el            | library of functions essential to phase #1
 ;;
-;; emacs.el                   | contains customization of emacs that is
-;;                              robust, starts phase #2
+;; mattie.el                   | contains customization of emacs that is
+;;                               robust, starts phase #2
 ;;
 ;; *.el                       | my libraries,code, and parts of the customization
 ;;                              that may fail.
