@@ -60,7 +60,7 @@
 ;; under version control is not stomped on or cluttered by all the traffic
 ;; into the standard location: session and intra-session state.
 
-;; * only system/emacs/{local,elisp} are placed in the path. the files in system/emacs
+;; * only system/emacs/{local,elisp} are placed in the load-path. the files in system/emacs
 ;;   are assumed to chain manually.
 
 (setq my-emacs-dir (concat (getenv "HOME") "/system/emacs/"))
