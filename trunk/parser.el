@@ -344,20 +344,6 @@
 ;; productions
 ;;----------------------------------------------------------------------
 
-(defun parser-interp-production ( production )
-  "Translate the definition of a production, or a reference to a production
-   into a match object symbol."
-
-  (cond
-    ((listp production) (parser-compile-definition production))
-    ((symbolp production) (parser-get-match production))
-
-    (throw 'syntax-error
-      (parser-daignostic production
-        "interpret definition"
-        "expected a definition as a list, or a symbol as a production/token reference"))
-    ))
-
 (defun list-filter-nil ( list )
   "filter nil symbols from a list"
   (if (consp list)
@@ -392,6 +378,20 @@
              nil)
            )))
       ))
+
+(defun parser-interp-production ( production )
+  "Translate the definition of a production, or a reference to a production
+   into a match object symbol."
+
+  (cond
+    ((listp production) (parser-compile-definition production))
+    ((symbolp production) (parser-get-match production))
+
+    (throw 'syntax-error
+      (parser-daignostic production
+        "interpret definition"
+        "expected a definition as a list, or a symbol as a production/token reference"))
+    ))
 
 (defmacro parser-compile-production ( combine-function production-list )
   "parser-compile-production simplifies the syntax of interpreting and compiling
