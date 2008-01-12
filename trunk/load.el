@@ -85,7 +85,7 @@
     ;; load list
     (cons my-localized-dir load-path)
 
-    ;; add the extras to the end of the list.
+    ;; add the extras and it's sub-directories to the end of the list.
     (cons my-extras-dir
       (filter-ls my-extras-dir t
         (type ?d)
