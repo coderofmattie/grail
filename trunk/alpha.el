@@ -23,7 +23,6 @@
   (interactive "Ssymbol? ")
   (pp (auto-overlay-local-binding symbol)))
 
-
 (defun mode-overlay-at-point-p ( mode-symbol )
   "determine if the point is in a flyspell overlay. given a overlay list
    which may be nil, translate via predicate into boolean values which
@@ -120,6 +119,21 @@
                 (insert (format "; !degraded configuration! %s\n" ,error)))
               ))
      ))
+
+;; I really like this implementation, would map-filter-nil benefit from
+;; using consp ?
+(defun list-filter-nil ( list )
+  "filter nil symbols from a list"
+  (if (consp list)
+    (lexical-let
+      ((head (car list)))
+
+      (if (eq head 'nil)
+        (list-filter-nil (cdr list))
+        (cons head (list-filter-nil (cdr list)))
+        ))
+    nil
+    ))
 
 ;;----------------------------------------------------------------------
 ;; experimental - interesting
