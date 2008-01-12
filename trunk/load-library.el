@@ -69,6 +69,21 @@
   "load a path relative to the configuration directory"
   (load-file (concat my-emacs-dir path)))
 
+(defmacro load-style ( file error )
+  "Load a style which is a combination of techniques that depend on features
+   which are not distributed by Emacs."
+  `(condition-case nil
+     (load (concat my-emacs-dir "styles/" ,file))
+     (error (progn
+              ;; duplicate the message to both *Messages* as a log
+              ;; and to the *scratch* buffer where it is highly visible.
+              (message "initialization failed %s" ,error)
+              (with-current-buffer "*scratch*"
+                (goto-char (point-max))
+                (insert (format "; !degraded configuration! %s\n" ,error)))
+              ))
+     ))
+
 ;;----------------------------------------------------------------------
 ;; filter-ls: a general purpose tools for filtering directory listings.
 ;;----------------------------------------------------------------------

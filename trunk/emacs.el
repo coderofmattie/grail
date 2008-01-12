@@ -206,13 +206,14 @@
 ;; use broken.el
 (load-config "alpha.el")
 
+(load-config "spell.el")
+
 ;;----------------------------------------------------------------------
 ;; undistributed features.
 ;;----------------------------------------------------------------------
 
-(load-guard "xml.el" "nxml not be available")
-(load-guard "complete.el" "icicles not be available - minibuffer extremely degraded.")
-(load-guard "spell.el" "enhanced spell-check not available, must run spell-check manually.")
+(load-style "xml.el" "nxml not be available")
+(load-style "complete.el" "icicles not be available - minibuffer extremely degraded.")
 
 ;;======================================================================
 ;;                  Phase 4: Programming
@@ -286,7 +287,7 @@
 ;;----------------------------------------------------------------------
 
 ;; latest and greatest template facility.
-(load-guard "template.el" "XML enhanced else template mode not available.")
+(load-style "template.el" "XML enhanced else template mode not available.")
 
 ;; this is insanely great. It displays the function you are "in" in terms
 ;; of the point. Really nice for reading long functions.
@@ -352,7 +353,7 @@
 ;;----------------------------------------------------------------------
 (setq lisp-indent-offset 2)
 
-(load-guard "paren.el" "parentheses highlighting will not be available")
+(load-style "paren.el" "parentheses highlighting will not be available")
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()

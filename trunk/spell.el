@@ -2,12 +2,6 @@
 ;; spell.el
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
-
-(defun install-flyspell ()
-  "install or update flyspell"
-  (interactive)
-  (deploy-url-elisp "http://www-sop.inria.fr/mimosa/Manuel.Serrano/flyspell/flyspell-1.7n.el" "flyspell"))
-
 (require 'flyspell)
 
 (setq-default
