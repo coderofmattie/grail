@@ -371,7 +371,7 @@
     nil
     ))
 
-(defun parser-curry-production ( identifier combine-operator &rest grammar )
+(defun parser-curry-production ( identifier combine-operator &rest matches )
   "Compile a match object with a combine operator and a match function list.
    I think curry is applicable, but largely it was named curry so I could
    create the parser-compile-production macro."
@@ -380,14 +380,17 @@
       "compile production"
       "match identifier"))
 
+  (lexical-let
+    ((matchf-list (list-filter-nil matches)))
+
     (parser-make-match identifier
       `(lambda ()
          (lexical-let
-           ((result (apply ',combine-operator (list-filter-nil ',grammar))))
-         (if result
-           (cons (car result) (cons ',identifier (cdr result)))
-           nil)
-           ))
+           ((result (apply ',combine-operator ',matchf-list)))
+           (if result
+             (cons (car result) (cons ',identifier (cdr result)))
+             nil)
+           )))
       ))
 
 (defmacro parser-compile-production ( combine-function production-list )
