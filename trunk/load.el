@@ -105,8 +105,7 @@
     (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
 
   ;; on darwin assume carbon-emacs.
-  ((string-equal "darwin" system-type)
-    (load-file (concat my-emacs-dir "darwin.el")))
+  ((string-equal "darwin" system-type) (load-config "darwin.el"))
   )
 
 ;; load my advanced configuration
