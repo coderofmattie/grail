@@ -58,7 +58,7 @@
 ;; productions can be referenced later in the definition. Backtracking
 ;; was another essential addition once the and non-terminal was added.
 
-;; -> Requirements
+;; ->Requirements
 
 ;; 1. Easy to use for trivial problems, powerful enough to solve
 ;;    most of them.
@@ -69,6 +69,15 @@
 ;;
 ;;    This allows the user to choose between positions, markers, overlays
 ;;    according to the requirements.
+
+;; ->TODO
+
+;; 1. define list where Matches can be defined without inserting a
+;;    match at the definition point
+
+;; 2. optional matching with ? for Match Function references.
+
+;; 3. Canonical tree walk implemented as parser-ast-node.
 
 ;;----------------------------------------------------------------------
 ;; Backtracking.
