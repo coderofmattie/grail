@@ -65,10 +65,6 @@
 ;; loading
 ;;----------------------------------------------------------------------
 
-(defun load-config ( path )
-  "load a path relative to the configuration directory"
-  (load-file (concat my-emacs-dir path)))
-
 (defmacro load-style ( file error )
   "Load a style which is a combination of techniques that depend on features
    which are not distributed by Emacs."

@@ -65,14 +65,18 @@
 
 (setq my-emacs-dir (concat (getenv "HOME") "/system/emacs/"))
 
+(setq my-localized-dir (concat my-emacs-dir "local/"))
+(setq my-extras-dir    (concat my-emacs-dir "elisp/"))
+
 ;; first load a small file containing only the functions that are essential
 ;; to constructing the load path. Once the load-path, system adaptation,
 ;; site-file have been loaded we can be less paranoid.
 
-(load-file (concat my-emacs-dir "load-library.el"))
+(defun load-config ( path )
+  "load a path relative to the configuration directory"
+  (load-file (concat my-emacs-dir path)))
 
-(setq my-localized-dir (concat my-emacs-dir "local/"))
-(setq my-extras-dir    (concat my-emacs-dir "elisp/"))
+(load-config "load-library.el")
 
 (setq load-path
   (append
