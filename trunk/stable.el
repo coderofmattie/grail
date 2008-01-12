@@ -1,5 +1,5 @@
 ;;----------------------------------------------------------------------
-;; mattie.el
+;; stable.el
 ;; Primary Author: Mike Mattie
 ;; Copyright: Mike Mattie (2007)
 ;; License: GPL v3.
