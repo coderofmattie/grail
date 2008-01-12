@@ -10,11 +10,11 @@ Integration
   1. unpack the tarball or checkout from the repository containing the
      configuration.
 
-  2. at the toplevel of the configuration tree modify adapt.el by
+  2. at the toplevel of the configuration tree modify load.el by
      changing the my-emacs-dir path to the absolute path of the
      configuration tree (where this document resides).
 
-  3. create a link $HOME/.emacs to adapt.el at the root of the
+  3. create a link $HOME/.emacs pointing to load.el at the root of the
      configuration tree.
 
   My configuration will then be the default for your user.
