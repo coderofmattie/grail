@@ -10,7 +10,8 @@
 (setq
   else-kill-proceed-to-next-placeholder t)
 
-(load-file (concat my-emacs-dir "else-xml.el"))
+(load-config "else-xml.el")  ;; until it's made into a proper mode my extensions reside in
+                             ;; my config.
 
 ;; else-mode is definitely the crown jewel of my input expansion. Sets
 ;; the standard for macro expansion.
