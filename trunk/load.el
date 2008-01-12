@@ -105,6 +105,5 @@
     (load-file (concat my-emacs-dir "darwin.el")))
   )
 
-;; load the real emacs file. It would be nice if errors were trapped or
-;; ignored.
-(load-file (concat my-emacs-dir "emacs.el"))
+;; load the configuration part
+(load-config "emacs.el")

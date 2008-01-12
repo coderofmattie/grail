@@ -43,9 +43,12 @@
     ))
 
 ;;----------------------------------------------------------------------
-;; clean - these implementations are considered clean in that they
-;;         are documented and not ugly.
+;; loading
 ;;----------------------------------------------------------------------
+
+(defun load-config ( path )
+  "load a path relative to the configuration directory"
+  (load-file (concat my-emacs-dir path)))
 
 (defun map-filter-nil ( func &rest seq )
   "map-filter-nil. apply the function to the arguements ala mapcar.

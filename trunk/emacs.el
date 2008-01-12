@@ -98,7 +98,7 @@
 )
 
 ;; load the keybindings.
-(load-file (concat my-emacs-dir "keybinding.el"))
+(load-config "keybinding.el")
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
@@ -118,7 +118,7 @@
 
 ;; this file is suppost to be for stable versions of the functions only.
 ;; stable functions are both mature and documented.
-(load-file (concat my-emacs-dir "mattie.el"))
+(load-config "mattie.el")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
@@ -251,7 +251,7 @@
 
 ;; load in-development features. if it is partial or completely broken
 ;; use broken.el
-(load-file (concat my-emacs-dir "alpha.el"))
+(load-config "alpha.el")
 
 ;;----------------------------------------------------------------------
 ;; undistributed features.
