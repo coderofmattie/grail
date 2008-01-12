@@ -105,5 +105,5 @@
     (load-file (concat my-emacs-dir "darwin.el")))
   )
 
-;; load the configuration part
-(load-config "emacs.el")
+;; load my advanced configuration
+(load-config "mattie.el")
