@@ -2,28 +2,9 @@
 ;; load.el
 ;; Primary Author: Mike Mattie
 ;;
-;; This file does two important things to start the loading of my
-;; configuration. First it disables customize. Second it sets up
-;; load-path and adapts to the host platform according to
+;; This file extends load-path according to the configuration's
+;; fs structure, and adapts to the host platform according to
 ;; the value of system-type.
-;;----------------------------------------------------------------------
-
-;; disable customization, automatic persistence of configuration changes.
-;; I personally don't like customize as I prefer emacs to start with
-;; a state I have personally defined and reviewed.
-
-;; this line is a nasty way of disabling customize, simply specify the
-;; customize file as /dev/null.
-
-(setq custom-file "/dev/null")
-
-;;======================================================================
-;;         Phase 1: Library loading and host init/normalization
-;;======================================================================
-
-;;----------------------------------------------------------------------
-;; extend the library search space with local changes and third pary
-;; extensions
 ;;----------------------------------------------------------------------
 
 ;; This code will assume a FS structure like this:

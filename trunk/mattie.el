@@ -12,6 +12,15 @@
 ;; be loaded via load-style.
 ;;----------------------------------------------------------------------
 
+;; disable customization, automatic persistence of configuration changes.
+;; I personally don't like customize as I prefer emacs to start with
+;; a state I have personally defined and reviewed.
+
+;; this line is a nasty way of disabling customize, simply specify the
+;; customize file as /dev/null.
+
+(setq custom-file "/dev/null")
+
 ;;----------------------------------------------------------------------
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
