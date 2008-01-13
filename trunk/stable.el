@@ -279,6 +279,7 @@
 
 (defun do-lisp-list ( func )
   "apply the function to the bounds of the lisp list under the point"
+  (interactive "cCommand? ")
   (lexical-let
     ((from (point)))
     (funcall func (- (bounds-scan-backward "()" from) 1) (+ 1 (bounds-scan-forward "()" from)))
