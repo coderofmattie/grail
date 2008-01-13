@@ -333,7 +333,7 @@
   ;; have a variable value bound so it fails noisily when the
   ;; quotation is incorrect.
   (cond
-    ((eq nil constructor)    `(parser-build-token ',identifier))
+    ((eq nil constructor)    `(parser-build-token '',identifier))
     ((listp constructor)     `(,(parser-make-anon-func constructor) (match-beginning 0) (match-end 0)))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
     ((symbolp constructor)   `(quote ',constructor))
@@ -406,7 +406,7 @@
            (if production
              (parser-make-match
                (parser-match-consumed production)
-               (parser-make-match-data ',prod-left (parser-match-data production)))
+               (parser-make-match-data '',prod-left (parser-match-data production)))
              nil)
            )))
       ))
