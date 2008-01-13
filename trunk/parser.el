@@ -20,17 +20,19 @@
 
 ;; Emacs supports parsing in two forms: Regular Expressions and tools
 ;; like Syntax Tables geared towards using the parse results to
-;; annotate buffers with text-properties and overlays. This works well
-;; for overlaying functions that interpret the meaning of text in the
-;; buffer, such as syntax highlighting, on a paradigm of unstructured
-;; text.
+;; annotate buffers with text-properties and overlays.
+
+;; This Dynamic Programming approach works well for overlaying
+;; functions that interpret the meaning of text in the buffer, such as
+;; syntax highlighting, on a paradigm of unstructured text. The
+;; analysis is preserved when the buffer is edited at a character
+;; level.
 
 ;; When you need to build an interface that rests entirely on the
 ;; parse analysis to the degree that the user or program does not
-;; modify or traverse the buffer at a character level this tool
-;; simplifies constructing a nested data structure that maps the
-;; parsing analysis onto the text of the buffer with beginning and end
-;; positions.
+;; modify or traverse the buffer at a character level, this tool
+;; simplifies construction of a nested data structure that maps tokens
+;; to beginning and ending positions of the match.
 
 ;; -> Related Works
 
@@ -55,10 +57,11 @@
 ;; in the body.
 
 ;; This essential simplicity is still present in the design but the
-;; implementation is now more complex with match functions replacing
-;; the cond clause form; allowing previous definitions of a token or
-;; productions can be referenced later in the definition. Backtracking
-;; was another essential addition once the and non-terminal was added.
+;; implementation is now more complex with Match Functions replacing
+;; the cond clause form. Match Functions allow previous definitions of
+;; a token or rule to be referenced later in later rules. Backtracking
+;; was another essential complexity once the and non-terminal was
+;; added.
 
 ;; ->Requirements
 
