@@ -100,6 +100,21 @@
 
 (require 'cl)
 
+;; not defined in Gnu Emacs evidently.
+
+(defmacro define-error ( symbol message &rest isa-list )
+  "define a error symbol with a isa list and a error message"
+  `(progn
+     (put ',symbol
+       'error-conditions (append '(error ,symbol) ',isa-list))
+     (put ',symbol 'error-message ,message)
+     ))
+
+;; A recursive macro expansion would be nice for creating a hierarchy.
+(define-error parser-compile-error  "parser error")
+  (define-error parser-syntactic-error  "syntactic error" parser-compile-error)
+  (define-error parser-semantic-error   "semantic error" parser-compile-error)
+
 ;;----------------------------------------------------------------------
 ;; Backtracking.
 ;;----------------------------------------------------------------------
@@ -289,7 +304,7 @@
     (if lookup
       (if (eq definition 'nil)
         lookup
-        (throw 'semantic-error (format "illegal redefinition of Match Function %s" id)))
+        (signal 'parser-semantic-error (format "illegal redefinition of Match Function %s" id)))
 
       (progn
         (fset (intern id match-table) (eval definition))
@@ -323,10 +338,11 @@
   "Translate the AST constructor part of a token definition into Elisp."
 
   (unless (symbolp identifier)
-    (throw 'syntax-error (parser-diagnostic identifier
-                           "parser token"
-                           "identifier: An unbound symbol used as an identifier"
-                           )))
+    (signal 'parser-syntactic-error
+      (parser-diagnostic identifier
+        "parser token"
+        "identifier: An unbound symbol used as an identifier"
+        )))
 
   ;; Warning: this code is very touchy, double quotation of AST
   ;; symbols is required. the saving grace is that the symbols don't
@@ -339,8 +355,9 @@
     ((symbolp constructor)   `(quote ',constructor))
 
     ;; all other constructor types are un-handled.
-    ((throw 'syntax-error (parser-diagnostic identifier
-                           "parser token: identifier" "A symbol"))))
+    ((signal 'parser-syntactic-error
+       (parser-diagnostic identifier
+         "parser token: identifier" "A symbol"))))
   )
 
 (defun parser-interp-token ( syntax ) ;; tested
@@ -420,7 +437,7 @@
     ((listp rule) (parser-compile-definition rule))
     ((symbolp rule) (parser-match-function rule))
 
-    (throw 'syntax-error
+    (signal 'parser-syntactic-error
       (parser-daignostic rule
         "Rule Right interpreter"
         "expected a grammar list e.g: token,and,or ; or a symbol as a rule or token reference"))
@@ -440,9 +457,10 @@
 (defun parser-compile-definition ( term )
   "parser-compile-definition is the recursive heart of the compiler."
   (unless (listp term)
-    (throw 'syntax-error (parser-diagnostic term
-                           "parser definition"
-                           "expected a definition of token|or|and")))
+    (signal 'parser-syntactic-error
+      (parser-diagnostic term
+        "parser definition"
+        "expected a definition of token|or|and|define")))
 
   (lexical-let
     ((keyword (car term))
@@ -462,9 +480,10 @@
           (mapcar 'parser-rule-right syntax)
           nil)
 
-        ((throw 'syntax-error (parser-diagnostic term
-                                "parser definition"
-                                "definition keyword token|or|and")))
+        ((signal 'parser-syntactic-error
+           (parser-diagnostic term
+             "parser definition"
+             "definition keyword token|or|and|define")))
         ))
     ))
 
@@ -479,36 +498,39 @@
     ;; non-terminal match functions
     ((match-table (make-vector parser-mtable-init-size 0)))
 
-    (lexical-let
-      ((compiled (catch 'syntax-error
-                   `(lambda ( start-pos )
-                      (let
-                        ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
-                        (save-excursion
-                          (goto-char start-pos)
-                          ;; note that the start symbol of the grammar is built in as an or combination
-                          ;; of the top-level definitions.
-                          (lexical-let
-                            ((parse (,(parser-rule-left 'start 'parser-or
-                                        (mapcar 'parser-compile-definition definition))
-                                      )))
-                            (if parse
-                              ;; if we have a production return the position at which the
-                              ;; parser stopped along with the AST.
-                              (parser-make-match (parser-pos) (parser-match-data parse))
-                              nil))
-                          )))
+    (condition-case diagnostic
+      (progn
+        (fset parser
+          (eval
+            `(lambda ( start-pos )
+               (let
+                 ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+                 (save-excursion
+                   (goto-char start-pos)
+                   ;; note that the start symbol of the grammar is built in as an or combination
+                   ;; of the top-level definitions.
+                   (lexical-let
+                     ((parse (,(parser-rule-left 'start 'parser-or
+                                 (mapcar 'parser-compile-definition definition))
+                               )))
+                     (if parse
+                       ;; if we have a production return the position at which the
+                       ;; parser stopped along with the AST.
+                       (parser-make-match (parser-pos) (parser-match-data parse))
+                       nil))
                    )))
-      (if (stringp compiled)
-        ;; error path, print a message and return nil.
-        (progn
-          (message "parser-compile failed! %s" compiled)
-          nil)
+            ))
+        t)
 
-        ;; success path, bind the compiled parser to the parser symbol and return t.
+      (parser-syntactic-error
         (progn
-          (fset parser (eval compiled))
-          t))
+          (message "parser-compile Syntax Error %s" diagnostic)
+          nil
+          ))
+      (parser-semantic-error
+        (progn
+          (message "parser-compile invalid statement %s" diagnostic)
+        ))
       )))
 
 (provide 'parser)
