@@ -133,28 +133,20 @@
   (pop parser-position)
   (goto-char (parser-pos)))
 
-(defun parser-advance ( distance )
-  "Add distance to the parsing position on the current stack level.
-   The advancing of the parser is done relative to the current
-   position so that a successful match can advance 0 characters.
-   This is important for optional matches such as the \"?\" meta-symbol.
-   They want to indicate a successful match without moving the parser position."
+(defun parser-advance ( consumed )
+  "Advance the input position of the parser to the next un-matched character: input consumed + 1."
 
-  ;; we are going to get zero's as a unfortunate side-effect of
-  ;; keeping the nesting of combination operators simple. Avoid NOP
-  ;; work with a quick test.
-
-  (if (> distance 0)
+  (if (> consumed 0)
     (lexical-let
-      ((pos (+ distance (parser-pos))))
+      ((pos (+ 1 consumed (parser-pos))))
       (progn
         (setcar parser-position pos)
         (goto-char pos)))
     ))
 
-(defun parser-next ()
-  "Compute the next parser position from the length of the entire regex's current match, plus one."
-  (+ 1 (- (match-end 0) (match-beginning 0))))
+(defun parser-consumed ()
+  "The number of input characters consumed by the token's match in the input."
+  (- (match-end 0) (match-beginning 0)))
 
 ;;----------------------------------------------------------------------
 ;; Match Result
@@ -181,6 +173,24 @@
 ;; match-functions to nest arbitrarily [except that tokens are
 ;; strictly leafs].
 
+;; My rationale for using inline functions is that I am essentially naming
+;; the car and cdr of my cons cell for readability.
+
+(defsubst parser-make-match ( consumed data )
+  "create a match result from the input consumed by the match, and the match data."
+  (cons consumed data))
+
+(defsubst parser-match-consumed ( match-result )
+  "return the input consumed by the match"
+  (car match-result))
+
+(defsubst parser-match-data ( match-result )
+  "return the data of the match"
+  (cdr match-result))
+
+(defsubst parser-make-match-data ( name data )
+  (cons name data))
+
 ;;----------------------------------------------------------------------
 ;; Combination Operators
 ;;----------------------------------------------------------------------
@@ -196,18 +206,18 @@
 ;; instead of returning the last Match Result.
 
 (defun parser-or ( &rest match-list )
-  "Combine match objects by or where the first successful match is returned.
+  "Combine Match Functions by or ; the first successful match is returned.
    nil is returned if no matches are found"
   (catch 'match
     (dolist (match match-list)
       (lexical-let
-        ((match-result (funcall match)))
-        (if match-result
+        ((production (funcall match)))
+        (if production
           (progn
-            (parser-advance (car match-result))
-            (throw 'match (cons 0 (cdr match-result)))))
-        ))
-    (throw 'match nil) ;; this is what failure looks like :)
+            (parser-advance (parser-match-consumed production))
+            (throw 'match (parser-make-match 0 (parser-match-data production))))
+          )))
+    (throw 'match nil)
     ))
 
 (defun parser-and ( &rest match-list )
@@ -221,13 +231,12 @@
             (mapcar
               (lambda (match)
                 (lexical-let
-                  ((match-result (funcall match)))
+                  ((production (funcall match)))
 
-                  (if match-result
+                  (if production
                     (progn
-                      ;; on match advance the parser and return the production.
-                      (parser-advance (car match-result))
-                      (cdr match-result))
+                      (parser-advance (parser-match-consumed production))
+                      (parser-match-data production))
 
                     (throw 'backtrack nil))
                   )) match-list)
@@ -235,7 +244,7 @@
    (if production
      (progn
        (parser-pop)
-       (cons 0 production)) ;; would be nice to filter optional matches here.
+       (parser-make-match 0 production)) ;; would be nice to filter optional matches here.
      (progn
        (parser-backtrack)
        nil))
@@ -271,39 +280,33 @@
 ;; match-table is objarray created at macro scope, and does not appear
 ;; in the compiled form.
 
-(defun parser-make-match ( symbol function ) ;; tested
-  "parser-make-match takes ( symbol function ) and returns a symbol
-   stored in the parser's match-table with the evaluated lambda
-   bound"
-  (lexical-let
-    ((new-name (symbol-name symbol)))
+(defun parser-match-function ( identifier &optional definition )
+  "Retrieve or define a Match Function."
+  (lexical-let*
+    ((id (symbol-name identifier))
+      (lookup (intern-soft id match-table)))
 
-    (if (intern-soft new-name match-table)
-      (throw 'semantic-error (format "illegal redefinition of match %s" new-name)))
+    (if lookup
+      (if (eq definition 'nil)
+        lookup
+        (throw 'semantic-error (format "illegal redefinition of Match Function %s" id)))
 
-    (fset (intern new-name match-table) (eval function))
-    (intern new-name match-table)
-    ))
-
-(defun parser-get-match ( symbol ) ;; tested
-  "return the compiled Match Function for symbol, or throw a semantic-error if it does not
-   exist"
-  (lexical-let
-    ((existing-name (symbol-name symbol)))
-
-    (unless (intern-soft existing-name match-table)
-      (throw 'semantic-error (format "unkown match %s" existing-name)))
-
-    (intern existing-name match-table)))
+      (progn
+        (fset (intern id match-table) (eval definition))
+        (intern id match-table))
+      )))
 
 ;;----------------------------------------------------------------------
 ;; tokens
 ;;----------------------------------------------------------------------
 
+;; EXPERIMENT: allow other functions to be used for token matching
+;;             other than looking-at, such as re-search.
+
 (defun parser-build-token ( identifier ) ;; tested
   "parser-make-token is a built-in constructor that records the analysis
    and the location of the text (id . (begin . end))"
-  (cons identifier (cons (match-beginning 0) (match-end 0))))
+  (parser-make-match-data identifier (cons (match-beginning 0) (match-end 0))))
 
 (defun parser-make-anon-func ( sexp ) ;; tested
   "bind an un-evaluated anonymous function to an un-interned symbol"
@@ -330,7 +333,7 @@
   ;; have a variable value bound so it fails noisily when the
   ;; quotation is incorrect.
   (cond
-    ((eq nil constructor)    `(parser-build-token (quote ',identifier)))
+    ((eq nil constructor)    `(parser-build-token ',identifier))
     ((listp constructor)     `(,(parser-make-anon-func constructor) (match-beginning 0) (match-end 0)))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
     ((symbolp constructor)   `(quote ',constructor))
@@ -354,14 +357,14 @@
 
     `(lambda ()
        (if (looking-at ,regex)
-         (cons (parser-next) ,(parser-interp-token-action identifier constructor))
+         (parser-make-match (parser-consumed) ,(parser-interp-token-action identifier constructor))
          nil
          ))
     ))
 
 (defun parser-compile-token ( syntax ) ;; tested
   "Compile a token into a Match Function."
-  (parser-make-match (car syntax) (parser-interp-token syntax)))
+  (parser-match-function (car syntax) (parser-interp-token syntax)))
 
 ;;----------------------------------------------------------------------
 ;; rules
@@ -396,12 +399,14 @@
   (lexical-let
     ((matchf-list (list-filter-nil prod-right))) ;; filter nils created by define lists.
 
-    (parser-make-match prod-left
+    (parser-match-function prod-left
       `(lambda ()
          (lexical-let
            ((production (apply ',combine-operator ',matchf-list)))
            (if production
-             (cons (car production) (cons ',prod-left (cdr production)))
+             (parser-make-match
+               (parser-match-consumed production)
+               (parser-make-match-data ',prod-left (parser-match-data production)))
              nil)
            )))
       ))
@@ -413,7 +418,7 @@
 
   (cond
     ((listp rule) (parser-compile-definition rule))
-    ((symbolp rule) (parser-get-match rule))
+    ((symbolp rule) (parser-match-function rule))
 
     (throw 'syntax-error
       (parser-daignostic rule
@@ -450,7 +455,12 @@
         ((eq keyword 'token)  (parser-compile-token syntax))
         ((eq keyword 'or)     (parser-compile-rule 'parser-or syntax))
         ((eq keyword 'and)    (parser-compile-rule 'parser-and syntax))
-        ((eq keyword 'define) (mapcar 'parser-rule-right syntax) nil)
+
+        ((eq keyword 'define)
+          ;; define discards the match functions as a return value so
+          ;; tokens and rules can be defined before they are used.
+          (mapcar 'parser-rule-right syntax)
+          nil)
 
         ((throw 'syntax-error (parser-diagnostic term
                                 "parser definition"
@@ -485,7 +495,7 @@
                             (if parse
                               ;; if we have a production return the position at which the
                               ;; parser stopped along with the AST.
-                              (cons (car parser-position) (cdr parse))
+                              (parser-make-match (parser-pos) (parser-match-data parse))
                               nil))
                           )))
                    )))
