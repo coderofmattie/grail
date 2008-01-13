@@ -109,6 +109,22 @@
     nil
     ))
 
+(defun copy-region-to-clipboard ()
+  "copy the region to the clipboard"
+  (interactive)
+  (let
+    ((x-select-enable-clipboard t))
+    (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
+    ))
+
+(defmacro define-error ( symbol message &rest isa-list )
+  "define a error symbol with a isa list and a error message"
+  `(progn
+     (put ',symbol
+       'error-conditions (append '(error ,symbol) ',isa-list))
+     (put ',symbol 'error-message ,message)
+     ))
+
 ;;----------------------------------------------------------------------
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
