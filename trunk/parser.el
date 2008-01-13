@@ -6,8 +6,10 @@
 
 ;; ->Summary.
 
-;; parser.el aims to be a lightweight implementation of Recursive Descent
-;; parsing.
+;; parser.el aims to be a lightweight implementation of Recursive
+;; Descent parsing. The parser-compile macro is given a symbol and a
+;; grammar definition. It returns a compiled parser bound to the
+;; function of the symbol.
 
 ;; -> Application.
 
@@ -64,18 +66,31 @@
 ;;    most of them.
 
 ;; 2. Data structures are orthogonal to the parser and not hard-wired
-;;    in. Leafs and nodes of the AST are constructed with beginning
-;;    and ending positions of the text in the buffer.
+;;    in. Tokens can perform user defined functions or construct custom
+;;    data structures with the beginning and ending positions of the
+;;    match in the input.
 ;;
 ;;    This allows the user to choose between positions, markers, overlays
 ;;    according to the requirements.
 
+;; ->Characteristics
+
+;; ->Terminology
+
+;; The meaning of terms such as production, rule, token, left side,
+;; right side etc was taken from the Dragon Book:
+
+;; Compilers
+;; Principles,Techniques,and Tools
+;; Alfred V.Aho, Ravi Sethi, Jeffrey D.Ullman
+;; 1986, Addison Wesley
+
 ;; ->TODO
 
 ;; 1. define list where Matches can be defined without inserting a
-;;    match at the definition point
+;;    match at the definition point [implemented, but not tested]
 
-;; 2. optional matching with ? for Match Function references.
+;; 2. optional matching with ? for Match Function references. [easy]
 
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
@@ -162,15 +177,15 @@
 ;; Combination Operators
 ;;----------------------------------------------------------------------
 
-;; the parser uses two combination operators: parser-and, parser-or as
+;; The parser uses two combination operators: parser-and, parser-or as
 ;; nodes in the parser tree. Significantly parser-and can backtrack
 ;; and parser-or never does.
 
 ;; and/or have the same essential meaning as the lisp and/or forms
 ;; with two specializations. Both functions treat their argument lists
-;; as a list of match-functions. Also the parser-and function returns
-;; a list of all the AST parts of the Match Results, instead of
-;; returning the last value.
+;; as a list of Match Functions. Also the parser-and function returns
+;; a production consisting of the AST parts of the Match Results,
+;; instead of returning the last Match Result.
 
 (defun parser-or ( &rest match-list )
   "Combine match objects by or where the first successful match is returned.
@@ -193,7 +208,7 @@
   (parser-push)
 
   (lexical-let
-    ((ast (catch 'backtrack
+    ((production (catch 'backtrack
             ;; we want to gather all the matches, so mapcar across the match objects.
             (mapcar
               (lambda (match)
@@ -202,17 +217,17 @@
 
                   (if match-result
                     (progn
-                      ;; on match advance the parser and return the AST
+                      ;; on match advance the parser and return the production.
                       (parser-advance (car match-result))
                       (cdr match-result))
 
                     (throw 'backtrack nil))
                   )) match-list)
             )))
-   (if ast
+   (if production
      (progn
        (parser-pop)
-       (cons 0 ast)) ;; would be nice to filter optional matches here.
+       (cons 0 production)) ;; would be nice to filter optional matches here.
      (progn
        (parser-backtrack)
        nil))
@@ -337,12 +352,16 @@
     ))
 
 (defun parser-compile-token ( syntax ) ;; tested
-  "Compile a token definition into a Match Function."
+  "Compile a token into a Match Function."
   (parser-make-match (car syntax) (parser-interp-token syntax)))
 
 ;;----------------------------------------------------------------------
-;; productions
+;; rules
 ;;----------------------------------------------------------------------
+
+;; rules are non-terminals, with a left side or identifier, and a
+;; right side containing matches that recognize a production of the
+;; rule.
 
 (defun list-filter-nil ( list )
   "filter nil symbols from a list"
@@ -357,48 +376,53 @@
     nil
     ))
 
-(defun parser-curry-production ( identifier combine-operator matches )
-  "Compile a match object with a combine operator and a match function list.
-   I think curry is applicable, but largely it was named curry so I could
-   create the parser-compile-production macro."
-  (unless (symbolp identifier)
-    (parser-diagnostic identifier
-      "compile production"
-      "match identifier"))
+(defun parser-rule-left ( prod-left combine-operator prod-right )
+  "Translate the Left Side of a Rule into a Match Function
+   currying the Right Side of a rule."
+
+  (unless (symbolp prod-left)
+    (parser-diagnostic prod-left
+      "Rule Left interpreter"
+      "left side of the production or an identifier"))
 
   (lexical-let
-    ((matchf-list (list-filter-nil matches)))
+    ((matchf-list (list-filter-nil prod-right))) ;; filter nils created by define lists.
 
-    (parser-make-match identifier
+    (parser-make-match prod-left
       `(lambda ()
          (lexical-let
-           ((result (apply ',combine-operator ',matchf-list)))
-           (if result
-             (cons (car result) (cons ',identifier (cdr result)))
+           ((production (apply ',combine-operator ',matchf-list)))
+           (if production
+             (cons (car production) (cons ',prod-left (cdr production)))
              nil)
            )))
       ))
 
-(defun parser-interp-production ( production )
-  "Translate the definition of a production, or a reference to a production
-   into a match object symbol."
+(defun parser-rule-right ( rule )
+  "Translate a match in the Right Side of the rule into a
+   compiled Match Function by retrieving the Match Function or
+   recursively interpreting the grammar definition."
 
   (cond
-    ((listp production) (parser-compile-definition production))
-    ((symbolp production) (parser-get-match production))
+    ((listp rule) (parser-compile-definition rule))
+    ((symbolp rule) (parser-get-match rule))
 
     (throw 'syntax-error
-      (parser-daignostic production
-        "interpret definition"
-        "expected a definition as a list, or a symbol as a production/token reference"))
+      (parser-daignostic rule
+        "Rule Right interpreter"
+        "expected a grammar list e.g: token,and,or ; or a symbol as a rule or token reference"))
     ))
 
-(defun parser-compile-production ( combine-function production-list )
-  (parser-curry-production      ;; make a match function
-    (car production-list)       ;; the identifier of the production
-    combine-function            ;; the combine operator
-    (mapcar 'parser-interp-production (cdr production-list)) ;; interpret the matching definition.
+(defun parser-compile-rule ( combine-function prod-right )
+  (parser-rule-left      ;; make a match function
+    (car prod-right)     ;; the identifier of the production
+    combine-function     ;; the combine operator
+    (mapcar 'parser-rule-right (cdr prod-right)) ;; interpret the matching definition.
   ))
+
+;;----------------------------------------------------------------------
+;; grammar definition.
+;;----------------------------------------------------------------------
 
 (defun parser-compile-definition ( term )
   "parser-compile-definition is the recursive heart of the compiler."
@@ -416,19 +440,15 @@
 
       (cond
         ((eq keyword 'token)  (parser-compile-token syntax))
-        ((eq keyword 'or)     (parser-compile-production 'parser-or syntax))
-        ((eq keyword 'and)    (parser-compile-production 'parser-and syntax))
-        ((eq keyword 'define) (mapcar 'parser-interp-production syntax) nil)
+        ((eq keyword 'or)     (parser-compile-rule 'parser-or syntax))
+        ((eq keyword 'and)    (parser-compile-rule 'parser-and syntax))
+        ((eq keyword 'define) (mapcar 'parser-rule-right syntax) nil)
 
         ((throw 'syntax-error (parser-diagnostic term
                                 "parser definition"
                                 "definition keyword token|or|and")))
         ))
     ))
-
-;;----------------------------------------------------------------------
-;; parser-compile macro
-;;----------------------------------------------------------------------
 
 (defvar parser-mtable-init-size 13
   "initial size of the match-table objarray for storing match functions. the value
@@ -451,7 +471,7 @@
                           ;; note that the start symbol of the grammar is built in as an or combination
                           ;; of the top-level definitions.
                           (lexical-let
-                            ((parse (,(parser-curry-production 'start 'parser-or
+                            ((parse (,(parser-rule-left 'start 'parser-or
                                         (mapcar 'parser-compile-definition definition))
                                       )))
                             (if parse
