@@ -263,7 +263,7 @@
     ))
 
 (defun parser-get-match ( symbol ) ;; tested
-  "return the compiled match for symbol, or throw a semantic-error if it does not
+  "return the compiled Match Function for symbol, or throw a semantic-error if it does not
    exist"
   (lexical-let
     ((existing-name (symbol-name symbol)))
