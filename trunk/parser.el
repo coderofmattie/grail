@@ -357,7 +357,7 @@
     nil
     ))
 
-(defun parser-curry-production ( identifier combine-operator &rest matches )
+(defun parser-curry-production ( identifier combine-operator matches )
   "Compile a match object with a combine operator and a match function list.
    I think curry is applicable, but largely it was named curry so I could
    create the parser-compile-production macro."
@@ -393,15 +393,12 @@
         "expected a definition as a list, or a symbol as a production/token reference"))
     ))
 
-(defmacro parser-compile-production ( combine-function production-list )
-  "parser-compile-production simplifies the syntax of interpreting and compiling
-   a production. The construct looks hairy because it combines two operations
-   with quoting necessitated by apply. This macro mechanizes the tricky part
-   to enhance code readability."
-  `(apply 'parser-curry-production      ;; make a match function
-     (car ,production-list)             ;; the identifier of the production
-     ',combine-function                 ;; the combine operator
-     (mapcar 'parser-interp-production (cdr ,production-list)))) ;; interpret the matching definition.
+(defun parser-compile-production ( combine-function production-list )
+  (parser-curry-production      ;; make a match function
+    (car production-list)       ;; the identifier of the production
+    combine-function            ;; the combine operator
+    (mapcar 'parser-interp-production (cdr production-list)) ;; interpret the matching definition.
+  ))
 
 (defun parser-compile-definition ( term )
   "parser-compile-definition is the recursive heart of the compiler."
@@ -418,10 +415,11 @@
       (parser-compile-definition keyword)
 
       (cond
-        ((eq keyword 'token) (parser-compile-token syntax))
-        ((eq keyword 'or)    (parser-compile-production parser-or syntax))
-        ((eq keyword 'and)   (parser-compile-production parser-and syntax))
-;;         ((eq keyword 'define) (mapcar 'parser-interp-production syntax) nil)
+        ((eq keyword 'token)  (parser-compile-token syntax))
+        ((eq keyword 'or)     (parser-compile-production 'parser-or syntax))
+        ((eq keyword 'and)    (parser-compile-production 'parser-and syntax))
+        ((eq keyword 'define) (mapcar 'parser-interp-production syntax) nil)
+
         ((throw 'syntax-error (parser-diagnostic term
                                 "parser definition"
                                 "definition keyword token|or|and")))
@@ -453,7 +451,7 @@
                           ;; note that the start symbol of the grammar is built in as an or combination
                           ;; of the top-level definitions.
                           (lexical-let
-                            ((parse (,(apply 'parser-curry-production 'start 'parser-or
+                            ((parse (,(parser-curry-production 'start 'parser-or
                                         (mapcar 'parser-compile-definition definition))
                                       )))
                             (if parse
