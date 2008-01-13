@@ -302,7 +302,7 @@
       (lookup (intern-soft id match-table)))
 
     (if lookup
-      (if (eq definition 'nil)
+      (if (eq definition nil)
         lookup
         (signal 'parser-semantic-error (format "illegal redefinition of Match Function %s" id)))
 
