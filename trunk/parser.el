@@ -78,10 +78,11 @@
 
 ;; ->Characteristics
 
+;; parser-compile produces a no frills recursive descent parser.
+
 ;; ->Terminology
 
-;; The meaning of terms such as production, rule, token, left side,
-;; right side etc was taken from the Dragon Book:
+;; My reference for parsing terminology is the Dragon Book:
 
 ;; Compilers
 ;; Principles,Techniques,and Tools
