@@ -98,6 +98,8 @@
 
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
+(require 'cl)
+
 ;;----------------------------------------------------------------------
 ;; Backtracking.
 ;;----------------------------------------------------------------------
@@ -110,25 +112,25 @@
 ;; position to a next or previous stack position. backtrack discards
 ;; the top of the stack.
 
-(defun parser-pos () ;; tested
+(defsubst parser-pos () ;; tested
   "Return the current position of the parser in the buffer"
   (car parser-position))
 
 (defun parser-push ()
   "Copy the parser position to a new stack level so the parser can backtrack when necessary."
-  (setq parser-position (cons (car parser-position) parser-position)))
+  (push (parser-pos) parser-position))
 
 (defun parser-pop ()
   "Copy the parser position to a previous stack level When the possibility of a backtrack
    has been eliminated by matching."
   (let
-    ((current (parser-pos)))
-    (setq parser-position (cons (car parser-position) (cddr parser-position)))
+    ((current (pop parser-position)))
+    (setcar parser-position current)
     ))
 
 (defun parser-backtrack ()
   "Restore the previous parser position by discarding the top of the parser-position stack."
-  (setq parser-position (cdr parser-position))
+  (pop parser-position)
   (goto-char (parser-pos)))
 
 (defun parser-advance ( distance )
@@ -143,9 +145,11 @@
   ;; work with a quick test.
 
   (if (> distance 0)
-    (progn
-      (setq parser-position (cons (+ distance (car parser-position)) (cdr parser-position)))
-      (goto-char (parser-pos)))
+    (lexical-let
+      ((pos (+ distance (parser-pos))))
+      (progn
+        (setcar parser-position pos)
+        (goto-char pos)))
     ))
 
 (defun parser-next ()
