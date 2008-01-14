@@ -23,37 +23,6 @@
   (interactive "Ssymbol? ")
   (pp (auto-overlay-local-binding symbol)))
 
-(defun mode-overlay-at-point-p ( mode-symbol )
-  "determine if the point is in a flyspell overlay. given a overlay list
-   which may be nil, translate via predicate into boolean values which
-   are then evaluated by or."
-  (interactive)
-  (let
-    ((overlay-list (overlays-at (point))))
-
-    (if overlay-list
-      (eval (cons 'or
-              (mapcar
-                (lambda ( overlay )
-                  (if (overlay-get overlay mode-symbol) t)) overlay-list)
-              ))
-    )))
-
-;; much like easy-mmode-define-keymap macro but with a little more
-;; juice doing the defvar part as well.
-
-(defmacro def-sparse-map ( symbol docstring &rest keys )
-  "make it easy to define a keymap give the symbol, a docstring, followed by
-   the usual (key 'symbol) lists."
-  `(defvar ,symbol
-     (let
-       ((map (make-sparse-keymap)))
-       ,@(mapcar (lambda (binding)
-                   (list 'define-key 'map (car binding) (cadr binding))) keys)
-       map)
-     ,docstring)
-  )
-
 ;; a interactive command I still use. Just a quick way to pull up the
 ;; source in a read-only buffer. Once the completion is fixed to search
 ;; the load-path and use icicles for completion it can go into mattie.el.
@@ -94,21 +63,6 @@
         (message "aborted localizing distributed file"))
     )))
 
-;; I really like this implementation, would map-filter-nil benefit from
-;; using consp ?
-(defun list-filter-nil ( list )
-  "filter nil symbols from a list"
-  (if (consp list)
-    (lexical-let
-      ((head (car list)))
-
-      (if (eq head 'nil)
-        (list-filter-nil (cdr list))
-        (cons head (list-filter-nil (cdr list)))
-        ))
-    nil
-    ))
-
 (defun copy-region-to-clipboard ()
   "copy the region to the clipboard"
   (interactive)
@@ -116,14 +70,6 @@
     ((x-select-enable-clipboard t))
     (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
     ))
-
-(defmacro define-error ( symbol message &rest isa-list )
-  "define a error symbol with a isa list and a error message"
-  `(progn
-     (put ',symbol
-       'error-conditions (append '(error ,symbol) ',isa-list))
-     (put ',symbol 'error-message ,message)
-     ))
 
 ;;----------------------------------------------------------------------
 ;; experimental - interesting

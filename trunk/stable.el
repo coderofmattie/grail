@@ -84,13 +84,6 @@
     t t)
     ))
 
-;; required for my patched em-unix, note: merged upstream, may collide
-;; on a update.
-(defun nil-blank-string ( string )
-  "if a string is all blanks return nil, if there are non-blank characters return the string"
-  (if (string-match "[^[:blank:]]" string ) string))
-
-
 ;;----------------------------------------------------------------------
 ;; bounds-scan. Scan for the bounds indicated by delimiters. This
 ;; is aimed at code so allow ignored nested delimiters.
