@@ -1,7 +1,8 @@
 ;;----------------------------------------------------------------------
 ;; parser.el
 ;; Primary Author: Mike Mattie (codermattie@gmail.com)
-;; Copyright: Mike Mattie (2008)
+;; Copyright (C) 2008 Mike Mattie
+;; Description: Recursive Descent parser compiler implemented as a Macro.
 ;;----------------------------------------------------------------------
 
 ;; ->Summary.
