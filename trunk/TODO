@@ -1,4 +1,7 @@
 ---> Grok List <---
+* the elisp docs have some stuff in condition-case on how to prevent
+  condition-case from porking the debugger which seems to be happening
+  with a condition-case somewhere in icicles.
 
 * look at replace-regex being able to call lisp code. that is insanely
   great.
@@ -31,8 +34,6 @@
 
 * find a way to auto-raise the mini-buffer or go to a dedicated mini-buffer.
 
-* finish up filter-ls so it can get cleaned up.
-
 * examine-library has a terrible prompt and no completion.
   Fix the prompting and completion so it can exit alpha.
 
@@ -48,13 +49,8 @@
   of language. This way the language can be set independent of some
   uber-dwim completion scheme.
 
-  In fact I can finally fix my insane lambda problem. All of emacs expects
-  a symbol name for a command, tons of code breaks unless it can use a symbol
-  name as a unique identifer. Examples include determining if the last command
-  was repeated.
-
-  What I should do is eval the lambda, then setf bind it to a un-interned symbol,
-  which then gets bound to the key. that will work.
+  hack up make-anon-func so that it generates unique names ? this is a interesting
+  puzzle.
 
   get rid of that silly text arguement as well hardwiring "elisp" as an option.
   that should be done in the mode hook.
