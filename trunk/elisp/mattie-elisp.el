@@ -11,11 +11,11 @@
   "if a string is all blanks return nil, if there are non-blank characters return the string"
   (if (string-match "[^[:blank:]]" string ) string))
 
-(defun make-anon-func ( sexp ) ;; tested
+(defun make-anon-func ( name sexp )
   "bind an un-evaluated anonymous function to an un-interned symbol"
   (let
     ;; this would be cooler if it used one of the unique algorithms.
-    ((anon-func (make-symbol "anonymous")))
+    ((anon-func (make-symbol name)))
     (fset anon-func (eval sexp))
     anon-func))
 
