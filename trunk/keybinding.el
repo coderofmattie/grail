@@ -5,6 +5,8 @@
 ;; keybinding tools and configuration.
 ;;----------------------------------------------------------------------
 
+(require 'mattie-elisp)
+
 (defun try-list (list)
   "iterate through the list of functions. If a function returns t for
    success terminate the iteration. It's a fancy or that assumes a list
@@ -45,20 +47,21 @@
          )))
 
     ;; If I create a un-interned symbol I think my problems will go away.
-    (lambda ()
-      "Complete if point is at end of a word, otherwise indent line."
-      (interactive)
+    (make-anon-func "dwim-tab"
+      (lambda ()
+        "Complete if point is at end of a word, otherwise indent line."
+        (interactive)
 
-      ;; first try the tab context which should override the
-      ;; general tab behavior only when the text or properties
-      ;; essentially guarantee to DTRT
-      (unless (eval-tab-context)
-        (if (looking-at "\\>")
-          ;; fall back on completion or indentation
-          (funcall completion-function)
-          (indent-for-tab-command)))
-      ))
-  )
+        ;; first try the tab context which should override the
+        ;; general tab behavior only when the text or properties
+        ;; essentially guarantee to DTRT
+        (unless (eval-tab-context)
+          (if (looking-at "\\>")
+            ;; fall back on completion or indentation
+            (funcall completion-function)
+            (indent-for-tab-command)))
+        ))
+    ))
 
 (defun apply-my-keybindings ( completion-context )
   ;; when setting up major/minor modes adapt my global key-bindings to
