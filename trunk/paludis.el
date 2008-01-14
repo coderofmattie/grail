@@ -24,8 +24,9 @@
 ;; the interface. Just more than one place they can execute install
 ;; related commands.
 
-(require 'auto-overlays)
-(require 'auto-overlay-word)
+(require 'parser)
+;; (require 'auto-overlays)
+;; (require 'auto-overlay-word)
 
 (defface deploy-package-name-face
   `((t (:inherit default :underline t)))
@@ -70,8 +71,6 @@
 (defmacro paludis-type-p ( type )
   `(eq ,type (overlay-get 'paludis 'paludis-type)))
 
-
-
 (defun paludis-show-at-point ()
   "show what packages will be installed by paludis"
   (interactive)
@@ -85,16 +84,6 @@
   (interactive)
   (message "install it !")
   )
-
-;;; (defun test-toke ()
-;;;   "just one little one"
-;;;   (interactive)
-;;;   (message "tokenized as %s"
-;;;     (toke-table
-;;;        ("[[:blank:]]" 'whitespace)
-;;;        ("\\([^[:blank:]].*\\):" 'repository ('ignore "installed" "License" "Installed time"))
-;;;        ))
-;;;   )
 
 (defun paludis-properties ()
   (goto-char (point-min))
