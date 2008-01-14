@@ -26,7 +26,7 @@
 ;;----------------------------------------------------------------------
 
 (setq inhibit-splash-screen t)                ;; definitely not a fan of the splash screen.
-(transient-mark-mode nil)                     ;; not a big fan of transient mark mode.
+(transient-mark-mode -1)                      ;; not a big fan of transient mark mode.
 
 (setq
   case-fold-search t
@@ -207,14 +207,17 @@
 ;; it.
 
 ;;----------------------------------------------------------------------
+;;                 Spelling
+;;----------------------------------------------------------------------
+(load-config "spell.el")
+
+;;----------------------------------------------------------------------
 ;; alpha features.
 ;;----------------------------------------------------------------------
 
 ;; load in-development features. if it is partial or completely broken
 ;; use broken.el
 (load-config "alpha.el")
-
-(load-config "spell.el")
 
 ;;----------------------------------------------------------------------
 ;; undistributed features.
