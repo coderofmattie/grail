@@ -659,7 +659,7 @@ STrace List? ")
       (parser-trace-message
         (format "\nPROD match? %s\n"
           (if parse-result
-            (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
+            (format "Yes matched to: %s, AST: %s" (car parse-result) (pp-to-string (cdr parse-result))
               "No")
             ))) )
 
