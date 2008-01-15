@@ -220,7 +220,7 @@
     (goto-char (point-max))
     (insert trace)))
 
-(defun parser-match-trace ( match-func match-result )
+(defun parser-trace-match ( match-func match-result )
   "trace a match"
   (if (and (boundp 'parser-trace-flag) (eq t parser-trace-flag))
     (funcall
@@ -292,7 +292,7 @@
         (lexical-let
           ((production (funcall match)))
 
-          (parser-match-trace match production)
+          (parser-trace-match match production)
 
           (if production
             (progn
@@ -314,7 +314,7 @@
                          (lexical-let
                            ((production (funcall match)))
 
-                           (parser-match-trace match production)
+                           (parser-trace-match match production)
 
                            (if production
                              (progn
