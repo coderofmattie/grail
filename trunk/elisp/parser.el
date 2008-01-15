@@ -223,15 +223,15 @@
 (defun parser-match-trace ( match-func match-result )
   "trace a match"
   (if (and (boundp 'parser-trace-flag) (eq t parser-trace-flag))
-    (apply
+    (funcall
       (if (boundp 'parser-trace-buffer)
         'parser-trace-message
         'message)
 
-      (format "[Parser Trace] %s at: %s match: %s\n"
+      (format "[Parser Trace] %s at: %d match: %s"
         (symbol-name match-func)
         (parser-pos)
-        (pp match-result)) )))
+        (pp-to-string match-result)) )))
 
 (defun parser-trace-p ( production )
   "return a trace flag"
@@ -239,10 +239,10 @@
     (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
     (lexical-let
-      ((toggle (apply 'or (mapcar (lambda ( trace-on )
-                                    (if (eq production (car trace-on))
-                                      (cdr trace-on)))
-                            parser-trace))))
+      ((toggle (eval (cons 'or (mapcar (lambda ( trace-on )
+                                         (if (equal (symbol-name production) (car trace-on))
+                                           (cdr trace-on)))
+                                 parser-trace) ))))
       (if toggle
         (cons t toggle)
         (cons nil nil)
@@ -251,16 +251,16 @@
 (defmacro parser-trace-on ( production &rest code )
   `(lexical-let*
     ((code-func (lambda () ,@code))
-      (trace-p (parser-trace-p ',production))
+      (trace-p (parser-trace-p ,production))
       (trace-toggle (cdr trace-p)) )
 
      (if (and
            (car trace-p)
-           (and
-             (boundp 'parser-trace-flag)
-             (not (eq parser-trace-flag trace-toggle)) ))
+           (or
+             (not (boundp 'parser-trace-flag))
+             (not (eq parser-trace-flag trace-toggle))))
        (let
-         ((parse-trace-flag trace-toggle))
+         ((parser-trace-flag trace-toggle))
          (funcall code-func))
        (funcall code-func)) ))
 
@@ -637,16 +637,21 @@
         "No")
       )) ))
 
-(defun parser-debug (parser)
-  "run test-parser interactively for testing and debugging."
-  (interactive "SParser? ")
-  (let
-    ((parser-trace-buffer (generate-new-buffer (format "trace %s" (symbol-name parser)))))
+(defmacro parser-trace-list ( list &rest productions )
+  `(setq ,list
+    '(
+       ,@(mapcar
+           (lambda (trace)
+             `(,(symbol-name (car trace)) . ,(cadr trace))) productions)
+       )))
 
-    ;; now that debugging has a buffer it's possible to make a mode, do slick things
-    ;; like highlight the bounds of the match when the cursor is on the line of
-    ;; a trace in the buffer.
-    (pop-to-buffer parser-trace-buffer)
+(defun parser-debug (parser trace-list)
+  "run test-parser interactively for testing and debugging."
+  (interactive "SParser? 
+STrace List? ")
+  (let
+    ((parser-trace-buffer (generate-new-buffer (format "parser-trace:%s" (symbol-name parser))))
+      (parser-trace (eval trace-list)))
 
     (lexical-let
       ((parse-result (funcall parser (point))))
@@ -656,6 +661,12 @@
           (if parse-result
             (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
               "No")
-            ))) )))
+            ))) )
+
+    ;; now that debugging has a buffer it's possible to make a mode, do slick things
+    ;; like highlight the bounds of the match when the cursor is on the line of
+    ;; a trace in the buffer.
+    (pop-to-buffer parser-trace-buffer)
+    ))
 
 (provide 'parser)
