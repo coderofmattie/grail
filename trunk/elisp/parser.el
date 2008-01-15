@@ -598,8 +598,7 @@
                        ;; parser stopped along with the AST.
                        (parser-make-match (parser-pos) (parser-match-data parse))
                        nil))
-                   )))
-            ))
+                   ))) ))
         t)
 
       (parser-syntactic-error
