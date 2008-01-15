@@ -258,8 +258,7 @@
        (let
          ((parse-trace-flag trace-toggle))
          (funcall code-func))
-       (funcall code-func))
-     ))
+       (funcall code-func)) ))
 
 ;; creative debugging idea. A flag could indicate at compilation to
 ;; ignore all of the token handlers and instead create overlays with
@@ -295,8 +294,7 @@
             (progn
               (parser-advance (parser-match-consumed production))
               (throw 'match (parser-make-match 0 (parser-match-data production))))
-            ))))
-    ))
+            )))) ))
 
 (defun parser-and ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
@@ -327,8 +325,7 @@
         (parser-make-match 0 production)) ;; would be nice to filter optional matches here.
       (progn
         (parser-backtrack)
-        nil))
-   ))
+        nil)) ))
 
 ;;----------------------------------------------------------------------
 ;; compiler diagnostics
