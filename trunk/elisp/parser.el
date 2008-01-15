@@ -208,6 +208,64 @@
   (cons name data))
 
 ;;----------------------------------------------------------------------
+;; Parser Debugging
+;;----------------------------------------------------------------------
+
+;; A tracing facility that can be selectively turned on and off for
+;; productions. When tracing is turned on the result of all matches
+;; attempted are printed to Message.
+
+;; A report of how the compiled parser matched the input stream is
+;; vital to developing a working grammar.
+
+(defun parser-match-trace ( match-func match-result )
+  "trace a match"
+  (if (eq t parser-trace-flag)
+    (message "[Parser Trace] %s at: %s match: %s"
+      (symbol-name match-func)
+      (parser-pos)
+      (pp match-result))
+    ))
+
+(defun parser-trace-p ( production )
+  "return a trace flag"
+  (catch 'abort
+    (unless (and (boundp parser-trace) (listp parser-trace)) (throw 'abort nil))
+
+    (lexical-let
+      ((toggle (apply 'or (mapcar (lambda ( trace-on )
+                                    (if (eq production (car trace-on))
+                                      (cdr trace-on)))
+                            parser-trace))))
+      (if toggle
+        (cons t toggle)
+        (cons nil nil)
+        ))
+    ))
+
+(defmacro parser-trace-on ( production &rest code )
+  `(lexical-let*
+    ((code-func (lambda () ,code))
+      (trace-p (parser-trace-p ,production))
+      (trace-toggle (cdr trace-p)) )
+
+     (if (and
+           (car trace-p)
+           (and
+             (boundp parser-trace-flag)
+             (not (eq parser-trace-flag trace-toggle)) ))
+       (let
+         ((parse-trace-flag trace-toggle))
+         (funcall code-func))
+       (funcall code-func))
+     ))
+
+;; creative debugging idea. A flag could indicate at compilation to
+;; ignore all of the token handlers and instead create overlays with
+;; the name of the token as a mouse-over. This could also be toggled
+;; at run-time actually.
+
+;;----------------------------------------------------------------------
 ;; Combination Operators
 ;;----------------------------------------------------------------------
 
@@ -226,15 +284,21 @@
    nil is returned if no matches are found"
   (catch 'match
     (dolist (match match-list)
-      (lexical-let
-        ((production (funcall match)))
-        (if production
-          (progn
-            (parser-advance (parser-match-consumed production))
-            (throw 'match (parser-make-match 0 (parser-match-data production))))
-          )))
-    (throw 'match nil)
-    ))
+
+      (parser-trace-on match
+        (lexical-let
+          ((production (funcall match)))
+
+          (parser-match-trace match production)
+
+          (if production
+            (progn
+              (parser-advance (parser-match-consumed production))
+              (throw 'match (parser-make-match 0 (parser-match-data production))))
+            )))
+
+      (throw 'match nil)
+    )))
 
 (defun parser-and ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
@@ -248,6 +312,8 @@
               (lambda (match)
                 (lexical-let
                   ((production (funcall match)))
+
+                  (parser-trace-on-production match production)
 
                   (if production
                     (progn
@@ -286,8 +352,6 @@
 ;;----------------------------------------------------------------------
 ;; Match Functions
 ;;----------------------------------------------------------------------
-
-;; make-match and get-match implement a table of match functions.
 
 ;; Match functions are lambdas that take no arguments and return Match
 ;; Result values. They assume that the compiled parser has scoped a
@@ -541,5 +605,18 @@
           (message "parser-compile invalid statement %s" diagnostic)
         ))
       )))
+
+(defun parser-interactive (parser)
+  "run test-parser interactively for testing and debugging."
+  (interactive "SParser? ")
+  (lexical-let
+    ((parse-result (funcall parser (point))))
+
+    (message "PROD match? %s"
+      (if parse-result
+        (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
+        "No")
+      ))
+    ))
 
 (provide 'parser)
