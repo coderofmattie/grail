@@ -127,7 +127,7 @@
 ;; position to a next or previous stack position. backtrack discards
 ;; the top of the stack.
 
-(defsubst parser-pos () ;; tested
+(defsubst parser-pos ()
   "Return the current position of the parser in the buffer"
   (car parser-position))
 
@@ -264,11 +264,6 @@
          (funcall code-func))
        (funcall code-func)) ))
 
-;; creative debugging idea. A flag could indicate at compilation to
-;; ignore all of the token handlers and instead create overlays with
-;; the name of the token as a mouse-over. This could also be toggled
-;; at run-time actually.
-
 ;;----------------------------------------------------------------------
 ;; Combination Operators
 ;;----------------------------------------------------------------------
@@ -338,10 +333,10 @@
 ;; construct meaningful compiler error messages in the
 ;; "expected: foo got: bar" form.
 
-(defun parser-expr-diagnostic ( form ) ;; tested
+(defun parser-expr-diagnostic ( form )
   (format "type(%s) %s" (symbol-name (type-of form)) (pp (eval form))))
 
-(defmacro parser-diagnostic ( form from expected ) ;; tested
+(defmacro parser-diagnostic ( form from expected )
   "syntax: (parser-diagnostic form from expected)
 
    Where form is the expr received, from is the component issuing the diagnostic,
@@ -430,7 +425,7 @@
          "parser token: identifier" "A symbol"))))
   )
 
-(defun parser-interp-token ( syntax ) ;; tested
+(defun parser-interp-token ( syntax )
   "Translate a token definition into a Match Function.
 
    The matching part is hard-wired into the function, while the
@@ -449,7 +444,7 @@
          ))
     ))
 
-(defun parser-compile-token ( syntax ) ;; tested
+(defun parser-compile-token ( syntax )
   "Compile a token into a Match Function."
   (parser-match-function (car syntax) (parser-interp-token syntax)))
 
@@ -586,7 +581,7 @@
    was chosen based on the recommendation of prime numbers for good hashing.")
 
 (defmacro parser-compile ( parser &rest definition )
-  "compile a LL parser from the given grammar."
+  "compile a Recursive Descent parser from the given grammar."
   (let
     ;; create a symbol table to store compiled terminal and
     ;; non-terminal match functions
