@@ -253,7 +253,7 @@
      (if (and
            (car trace-p)
            (and
-             (boundp parser-trace-flag)
+             (boundp 'parser-trace-flag)
              (not (eq parser-trace-flag trace-toggle)) ))
        (let
          ((parse-trace-flag trace-toggle))
@@ -285,9 +285,6 @@
    nil is returned if no matches are found"
   (catch 'match
     (dolist (match match-list)
-
-      (message "got there !")
-
       (parser-trace-on match
         (lexical-let
           ((production (funcall match)))
@@ -298,10 +295,8 @@
             (progn
               (parser-advance (parser-match-consumed production))
               (throw 'match (parser-make-match 0 (parser-match-data production))))
-            )))
-
-      (throw 'match nil)
-    )))
+            ))))
+    ))
 
 (defun parser-and ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
@@ -418,7 +413,8 @@
   ;; quotation is incorrect.
   (cond
     ((eq nil constructor)    `(parser-build-token '',identifier))
-    ((listp constructor)     `(,(parser-make-anon-func "parser-user-handler" constructor) (match-beginning 0) (match-end 0)))
+    ((listp constructor)     `(,(parser-make-anon-func "parser-user-handler" constructor)
+                                (match-beginning 0) (match-end 0)))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
     ((symbolp constructor)   `(quote ',constructor))
 
@@ -497,7 +493,7 @@
    pass it through."
   (parser-make-anon-func (symbol-name combine-function)
     `(lambda ()
-       ,(cons combine-function (list-filter-nil (mapcar 'parser-rule-right prod-right))))
+       (apply ',combine-function ',(list-filter-nil (mapcar 'parser-rule-right prod-right))))
     ))
 
 (defun parser-rule-left ( prod-left combine-operator prod-right )
