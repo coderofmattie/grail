@@ -148,11 +148,11 @@
   (goto-char (parser-pos)))
 
 (defun parser-advance ( consumed )
-  "Advance the input position of the parser to the next un-matched character: input consumed + 1."
+  "Advance the input position of the parser to the next un-matched character."
 
   (if (> consumed 0)
     (lexical-let
-      ((pos (+ 1 consumed (parser-pos))))
+      ((pos (+ consumed (parser-pos))))
       (progn
         (setcar parser-position pos)
         (goto-char pos))) ))
