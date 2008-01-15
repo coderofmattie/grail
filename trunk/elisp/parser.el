@@ -220,7 +220,7 @@
 
 (defun parser-match-trace ( match-func match-result )
   "trace a match"
-  (if (eq t parser-trace-flag)
+  (if (and (boundp 'parser-trace-flag) (eq t parser-trace-flag))
     (message "[Parser Trace] %s at: %s match: %s"
       (symbol-name match-func)
       (parser-pos)
@@ -229,8 +229,9 @@
 
 (defun parser-trace-p ( production )
   "return a trace flag"
+  (message "got here !")
   (catch 'abort
-    (unless (and (boundp parser-trace) (listp parser-trace)) (throw 'abort nil))
+    (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
     (lexical-let
       ((toggle (apply 'or (mapcar (lambda ( trace-on )
@@ -245,8 +246,8 @@
 
 (defmacro parser-trace-on ( production &rest code )
   `(lexical-let*
-    ((code-func (lambda () ,code))
-      (trace-p (parser-trace-p ,production))
+    ((code-func (lambda () ,@code))
+      (trace-p (parser-trace-p ',production))
       (trace-toggle (cdr trace-p)) )
 
      (if (and
@@ -284,6 +285,8 @@
    nil is returned if no matches are found"
   (catch 'match
     (dolist (match match-list)
+
+      (message "got there !")
 
       (parser-trace-on match
         (lexical-let
@@ -388,10 +391,10 @@
    and the location of the text (id . (begin . end))"
   (parser-make-match-data identifier (cons (match-beginning 0) (match-end 0))))
 
-(defun parser-make-anon-func ( sexp ) ;; tested
+(defun parser-make-anon-func ( name sexp ) ;; tested
   "bind an un-evaluated anonymous function to an un-interned symbol"
   (let
-    ((anon-func (make-symbol "parser-user-handler")))
+    ((anon-func (make-symbol name)))
     (fset anon-func (eval sexp))
     anon-func))
 
@@ -415,7 +418,7 @@
   ;; quotation is incorrect.
   (cond
     ((eq nil constructor)    `(parser-build-token '',identifier))
-    ((listp constructor)     `(,(parser-make-anon-func constructor) (match-beginning 0) (match-end 0)))
+    ((listp constructor)     `(,(parser-make-anon-func "parser-user-handler" constructor) (match-beginning 0) (match-end 0)))
     ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
     ((symbolp constructor)   `(quote ',constructor))
 
@@ -456,43 +459,6 @@
 ;; right side containing matches that recognize a production of the
 ;; rule.
 
-(defun list-filter-nil ( list )
-  "filter nil symbols from a list"
-  (if (consp list)
-    (lexical-let
-      ((head (car list)))
-
-      (if (eq head 'nil)
-        (list-filter-nil (cdr list))
-        (cons head (list-filter-nil (cdr list)))
-        ))
-    nil
-    ))
-
-(defun parser-rule-left ( prod-left combine-operator prod-right )
-  "Translate the Left Side of a Rule into a Match Function
-   currying the Right Side of a rule."
-
-  (unless (symbolp prod-left)
-    (parser-diagnostic prod-left
-      "Rule Left interpreter"
-      "left side of the production or an identifier"))
-
-  (lexical-let
-    ((matchf-list (list-filter-nil prod-right))) ;; filter nils created by define lists.
-
-    (parser-match-function prod-left
-      `(lambda ()
-         (lexical-let
-           ((production (apply ',combine-operator ',matchf-list)))
-           (if production
-             (parser-make-match
-               (parser-match-consumed production)
-               (parser-make-match-data '',prod-left (parser-match-data production)))
-             nil)
-           )))
-      ))
-
 (defun parser-rule-right ( rule )
   "Translate a match in the Right Side of the rule into a
    compiled Match Function by retrieving the Match Function or
@@ -508,8 +474,61 @@
         "expected a grammar list e.g: token,and,or ; or a symbol as a rule or token reference"))
     ))
 
-(defun parser-compile-rule ( combine-function prod-right )
-  "compile a rule definition given the combine-function and the remainder of the rule definition."
+;; both parser-compile-anon-rule and parser-rule-left are the latest
+;; point at which we can catch nils in the parser tree so they must
+;; both use the list-filter-nil function.
+
+(defun list-filter-nil ( list )
+  "filter nil symbols from a list"
+  (if (consp list)
+    (lexical-let
+      ((head (car list)))
+
+      (if (eq head 'nil)
+        (list-filter-nil (cdr list))
+        (cons head (list-filter-nil (cdr list)))
+        ))
+    nil
+    ))
+
+(defun parser-compile-anon-rule ( combine-function prod-right )
+  "Compile a Match Function out of an anonymous rule which is
+   fairly simple since we do not need to construct a match, only
+   pass it through."
+  (parser-make-anon-func (symbol-name combine-function)
+    `(lambda ()
+       ,(cons combine-function (list-filter-nil (mapcar 'parser-rule-right prod-right))))
+    ))
+
+(defun parser-rule-left ( prod-left combine-operator prod-right )
+  "Compile a Match Function from a named rule."
+
+  (unless (symbolp prod-left)
+    (parser-diagnostic prod-left
+      "Rule Left interpreter"
+      "left side of the production or an identifier"))
+
+  (lexical-let
+    ((matchf-list (list-filter-nil prod-right)))
+
+    (if matchf-list
+      (parser-match-function prod-left
+        `(lambda ()
+           (lexical-let
+             ((production (apply ',combine-operator ',matchf-list)))
+             (if production
+               (parser-make-match
+                 (parser-match-consumed production)
+                 (parser-make-match-data '',prod-left (parser-match-data production))))
+             )))
+      (progn
+        (message "parser-compile Warning! named rule %s deleted with no matches in rule"
+          (symbol-name prod-left))
+        nil))
+    ))
+
+(defun parser-compile-named-rule ( combine-function prod-right )
+  "compile a named rule"
   (let
     ((production (car prod-right))
       (rules (cdr prod-right)))
@@ -521,7 +540,7 @@
           "a symbol to name the production")))
 
     (parser-rule-left production combine-function (mapcar 'parser-rule-right rules))
-  ))
+    ))
 
 ;;----------------------------------------------------------------------
 ;; grammar definition.
@@ -544,8 +563,8 @@
 
       (cond
         ((eq keyword 'token)  (parser-compile-token syntax))
-        ((eq keyword 'or)     (parser-compile-rule 'parser-or syntax))
-        ((eq keyword 'and)    (parser-compile-rule 'parser-and syntax))
+        ((eq keyword 'or)     (parser-compile-anon-rule 'parser-or syntax))
+        ((eq keyword 'and)    (parser-compile-named-rule 'parser-and syntax))
 
         ((eq keyword 'define)
           ;; define discards the match functions as a return value so
