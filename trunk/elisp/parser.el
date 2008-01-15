@@ -305,29 +305,29 @@
 
   (lexical-let
     ((production (catch 'backtrack
-            ;; we want to gather all the matches, so mapcar across the match objects.
-            (mapcar
-              (lambda (match)
-                (lexical-let
-                  ((production (funcall match)))
+                   ;; we want to gather all the matches, so mapcar across the match objects.
+                   (mapcar
+                     (lambda (match)
+                       (parser-trace-on match
+                         (lexical-let
+                           ((production (funcall match)))
 
-                  (parser-trace-on-production match production)
+                           (parser-match-trace match production)
 
-                  (if production
-                    (progn
-                      (parser-advance (parser-match-consumed production))
-                      (parser-match-data production))
+                           (if production
+                             (progn
+                               (parser-advance (parser-match-consumed production))
+                               (parser-match-data production))
 
-                    (throw 'backtrack nil))
-                  )) match-list)
-            )))
-   (if production
-     (progn
-       (parser-pop)
-       (parser-make-match 0 production)) ;; would be nice to filter optional matches here.
-     (progn
-       (parser-backtrack)
-       nil))
+                             (throw 'backtrack nil)) )))
+                     match-list)) ))
+    (if production
+      (progn
+        (parser-pop)
+        (parser-make-match 0 production)) ;; would be nice to filter optional matches here.
+      (progn
+        (parser-backtrack)
+        nil))
    ))
 
 ;;----------------------------------------------------------------------
