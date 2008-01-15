@@ -379,15 +379,19 @@
 ;; tokens
 ;;----------------------------------------------------------------------
 
-;; EXPERIMENT: allow other functions to be used for token matching
+;; Experiment: allow other functions to be used for token matching
 ;;             other than looking-at, such as re-search.
 
-(defun parser-build-token ( identifier ) ;; tested
+(defun parser-token-match-range ( data-type capture )
+  ;; the upper bound is not inclusive, so adjust by one.
+  (eval `(,data-type (match-beginning capture) (- (match-end capture) 1))))
+
+(defun parser-build-token ( identifier capture )
   "parser-make-token is a built-in constructor that records the analysis
    and the location of the text (id . (begin . end))"
-  (parser-make-match-data identifier (cons (match-beginning 0) (match-end 0))))
+  (parser-make-match-data identifier (parser-token-match-range 'cons capture)))
 
-(defun parser-make-anon-func ( name sexp ) ;; tested
+(defun parser-make-anon-func ( name sexp )
   "bind an un-evaluated anonymous function to an un-interned symbol"
   (let
     ((anon-func (make-symbol name)))
@@ -398,7 +402,7 @@
 ;; flexibility of tokens (user functions or return values for
 ;; constructing AST) from the hard-wired parser part.
 
-(defun parser-interp-token-action ( identifier constructor ) ;; tested
+(defun parser-interp-token-action ( identifier constructor )
   "Translate the AST constructor part of a token definition into Elisp."
 
   (unless (symbolp identifier)
@@ -413,10 +417,11 @@
   ;; have a variable value bound so it fails noisily when the
   ;; quotation is incorrect.
   (cond
-    ((eq nil constructor)    `(parser-build-token '',identifier))
-    ((listp constructor)     `(,(parser-make-anon-func "parser-user-handler" constructor)
-                                (match-beginning 0) (match-end 0)))
-    ((functionp constructor) `(,constructor (match-beginning 0) (match-end 0)))
+    ((eq nil constructor)    `(parser-build-token '',identifier 0))
+    ((listp constructor)     `(apply ',(parser-make-anon-func "parser-user-handler" constructor)
+                                (parser-token-match-range 'list 0)))
+    ((functionp constructor) `(apply ',constructor (parser-token-match-range 'list 0)))
+    ((numberp constructor)   `(parser-build-token '',identifier constructor))
     ((symbolp constructor)   `(quote ',constructor))
 
     ;; all other constructor types are un-handled.
