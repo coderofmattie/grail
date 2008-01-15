@@ -235,7 +235,6 @@
 
 (defun parser-trace-p ( production )
   "return a trace flag"
-  (message "got here !")
   (catch 'abort
     (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
