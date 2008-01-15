@@ -445,10 +445,18 @@
     ))
 
 (defun parser-compile-rule ( combine-function prod-right )
-  (parser-rule-left      ;; make a match function
-    (car prod-right)     ;; the identifier of the production
-    combine-function     ;; the combine operator
-    (mapcar 'parser-rule-right (cdr prod-right)) ;; interpret the matching definition.
+  "compile a rule definition given the combine-function and the remainder of the rule definition."
+  (let
+    ((production (car prod-right))
+      (rules (cdr prod-right)))
+
+    (unless (symbolp production)
+      (signal 'parser-syntactic-error
+        (parser-diagnostic production
+          "Rule interpreter"
+          "a symbol to name the production")))
+
+    (parser-rule-left production combine-function (mapcar 'parser-rule-right rules))
   ))
 
 ;;----------------------------------------------------------------------
