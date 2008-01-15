@@ -215,13 +215,23 @@
 ;; A report of how the compiled parser matched the input stream is
 ;; vital to developing a working grammar.
 
+(defun parser-trace-message ( trace )
+  (with-current-buffer parser-trace-buffer
+    (goto-char (point-max))
+    (insert trace)))
+
 (defun parser-match-trace ( match-func match-result )
   "trace a match"
   (if (and (boundp 'parser-trace-flag) (eq t parser-trace-flag))
-    (message "[Parser Trace] %s at: %s match: %s"
-      (symbol-name match-func)
-      (parser-pos)
-      (pp match-result)) ))
+    (apply
+      (if (boundp 'parser-trace-buffer)
+        'parser-trace-message
+        'message)
+
+      (format "[Parser Trace] %s at: %s match: %s\n"
+        (symbol-name match-func)
+        (parser-pos)
+        (pp match-result)) )))
 
 (defun parser-trace-p ( production )
   "return a trace flag"
@@ -612,6 +622,10 @@
         ))
       )))
 
+;;----------------------------------------------------------------------
+;; utilities
+;;----------------------------------------------------------------------
+
 (defun parser-interactive (parser)
   "run test-parser interactively for testing and debugging."
   (interactive "SParser? ")
@@ -622,7 +636,27 @@
       (if parse-result
         (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
         "No")
-      ))
-    ))
+      )) ))
+
+(defun parser-debug (parser)
+  "run test-parser interactively for testing and debugging."
+  (interactive "SParser? ")
+  (let
+    ((parser-trace-buffer (generate-new-buffer (format "trace %s" (symbol-name parser)))))
+
+    ;; now that debugging has a buffer it's possible to make a mode, do slick things
+    ;; like highlight the bounds of the match when the cursor is on the line of
+    ;; a trace in the buffer.
+    (pop-to-buffer parser-trace-buffer)
+
+    (lexical-let
+      ((parse-result (funcall parser (point))))
+
+      (parser-trace-message
+        (format "\nPROD match? %s\n"
+          (if parse-result
+            (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
+              "No")
+            ))) )))
 
 (provide 'parser)
