@@ -108,8 +108,7 @@
   `(progn
      (put ',symbol
        'error-conditions (append '(error ,symbol) ',isa-list))
-     (put ',symbol 'error-message ,message)
-     ))
+     (put ',symbol 'error-message ,message) ))
 
 ;; A recursive macro expansion would be nice for creating a hierarchy.
 (define-error parser-compile-error  "parser error")
@@ -141,8 +140,7 @@
    has been eliminated by matching."
   (let
     ((current (pop parser-position)))
-    (setcar parser-position current)
-    ))
+    (setcar parser-position current) ))
 
 (defun parser-backtrack ()
   "Restore the previous parser position by discarding the top of the parser-position stack."
@@ -157,8 +155,7 @@
       ((pos (+ 1 consumed (parser-pos))))
       (progn
         (setcar parser-position pos)
-        (goto-char pos)))
-    ))
+        (goto-char pos))) ))
 
 (defun parser-consumed ()
   "The number of input characters consumed by the token's match in the input."
@@ -224,8 +221,7 @@
     (message "[Parser Trace] %s at: %s match: %s"
       (symbol-name match-func)
       (parser-pos)
-      (pp match-result))
-    ))
+      (pp match-result)) ))
 
 (defun parser-trace-p ( production )
   "return a trace flag"
@@ -241,8 +237,7 @@
       (if toggle
         (cons t toggle)
         (cons nil nil)
-        ))
-    ))
+        )) ))
 
 (defmacro parser-trace-on ( production &rest code )
   `(lexical-let*
