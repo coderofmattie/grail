@@ -618,8 +618,7 @@
            (parser-diagnostic term
              "parser definition"
              "definition keyword token|or|and|define")))
-        ))
-    ))
+        )) ))
 
 (defvar parser-mtable-init-size 13
   "initial size of the match-table objarray for storing match functions. the value
