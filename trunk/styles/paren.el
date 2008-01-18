@@ -5,13 +5,12 @@
 
 ;; fancy paren/delimited highlighting.
 
-(require 'mic-paren)
+(paren-activate)
 
 (setq
   paren-showing t
   show-paren-style 'parenthesis
   show-paren-delay nil
-  )
+  paren-sexp-mode 'match )
 
-(paren-activate)
 
