@@ -79,7 +79,7 @@
 
 ;; ->Characteristics
 
-;; parser-compile produces a no frills recursive descent parser.
+;; parser-compile produces a no frills LL Recursive Descent parser.
 
 ;; ->Terminology
 
@@ -96,12 +96,23 @@
 ;;    match at the definition point [implemented, but not tested]
 
 ;; 2. optional matching with ? for Match Function references. [easy]
+;;    other meta-symbols to consider would be * for kleene closure
+;;    and a bounded closure like {digit}
 
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
+;; 4. re-write left recursion. This is essential to make grammars
+;;    easy to write while avoiding infinite recursion problems.
+
+;;    This will likely be a non-trivial hack requiring some extensive
+;;    modifications to the parser. It would be nice if the surgery
+;;    could be largely contained to parser-match-function.
+
 (require 'cl)
 
-;; not defined in Gnu Emacs evidently.
+;; define-error originated in XEmacs. This implementation shares the
+;; same name, but not the interface. I need to clone or copy the
+;; XEmacs version.
 
 (defmacro define-error ( symbol message &rest isa-list )
   "define a error symbol with a isa list and a error message"
@@ -205,50 +216,70 @@
   (cons name data))
 
 ;;----------------------------------------------------------------------
-;; Parser Debugging
+;; Parser Tracing
 ;;----------------------------------------------------------------------
 
 ;; A tracing facility that can be selectively turned on and off for
 ;; productions. When tracing is turned on the result of all matches
-;; attempted are printed to Message.
+;; attempted are printed to a buffer, or the Message buffer.
 
 ;; A report of how the compiled parser matched the input stream is
 ;; vital to developing a working grammar.
 
-(defun parser-trace-message ( trace )
+(defun parser-trace-message ( format &rest args )
+  "like message but prints to a trace buffer instead of the Message buffer."
   (with-current-buffer parser-trace-buffer
     (goto-char (point-max))
-    (insert trace)))
+    (insert (apply 'format format args))))
 
 (defun parser-trace-match ( match-func match-result )
-  "trace a match"
+  "Trace the current match if the parser-trace-flag is bound to t"
   (if (and (boundp 'parser-trace-flag) (eq t parser-trace-flag))
     (funcall
       (if (boundp 'parser-trace-buffer)
         'parser-trace-message
         'message)
 
-      (format "[Parser Trace] %s at: %d match: %s"
-        (symbol-name match-func)
-        (parser-pos)
-        (pp-to-string match-result)) )))
+      "%s at: %d match: %s"
+      (symbol-name match-func)
+      (parser-pos)
+      (pp-to-string match-result)) ))
 
 (defun parser-trace-p ( production )
-  "return a trace flag"
+  "Given a Match Function determine if parser-trace-flag should
+   be set. The parser-trace list is scanned for a symbol match.
+   The return value is a cons of a boolean indicating whether to
+   set the flag, and the value of the flag.
+
+   The parser-trace list is created by the macro parser-trace-list
+   in utilities."
+
   (catch 'abort
     (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
     (lexical-let
       ((toggle (eval (cons 'or (mapcar (lambda ( trace-on )
+                                         ;; eq comparison of symbols does not work. A string
+                                         ;; comparison is used for matching.
                                          (if (equal (symbol-name production) (car trace-on))
                                            (cdr trace-on)))
                                  parser-trace) ))))
+      ;; a cons cell is returned so that a false value for the trace flag can be returned
+      ;; without negating the truth value of the predicate itself.
       (if toggle
         (cons t toggle)
         (cons nil nil)
         )) ))
 
 (defmacro parser-trace-on ( production &rest code )
+  "parser-trace-on takes production and a code block code. If the production
+   is on the parser-trace list a parser-trace-flag dynamically scoped is
+   bound to the boolean toggle for tracing that production."
+
+  ;; Using the dynamic scoping of let during the execution of the
+  ;; compiled parser to scope parser-trace-flag gives tracing behavior
+  ;; that precisely matches the execution of the parser.
+
   `(lexical-let*
     ((code-func (lambda () ,@code))
       (trace-p (parser-trace-p ,production))
@@ -256,12 +287,18 @@
 
      (if (and
            (car trace-p)
+
+           ;; This expression attempts to minimize duplicate binding
+           ;; of parser-trace-flag. If there are flaws in the tracing
+           ;; behavior stemming from this expression it should be
+           ;; removed entirely.
            (or
              (not (boundp 'parser-trace-flag))
              (not (eq parser-trace-flag trace-toggle))))
        (let
          ((parser-trace-flag trace-toggle))
          (funcall code-func))
+
        (funcall code-func)) ))
 
 ;;----------------------------------------------------------------------
@@ -274,9 +311,12 @@
 
 ;; and/or have the same essential meaning as the lisp and/or forms
 ;; with two specializations. Both functions treat their argument lists
-;; as a list of Match Functions. Also the parser-and function returns
-;; a production consisting of the AST parts of the Match Results,
-;; instead of returning the last Match Result.
+;; as a list of Match Functions.
+
+;; parser-and is a named rule that returns Match Result lists.
+
+;; parser-or is an anonymous production, it has no identity and passes
+;; it's nested matches on transparently.
 
 (defun parser-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
@@ -321,7 +361,9 @@
     (if production
       (progn
         (parser-pop)
-        (parser-make-match 0 production)) ;; would be nice to filter optional matches here.
+        ;; TODO: Any optional matches with 0 input characters consumed, or
+        ;; nil AST could be filtered here.
+        (parser-make-match 0 production))
       (progn
         (parser-backtrack)
         nil)) ))
@@ -355,7 +397,10 @@
 ;; in the compiled form.
 
 (defun parser-match-function ( identifier &optional definition )
-  "Retrieve or define a Match Function."
+  "Retrieve or define a Match Function. the name of the production is required,
+   if it is an anonymous production use parser-make-anon-func. For retrieval
+   specify the symbol only, for definition pass the un-evaluated lambda expression
+   as well."
   (lexical-let*
     ((id (symbol-name identifier))
       (lookup (intern-soft id match-table)))
@@ -370,22 +415,6 @@
         (intern id match-table))
       )))
 
-;;----------------------------------------------------------------------
-;; tokens
-;;----------------------------------------------------------------------
-
-;; Experiment: allow other functions to be used for token matching
-;;             other than looking-at, such as re-search.
-
-(defun parser-token-match-range ( data-type capture )
-  ;; the upper bound is not inclusive, so adjust by one.
-  (eval `(,data-type (match-beginning capture) (- (match-end capture) 1))))
-
-(defun parser-build-token ( identifier capture )
-  "parser-make-token is a built-in constructor that records the analysis
-   and the location of the text (id . (begin . end))"
-  (parser-make-match-data identifier (parser-token-match-range 'cons capture)))
-
 (defun parser-make-anon-func ( name sexp )
   "bind an un-evaluated anonymous function to an un-interned symbol"
   (let
@@ -393,9 +422,27 @@
     (fset anon-func (eval sexp))
     anon-func))
 
-;; the token interpreter was split into two functions to isolate the
-;; flexibility of tokens (user functions or return values for
-;; constructing AST) from the hard-wired parser part.
+;;----------------------------------------------------------------------
+;; tokens
+;;----------------------------------------------------------------------
+
+(defun parser-token-match-range ( data-type capture )
+  "Return the bounds of the capture from match-{beg,end} with the
+   upper bound adjusted by decrement to inclusive. The type
+   returned is chosen with a quoted type constructor symbol like
+   cons or list."
+  (eval `(,data-type (match-beginning capture) (- (match-end capture) 1)) ))
+
+(defun parser-token-match-data ( identifier capture )
+  "Construct the data of a token's Match Result combining the production identifier
+   and the bounds of the matching input inclusive: (id . (begin . end))"
+  (parser-make-match-data identifier (parser-token-match-range 'cons capture)))
+
+;; The token part of the grammar definition contains a great deal of flexibility
+;; or construction options for tokens.
+
+;; parser-interp-token-action builds the constructor part of a token, while
+;; parser-interp-token focuses on constructing a Match Function for the token.
 
 (defun parser-interp-token-action ( identifier constructor )
   "Translate the AST constructor part of a token definition into Elisp."
@@ -412,11 +459,11 @@
   ;; have a variable value bound so it fails noisily when the
   ;; quotation is incorrect.
   (cond
-    ((eq nil constructor)    `(parser-build-token '',identifier 0))
+    ((eq nil constructor)    `(parser-token-match-data '',identifier 0))
     ((listp constructor)     `(apply ',(parser-make-anon-func "parser-user-handler" constructor)
                                 (parser-token-match-range 'list 0)))
     ((functionp constructor) `(apply ',constructor (parser-token-match-range 'list 0)))
-    ((numberp constructor)   `(parser-build-token '',identifier constructor))
+    ((numberp constructor)   `(parser-token-match-data '',identifier constructor))
     ((symbolp constructor)   `(quote ',constructor))
 
     ;; all other constructor types are un-handled.
@@ -425,13 +472,11 @@
          "parser token: identifier" "A symbol"))))
   )
 
+;; Experiment: allow other functions to be used for token matching
+;;             other than looking-at, such as re-search.
+
 (defun parser-interp-token ( syntax )
-  "Translate a token definition into a Match Function.
-
-   The matching part is hard-wired into the function, while the
-   AST part which contains a great degree of flexibility is
-   translated by parser-interp-token-action"
-
+  "Translate a token definition into a Match Function."
   (lexical-let
     ((identifier  (car syntax))
      (regex       (cadr syntax))    ;; eval ? many regexs are stored in variables.
