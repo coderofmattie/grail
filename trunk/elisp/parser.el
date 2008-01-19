@@ -494,6 +494,28 @@
   (parser-match-function (car syntax) (parser-interp-token syntax)))
 
 ;;----------------------------------------------------------------------
+;; grammar statements
+;;----------------------------------------------------------------------
+
+(defmacro parser-statement-map ( statement no-match &rest operators )
+  "A sugared cond form that implements a statement table.
+
+   compare STATEMENT against a OPERATORS list of symbol body
+   pairs. Evaluate the body if STATEMENT eq symbol otherwise
+   no-match for failure."
+  `(cond
+     ,@(mapcar
+         (lambda ( op-map )
+           `((eq ,statement ',(car op-map)) (,@(cadr op-map))) ) operators)
+     ((,@no-match))
+     ))
+
+(defun parser-anon-op ( name )
+  (parser-statement-map name nil
+    (or ''parser-or)
+    (+ ''parser-positive-closure)))
+
+;;----------------------------------------------------------------------
 ;; rules
 ;;----------------------------------------------------------------------
 
