@@ -657,13 +657,18 @@
      ((,@no-match))
      ))
 
+(defun parser-anon-op ( name )
+  (parser-statement-map name
+    (or 'parser-or)
+    (+  'parser-positive-closure)))
+
 (defun parser-bound-statement ( name definition )
   "bypass normal anon compilation to bind it to a name."
-  (lexical-let
+  (let
     ((operator (parser-anon-op (car definition)))
      (prod-right (cdr definition)))
 
-    (unless operator
+    (if (eq nil operator)
       (signal 'parser-syntactic-error
         (parser-diagnostic operator
           "Rule interpreter"
@@ -732,9 +737,8 @@
                    ;; note that the start symbol of the grammar is built in as an or combination
                    ;; of the top-level definitions.
                    (lexical-let
-                     ((parse (,(parser-rule-left 'start 'parser-or
-                                 (mapcar 'parser-compile-definition definition))
-                               )))
+                     ((parse (,(parser-compile-bound-func definition 'start
+                                 'parser-simple-rule 'parser-or)) ))
                      (if parse
                        ;; if we have a production return the position at which the
                        ;; parser stopped along with the AST.
