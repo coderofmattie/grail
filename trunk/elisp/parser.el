@@ -578,6 +578,13 @@
 ;; statement decomposition.
 ;;----------------------------------------------------------------------
 
+;; the parser statement dispatch minimally looks at the first symbol
+;; of a list as a keyword and calls one of these functions with
+;; the list stripped of the keyword.
+
+;; these functions break the remainder of the statement down for
+;; compilation.
+
 (defun parser-token-statement ( syntax )
   "Compile a token into a Match Function."
   (parser-match-function (car syntax) (parser-interp-token syntax)))
@@ -646,7 +653,7 @@
     ))
 
 ;;----------------------------------------------------------------------
-;; top level grammar statements.
+;; parser dispatch
 ;;----------------------------------------------------------------------
 
 (defun parser-dispatch-unique ( table )
@@ -684,6 +691,10 @@
        (,no-match)
        )))
 
+;;----------------------------------------------------------------------
+;; top level grammar statements.
+;;----------------------------------------------------------------------
+
 (defun parser-compile-definition ( term )
   "parser-compile-definition compiles grammar statements which are lists
    with a keyword as the first symbol."
@@ -691,7 +702,7 @@
     (signal 'parser-syntactic-error
       (parser-diagnostic term
         "parser definition"
-        "expected a definition of token|or|and|define")))
+        "expected a definition list such as token|or|and|define")))
 
   (parser-statement-dispatch term
     (signal 'parser-syntactic-error
@@ -718,6 +729,10 @@
                  (mapcar 'parser-compile-definition syntax)
                  nil)) )
     ))
+
+;;----------------------------------------------------------------------
+;; macro interface
+;;----------------------------------------------------------------------
 
 (defvar parser-mtable-init-size 13
   "initial size of the match-table objarray for storing match functions. the value
