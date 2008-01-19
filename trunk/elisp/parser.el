@@ -494,7 +494,154 @@
   (parser-match-function (car syntax) (parser-interp-token syntax)))
 
 ;;----------------------------------------------------------------------
-;; grammar statements
+;; production right side evaluation
+;;----------------------------------------------------------------------
+
+;; Production right side evaluation is introduced before parser compilation
+;; so that the recursion of evaluating a grammar statement can be inserted
+;; into the parser compilation functions.
+
+;; This simplifies the top level statement compilation by rendering the
+;; recursive part of the statement an opaque object fed to the
+;; parser compiler.
+
+(defun parser-eval-rule-right ( rule )
+  "Translate a match in the Right Side of the rule into a
+   compiled Match Function by retrieving the Match Function or
+   recursively interpreting the grammar definition."
+
+  (cond
+    ((listp rule) (parser-compile-definition rule))
+    ((symbolp rule) (parser-match-function rule))
+
+    (signal 'parser-syntactic-error
+      (parser-daignostic rule
+        "Rule Right interpreter"
+        "expected a grammar list e.g: token,and,or ; or a symbol as a rule or token reference"))
+    ))
+
+;; both parser-compile-anon-rule and parser-compile-bound-rule are the
+;; latest point at which we can catch nils in the parser tree so they
+;; must both use the list-filter-nil function.
+
+(defun list-filter-nil ( list )
+  "filter nil symbols from a list"
+  (if (consp list)
+    (lexical-let
+      ((head (car list)))
+
+      (if (eq head 'nil)
+        (list-filter-nil (cdr list))
+        (cons head (list-filter-nil (cdr list)))
+        ))
+    nil
+    ))
+
+(defun parser-rule-right ( nil-warning rule-list )
+  (lexical-let
+    ((matchf-list (list-filter-nil (mapcar 'parser-eval-rule-right rule-list))))
+
+    (if matchf-list
+      matchf-list
+      (progn
+        (message "%s" nil-warning)
+        (throw 'no-matches nil)))
+    ))
+
+;;----------------------------------------------------------------------
+;; parser compiler
+;;----------------------------------------------------------------------
+
+;; the parser compiler part consists of two function generators and
+;; two compilers. The generators build Match functions that are
+;; either simple or compound.
+
+;; The two compilers create anonymous functions: un-interned symbols
+;; or bound functions: symbols stored and retrieved by
+;; parser-match-function.
+
+;; These two sets of functions are combined with a functional
+;; composition style
+
+;; Generators
+
+(defun parser-simple-rule ( matchf-list operator )
+  `(lambda ()
+     (apply ',operator ',matchf-list)) )
+
+(defun parser-compound-rule ( matchf-list operator function )
+  `(lambda ()
+     (funcall ,function (apply ',operator ',matchf-list))) )
+
+;; Compilers
+
+(defun parser-compile-anon-func ( prod-right rule-builder &rest builder-args )
+  "Compile a Match Function out of an anonymous rule which is
+   fairly simple since we do not need to construct a match, only
+   pass it through."
+
+  (catch 'no-matches
+    (parser-make-anon-func (symbol-name combine-function)
+      (apply rule-builder
+        (parser-rule-right
+          (format
+            "parser-compile Warning! anonymous rule %s deleted with no matches in rule"
+            (symbol-name combine-function))
+          prod-right)
+        builder-args))
+    ))
+
+(defun parser-compile-bound-func ( prod-right name rule-builder &rest builder-args )
+  "bind an anonymous operator to a named Match Function"
+  (catch 'no-matches
+
+    (parser-match-function name
+      (apply rule-builder
+        (parser-rule-right
+          (format
+            "parser-compile Warning! rule %s deleted with no matches in rule"
+            (symbol-name name))
+          prod-right)
+        builder-args))
+   ))
+
+;;----------------------------------------------------------------------
+;; rule construction
+;;----------------------------------------------------------------------
+
+(defun parser-rule-left ( prod-left operator prod-right )
+  "Compile a Match Function from a named rule."
+
+  (unless (symbolp prod-left)
+    (parser-diagnostic prod-left
+      "Rule Left interpreter"
+      "left side of the production or an identifier"))
+
+  (parser-compile-bound-func prod-right prod-left 'parser-compound-rule operator
+    `(lambda ( production )
+       (if production
+         (parser-make-match
+           (parser-match-consumed production)
+           (parser-make-match-data '',prod-left (parser-match-data production)))))
+    ))
+
+(defun parser-named-statement ( operator prod-right )
+  "compile a statement with a name"
+  (let
+    ((name (car prod-right))
+     (rules (cdr prod-right)))
+
+    (unless (symbolp name)
+      (signal 'parser-syntactic-error
+        (parser-diagnostic name
+          "Rule interpreter"
+          "a symbol to name the production")))
+
+    (parser-rule-left name operator rules)
+    ))
+
+;;----------------------------------------------------------------------
+;; grammar definition.
 ;;----------------------------------------------------------------------
 
 (defmacro parser-statement-map ( statement no-match &rest operators )
@@ -510,105 +657,20 @@
      ((,@no-match))
      ))
 
-(defun parser-anon-op ( name )
-  (parser-statement-map name nil
-    (or ''parser-or)
-    (+ ''parser-positive-closure)))
-
-;;----------------------------------------------------------------------
-;; rules
-;;----------------------------------------------------------------------
-
-;; rules are non-terminals, with a left side or identifier, and a
-;; right side containing matches that recognize a production of the
-;; rule.
-
-(defun parser-rule-right ( rule )
-  "Translate a match in the Right Side of the rule into a
-   compiled Match Function by retrieving the Match Function or
-   recursively interpreting the grammar definition."
-
-  (cond
-    ((listp rule) (parser-compile-definition rule))
-    ((symbolp rule) (parser-match-function rule))
-
-    (signal 'parser-syntactic-error
-      (parser-daignostic rule
-        "Rule Right interpreter"
-        "expected a grammar list e.g: token,and,or ; or a symbol as a rule or token reference"))
-    ))
-
-;; both parser-compile-anon-rule and parser-rule-left are the latest
-;; point at which we can catch nils in the parser tree so they must
-;; both use the list-filter-nil function.
-
-(defun list-filter-nil ( list )
-  "filter nil symbols from a list"
-  (if (consp list)
-    (lexical-let
-      ((head (car list)))
-
-      (if (eq head 'nil)
-        (list-filter-nil (cdr list))
-        (cons head (list-filter-nil (cdr list)))
-        ))
-    nil
-    ))
-
-(defun parser-compile-anon-rule ( combine-function prod-right )
-  "Compile a Match Function out of an anonymous rule which is
-   fairly simple since we do not need to construct a match, only
-   pass it through."
-  (parser-make-anon-func (symbol-name combine-function)
-    `(lambda ()
-       (apply ',combine-function ',(list-filter-nil (mapcar 'parser-rule-right prod-right))))
-    ))
-
-(defun parser-rule-left ( prod-left combine-operator prod-right )
-  "Compile a Match Function from a named rule."
-
-  (unless (symbolp prod-left)
-    (parser-diagnostic prod-left
-      "Rule Left interpreter"
-      "left side of the production or an identifier"))
-
+(defun parser-bound-statement ( name definition )
+  "bypass normal anon compilation to bind it to a name."
   (lexical-let
-    ((matchf-list (list-filter-nil prod-right)))
+    ((operator (parser-anon-op (car definition)))
+     (prod-right (cdr definition)))
 
-    (if matchf-list
-      (parser-match-function prod-left
-        `(lambda ()
-           (lexical-let
-             ((production (apply ',combine-operator ',matchf-list)))
-             (if production
-               (parser-make-match
-                 (parser-match-consumed production)
-                 (parser-make-match-data '',prod-left (parser-match-data production))))
-             )))
-      (progn
-        (message "parser-compile Warning! named rule %s deleted with no matches in rule"
-          (symbol-name prod-left))
-        nil))
-    ))
-
-(defun parser-compile-named-rule ( combine-function prod-right )
-  "compile a named rule"
-  (let
-    ((production (car prod-right))
-      (rules (cdr prod-right)))
-
-    (unless (symbolp production)
+    (unless operator
       (signal 'parser-syntactic-error
-        (parser-diagnostic production
+        (parser-diagnostic operator
           "Rule interpreter"
-          "a symbol to name the production")))
+          "anonymous rule to bind to a name")))
 
-    (parser-rule-left production combine-function (mapcar 'parser-rule-right rules))
+    (parser-compile-bound-func prod-right name 'parser-simple-rule operator)
     ))
-
-;;----------------------------------------------------------------------
-;; grammar definition.
-;;----------------------------------------------------------------------
 
 (defun parser-compile-definition ( term )
   "parser-compile-definition is the recursive heart of the compiler."
@@ -632,14 +694,17 @@
             "definition keyword token|or|and|define"))
 
         (token   (parser-compile-token syntax))
+        (and     (parser-named-statement 'parser-and syntax))
+
         (or      (parser-compile-anon-rule 'parser-or syntax))
-        (and     (parser-compile-named-rule 'parser-and syntax))
 
         ;; define discards the match functions as a return value so
         ;; tokens and rules can be defined before they are used.
 
+        ;; we should only have two sexp in the name list, hence cadr
+        (name    (parser-bound-statement (car syntax) (cadr syntax)))
         (define  (progn
-                   (mapcar 'parser-rule-right syntax)
+                   (parser-rule-right "parser-compiler Warning! empty definition" syntax)
                     nil))
         ))
     ))
