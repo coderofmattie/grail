@@ -63,7 +63,7 @@
         ))
     ))
 
-(defun apply-my-keybindings ( completion-context )
+(defun bind-my-tab-keys ( completion-context )
   ;; when setting up major/minor modes adapt my global key-bindings to
   ;; the modes of the buffer. Local key-bindings that shadow my global
   ;; key-bindings are unset or replaced with contextualized variations
@@ -76,7 +76,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;;                    Custom Key-Bindings
+;;                    Global Key-Bindings
 ;;----------------------------------------------------------------------
 
 ;; enable ffap bindings so that C-x C-f on things like include directives
@@ -124,4 +124,22 @@
 
 (global-set-key (kbd "<S-tab>") 'other-window)
 
+;;----------------------------------------------------------------------
+;;                    Task specific Key-Bindings
+;;----------------------------------------------------------------------
 
+;; these setups should be considered inserts into other modes, they should
+;; make no mode assumptions, and stay focused.
+
+(defun bind-my-paren-keys ()
+  "bind the parentheses to the brace keys, while the shifted
+   paren keys become the braces."
+  (interactive)
+
+  ;; make the parentheses a bit easier to type, less shifting.
+  (local-set-key (kbd "[") (lambda () (interactive) (insert-char ?\( 1 nil)))
+  (local-set-key (kbd "]") (lambda () (interactive) (insert-char ?\) 1 nil)))
+
+  (local-set-key (kbd "(") (lambda () (interactive) (insert-char ?\[ 1 nil)))
+  (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil)))
+  )

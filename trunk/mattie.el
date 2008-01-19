@@ -145,7 +145,7 @@
       (append eshell-visual-commands (list "ssh" "su" "telnet")))
 
     ;; ensure that none of my custom keybindings are affected.
-    (apply-my-keybindings nil)
+    (bind-my-tab-keys nil)
 
     ;; I rarely want to quit eshell. when I do I can use quit. map
     ;; the usual kill-buffer keybinding to rid-window.
@@ -168,11 +168,13 @@
 ;; emacs IRC client is handy when on #emacs ...
 
 (eval-after-load "erc"
-  (setq
-    erc-default-server "irc.freenode.net"
-    erc-default-port "6667"
-    erc-nick "codermattie"
-    ))
+  (progn
+    (setq
+      erc-default-server "irc.freenode.net"
+      erc-default-port "6667"
+      erc-nick "codermattie")
+
+    (add-hook 'erc-mode-hook 'bind-my-paren-keys) ))
 
 ;;----------------------------------------------------------------------
 ;;                           Diff
@@ -320,9 +322,9 @@
 
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
-  ;; (turn-on-filladapt-mode)                ;; smart comment line wrapping
+  ;; (turn-on-filladapt-mode)             ;; smart comment line wrapping
 
-  (apply-my-keybindings lang)               ;; use my keybindings
+  (bind-my-tab-keys lang)                 ;; use my keybindings
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
@@ -370,12 +372,7 @@
   (lambda ()
     (tune-programming "elisp")
 
-    ;; make the parentheses a bit easier to type, less shifting.
-    (local-set-key (kbd "[") (lambda () (interactive) (insert-char ?\( 1 nil)))
-    (local-set-key (kbd "]") (lambda () (interactive) (insert-char ?\) 1 nil)))
-
-    (local-set-key (kbd "(") (lambda () (interactive) (insert-char ?\[ 1 nil)))
-    (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil)))
+    (bind-my-paren-keys)
 
     ;; this binding is very important. normal evaluation of defuns such as defvar
     ;; and defcustom do not change the default value because the form only sets
