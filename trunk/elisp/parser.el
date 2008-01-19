@@ -663,6 +663,9 @@
       `((eq keyword ',(car statement-map)) (funcall ,(cadr statement-map) syntax))) table))
 
 (defun parser-dispatch-class ( implementation table )
+  ;; the clause is nested in a list because both dispatch-unique and dispatch-class
+  ;; need to return a list of clauses for combination even though class always
+  ;; returns a single clause.
   (list `((lexical-let
       ((lookup (cond
                  ,@(mapcar
