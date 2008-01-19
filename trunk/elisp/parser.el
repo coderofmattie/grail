@@ -625,22 +625,24 @@
     (if (listp keyword)
       (parser-compile-definition keyword)
 
-      (cond
-        ((eq keyword 'token)  (parser-compile-token syntax))
-        ((eq keyword 'or)     (parser-compile-anon-rule 'parser-or syntax))
-        ((eq keyword 'and)    (parser-compile-named-rule 'parser-and syntax))
+      (parser-statement-map keyword
+        (signal 'parser-syntactic-error
+          (parser-diagnostic term
+            "parser definition"
+            "definition keyword token|or|and|define"))
 
-        ((eq keyword 'define)
-          ;; define discards the match functions as a return value so
-          ;; tokens and rules can be defined before they are used.
-          (mapcar 'parser-rule-right syntax)
-          nil)
+        (token   (parser-compile-token syntax))
+        (or      (parser-compile-anon-rule 'parser-or syntax))
+        (and     (parser-compile-named-rule 'parser-and syntax))
 
-        ((signal 'parser-syntactic-error
-           (parser-diagnostic term
-             "parser definition"
-             "definition keyword token|or|and|define")))
-        )) ))
+        ;; define discards the match functions as a return value so
+        ;; tokens and rules can be defined before they are used.
+
+        (define  (progn
+                   (mapcar 'parser-rule-right syntax)
+                    nil))
+        ))
+    ))
 
 (defvar parser-mtable-init-size 13
   "initial size of the match-table objarray for storing match functions. the value
