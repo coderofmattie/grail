@@ -92,9 +92,6 @@
 
 ;; ->TODO
 
-;; 1. define list where Matches can be defined without inserting a
-;;    match at the definition point [implemented, but not tested]
-
 ;; 2. optional matching with ? for Match Function references. [easy]
 ;;    other meta-symbols to consider would be * for kleene closure
 ;;    and a bounded closure like {digit}
@@ -109,19 +106,8 @@
 ;;    could be largely contained to parser-match-function.
 
 (require 'cl)
+(require 'mattie-elisp) ;; define-error, make-anon-func, list-filter-nil
 
-;; define-error originated in XEmacs. This implementation shares the
-;; same name, but not the interface. I need to clone or copy the
-;; XEmacs version.
-
-(defmacro define-error ( symbol message &rest isa-list )
-  "define a error symbol with a isa list and a error message"
-  `(progn
-     (put ',symbol
-       'error-conditions (append '(error ,symbol) ',isa-list))
-     (put ',symbol 'error-message ,message) ))
-
-;; A recursive macro expansion would be nice for creating a hierarchy.
 (define-error parser-compile-error  "parser error")
   (define-error parser-syntactic-error  "syntactic error" parser-compile-error)
   (define-error parser-semantic-error   "semantic error" parser-compile-error)
@@ -415,13 +401,6 @@
         (intern id match-table))
       )))
 
-(defun parser-make-anon-func ( name sexp )
-  "bind an un-evaluated anonymous function to an un-interned symbol"
-  (let
-    ((anon-func (make-symbol name)))
-    (fset anon-func (eval sexp))
-    anon-func))
-
 ;;----------------------------------------------------------------------
 ;; tokens
 ;;----------------------------------------------------------------------
@@ -460,7 +439,7 @@
   ;; quotation is incorrect.
   (cond
     ((eq nil constructor)    `(parser-token-match-data '',identifier 0))
-    ((listp constructor)     `(apply ',(parser-make-anon-func "parser-user-handler" constructor)
+    ((listp constructor)     `(apply ',(make-anon-func "parser-user-handler" constructor)
                                 (parser-token-match-range 'list 0)))
     ((functionp constructor) `(apply ',constructor (parser-token-match-range 'list 0)))
     ((numberp constructor)   `(parser-token-match-data '',identifier constructor))
@@ -488,10 +467,6 @@
          nil
          ))
     ))
-
-(defun parser-compile-token ( syntax )
-  "Compile a token into a Match Function."
-  (parser-match-function (car syntax) (parser-interp-token syntax)))
 
 ;;----------------------------------------------------------------------
 ;; production right side evaluation
@@ -524,19 +499,6 @@
 ;; latest point at which we can catch nils in the parser tree so they
 ;; must both use the list-filter-nil function.
 
-(defun list-filter-nil ( list )
-  "filter nil symbols from a list"
-  (if (consp list)
-    (lexical-let
-      ((head (car list)))
-
-      (if (eq head 'nil)
-        (list-filter-nil (cdr list))
-        (cons head (list-filter-nil (cdr list)))
-        ))
-    nil
-    ))
-
 (defun parser-rule-right ( nil-warning rule-list )
   (lexical-let
     ((matchf-list (list-filter-nil (mapcar 'parser-eval-rule-right rule-list))))
@@ -552,16 +514,25 @@
 ;; parser compiler
 ;;----------------------------------------------------------------------
 
-;; the parser compiler part consists of two function generators and
-;; two compilers. The generators build Match functions that are
-;; either simple or compound.
+;; the parser compiler part consists of two compilers and two
+;; function generators.
 
-;; The two compilers create anonymous functions: un-interned symbols
-;; or bound functions: symbols stored and retrieved by
-;; parser-match-function.
+;; The two compilers create operators or productions: operators are
+;; compiled to un-interned symbols, production symbols are defined and
+;; queried by parser-match-function.
+
+;; inserting production symbols into the parse tree is implemented by
+;; parser-production-statement, production at this phase of
+;; compilation means a Match Function that can be queried.
+
+;; the generators either produce a simple or compound rule function.
+;; a simple rule evaluates a Match Function list with an operator.
+;; Compound rule functions supply a transform function to modify the
+;; parse tree produced by the operator and Match Function list.
 
 ;; These two sets of functions are combined with a functional
-;; composition style
+;; composition style to obtain N x N combination with N + N
+;; declarations.
 
 ;; Generators
 
@@ -575,23 +546,21 @@
 
 ;; Compilers
 
-(defun parser-compile-anon-func ( prod-right rule-builder &rest builder-args )
+(defun parser-compile-operator ( prod-right rule-builder &rest builder-args )
   "Compile a Match Function out of an anonymous rule which is
    fairly simple since we do not need to construct a match, only
    pass it through."
 
   (catch 'no-matches
-    (parser-make-anon-func (symbol-name combine-function)
+    (make-anon-func "parser-operator"
       (apply rule-builder
         (parser-rule-right
-          (format
-            "parser-compile Warning! anonymous rule %s deleted with no matches in rule"
-            (symbol-name combine-function))
+          "parser-compile Warning! anonymous rule deleted with no matches in rule"
           prod-right)
         builder-args))
     ))
 
-(defun parser-compile-bound-func ( prod-right name rule-builder &rest builder-args )
+(defun parser-compile-production ( prod-right name rule-builder &rest builder-args )
   "bind an anonymous operator to a named Match Function"
   (catch 'no-matches
 
@@ -606,63 +575,62 @@
    ))
 
 ;;----------------------------------------------------------------------
-;; rule construction
+;; statement decomposition.
 ;;----------------------------------------------------------------------
 
-(defun parser-rule-left ( prod-left operator prod-right )
-  "Compile a Match Function from a named rule."
+(defun parser-token-statement ( syntax )
+  "Compile a token into a Match Function."
+  (parser-match-function (car syntax) (parser-interp-token syntax)))
 
-  (unless (symbolp prod-left)
-    (parser-diagnostic prod-left
-      "Rule Left interpreter"
-      "left side of the production or an identifier"))
+;; statements are either production statements that produce
+;; non-terminals or matching statements.
 
-  (parser-compile-bound-func prod-right prod-left 'parser-compound-rule operator
-    `(lambda ( production )
-       (if production
-         (parser-make-match
-           (parser-match-consumed production)
-           (parser-make-match-data '',prod-left (parser-match-data production)))))
-    ))
-
-(defun parser-named-statement ( operator prod-right )
+(defun parser-production-statement ( operator prod-right )
   "compile a statement with a name"
+  ;; FIXME:
+  ;; I changed this from lexical-let to let and it works instead of failing.
+  ;; This means that I have a binding phase problem, and I need to figure out
+  ;; where I need to use make-symbol.
   (let
-    ((name (car prod-right))
-     (rules (cdr prod-right)))
+    ((prod-symbol (car prod-right))
+     (prod-rules  (cdr prod-right)))
 
-    (unless (symbolp name)
-      (signal 'parser-syntactic-error
-        (parser-diagnostic name
-          "Rule interpreter"
-          "a symbol to name the production")))
+    (unless (symbolp prod-symbol)
+      (parser-diagnostic prod-symbol
+        "Production Left interpreter"
+        "left side of the production: an identifier"))
 
-    (parser-rule-left name operator rules)
+    (parser-compile-production prod-rules prod-symbol 'parser-compound-rule operator
+      `(lambda ( production )
+         (if production
+           (parser-make-match
+             (parser-match-consumed production)
+             (parser-make-match-data '',prod-symbol (parser-match-data production))))))
     ))
 
-;;----------------------------------------------------------------------
-;; grammar definition.
-;;----------------------------------------------------------------------
+(defun parser-operator-statement ( operator prod-right )
+  (parser-compile-operator prod-right 'parser-simple-rule operator))
 
-(defmacro parser-statement-map ( statement no-match &rest operators )
-  "A sugared cond form that implements a statement table.
+;; unfortunately I am forced to define the operator table for
+;; parser-operator-production as well because parser-operator-production
+;; "steals" the operator statement from parser-compile-definition
+;; so it can be compiled as a production instead of a operator.
 
-   compare STATEMENT against a OPERATORS list of symbol body
-   pairs. Evaluate the body if STATEMENT eq symbol otherwise
-   no-match for failure."
+(defmacro parser-operator-map ( statement &rest operators )
+  "compare STATEMENT against a OPERATORS list of symbol body
+   pairs. Evaluate the body if STATEMENT eq symbol."
   `(cond
      ,@(mapcar
          (lambda ( op-map )
            `((eq ,statement ',(car op-map)) (,@(cadr op-map))) ) operators)
-     ((,@no-match))
      ))
 
-(defun parser-anon-op ( name )
-  (parser-statement-map name
+(defun parser-operator ( name )
+  (parser-operator-map name
     (or 'parser-or)
     (+  'parser-positive-closure)))
 
-(defun parser-bound-statement ( name definition )
+(defun parser-operator-production ( name definition )
   "bypass normal anon compilation to bind it to a name."
   (let
     ((operator (parser-anon-op (car definition)))
@@ -674,44 +642,81 @@
           "Rule interpreter"
           "anonymous rule to bind to a name")))
 
-    (parser-compile-bound-func prod-right name 'parser-simple-rule operator)
+    (parser-compile-production prod-right name 'parser-simple-rule operator)
     ))
 
+;;----------------------------------------------------------------------
+;; top level grammar statements.
+;;----------------------------------------------------------------------
+
+(defun parser-dispatch-unique ( table )
+  "create the cond clauses for unique statements"
+  (mapcar
+    (lambda ( statement-map )
+      `((eq keyword ',(car statement-map)) (funcall ,(cadr statement-map) syntax))) table))
+
+(defun parser-dispatch-class ( implementation table )
+  (list `((lexical-let
+      ((lookup (cond
+                 ,@(mapcar
+                     (lambda (statement-map)
+                       `((eq keyword ',(car statement-map)) ',(cadr statement-map))) table))))
+
+      (if lookup
+        (funcall ',implementation lookup syntax)))) ))
+
+(defmacro parser-statement-dispatch ( grammar no-match &rest tables )
+  `(let
+     ((keyword (car ,grammar))
+       (syntax  (cdr ,grammar)))
+
+     (cond
+       ,@(apply 'append (mapcar
+             (lambda (table)
+               (lexical-let
+                 ((table-type (car table))
+                  (table-def  (cdr table)))
+
+                 (cond
+                   ((eq table-type 'type)   (parser-dispatch-class (car table-def) (cdr table-def)))
+                   ((eq table-type 'unique) (parser-dispatch-unique table-def)) )
+                 )) tables ))
+       (,no-match)
+       )))
+
 (defun parser-compile-definition ( term )
-  "parser-compile-definition is the recursive heart of the compiler."
+  "parser-compile-definition compiles grammar statements which are lists
+   with a keyword as the first symbol."
   (unless (listp term)
     (signal 'parser-syntactic-error
       (parser-diagnostic term
         "parser definition"
         "expected a definition of token|or|and|define")))
 
-  (lexical-let
-    ((keyword (car term))
-      (syntax (cdr term)))
+  (parser-statement-dispatch term
+    (signal 'parser-syntactic-error
+      (parser-diagnostic keyword
+        "parser definition"
+        "definition keyword token|or|and|define"))
 
-    (if (listp keyword)
-      (parser-compile-definition keyword)
+    (type parser-production-statement
+      (and parser-and))
 
-      (parser-statement-map keyword
-        (signal 'parser-syntactic-error
-          (parser-diagnostic term
-            "parser definition"
-            "definition keyword token|or|and|define"))
+    (type parser-operator-statement
+      (or parser-or)
+      (+  parser-positive-closure))
 
-        (token   (parser-compile-token syntax))
-        (and     (parser-named-statement 'parser-and syntax))
+    (unique
+      (token   (lambda (syntax) (parser-token-statement syntax)))
 
-        (or      (parser-compile-anon-rule 'parser-or syntax))
+      ;; we should only have two sexp in the name list, hence cadr
+      (name    (lambda (syntax) (parser-operator-production (car syntax) (cadr syntax))))
 
-        ;; define discards the match functions as a return value so
-        ;; tokens and rules can be defined before they are used.
-
-        ;; we should only have two sexp in the name list, hence cadr
-        (name    (parser-bound-statement (car syntax) (cadr syntax)))
-        (define  (progn
-                   (parser-rule-right "parser-compiler Warning! empty definition" syntax)
-                    nil))
-        ))
+      ;; define discards the match functions as a return value so
+      ;; tokens and rules can be defined before they are used.
+      (define  (lambda (syntax)
+                 (mapcar 'parser-compile-definition syntax)
+                 nil)) )
     ))
 
 (defvar parser-mtable-init-size 13
@@ -737,7 +742,7 @@
                    ;; note that the start symbol of the grammar is built in as an or combination
                    ;; of the top-level definitions.
                    (lexical-let
-                     ((parse (,(parser-compile-bound-func definition 'start
+                     ((parse (,(parser-compile-production definition 'start
                                  'parser-simple-rule 'parser-or)) ))
                      (if parse
                        ;; if we have a production return the position at which the
