@@ -669,6 +669,10 @@
 ;; utilities
 ;;----------------------------------------------------------------------
 
+(defun parser-token-string ( start end )
+  "Return a string of the input bounded by the token match."
+  (filter-buffer-substring start end nil t))
+
 (defun parser-interactive (parser)
   "run test-parser interactively for testing and debugging."
   (interactive "SParser? ")
