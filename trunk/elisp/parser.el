@@ -123,9 +123,9 @@
 (require 'cl)
 (require 'mattie-elisp) ;; define-error, make-anon-func, list-filter-nil
 
-(define-error parser-compile-error  "parser error")
-  (define-error parser-syntactic-error  "syntactic error" parser-compile-error)
-  (define-error parser-semantic-error   "semantic error" parser-compile-error)
+(define-error parser-compile-error   "parser error")
+(define-error parser-syntactic-error "syntactic error" parser-compile-error)
+(define-error parser-semantic-error  "semantic error" parser-compile-error)
 
 ;;----------------------------------------------------------------------
 ;; Backtracking.
@@ -155,9 +155,11 @@
     (setcar parser-position current) ))
 
 (defun parser-backtrack ()
-  "Restore the previous parser position by discarding the top of the parser-position stack."
+  "Restore the previous parser position by discarding the top of the parser-position stack.
+   Always returns nil so it can be used as a failure Match Result."
   (pop parser-position)
-  (goto-char (parser-pos)))
+  (goto-char (parser-pos))
+  nil)
 
 (defun parser-advance ( consumed )
   "Advance the input position of the parser to the next un-matched character."
@@ -172,6 +174,23 @@
 (defun parser-consumed ()
   "The number of input characters consumed by the token's match in the input."
   (- (match-end 0) (match-beginning 0)))
+
+;;----------------------------------------------------------------------
+;; compiler diagnostics
+;;----------------------------------------------------------------------
+
+;; construct meaningful compiler error messages in the
+;; "expected: foo got: bar" form.
+
+(defun parser-expr-diagnostic ( form )
+  (format "type(%s) %s" (symbol-name (type-of form)) (pp (eval form))))
+
+(defmacro parser-diagnostic ( form from expected )
+  "syntax: (parser-diagnostic form from expected)
+
+   Where form is the expr received, from is the component issuing the diagnostic,
+   and expected is a message describing what the component expected"
+  `(concat (format "[%s] expected: " ,from)  ,expected " not: " ,(parser-expr-diagnostic form)))
 
 ;;----------------------------------------------------------------------
 ;; Match Result
@@ -198,23 +217,29 @@
 ;; match-functions to nest arbitrarily [except that tokens are
 ;; strictly leafs].
 
-;; My rationale for using inline functions is that I am essentially naming
-;; the car and cdr of my cons cell for readability.
+(defun parser-make-production-match ( data )
+  "Create a Match Result cons of (t . match data)."
+  (cons t data))
 
-(defsubst parser-make-match ( consumed data )
-  "Create a Match Result cons of (input consumed . match data)."
-  (cons consumed data))
+(defun parser-make-token-match ( data )
+  "Create a Match Result cons of (t . match data)."
+  (cons (parser-consumed) data))
 
-(defsubst parser-match-consumed ( match-result )
+(defun parser-match-p ( match-result )
   "Return the input consumed by the match"
-  (car match-result))
+  (and (consp match-result) (car match-result)))
 
 (defsubst parser-match-data ( match-result )
   "Return the match data."
   (cdr match-result))
 
-(defsubst parser-make-match-data ( name data )
-  (cons name data))
+(defun parser-consume-token ( match-result )
+  "consume a token converting it to a production match if not so already."
+  (if (numberp (car match-result))
+    (progn
+      (parser-advance (car match-result))
+      (parser-make-production-match (cdr match-result)))
+    match-result) )
 
 ;;----------------------------------------------------------------------
 ;; Parser Tracing
@@ -328,10 +353,9 @@
           (parser-trace-match match production)
 
           (if production
-            (progn
-              (parser-advance (parser-match-consumed production))
-              (throw 'match (parser-make-match 0 (parser-match-data production))))
-            )))) ))
+            (throw 'match (parser-consume-token production)))
+          ))
+      )))
 
 (defun parser-and ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
@@ -349,39 +373,16 @@
 
                            (parser-trace-match match production)
 
-                           (if production
-                             (progn
-                               (parser-advance (parser-match-consumed production))
-                               (parser-match-data production))
+                           (unless production
+                             (throw 'backtrack nil))
 
-                             (throw 'backtrack nil)) )))
+                           (parser-match-data (parser-consume-token production)) )))
                      match-list)) ))
     (if production
       (progn
         (parser-pop)
-        ;; TODO: Any optional matches with 0 input characters consumed, or
-        ;; nil AST could be filtered here.
-        (parser-make-match 0 production))
-      (progn
-        (parser-backtrack)
-        nil)) ))
-
-;;----------------------------------------------------------------------
-;; compiler diagnostics
-;;----------------------------------------------------------------------
-
-;; construct meaningful compiler error messages in the
-;; "expected: foo got: bar" form.
-
-(defun parser-expr-diagnostic ( form )
-  (format "type(%s) %s" (symbol-name (type-of form)) (pp (eval form))))
-
-(defmacro parser-diagnostic ( form from expected )
-  "syntax: (parser-diagnostic form from expected)
-
-   Where form is the expr received, from is the component issuing the diagnostic,
-   and expected is a message describing what the component expected"
-  `(concat (format "[%s] expected: " ,from)  ,expected " not: " ,(parser-expr-diagnostic form)))
+        (parser-make-production-match production)) ;; nil AST could be filtered here.
+      (parser-backtrack)) ))
 
 ;;----------------------------------------------------------------------
 ;; Match Functions
@@ -449,14 +450,11 @@
          "parser-token-constructor"
          "lambda|function|number|symbol")))) )
 
-;; Experiment: allow other functions to be used for token matching
-;;             other than looking-at, such as re-search.
-
 (defun parser-token-function ( syntax )
   "Generate a token Match Function lambda."
   `(lambda ()
      (if (looking-at ,(car syntax))
-       (parser-make-match (parser-consumed) ,(parser-token-constructor (cadr syntax)))
+       (parser-make-token-match ,(parser-token-constructor (cadr syntax)))
        nil)) )
 
 ;;----------------------------------------------------------------------
@@ -496,19 +494,17 @@
   (lexical-let
     ((closure nil))
 
-    (if (do ((production (funcall match-func) (funcall match-func)))
-            ((eq nil production) (not (eq nil closure)))
-
-          (if production
-            (setq closure (cons production closure))) )
-      (parser-make-match 0 closure)) ))
+    (do ((production (funcall match-func) (funcall match-func)))
+        ((eq nil production) (if (not (eq nil closure)) (parser-make-production-match closure)))
+      (setq closure (cons (parser-consume-token production) closure))
+      )))
 
 (defun parser-optional-closure ( match-result )
   "An optional closure predicate function that converts match
    failures to a match succeeded with nil match data."
   (if match-result
-    match-result
-    (parser-make-match 0 nil)) )
+    (parser-consume-token match-result)
+    (parser-make-production-match nil)) )
 
 ;;----------------------------------------------------------------------
 ;; Predicate Generators
@@ -533,9 +529,9 @@
   (parser-predicate-function match-function
     `(lambda ( production )
        (if production
-         (parser-make-match
-           (parser-match-consumed production)
-           (parser-make-match-data '',name (parser-match-data production))))) ))
+         (progn
+           (setcdr production (cons '',name (cdr production)))
+           production))) ))
 
 ;;----------------------------------------------------------------------
 ;; production right side evaluation
