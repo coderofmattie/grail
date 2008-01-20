@@ -113,22 +113,32 @@
 
 ;; ->TODO
 
+;; 1. specifying captures passed to custom token handlers.
+
 ;; 2. optional matching with ? for Match Function references. [easy]
 ;;    other meta-symbols to consider would be * for kleene closure
 ;;    and a bounded closure like {digit}
 
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
-;; 4. re-write left recursion. This is essential to make grammars
+;; -> Phase 2
+
+;; 1. re-write left recursion. This is essential to make grammars
 ;;    easy to write while avoiding infinite recursion problems.
 
 ;;    This will likely be a non-trivial hack requiring some extensive
 ;;    modifications to the parser. It would be nice if the surgery
 ;;    could be largely contained to parser-match-function.
 
-;; 5. Consider the ! operator from PEG parsers.
+;; this might be possible to solve dynamically. Need to check the
+;; indirect recursion case, but the idea is to convert a stateless
+;; recursion which goes infinite into a nesting, via a stack. It would
+;; track the current production, and be cleared when a non-terminal
+;; matches. If no non-terminal matches and it's already on stack then
+;; skip the non-terminal.
 
-;; 6. some sort of generalized white-space feature ?
+;; 2. Implement memoization. whenever a backtrack clears the stack instead
+;;    of discarding the stack it should save it instead.
 
 (require 'cl)
 (require 'mattie-elisp) ;; define-error, make-anon-func, list-filter-nil
@@ -313,21 +323,18 @@
        (funcall code-func)) ))
 
 ;;----------------------------------------------------------------------
-;; Combination Operators
+;; Primitive Operators
 ;;----------------------------------------------------------------------
 
-;; The parser uses two combination operators: parser-and, parser-or as
-;; nodes in the parser tree. Significantly parser-and can backtrack
-;; and parser-or never does.
+;; The parser uses two primitive operators: parser-and, parser-or as
+;; primitives to construct matching behavior. Significantly parser-and
+;; can backtrack and parser-or never does.
 
 ;; and/or have the same essential meaning as the lisp and/or forms
 ;; with two specializations. Both functions treat their argument lists
 ;; as a list of Match Functions.
 
-;; parser-and is a named rule that returns Match Result lists.
-
-;; parser-or is an anonymous production, it has no identity and passes
-;; it's nested matches on transparently.
+;; These are purely matching functions: Match Results as opaque.
 
 (defun parser-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
@@ -562,46 +569,30 @@
 
 ;; Generators
 
-(defun parser-simple-rule ( matchf-list operator )
+(defun parser-simple-rule ( prod-right operator )
   `(lambda ()
-     (apply ',operator ',matchf-list)) )
+     (apply ',operator  ',(parser-rule-right
+                            "parser-compile Warning! rule deleted with no matches in rule"
+                            prod-right))) )
 
-(defun parser-compound-rule ( matchf-list operator function )
+(defun parser-compound-rule ( prod-right operator function )
   `(lambda ()
-     (funcall ,function (apply ',operator ',matchf-list))) )
+     (funcall ,function (apply ',operator
+                          ',(parser-rule-right
+                              "parser-compile Warning! rule deleted with no matches in rule"
+                              prod-right)))) )
 
 ;; Compilers
 
-;; the abnormal function passing [quoted symbol + args] is to keep the call
-;; to parse-rule-right inside the compiler functions.
-
-(defun parser-compile-operator ( prod-right rule-builder &rest builder-args )
+(defun parser-compile-operator ( function )
   "Compile a Match Function out of an anonymous rule which is
    fairly simple since we do not need to construct a match, only
    pass it through."
+  (make-anon-func "parser-operator" function))
 
-  (catch 'no-matches
-    (make-anon-func "parser-operator"
-      (apply rule-builder
-        (parser-rule-right
-          "parser-compile Warning! anonymous rule deleted with no matches in rule"
-          prod-right)
-        builder-args))
-    ))
-
-(defun parser-compile-production ( prod-right name rule-builder &rest builder-args )
+(defun parser-compile-production ( name function )
   "bind an anonymous operator to a named Match Function"
-  (catch 'no-matches
-
-    (parser-match-function name
-      (apply rule-builder
-        (parser-rule-right
-          (format
-            "parser-compile Warning! rule %s deleted with no matches in rule"
-            (symbol-name name))
-          prod-right)
-        builder-args))
-   ))
+  (parser-match-function name function))
 
 ;;----------------------------------------------------------------------
 ;; statement decomposition.
@@ -611,8 +602,8 @@
 ;; of a list as a keyword and calls one of these functions with
 ;; the list stripped of the keyword.
 
-;; these functions break the remainder of the statement down for
-;; compilation.
+;; these functions construct the lambda of the Match Function to
+;; implement various behaviors
 
 (defun parser-token-statement ( syntax )
   "Compile a token into a Match Function."
@@ -636,16 +627,18 @@
         "Production Left interpreter"
         "left side of the production: an identifier"))
 
-    (parser-compile-production prod-rules prod-symbol 'parser-compound-rule operator
-      `(lambda ( production )
-         (if production
-           (parser-make-match
-             (parser-match-consumed production)
-             (parser-make-match-data '',prod-symbol (parser-match-data production))))))
+    (catch 'no-matches
+      (parser-compile-production prod-symbol
+        (parser-compound-rule prod-rules operator
+          `(lambda ( production )
+             (if production
+               (parser-make-match
+                 (parser-match-consumed production)
+                 (parser-make-match-data '',prod-symbol (parser-match-data production))))) )))
     ))
 
 (defun parser-operator-statement ( operator prod-right )
-  (parser-compile-operator prod-right 'parser-simple-rule operator))
+  (parser-compile-operator (parser-simple-rule prod-right operator)))
 
 ;; unfortunately I am forced to define the operator table for
 ;; parser-operator-production as well because parser-operator-production
@@ -678,7 +671,7 @@
           "Rule interpreter"
           "anonymous rule to bind to a name")))
 
-    (parser-compile-production prod-right name 'parser-simple-rule operator)
+    (parser-compile-production name (parser-simple-rule prod-right operator))
     ))
 
 ;;----------------------------------------------------------------------
@@ -789,8 +782,8 @@
                    ;; note that the start symbol of the grammar is built in as an or combination
                    ;; of the top-level definitions.
                    (lexical-let
-                     ((parse (,(parser-compile-production definition 'start
-                                 'parser-simple-rule 'parser-or)) ))
+                     ((parse (,(parser-compile-production 'start
+                                 (parser-simple-rule definition 'parser-or)) )))
                      (if parse
                        ;; if we have a production return the position at which the
                        ;; parser stopped along with the AST.
