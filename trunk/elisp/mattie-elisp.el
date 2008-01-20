@@ -65,7 +65,10 @@
     nil
     ))
 
-;; probably crap, need to match the XEmacs syntax. or make it cooler.
+;; define-error originated in XEmacs. This implementation shares the
+;; same name, but not the interface. I need to clone or copy the
+;; XEmacs version.
+
 (defmacro define-error ( symbol message &rest isa-list )
   "define a error symbol with a isa list and a error message"
   `(progn
