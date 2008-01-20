@@ -471,12 +471,16 @@
   ;; any quoting issues should be implemented here.
 
   `(lambda ()
-     (funcall ,predicate (funcall ,match-func))) )
+     (funcall ,predicate
+       ,(if (listp match-func)
+          `(funcall ,match-func)
+          `(funcall ',match-func))
+       )) )
 
 (defun parser-compound-function ( match-func function )
   "Pass the Match Function match-func to predicate."
   `(lambda ()
-     (funcall ,function ,match-func)) )
+     (funcall ,function ',match-func)) )
 
 ;;----------------------------------------------------------------------
 ;; Closures
@@ -599,7 +603,7 @@
 (defun parser-compile-to-symbol ( function &optional name )
   "compile a Match Function as either a un-interned symbol when name is nil or
    a symbol queried by parser-match-function when name is given"
-  ;; (message "compiling %s" (pp-to-string function))
+  (message "compiling %s" (pp-to-string function))
   (if name
     (parser-match-function name function)
     (make-anon-func "parser-operator" function)))
