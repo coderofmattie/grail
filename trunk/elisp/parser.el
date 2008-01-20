@@ -12,29 +12,6 @@
 ;; grammar definition. It returns a compiled parser bound to the
 ;; function of the symbol.
 
-;; -> Application.
-
-;; Building or extracting a nested data structure by parsing static
-;; text, or anywhere you need a parser in Emacs :)
-
-;; -> Comparison with Emacs parsing facilities.
-
-;; Emacs supports parsing in two forms: Regular Expressions and tools
-;; like Syntax Tables geared towards using the parse results to
-;; annotate buffers with text-properties and overlays.
-
-;; This Dynamic Programming approach works well for overlaying
-;; functions that interpret the meaning of text in the buffer, such as
-;; syntax highlighting, on a paradigm of unstructured text. The
-;; analysis is preserved when the buffer is edited at a character
-;; level.
-
-;; When you need to build an interface that rests entirely on the
-;; parse analysis to the degree that the user or program does not
-;; modify or traverse the buffer at a character level, this tool
-;; simplifies construction of a nested data structure that maps tokens
-;; to beginning and ending positions of the match.
-
 ;; -> Related Works
 
 ;; * CEDET.
@@ -113,12 +90,8 @@
 
 ;; ->TODO
 
-;; 1. specifying captures passed to custom token handlers.
-
-;; 2. optional matching with ? for Match Function references. [easy]
-;;    other meta-symbols to consider would be * for kleene closure
-;;    and a bounded closure like {digit}
-
+;; 1. All of the PEG operators
+;; 2. re-document after all the code churn.
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
 ;; -> Phase 2
@@ -229,15 +202,15 @@
 ;; the car and cdr of my cons cell for readability.
 
 (defsubst parser-make-match ( consumed data )
-  "create a match result from the input consumed by the match, and the match data."
+  "Create a Match Result cons of (input consumed . match data)."
   (cons consumed data))
 
 (defsubst parser-match-consumed ( match-result )
-  "return the input consumed by the match"
+  "Return the input consumed by the match"
   (car match-result))
 
 (defsubst parser-match-data ( match-result )
-  "return the data of the match"
+  "Return the match data."
   (cdr match-result))
 
 (defsubst parser-make-match-data ( name data )
@@ -461,7 +434,7 @@
 ;; for the token.
 
 (defun parser-token-constructor ( constructor )
-  "Translate the AST constructor part of a token definition into Elisp."
+  "Construct the Match Data constructor for the token as a single s-exp."
 
   (cond
     ((eq nil constructor)    `(parser-token-bounds 0))
@@ -480,7 +453,7 @@
 ;;             other than looking-at, such as re-search.
 
 (defun parser-token-function ( syntax )
-  "Translate a token definition into a Match Function."
+  "Generate a token Match Function lambda."
   `(lambda ()
      (if (looking-at ,(car syntax))
        (parser-make-match (parser-consumed) ,(parser-token-constructor (cadr syntax)))
@@ -490,30 +463,32 @@
 ;; Parser Generator
 ;;----------------------------------------------------------------------
 
-;; The parser is largely built out of these two lambda generators
-;; that combine match functions as either predicate or compound
-;; functions.
+;; The parser is built up from primitives with two combination generators
+;; that nest Match Functions.
 
 (defun parser-predicate-function ( match-func predicate )
-  "predicate functions are passed the Match Result"
+  "Pass the Match Result of match-func to predicate."
   ;; any quoting issues should be implemented here.
 
   `(lambda ()
      (funcall ,predicate (funcall ,match-func))) )
 
 (defun parser-compound-function ( match-func function )
+  "Pass the Match Function match-func to predicate."
   `(lambda ()
      (funcall ,function ,match-func)) )
 
 ;;----------------------------------------------------------------------
-;; Predicates
+;; Closures
 ;;----------------------------------------------------------------------
 
 ;; these two predicate operators are the two primitives needed to
 ;; implement greedy matching.
 
+;; FIXME: trace point in the closures ?
+
 (defun parser-positive-closure ( match-func )
-  "create a positive closure capturing the expressions."
+  "A positive closure compound function of unbounded greed."
   (lexical-let
     ((closure nil))
 
@@ -525,7 +500,8 @@
       (parser-make-match 0 closure)) ))
 
 (defun parser-optional-closure ( match-result )
-  "optional predicate"
+  "An optional closure predicate function that converts match
+   failures to a match succeeded with nil match data."
   (if match-result
     match-result
     (parser-make-match 0 nil)) )
@@ -535,20 +511,21 @@
 ;;----------------------------------------------------------------------
 
 (defun parser-positive-function ( match-func )
-  "create a positive closure capturing the expressions."
+  "Generate a positive closure of match-func."
   (parser-compound-function match-func ''parser-positive-closure))
 
 (defun parser-optional-function ( match-func )
-  "create a positive closure capturing the expressions."
+  "Generate an optional closure of match-func."
   (parser-predicate-function match-func ''parser-optional-closure))
 
 (defun parser-kleene-function ( match-func )
-  "create a positive closure capturing the expressions."
+  "Generate a kleene closure of match-func."
   (parser-predicate-function
     (parser-positive-function match-func) ''parser-optional-closure))
 
 (defun parser-production-function ( name match-function )
-  "cons the identifier symbol for the production to the Match Result."
+  "Generate a predicate that cons's a production identifier to
+   the Match Result data."
   (parser-predicate-function match-function
     `(lambda ( production )
        (if production
@@ -557,10 +534,10 @@
            (parser-make-match-data '',name (parser-match-data production))))) ))
 
 ;;----------------------------------------------------------------------
-;;
+;; production right side evaluation
 ;;----------------------------------------------------------------------
 
-(defmacro parser-metasymbol-map ( statement &rest operators )
+(defmacro parser-operator-map ( statement &rest operators )
   "compare STATEMENT against a OPERATORS list of symbol body
    pairs. Evaluate the body if STATEMENT eq symbol."
   `(cond
@@ -568,10 +545,6 @@
          (lambda ( op-map )
            `((eq ,statement ',(car op-map)) (,@(cadr op-map))) ) operators)
      ))
-
-;;----------------------------------------------------------------------
-;; production right side evaluation
-;;----------------------------------------------------------------------
 
 ;; Production right side evaluation is introduced before parser compilation
 ;; so that the recursion of evaluating a grammar statement can be inserted
@@ -582,9 +555,7 @@
 ;; parser compiler.
 
 (defun parser-eval-rule-right ( rule )
-  "Translate a match in the Right Side of the rule into a
-   compiled Match Function by retrieving the Match Function or
-   recursively interpreting the grammar definition."
+  "Evaluate a symbol or statement in the production right resulting in a bound Match Function."
 
   (cond
     ((listp rule) (parser-compile-definition rule))
@@ -597,7 +568,7 @@
     ))
 
 (defun parser-rule-right ( nil-warning rule-list )
-  "apply parse-eval-rule-right to a list"
+  "Apply parser-eval-rule-right to a production right list."
   (lexical-let
     ((matchf-list (list-filter-nil (mapcar 'parser-eval-rule-right rule-list))))
 
@@ -609,14 +580,12 @@
     ))
 
 (defun parser-node-function ( prod-operator prod-right )
-  "bind one or more match functions to an operator"
+  "Bind a set of Match functions to a primitive operator, a single match is optimized
+   as itself."
   (let
     ((matchf-list (parser-rule-right
                     "parser-compile Warning! rule deleted with no matches in rule"
                     prod-right)))
-
-    ;; both and/or with one Match Function are equivalent to the
-    ;; Match Function itself.
 
     (if (eq nil (cdr matchf-list))
       (car matchf-list)
@@ -628,13 +597,15 @@
 ;;----------------------------------------------------------------------
 
 (defun parser-compile-to-symbol ( function &optional name )
-  (message "compiling %s" (pp-to-string function))
+  "compile a Match Function as either a un-interned symbol when name is nil or
+   a symbol queried by parser-match-function when name is given"
+  ;; (message "compiling %s" (pp-to-string function))
   (if name
     (parser-match-function name function)
     (make-anon-func "parser-operator" function)))
 
 (defun parser-compile-production ( name match-function )
-  "compile a statement with a name"
+  "Compile a named production given a name and a generated Match Function."
   (parser-compile-to-symbol (parser-production-function name match-function) name))
 
 ;;----------------------------------------------------------------------
@@ -642,6 +613,8 @@
 ;;----------------------------------------------------------------------
 
 (defun parser-lookup-table ( table body )
+  "Expand into a lookup table contained within a cond clause that executes body if
+   a match is found in the table."
   `((lexical-let
       ((lookup (cond
                  ,@(mapcar
@@ -650,18 +623,20 @@
       (if lookup
         ,body))) )
 
+;; These two functions return clauses within lists so that all the clauses generated
+;; can be merged with apply into a single list suitable for inserting into a cond
+;; form.
+
 (defun parser-dispatch-operator ( table )
-  ;; the clause is nested in a list because both dispatch-unique and dispatch-class
-  ;; need to return a list of clauses for combination even though class always
-  ;; returns a single clause.
+  "Compile operator statements with a predicate function generator from the table
+   and the parser-and operator."
   (list (parser-lookup-table table
           `(parser-compile-to-symbol
              (funcall lookup (parser-node-function 'parser-and syntax))) )))
 
 (defun parser-dispatch-production ( table )
-  ;; the clause is nested in a list because both dispatch-unique and dispatch-class
-  ;; need to return a list of clauses for combination even though class always
-  ;; returns a single clause.
+  "Compile productions using the identifier from the statement and the Match Function
+   generated by the lambda in the table."
   (list (parser-lookup-table table
           `(parser-compile-production (car syntax) (funcall lookup (cdr syntax))) )))
 
@@ -672,6 +647,9 @@
       `((eq keyword ',(car statement-map)) (funcall ,(cadr statement-map) syntax))) table))
 
 (defmacro parser-grammar ( grammar expected &rest tables )
+  "construct a more readable syntax for the grammar statement interpreter using nested cond
+   forms as the mechanism. The compilation of Match Functions is implemented in the macro
+   allowing the form to focus on parser generation."
   `(let
      ((keyword (car ,grammar))
        (syntax  (cdr ,grammar)))
@@ -699,6 +677,7 @@
 (defun parser-compile-definition ( statement )
   "parser-compile-definition compiles grammar statements which are lists
    with a keyword as the first symbol."
+
   (unless (listp statement)
     (signal 'parser-syntactic-error
       (parser-diagnostic term
