@@ -500,6 +500,7 @@
 ;; must both use the list-filter-nil function.
 
 (defun parser-rule-right ( nil-warning rule-list )
+  "apply parse-eval-rule-right to a list"
   (lexical-let
     ((matchf-list (list-filter-nil (mapcar 'parser-eval-rule-right rule-list))))
 
@@ -545,6 +546,9 @@
      (funcall ,function (apply ',operator ',matchf-list))) )
 
 ;; Compilers
+
+;; the abnormal function passing [quoted symbol + args] is to keep the call
+;; to parse-rule-right inside the compiler functions.
 
 (defun parser-compile-operator ( prod-right rule-builder &rest builder-args )
   "Compile a Match Function out of an anonymous rule which is
