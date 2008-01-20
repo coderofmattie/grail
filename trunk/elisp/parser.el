@@ -76,8 +76,8 @@
 ;; the use of or and and as the primitive combination operators. All
 ;; operators are greedy.
 
-;; left recursion is present, and the optimizations of a packrat parser
-;; are not yet implemented.
+;; left recursion is illegal, but I might want to add it
+;; as a convenience.
 
 ;; ->Terminology
 
@@ -90,7 +90,7 @@
 
 ;; ->TODO
 
-;; 1. All of the PEG operators
+;; 1. All of the PEG predicates
 ;; 2. re-document after all the code churn.
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
@@ -420,12 +420,12 @@
 ;; tokens
 ;;----------------------------------------------------------------------
 
-(defun parser-token-bounds ( capture )
+(defun parser-token-bounds ( type capture )
   "Return the bounds of the capture from match-{beg,end} with the
    upper bound adjusted by decrement to inclusive. The type
    returned is chosen with a quoted type constructor symbol like
    cons or list."
-  (cons (match-beginning capture) (- (match-end capture) 1)) )
+  (eval `(,type (match-beginning capture) (match-end capture)) ))
 
 ;; The token part of the grammar definition contains a great deal of flexibility
 ;; or construction options for tokens.
@@ -438,10 +438,10 @@
   "Construct the Match Data constructor for the token as a single s-exp."
 
   (cond
-    ((eq nil constructor)    `(parser-token-bounds 0))
-    ((listp constructor)     `(funcall ',(make-anon-func "parser-user-handler") (parser-token-bounds 0)))
-    ((functionp constructor) `(funcall ',constructor (parser-token-bounds 0)))
-    ((numberp constructor)   `(parser-token-bounds ,constructor))
+    ((eq nil constructor)    `(parser-token-bounds 'cons 0))
+    ((listp constructor)     `(apply ',(make-anon-func "parser-user-handler") (parser-token-bounds 'list 0)))
+    ((functionp constructor) `(apply ',constructor (parser-token-bounds 'list 0)))
+    ((numberp constructor)   `(parser-token-bounds 'cons ,constructor))
     ((symbolp constructor)   `(quote ',constructor))
 
     ;; all other constructor types are un-handled.
@@ -495,8 +495,15 @@
     ((closure nil))
 
     (do ((production (funcall match-func) (funcall match-func)))
-        ((eq nil production) (if (not (eq nil closure)) (parser-make-production-match closure)))
-      (setq closure (cons (parser-consume-token production) closure))
+        ((eq nil production) (if (not (eq nil closure))
+                               (parser-make-production-match closure)))
+      (lexical-let
+        ((data (parser-match-data (parser-consume-token production) )))
+        (setq closure
+          (cond
+            ((eq nil closure) data)
+            ((and (listp closure) (listp data)) (append closure data))
+            ((cons data closure)) )))
       )))
 
 (defun parser-optional-closure ( match-result )
@@ -599,7 +606,7 @@
 (defun parser-compile-to-symbol ( function &optional name )
   "compile a Match Function as either a un-interned symbol when name is nil or
    a symbol queried by parser-match-function when name is given"
-  (message "compiling %s" (pp-to-string function))
+  ;; (message "compiling %s" (pp-to-string function))
   (if name
     (parser-match-function name function)
     (make-anon-func "parser-operator" function)))
