@@ -15,7 +15,7 @@
 ;; -> Application.
 
 ;; Building or extracting a nested data structure by parsing static
-;; text.
+;; text, or anywhere you need a parser in Emacs :)
 
 ;; -> Comparison with Emacs parsing facilities.
 
@@ -48,6 +48,15 @@
 ;; recursive descent parser. If backtracking needs to be optimized
 ;; something like CEDET is a better choice than parser-compile.
 
+;; * lalr for chicken Scheme
+
+;; http://www.call-with-current-continuation.org/eggs/lalr.html
+
+;; lalr implements a parser-compiler as a macro so it is similar in
+;; spirit despite being a different class of parser.
+
+;; tokenizing is a seperate phase as well.
+
 ;; ->Concept
 
 ;; A parser compiler that combines lexical (regex) analysis with recursive
@@ -77,9 +86,21 @@
 ;;    This allows the user to choose between positions, markers, overlays
 ;;    according to the requirements.
 
+;; 3. Recursion must be limited to the grammar, not the input. For example
+;;    positive closure must be iterative, since it is bounded only by
+;;    the input stream. This requirement makes it possible to approximate
+;;    a recursion limit, important as Emacs does not have TCO.
+
 ;; ->Characteristics
 
 ;; parser-compile produces a no frills LL Recursive Descent parser.
+
+;; The parsing characteristics are very similar to PEG grammars due to
+;; the use of or and and as the primitive combination operators. All
+;; operators are greedy.
+
+;; left recursion is present, and the optimizations of a packrat parser
+;; are not yet implemented.
 
 ;; ->Terminology
 
@@ -104,6 +125,10 @@
 ;;    This will likely be a non-trivial hack requiring some extensive
 ;;    modifications to the parser. It would be nice if the surgery
 ;;    could be largely contained to parser-match-function.
+
+;; 5. Consider the ! operator from PEG parsers.
+
+;; 6. some sort of generalized white-space feature ?
 
 (require 'cl)
 (require 'mattie-elisp) ;; define-error, make-anon-func, list-filter-nil
