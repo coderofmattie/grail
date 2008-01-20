@@ -461,7 +461,7 @@
   `(lambda ()
      (if (looking-at ,(car syntax))
        (parser-make-token-match ,(parser-token-constructor (cadr syntax)))
-       nil)) )
+       )) )
 
 ;;----------------------------------------------------------------------
 ;; Parser Generator
@@ -539,8 +539,11 @@
     `(lambda ( production )
        (if production
          (progn
-           (setcdr production (cons '',name (cdr production)))
-           production))) ))
+           (setcdr production
+             (if (numberp (car production))
+               (cons '',name (cdr production))
+               (list '',name (cdr production)) ))
+           production)) )))
 
 ;;----------------------------------------------------------------------
 ;; production right side evaluation
@@ -608,7 +611,7 @@
 (defun parser-compile-to-symbol ( function &optional name )
   "compile a Match Function as either a un-interned symbol when name is nil or
    a symbol queried by parser-match-function when name is given"
-  ;; (message "compiling %s" (pp-to-string function))
+  (message "compiling %s" (pp-to-string function))
   (if name
     (parser-match-function name function)
     (make-anon-func "parser-operator" function)))
