@@ -241,6 +241,12 @@
       (parser-make-production-match (cdr match-result)))
     match-result) )
 
+(defun parser-combine-match-data ( newer older )
+  (cond
+    ((eq nil older) newer)
+    ((and (listp newer) (listp older)) (append older newer))
+    ((cons newer older)) ))
+
 ;;----------------------------------------------------------------------
 ;; Parser Tracing
 ;;----------------------------------------------------------------------
@@ -499,11 +505,7 @@
                                (parser-make-production-match closure)))
       (lexical-let
         ((data (parser-match-data (parser-consume-token production) )))
-        (setq closure
-          (cond
-            ((eq nil closure) data)
-            ((and (listp closure) (listp data)) (append closure data))
-            ((cons data closure)) )))
+        (setq closure (parser-combine-match-data data closure) ))
       )))
 
 (defun parser-optional-closure ( match-result )
