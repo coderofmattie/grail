@@ -271,12 +271,12 @@
     (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
     (lexical-let
-      ((toggle (eval (cons 'or (mapcar (lambda ( trace-on )
-                                         ;; eq comparison of symbols does not work. A string
-                                         ;; comparison is used for matching.
-                                         (if (equal (symbol-name production) (car trace-on))
-                                           (cdr trace-on)))
-                                 parser-trace) ))))
+      ((toggle (apply 'or (mapcar (lambda ( trace-on )
+                                    ;; eq comparison of symbols does not work. A string
+                                    ;; comparison is used for matching.
+                                    (if (equal (symbol-name production) (car trace-on))
+                                      (cdr trace-on)))
+                            parser-trace) )))
       ;; a cons cell is returned so that a false value for the trace flag can be returned
       ;; without negating the truth value of the predicate itself.
       (if toggle
