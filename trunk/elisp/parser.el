@@ -245,8 +245,8 @@
 (defun parser-combine-match-data ( newer older )
   (cond
     ((eq nil older) newer)
-    ((and (terminated-list-p newer) (terminated-list-p older)) (append older newer))
-    ((cons newer older)) ))
+    ((and (terminated-list-p newer) (terminated-list-p older)) (append newer older))
+    ((cons older newer)) ))
 
 ;;----------------------------------------------------------------------
 ;; Parser Tracing
@@ -457,13 +457,6 @@
        (parser-diagnostic constructor
          "parser-token-constructor"
          "lambda|function|number|symbol")))) )
-
-(defun parser-token-function ( syntax )
-  "Generate a token Match Function lambda."
-  `(lambda ()
-     (if (looking-at ,(car syntax))
-       (parser-make-token-match ,(parser-token-constructor (cadr syntax)))
-       )) )
 
 (defun parser-token-sexp ( syntax )
   "Generate a token Match Function lambda."
