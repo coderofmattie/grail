@@ -5,16 +5,24 @@
 ;; Description: basic elisp programming tools.
 ;;----------------------------------------------------------------------
 
+(defun join-cons ( a b )
+  "like cons but joins as a list instead of nesting"
+  (let
+    ((new-a (if (cdr a) (cons a nil) a))
+     (new-b (if (cdr b) (cons b nil) b)) )
+    (setcdr new-a new-b)
+    new-a))
+
 (defun terminate-sequence ( &rest args )
   "terminate sequence takes a all types concatenates into a list properly handling unterminated sequences"
   (lexical-let
     ((terminated nil))
 
     (dolist (arg (reverse args))
-      (if (consp arg)
+      (if (and (consp arg) (not (eq 'quote (car arg))))
         (lexical-let
           ((reverse-stack nil)
-           (sequence arg))
+            (sequence arg))
 
           (while (consp sequence)
             (push (car sequence) reverse-stack)
