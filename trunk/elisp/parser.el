@@ -101,7 +101,7 @@
 ;;    of discarding the stack it should save it instead.
 
 (require 'cl)
-(require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil terminated-list-p terminate-sequence
+(require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil
 
 (define-error parser-compile-error   "parser error")
 (define-error parser-syntactic-error "syntactic error" parser-compile-error)
@@ -197,12 +197,12 @@
 ;; match-functions to nest arbitrarily [except that tokens are
 ;; strictly leafs].
 
-(defun parser-make-production-match ( data )
-  "Create a Match Result cons of (t . match data)."
-  (cons t data))
+(defun parser-make-production-match ( tree )
+  "document me."
+  (cons t tree))
 
 (defun parser-make-token-match ( data )
-  "Create a Match Result cons of (t . match data)."
+  "Create a Match Result cons of (consumed . match data)."
   (cons (parser-consumed) data))
 
 (defun parser-match-p ( match-result )
@@ -221,12 +221,48 @@
       (parser-make-production-match (cdr match-result)))
     match-result) )
 
-(defun parser-combine-match-data ( newer older )
-  (cond
-    ((eq nil older) newer)
-    ((eq nil newer) older)
-    ((and (terminated-list-p newer) (terminated-list-p older)) (append newer older))
-    ((join-cons older newer)) ))
+;;----------------------------------------------------------------------
+;; AST tree constructors
+;;----------------------------------------------------------------------
+
+(defun parser-ast-append ( production )
+  "append to the AST."
+  (lexical-let
+    ((new-tail (cons production nil)))
+
+    (setcdr parse-tree new-tail)
+    (setq parse-tree new-tail) ))
+
+(defun parser-ast-append-match ( match )
+  "append to the parse AST if the match data is not null."
+  (lexical-let
+    ((data (parser-match-data match)))
+
+    (if data
+      (parser-ast-append data)) ))
+
+(defun parser-ast-descend ( non-terminal func-match )
+  "start a new AST level"
+  (catch 'no-match
+    (lexical-let
+      ((head (cons non-terminal nil))
+        (match-result nil))
+
+      (let
+        ((parse-tree head))
+
+        (setq match-result (funcall func-match))
+
+        (unless (parser-match-p match-result)
+          (throw 'no-match nil))
+
+        (parser-ast-append-match (parser-consume-token match-result)))
+
+      (if (boundp 'parse-tree)
+        (progn
+          (parser-ast-append head)
+          (parser-make-production-match nil))
+        (parser-make-production-match head)) )))
 
 ;;----------------------------------------------------------------------
 ;; Parser Tracing
@@ -340,37 +376,31 @@
           (parser-trace-match match production)
 
           (if production
-            (throw 'match (parser-consume-token production)))
-          ))
+            (throw 'match production)) ))
       )))
 
-(defun parser-and  ( &rest match-list )
+(defun parser-and ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
    in the parser part or the parser will backtrack and return nil."
   (parser-push)
 
-  (lexical-let
-    ((expansion nil))
+  (if (catch 'backtrack
+        (dolist (match-func match-list t)
+          (parser-trace-on match-func
+            (lexical-let
+              ((production (funcall match-func)))
 
-    (if (catch 'backtrack
-          (dolist (match-func match-list (not (eq nil expansion)))
-            (parser-trace-on match-func
-              (lexical-let
-                ((production (funcall match-func)))
+              (parser-trace-match match-func production)
 
-                (parser-trace-match match-func production)
+              (unless production
+                (throw 'backtrack nil))
 
-                (unless production
-                  (throw 'backtrack nil))
-
-                (setq expansion
-                  (parser-combine-match-data (parser-match-data (parser-consume-token production)) expansion))
-                ))))
+              (parser-ast-append (parser-match-data (parser-consume-token production)))
+              ))))
       (progn
         (parser-pop)
-        (parser-make-production-match expansion)) ;; nil AST could be filtered here ?
-      (parser-backtrack)
-      )))
+        (parser-make-production-match nil))
+      (parser-backtrack) ))
 
 ;;----------------------------------------------------------------------
 ;; Match Functions
@@ -438,10 +468,11 @@
          "parser-token-constructor"
          "lambda|function|number|symbol")))) )
 
-(defun parser-token-sexp ( syntax )
+(defun parser-token-function ( syntax )
   "Generate a token Match Function lambda."
-  `(if (looking-at ,(car syntax))
-     (parser-make-token-match ,(parser-token-constructor (cadr syntax))) ))
+  `(lambda ()
+     (if (looking-at ,(cadr syntax))
+       (parser-make-token-match (cons '',(car syntax) ,(parser-token-constructor (caddr syntax)))) )))
 
 ;;----------------------------------------------------------------------
 ;; Parser Generator
@@ -478,14 +509,13 @@
 (defun parser-positive-closure ( match-func )
   "A positive closure compound function of unbounded greed."
   (lexical-let
-    ((closure nil))
+    ((matched-once nil))
 
     (do ((production (funcall match-func) (funcall match-func)))
-        ((eq nil production) (if (not (eq nil closure))
-                               (parser-make-production-match closure)))
-      (lexical-let
-        ((data (parser-match-data (parser-consume-token production) )))
-        (setq closure (parser-combine-match-data data closure) ))
+        ((eq nil production) (if (not (null matched-once))
+                               (parser-make-production-match nil)))
+
+      (parser-ast-append (parser-match-data (parser-consume-token production)))
       )))
 
 (defun parser-optional-closure ( match-result )
@@ -513,17 +543,10 @@
     (parser-positive-function match-func) ''parser-optional-closure))
 
 (defun parser-production-function ( name match-function )
-  "Generate a predicate that cons's a production identifier to
-   the Match Result data."
-  (parser-predicate-function match-function
-    `(lambda ( production )
-       (if production
-         (progn
-           (setcdr production
-             (if (numberp (car production))
-               (cons '',name (cdr production))
-               (terminate-sequence '',name (cdr production)) ))
-           production)) )))
+  "Notably does not use the Parser Generator combination operators, using
+   them here would just be dogmatic."
+  `(lambda ()
+     (parser-ast-descend '',name ',match-function)))
 
 ;;----------------------------------------------------------------------
 ;; production right side evaluation
@@ -686,12 +709,12 @@
 
     (productions
       (and     (lambda (syntax)
-                 (parser-node-function 'parser-and syntax)))
-
-      (token   (lambda (syntax)
-                 (parser-token-sexp syntax))) )
+                 (parser-node-function 'parser-and syntax))) )
 
     (statements
+      (token   (lambda (syntax)
+                 (parser-compile-to-symbol (parser-token-function syntax) (car syntax))))
+
       (or      (lambda (syntax)
                  (parser-compile-to-symbol (parser-node-function 'parser-or syntax))))
 
