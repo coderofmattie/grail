@@ -5,6 +5,17 @@
 ;; Description: basic elisp programming tools.
 ;;----------------------------------------------------------------------
 
+(defun terminated-list-p ( list )
+  "return true only if the list is nil terminated"
+  (if (consp list)
+    (lexical-let
+      ((element (cdr list)))
+
+      (while (consp element)
+        (setq element (cdr element)))
+
+      (eq nil element)) ))
+
 ;; required for my patched em-unix, note: merged upstream, may collide
 ;; on a update.
 (defun nil-blank-string ( string )
