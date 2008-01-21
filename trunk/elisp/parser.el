@@ -91,38 +91,17 @@
 ;; ->TODO
 
 ;; 0. tracing start production does not work.
-;; 1. All of the PEG predicates
+;; 1. All of the PEG predicates (missing not)
 ;; 2. re-document after all the code churn.
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
 ;; -> Phase 2
 
-;; left recursion is currently forbidden because the lookup in the
-;; production table will fail with a signal. to implement left
-;; recursion binding needs to be delayed.
-
-;; 1. re-write left recursion. This is essential to make grammars
-;;    easy to write while avoiding infinite recursion problems.
-
-;; my dynamic approach is looking essentially the same as "Packrat parsers
-;; can be Left Recursive". It is obvious :)
-
-;;    This will likely be a non-trivial hack requiring some extensive
-;;    modifications to the parser. It would be nice if the surgery
-;;    could be largely contained to parser-match-function.
-
-;; this might be possible to solve dynamically. Need to check the
-;; indirect recursion case, but the idea is to convert a stateless
-;; recursion which goes infinite into a nesting, via a stack. It would
-;; track the current production, and be cleared when a non-terminal
-;; matches. If no non-terminal matches and it's already on stack then
-;; skip the non-terminal.
-
 ;; 2. Implement memoization. whenever a backtrack clears the stack instead
 ;;    of discarding the stack it should save it instead.
 
 (require 'cl)
-(require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil terminated-list-p
+(require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil terminated-list-p terminate-sequence
 
 (define-error parser-compile-error   "parser error")
 (define-error parser-syntactic-error "syntactic error" parser-compile-error)
@@ -542,7 +521,7 @@
            (setcdr production
              (if (numberp (car production))
                (cons '',name (cdr production))
-               (list '',name (cdr production)) ))
+               (terminate-sequence '',name (cdr production)) ))
            production)) )))
 
 ;;----------------------------------------------------------------------
