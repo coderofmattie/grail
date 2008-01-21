@@ -90,6 +90,7 @@
 
 ;; ->TODO
 
+;; 0. tracing start production does not work.
 ;; 1. All of the PEG predicates
 ;; 2. re-document after all the code churn.
 ;; 3. Canonical tree walk implemented as parser-ast-node.
@@ -121,7 +122,7 @@
 ;;    of discarding the stack it should save it instead.
 
 (require 'cl)
-(require 'mattie-elisp) ;; define-error, make-anon-func, list-filter-nil
+(require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil terminated-list-p
 
 (define-error parser-compile-error   "parser error")
 (define-error parser-syntactic-error "syntactic error" parser-compile-error)
@@ -244,7 +245,7 @@
 (defun parser-combine-match-data ( newer older )
   (cond
     ((eq nil older) newer)
-    ((and (listp newer) (listp older)) (append older newer))
+    ((and (terminated-list-p newer) (terminated-list-p older)) (append older newer))
     ((cons newer older)) ))
 
 ;;----------------------------------------------------------------------
@@ -363,32 +364,33 @@
           ))
       )))
 
-(defun parser-and ( &rest match-list )
+(defun parser-and  ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
    in the parser part or the parser will backtrack and return nil."
   (parser-push)
 
   (lexical-let
-    ((production (catch 'backtrack
-                   ;; we want to gather all the matches, so mapcar across the match objects.
-                   (mapcar
-                     (lambda (match)
-                       (parser-trace-on match
-                         (lexical-let
-                           ((production (funcall match)))
+    ((expansion nil))
 
-                           (parser-trace-match match production)
+    (if (catch 'backtrack
+          (dolist (match-func match-list (not (eq nil expansion)))
+            (parser-trace-on match-func
+              (lexical-let
+                ((production (funcall match-func)))
 
-                           (unless production
-                             (throw 'backtrack nil))
+                (parser-trace-match match-func production)
 
-                           (parser-match-data (parser-consume-token production)) )))
-                     match-list)) ))
-    (if production
+                (unless production
+                  (throw 'backtrack nil))
+
+                (setq expansion
+                  (parser-combine-match-data (parser-match-data (parser-consume-token production)) expansion))
+                ))))
       (progn
         (parser-pop)
-        (parser-make-production-match production)) ;; nil AST could be filtered here.
-      (parser-backtrack)) ))
+        (parser-make-production-match expansion)) ;; nil AST could be filtered here ?
+      (parser-backtrack)
+      )))
 
 ;;----------------------------------------------------------------------
 ;; Match Functions
@@ -463,6 +465,11 @@
        (parser-make-token-match ,(parser-token-constructor (cadr syntax)))
        )) )
 
+(defun parser-token-sexp ( syntax )
+  "Generate a token Match Function lambda."
+  `(if (looking-at ,(car syntax))
+     (parser-make-token-match ,(parser-token-constructor (cadr syntax))) ))
+
 ;;----------------------------------------------------------------------
 ;; Parser Generator
 ;;----------------------------------------------------------------------
@@ -476,10 +483,10 @@
 
   `(lambda ()
      (funcall ,predicate
-       ,(if (listp match-func)
-          `(funcall ,match-func)
-          `(funcall ',match-func))
-       )) )
+       ,(cond
+          ((and (listp match-func) (functionp match-func)) `(funcall ,match-func))
+          ((functionp match-func) `(funcall ',match-func))
+          ((symbol-value 'match-func)) ))) )
 
 (defun parser-compound-function ( match-func function )
   "Pass the Match Function match-func to predicate."
@@ -611,7 +618,7 @@
 (defun parser-compile-to-symbol ( function &optional name )
   "compile a Match Function as either a un-interned symbol when name is nil or
    a symbol queried by parser-match-function when name is given"
-  (message "compiling %s" (pp-to-string function))
+  ;; (message "compiling %s" (pp-to-string function))
   (if name
     (parser-match-function name function)
     (make-anon-func "parser-operator" function)))
@@ -709,7 +716,7 @@
                  (parser-node-function 'parser-and syntax)))
 
       (token   (lambda (syntax)
-                 (parser-token-function syntax))) )
+                 (parser-token-sexp syntax))) )
 
     (statements
       (or      (lambda (syntax)
