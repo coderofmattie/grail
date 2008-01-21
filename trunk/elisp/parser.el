@@ -395,7 +395,7 @@
               (unless production
                 (throw 'backtrack nil))
 
-              (parser-ast-append (parser-match-data (parser-consume-token production)))
+              (parser-ast-append-match (parser-consume-token production))
               ))))
       (progn
         (parser-pop)
@@ -515,7 +515,8 @@
         ((eq nil production) (if (not (null matched-once))
                                (parser-make-production-match nil)))
 
-      (parser-ast-append (parser-match-data (parser-consume-token production)))
+      (setq matched-once t)
+      (parser-ast-append-match (parser-consume-token production))
       )))
 
 (defun parser-optional-closure ( match-result )
