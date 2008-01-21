@@ -226,7 +226,7 @@
     ((eq nil older) newer)
     ((eq nil newer) older)
     ((and (terminated-list-p newer) (terminated-list-p older)) (append newer older))
-    ((cons older newer)) ))
+    ((join-cons older newer)) ))
 
 ;;----------------------------------------------------------------------
 ;; Parser Tracing
