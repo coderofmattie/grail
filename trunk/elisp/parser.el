@@ -8,7 +8,10 @@
 
 ;; ->Features
 
-;; 0. Evaluate a parser-compiler form with a symbol and a grammar
+;; 0. Parsing is integrated directly into the language instead of
+;;    being a separate tool.
+
+;;    Evaluate a parser-compiler form with a symbol and a grammar
 ;;    to generate a parser bound to your symbol.
 
 ;; 1. PEG like grammar.
@@ -23,18 +26,9 @@
 ;; 3. Grammar recursive but not input recursive, important because
 ;;    Emacs does not have TCO.
 
-;; ->Terminology
-
-;; My reference for parsing terminology is the Dragon Book:
-
-;; Compilers
-;; Principles,Techniques,and Tools
-;; Alfred V.Aho, Ravi Sethi, Jeffrey D.Ullman
-;; 1986, Addison Wesley
-
 ;; ->TODO
 
-;; -> Phase 1: correctness
+;;   -> Phase 1: correctness
 
 ;; 0. tracing start production does not work.
 ;; 1. All of the PEG predicates (missing not)
@@ -45,7 +39,7 @@
 ;; 5. Check the generated code for anything silly, keeping in mind that
 ;;    it is generated code.
 
-;; -> Phase 2: optimization
+;;    -> Phase 2: optimization
 
 ;; 2. Implement packrat backtrack optimization.
 
@@ -53,6 +47,15 @@
 ;;    the parse-ast-descend predicate. Normally the parse tree constructed
 ;;    so far would be discarded. Instead filter the terminals out, and
 ;;    keep them in a table.
+
+;; ->Terminology
+
+;; My reference for parsing terminology is the Dragon Book:
+
+;; Compilers
+;; Principles,Techniques,and Tools
+;; Alfred V.Aho, Ravi Sethi, Jeffrey D.Ullman
+;; 1986, Addison Wesley
 
 (require 'cl)
 (require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil
