@@ -488,13 +488,13 @@
 
 (defun parser-predicate-function ( match-func predicate )
   "Pass the Match Result of match-func to predicate."
-  ;; any quoting issues should be implemented here.
-
   `(lambda ()
      (funcall ,predicate
        ,(cond
-          ((and (listp match-func) (functionp match-func)) `(funcall ,match-func))
-          ((functionp match-func) `(funcall ',match-func))
+          ((and (listp match-func)
+                (functionp match-func)) `(funcall ,match-func))
+          ((functionp match-func)       `(funcall ',match-func))
+
           ((symbol-value 'match-func)) ))) )
 
 (defun parser-compound-function ( match-func function )
