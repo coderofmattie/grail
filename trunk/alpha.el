@@ -28,6 +28,9 @@
 ;; the load-path and use icicles for completion it can go into mattie.el.
 
 (defun examine-library (library-name)
+  ;; switch over to find-library and figure out how to make the buffer
+  ;; automatically read-only.
+
   "examine the source of a library. Type the library name without
    any extension. If the library exists the source will be
    loaded"
@@ -70,6 +73,7 @@
     ((x-select-enable-clipboard t))
     (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
     ))
+
 
 ;;----------------------------------------------------------------------
 ;; experimental - interesting
