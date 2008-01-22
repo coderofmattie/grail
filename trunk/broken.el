@@ -4,6 +4,18 @@
 ;; and fixing.
 ;;----------------------------------------------------------------------
 
+;; This would be very cool if I had a better font for greek symbols.
+
+;; from: http://www.emacswiki.org/cgi-bin/emacs-en/PrettyLambda
+
+(defun pretty-lambdas ()
+  (interactive)
+  (font-lock-add-keywords
+    nil `(("(\\(lambda\\>\\)"
+            (0 (progn (compose-region (match-beginning 1) (match-end 1)
+                        ,(make-char 'greek-iso8859-7 107))
+                 nil))))))
+
 ;; stateful version by fledermous in #emacs (thanks)
 ;; (remove nil (mapcar fun (remove nil list)))
 
@@ -84,15 +96,6 @@
 ;;    (message "it failed !")
 ;;    ))
 
-(defun lisp-list-delete-body ()
-  "delete the body of a lisp list including any nested lists"
-  (interactive)
-  (let
-    ((open-pos (scan-lisp-list-open))
-     (close-pos (scan-lisp-list-close)))
-
-    (delete-backward-char (- close-pos open-pos))))
-
 (defun paludis-overlay ()
   (auto-overlay-unload-regexp 'paludis)
   (auto-overlay-load-regexp
@@ -117,4 +120,5 @@
 
   (auto-overlay-start 'paludis)
   )
+
 
