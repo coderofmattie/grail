@@ -141,7 +141,7 @@
 ;; vital to developing a working grammar.
 
 (defun parser-trace-message ( format &rest args )
-  "like message but prints to a trace buffer instead of the Message buffer."
+  "Prints to a trace buffer instead of the Message buffer."
   (with-current-buffer parser-trace-buffer
     (goto-char (point-max))
     (insert (apply 'format format args))))
@@ -175,6 +175,8 @@
       ((toggle (apply 'or (mapcar (lambda ( trace-on )
                                     ;; eq comparison of symbols does not work. A string
                                     ;; comparison is used for matching.
+
+                                    ;; FIXME: symbol-value may remove this wart.
                                     (if (equal (symbol-name production) (car trace-on))
                                       (cdr trace-on)))
                             parser-trace) )))
@@ -225,34 +227,32 @@
 
 ;; nil indicates failure to match.
 
-;; A successful match has a parser and AST parts. The parser is
-;; the ending position of the match relative to the starting
-;; match position.
+;; A successful match has a parser and AST parts.
+
+;; The parser part is either a count of input characters consumed
+;; for a terminal or t|nil for non-terminals. When the parser
+;; position is advanced the count is replaced with t.
 
 ;; The AST part is created by a token action handler or a combination
 ;; operator like and.
 
-;; token ( match-symbol . ( start . end ) | "user value" | "user function return value")
-;; and   ( match-symbol . "a list of Match Result AST parts" )
-
-;; This consistent return value structure allows token/and/or
-;; match-functions to nest arbitrarily [except that tokens are
-;; strictly leafs].
+;; terminal     ( match-symbol . ( start . end ) | "user value")
+;; non-terminal ( match-symbol . "a list/tree of AST" )
 
 (defun parser-make-production-match ( tree )
-  "document me."
+  "Make a matched non-terminal Match Result."
   (cons t tree))
 
 (defun parser-make-token-match ( data )
-  "Create a Match Result cons of (consumed . match data)."
+  "Make a matched terminal Match Result."
   (cons (parser-consumed) data))
 
 (defun parser-match-p ( match-result )
-  "Return the input consumed by the match"
-  (and (consp match-result) (car match-result)))
+  "Return the parse part of a Match Result."
+  (car match-result))
 
 (defsubst parser-match-data ( match-result )
-  "Return the match data."
+  "Return the data of a Match Result."
   (cdr match-result))
 
 (defun parser-consume-token ( match-result )
