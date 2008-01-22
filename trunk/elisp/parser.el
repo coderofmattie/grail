@@ -87,6 +87,10 @@
 ;; 1. All of the PEG predicates (missing not)
 ;; 2. re-document after all the code churn.
 ;; 3. Canonical tree walk implemented as parser-ast-node.
+;; 4. commented out message string in compile needs to be a debugging
+;;    option
+;; 5. Check the generated code for anything silly, keeping in mind that
+;;    it is generated code.
 
 ;; -> Phase 2
 
@@ -98,6 +102,11 @@
 ;;    starting input position and the name. When this happens
 ;;    these names must be unique. Both backtracking and popping
 ;;    the parser position needs to clear the list.
+
+;;    better idea. When a backtrack occurs take the dynamically scoped
+;;    parse-tree and filter out all the tokens, and sort by starting
+;;    position. insertion sort would work well because I will know the
+;;    size of the table to create.
 
 (require 'cl)
 (require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil
@@ -170,6 +179,91 @@
    Where form is the expr received, from is the component issuing the diagnostic,
    and expected is a message describing what the component expected"
   `(concat (format "[%s] expected: " ,from)  ,expected " not: " ,(parser-expr-diagnostic form)))
+
+;;----------------------------------------------------------------------
+;; Parser Tracing
+;;----------------------------------------------------------------------
+
+;; A tracing facility that can be selectively turned on and off for
+;; productions. When tracing is turned on the result of all matches
+;; attempted are printed to a buffer, or the Message buffer.
+
+;; A report of how the compiled parser matched the input stream is
+;; vital to developing a working grammar.
+
+(defun parser-trace-message ( format &rest args )
+  "like message but prints to a trace buffer instead of the Message buffer."
+  (with-current-buffer parser-trace-buffer
+    (goto-char (point-max))
+    (insert (apply 'format format args))))
+
+(defun parser-trace-match ( match-func match-result )
+  "Trace the current match if the parser-trace-flag is bound to t"
+  (if (and (boundp 'parser-trace-flag) (eq t parser-trace-flag))
+    (funcall
+      (if (boundp 'parser-trace-buffer)
+        'parser-trace-message
+        'message)
+
+      "%s at: %d match: %s"
+      (symbol-name match-func)
+      (parser-pos)
+      (pp-to-string match-result)) ))
+
+(defun parser-trace-p ( production )
+  "Given a Match Function determine if parser-trace-flag should
+   be set. The parser-trace list is scanned for a symbol match.
+   The return value is a cons of a boolean indicating whether to
+   set the flag, and the value of the flag.
+
+   The parser-trace list is created by the macro parser-trace-list
+   in utilities."
+
+  (catch 'abort
+    (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
+
+    (lexical-let
+      ((toggle (apply 'or (mapcar (lambda ( trace-on )
+                                    ;; eq comparison of symbols does not work. A string
+                                    ;; comparison is used for matching.
+                                    (if (equal (symbol-name production) (car trace-on))
+                                      (cdr trace-on)))
+                            parser-trace) )))
+      ;; a cons cell is returned so that a false value for the trace flag can be returned
+      ;; without negating the truth value of the predicate itself.
+      (if toggle
+        (cons t toggle)
+        (cons nil nil) )) ))
+
+(defmacro parser-trace-on ( production &rest code )
+  "parser-trace-on takes production and a code block code. If the production
+   is on the parser-trace list a parser-trace-flag dynamically scoped is
+   bound to the boolean toggle for tracing that production."
+
+  ;; Using the dynamic scoping of let during the execution of the
+  ;; compiled parser to scope parser-trace-flag gives tracing behavior
+  ;; that precisely matches the execution of the parser.
+
+  `(lexical-let*
+    ((code-func (lambda () ,@code))
+      (trace-p (parser-trace-p ,production))
+      (trace-toggle (cdr trace-p)) )
+
+     (if (and
+           (car trace-p)
+
+           ;; This expression attempts to minimize duplicate binding
+           ;; of parser-trace-flag. If there are flaws in the tracing
+           ;; behavior stemming from this expression it should be
+           ;; removed entirely.
+           (or
+             (not (boundp 'parser-trace-flag))
+             (not (eq parser-trace-flag trace-toggle))))
+       (let
+         ((parser-trace-flag trace-toggle))
+         (funcall code-func))
+
+       (funcall code-func)) ))
 
 ;;----------------------------------------------------------------------
 ;; Match Result
@@ -262,91 +356,6 @@
           (parser-ast-append head)
           (parser-make-production-match nil))
         (parser-make-production-match head)) )))
-
-;;----------------------------------------------------------------------
-;; Parser Tracing
-;;----------------------------------------------------------------------
-
-;; A tracing facility that can be selectively turned on and off for
-;; productions. When tracing is turned on the result of all matches
-;; attempted are printed to a buffer, or the Message buffer.
-
-;; A report of how the compiled parser matched the input stream is
-;; vital to developing a working grammar.
-
-(defun parser-trace-message ( format &rest args )
-  "like message but prints to a trace buffer instead of the Message buffer."
-  (with-current-buffer parser-trace-buffer
-    (goto-char (point-max))
-    (insert (apply 'format format args))))
-
-(defun parser-trace-match ( match-func match-result )
-  "Trace the current match if the parser-trace-flag is bound to t"
-  (if (and (boundp 'parser-trace-flag) (eq t parser-trace-flag))
-    (funcall
-      (if (boundp 'parser-trace-buffer)
-        'parser-trace-message
-        'message)
-
-      "%s at: %d match: %s"
-      (symbol-name match-func)
-      (parser-pos)
-      (pp-to-string match-result)) ))
-
-(defun parser-trace-p ( production )
-  "Given a Match Function determine if parser-trace-flag should
-   be set. The parser-trace list is scanned for a symbol match.
-   The return value is a cons of a boolean indicating whether to
-   set the flag, and the value of the flag.
-
-   The parser-trace list is created by the macro parser-trace-list
-   in utilities."
-
-  (catch 'abort
-    (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
-
-    (lexical-let
-      ((toggle (apply 'or (mapcar (lambda ( trace-on )
-                                    ;; eq comparison of symbols does not work. A string
-                                    ;; comparison is used for matching.
-                                    (if (equal (symbol-name production) (car trace-on))
-                                      (cdr trace-on)))
-                            parser-trace) )))
-      ;; a cons cell is returned so that a false value for the trace flag can be returned
-      ;; without negating the truth value of the predicate itself.
-      (if toggle
-        (cons t toggle)
-        (cons nil nil) )) ))
-
-(defmacro parser-trace-on ( production &rest code )
-  "parser-trace-on takes production and a code block code. If the production
-   is on the parser-trace list a parser-trace-flag dynamically scoped is
-   bound to the boolean toggle for tracing that production."
-
-  ;; Using the dynamic scoping of let during the execution of the
-  ;; compiled parser to scope parser-trace-flag gives tracing behavior
-  ;; that precisely matches the execution of the parser.
-
-  `(lexical-let*
-    ((code-func (lambda () ,@code))
-      (trace-p (parser-trace-p ,production))
-      (trace-toggle (cdr trace-p)) )
-
-     (if (and
-           (car trace-p)
-
-           ;; This expression attempts to minimize duplicate binding
-           ;; of parser-trace-flag. If there are flaws in the tracing
-           ;; behavior stemming from this expression it should be
-           ;; removed entirely.
-           (or
-             (not (boundp 'parser-trace-flag))
-             (not (eq parser-trace-flag trace-toggle))))
-       (let
-         ((parser-trace-flag trace-toggle))
-         (funcall code-func))
-
-       (funcall code-func)) ))
 
 ;;----------------------------------------------------------------------
 ;; Primitive Operators
