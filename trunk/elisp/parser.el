@@ -679,10 +679,18 @@
       (or      (lambda (syntax)
                  (parser-compile-to-symbol (parser-node-function 'parser-or syntax))))
 
-      ;; we should only have two sexp in the name list, hence cadr
       (name    (lambda (syntax)
-                 (parser-remember-production (car syntax))
-                 (parser-compile-definition (cadr syntax))))
+                 (lexical-let
+                   ;; first try to compile
+                   ((compiled (parser-compile-definition (cadr syntax))))
+
+                   (message "compiled is %s" (pp-to-string compiled))
+                   ;; we should get an anon compiled function, otherwise using
+                   ;; name is nutty.
+                   (if (string-equal "parser-operator" compiled)
+                     (parser-compile-to-symbol (symbol-function compiled) (car syntax))
+                     (signal parser-syntax-error "name statement is for naming operators/or only"))
+                   )))
 
       ;; define discards the match functions as a return value so
       ;; tokens and rules can be defined before they are used.
@@ -703,7 +711,7 @@
 
 ;; parser-compile produces a no frills LL Recursive Descent parser.
 
-;; The grammar accepted by the parser compiler is 
+;; The grammar accepted by the parser compiler is
 
 ;; left recursion is impossible because the compile is recursive, a
 ;; production does not exist in the production table until a recursion
@@ -757,7 +765,7 @@
                      (if parse
                        ;; if we have a production return the position at which the
                        ;; parser stopped along with the AST.
-                       (parser-make-match (parser-pos) (parser-match-data parse))
+                       (cons (parser-pos) (parser-match-data parse))
                        nil))
                    ))) ))
         t)
