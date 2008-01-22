@@ -31,6 +31,9 @@
          ) given-forms)
     ))
 
+;; DejaVuLisp was modified from DejaVuMono from this link.
+;; http://dejavu.sourceforge.net/wiki/index.php/Main_Page
+
 (simple-set-theme user
   ;; default
   (default splice (:stipple nil
@@ -45,7 +48,7 @@
                     :weight normal
                     :height 110
                     :width normal
-                    :family "Courier New"))
+                    :family "DejaVuLisp"))
 
   ;; comments are set off-tempature to distingiush them better.
   ;; orange was chosen as a red that wasn't harsh.
@@ -75,5 +78,5 @@
   (cperl-hash-face  slant 'italic)
 
   ;; flyspell.
-  (flyspell-incorrect underline t)
-)
+  (flyspell-incorrect underline t))
+
