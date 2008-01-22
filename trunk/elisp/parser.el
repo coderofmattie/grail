@@ -267,6 +267,23 @@
 ;; AST tree constructors
 ;;----------------------------------------------------------------------
 
+;; The AST constructor builds a tree out of the Match Results created
+;; by parsing.
+
+;; Each non-terminal created by the and statement creates a new list
+;; that is dynamically scoped as parse-tree. The beginning of the list
+;; is stored lexically.
+
+;; As the parse progresses terminals are added with
+;; parse-ast-append-match. When a production is derived for a
+;; non-terminal the scope of parse-tree is exited, and the completed
+;; sub-tree is joined to the parent production's parse-tree which is
+;; no longer shadowed.
+
+;; If there is no parent parse-tree bound it can only be the start
+;; symbol, so the value of head is returned from the function as the
+;; completed AST tree.
+
 (defun parser-ast-append ( production )
   "append to the AST."
   (lexical-let
@@ -276,7 +293,7 @@
     (setq parse-tree new-tail) ))
 
 (defun parser-ast-append-match ( match )
-  "append to the parse AST if the match data is not null."
+  "append to the parse AST filtering null match data."
   (lexical-let
     ((data (parser-match-data match)))
 
@@ -392,19 +409,19 @@
 ;; tokens
 ;;----------------------------------------------------------------------
 
-(defun parser-token-bounds ( type capture )
-  "Return the bounds of the capture from match-{beg,end} with the
-   upper bound adjusted by decrement to inclusive. The type
-   returned is chosen with a quoted type constructor symbol like
-   cons or list."
-  (eval `(,type (match-beginning capture) (match-end capture)) ))
-
 ;; The token part of the grammar definition contains a great deal of flexibility
 ;; or construction options for tokens.
 
 ;; parser-token-function builds the matching part while
 ;; parser-token-constructor focuses on constructing Match Result data
 ;; for the token.
+
+(defun parser-token-bounds ( type capture )
+  "Return the bounds of the capture from match-{beg,end} with the
+   upper bound adjusted by decrement to inclusive. The type
+   returned is chosen with a quoted type constructor symbol like
+   cons or list."
+  (eval `(,type (match-beginning capture) (match-end capture)) ))
 
 (defun parser-token-constructor ( constructor )
   "Construct the Match Data constructor for the token as a single s-exp."
@@ -498,8 +515,9 @@
     (parser-positive-function match-func) ''parser-optional-closure))
 
 (defun parser-production-function ( name match-function )
-  "Notably does not use the Parser Generator combination operators, using
-   them here would just be dogmatic."
+  "Pass the Match Function to parser-ast-descend to create a sub-tree
+   in the AST, scoping parse-tree. This is used by non-terminals
+   only."
   `(lambda ()
      (parser-ast-descend '',name ',match-function)))
 
