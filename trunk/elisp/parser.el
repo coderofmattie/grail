@@ -76,7 +76,7 @@
 ;; position to a next or previous stack position. backtrack discards
 ;; the top of the stack.
 
-(defsubst parser-pos ()
+(defun parser-pos ()
   "Return the current position of the parser in the buffer"
   (car parser-position))
 
@@ -248,20 +248,15 @@
   (cons (parser-consumed) data))
 
 (defun parser-match-p ( match-result )
+  (unless (consp match-result)
+    (throw 'parser-match-fail nil))
+
   "Return the parse part of a Match Result."
   (car match-result))
 
 (defsubst parser-match-data ( match-result )
   "Return the data of a Match Result."
   (cdr match-result))
-
-(defun parser-consume-token ( match-result )
-  "consume a token converting it to a production match if not so already."
-  (if (numberp (car match-result))
-    (progn
-      (parser-advance (car match-result))
-      (parser-make-production-match (cdr match-result)))
-    match-result) )
 
 ;;----------------------------------------------------------------------
 ;; AST tree constructors
@@ -292,36 +287,48 @@
     (setcdr parse-tree new-tail)
     (setq parse-tree new-tail) ))
 
-(defun parser-ast-append-match ( match )
-  "append to the parse AST filtering null match data."
-  (lexical-let
-    ((data (parser-match-data match)))
+(defun parser-?consume-match ( match-result )
+  "consume a token converting it to a production match if not so already."
 
-    (if data
-      (parser-ast-append data)) ))
+  (catch 'consumed-match
+    (lexical-let
+      ((match-status (parser-match-p match-result))
+       (match-data   (parser-match-data match-result)))
+
+      (unless match-status
+        (throw 'parser-match-fail nil))
+
+      (if (numberp match-status)
+        (progn
+          (parser-advance match-status)
+          (parser-ast-append match-data)
+          (throw 'consumed-match (parser-make-production-match nil)))
+
+        ;; alternative to a token is a possible un-consumed production.
+        (if match-data
+          (progn
+            (parser-ast-append match-data)
+            (throw 'consumed-match (parser-make-produciton-match nil)))) ))
+
+      match-result))
 
 (defun parser-ast-descend ( non-terminal func-match )
   "start a new AST level"
-  (catch 'no-match
+  (catch 'parser-match-fail
     (lexical-let
-      ((head (cons non-terminal nil))
-        (match-result nil))
+      ((unattached-node (cons non-terminal nil)))
 
+      ;; this step populates the detached node
       (let
-        ((parse-tree head))
+        ((parse-tree unattached-node))
+        (parser-?consume-match (funcall func-match)) )
 
-        (setq match-result (funcall func-match))
-
-        (unless (parser-match-p match-result)
-          (throw 'no-match nil))
-
-        (parser-ast-append-match (parser-consume-token match-result)))
-
+      ;; this either attaches the tree or returns it.
       (if (boundp 'parse-tree)
         (progn
-          (parser-ast-append head)
+          (parser-ast-append unattached-node)
           (parser-make-production-match nil))
-        (parser-make-production-match head)) )))
+        (parser-make-production-match unattached-node)) )))
 
 ;;----------------------------------------------------------------------
 ;; Primitive Operators
@@ -329,50 +336,47 @@
 
 ;; The parser uses two primitive operators: parser-and, parser-or as
 ;; primitives to construct matching behavior. Significantly parser-and
-;; can backtrack and parser-or never does.
+;; both backtracks and populates nodes - whereas or treats matches as
+;; opaque.
 
-;; and/or have the same essential meaning as the lisp and/or forms
-;; with two specializations. Both functions treat their argument lists
-;; as a list of Match Functions.
-
-;; These are purely matching functions: Match Results as opaque.
+;; and/or have the same logical behavior in regards to the boolean
+;; result of evaluating Match Functions as the lisp and/or forms.
 
 (defun parser-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
    nil is returned if no matches are found"
   (catch 'match
-    (dolist (match match-list)
-      (parser-trace-on match
-        (lexical-let
-          ((production (funcall match)))
+    (dolist (match-func match-list)
+      (parser-trace-on match-func
 
-          (parser-trace-match match production)
+        (catch 'parser-match-fail
 
-          (if production
-            (throw 'match production)) )) )))
+          ;; if there was not a non-local exit abort the traverse of match-list
+          ;; with a successful match.
+          (throw 'match
+            (lexical-let
+              ((match-result (funcall match-func)))
+
+              (parser-trace-match match-func match-result)
+              (parser-?consume-match match-result)) )) ))))
 
 (defun parser-and ( &rest match-list )
   "combine the matches with and. all of the match objects must return non-nil
    in the parser part or the parser will backtrack and return nil."
   (parser-push)
 
-  (if (catch 'backtrack
+  (if (catch 'parser-match-fail
         (dolist (match-func match-list t)
           (parser-trace-on match-func
+
             (lexical-let
-              ((production (funcall match-func)))
-
-              (parser-trace-match match-func production)
-
-              (unless production
-                (throw 'backtrack nil))
-
-              (parser-ast-append-match (parser-consume-token production))
-              ))))
-      (progn
-        (parser-pop)
-        (parser-make-production-match nil))
-      (parser-backtrack) ))
+              ((match-result (funcall match-func)))
+              (parser-trace-match match-func match-result)
+              (parser-?consume-match match-result) )) ))
+    (progn
+      (parser-pop)
+      (parser-make-production-match nil))
+    (parser-backtrack) ))
 
 ;;----------------------------------------------------------------------
 ;; Match Functions
@@ -475,8 +479,6 @@
 ;; these two predicate operators are the two primitives needed to
 ;; implement greedy matching.
 
-;; FIXME: trace point in the closures ?
-
 (defun parser-positive-closure ( match-func )
   "A positive closure compound function of unbounded greed."
   (lexical-let
@@ -487,15 +489,16 @@
                                (parser-make-production-match nil)))
 
       (setq matched-once t)
-      (parser-ast-append-match (parser-consume-token production))
-      )))
+      (parser-?consume-match production)) ))
 
 (defun parser-optional-closure ( match-result )
   "An optional closure predicate function that converts match
    failures to a match succeeded with nil match data."
-  (if match-result
-    (parser-consume-token match-result)
-    (parser-make-production-match nil)) )
+
+  (catch 'parser-match-fail
+    (parser-?consume-match match-result))
+
+  (parser-make-production-match nil))
 
 ;;----------------------------------------------------------------------
 ;; Predicate Generators
