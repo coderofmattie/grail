@@ -50,18 +50,45 @@
 
 ;; eval this, then eval various tests.
 
-(defun run-parser ()
-  "run test-parser interactively for testing and debugging."
-  (interactive)
-  (lexical-let
-    ((parse-result (test-parser (point))))
+(parser-production-function
 
-    (message "PROD match? %s"
-      (if parse-result
-        (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
-        "No")
-      ))
-    ))
+(parser-compile test-parser
+  (token whitespace "[[:blank:]]+")
+  (token word "[[:alpha:]]+"))
+
+(parser-compile test-parser
+  (+ (token word "[[:alpha:]]+") (token whitespace "[[:blank:]]+")))
+
+(parser-compile test-parser
+  (+ (token word "[[:alpha:]]+") (token whitespace "[[:blank:]]+")))
+
+(parser-compile test-parser
+  (+ (token word "[[:alpha:]]+" parser-token-string) (? (token whitespace "[[:blank:]]+"))))
+
+parser foo bar baz||
+
+(parser-compile test-parser
+  (define
+    (name bingo (or
+                  (token whitespace "[[:blank:]]+")
+                  (token word "[[:alpha:]]+"))))
+  bingo)
+
+(parser-trace-list test-trace
+  (whitespace t)
+  (word t)
+  (start t))
+
+(parser-compile test-parser
+  (define
+    (name foo (or
+                (token whitespace "[[:blank:]]+")
+                (token word "[[:alpha:]]+"))))
+  foo)
+
+(parser-compile test-parser
+  (and indented (token whitespace "[[:blank:]]+") (token word "[[:alpha:]]+"))
+  (and inverted word whitespace))
 
 (parser-compile test-parser
   (token whitespace "[[:blank:]]+"))
@@ -84,5 +111,16 @@
   (and indented (token whitespace "[[:blank:]]+") (token word "[[:alpha:]]+"))
   (and inverted word whitespace))
 
-fooo   bar
+foo bar baz
 
+;;----------------------------------------------------------------------
+;; experimental
+;;----------------------------------------------------------------------
+
+now create a spiffy function that walks the AST tree for you.
+
+something like start/indented/whitespace
+or start/indented
+
+this should lay the grounds for verifying wether the AST is generated as expected,
+with parser-walk defining a canonical traversal.
