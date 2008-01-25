@@ -68,8 +68,8 @@
   (message "install it !")
   )
 
-(defmacro paludis-type-p ( type )
-  `(eq ,type (overlay-get 'paludis 'paludis-type)))
+;; this is where we need to translate the buffer position into a position
+;; in our data structure.
 
 (defun paludis-show-at-point ()
   "show what packages will be installed by paludis"
@@ -85,14 +85,25 @@
   (message "install it !")
   )
 
-(defun paludis-properties ()
-  (goto-char (point-min))
+;; why can't I name an or ? this is a weakness in define that needs to be addressed.
+(parser-compile paludis-query
+  (define
+    (token whitespace        "[[:blank:]]+")
+    (token pkg-name          "[^[:blank:]]+" parser-token-string)
+    (token repo-name         "\\([^[:blank:]]+\\):" 1)
 
-  (let
-    ((span-start (point))
-      )
+    (name pkg-version        (or
+                               (token pkg-ver-masked "\\\(\\([^[:blank:]]+\\)\\\)[^[:blank:]]+" 1)
+                               (token pkg-ver-stable "[^[:blank:]{][^[:blank:]]+" parser-token-string)))
+    )
 
-    ))
+  (and package (token package-record "\\\*") whitespace pkg-name)
+  (and repository whitespace repo-name whitespace (+ pkg-version whitespace))
+  )
+
+(parser-trace-list paludis-trace
+  (package t)
+  (repository t))
 
 ;; need a local-map
 (defun paludis-mode ()
