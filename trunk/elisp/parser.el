@@ -32,7 +32,11 @@
 
 ;; 0. tracing start production does not work.
 ;; 1. All of the PEG predicates (missing not)
+
 ;; 2. re-document after all the code churn.
+;;    need to C-h f functions in various context to see how the DocStrings look +
+;;    read the DocString Style Guide.
+
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 ;; 4. commented out message string in compile needs to be a debugging
 ;;    option
@@ -600,7 +604,7 @@
   (parser-compile-to-symbol (parser-production-function name match-function) name))
 
 ;;----------------------------------------------------------------------
-;; Grammar Interpreter
+;; Interpreter Syntax
 ;;----------------------------------------------------------------------
 
 (defun parser-lookup-table ( table body )
@@ -653,6 +657,10 @@
                 "parser definition"
                 ,expected))) )))
 
+;;----------------------------------------------------------------------
+;; Grammar Interpreter.
+;;----------------------------------------------------------------------
+
 (defun parser-compile-definition ( statement )
   "parser-compile-definition compiles grammar statements which are lists
    with a keyword as the first symbol."
@@ -699,8 +707,7 @@
       ;; tokens and rules can be defined before they are used.
       (define  (lambda (syntax)
                  (mapcar 'parser-compile-definition syntax)
-                 nil)) )
-    ))
+                 nil)) )))
 
 ;;----------------------------------------------------------------------
 ;; macro interface
@@ -710,21 +717,8 @@
   "initial size of the match-table objarray for storing match functions. the value
    was chosen based on the recommendation of prime numbers for good hashing.")
 
-;; ->Characteristics
-
-;; parser-compile produces a no frills LL Recursive Descent parser.
-
-;; The grammar accepted by the parser compiler is
-
-;; left recursion is impossible because the compile is recursive, a
-;; production does not exist in the production table until a recursion
-;; is completed.
-
-;; adding left recursion as a feature will be challenging, binding of
-;; match functions must be delayed.
-
 (defmacro parser-compile ( parser &rest definition )
- "PARSER &rest GRAMMAR
+  "parser-compile PARSER &rest GRAMMAR
 
   parser-compile Implements a Recursive Descent parser compiler
   with a Lisp Macro interface. The parser-compiler is a symbol
@@ -732,19 +726,26 @@
   generates a complete scanner-less parser bound to the PARSER
   symbol given as the first argument.
 
-  PARSER is bound fset so the symbol may be used as a function:
-  funcall is not necessary. Parsers do not conflict with each
-  other unless you tried to nest them.
+  The generated parser is bound fset so the symbol is used as a
+  function: funcall is not necessary. Parsers do not conflict
+  with each other unless you tried to nest them.
+
+  The sole argument to the parser is a starting position in the
+  current buffer. The return value is the resume position for
+  another parse along with the AST generated, or nil. A single
+  production of the start symbol is returned per-call.
 
   GRAMMAR is essentially PEG in sexp form with some additional
   features for tokens. There is a implicit start symbol 'start
   for the toplevel of the grammar definition. The start symbol's
   operator is or.
 
-  The generated parser is called with a starting position in a
-  buffer. The return value is the resume position for another
-  parse along with the AST generated, or nil. A single production
-  of the start symbol is returned per-call."
+  The grammar is recursively interpreted. Left recursion of any
+  sort is forbidden because a Left Production is not stored in
+  the Production Table until the Production right is completely
+  evaluated. I consider this a mis-feature and would like to
+  implement delayed binding.
+  "
 
   (let
     ;; create a symbol table to store compiled terminal and
