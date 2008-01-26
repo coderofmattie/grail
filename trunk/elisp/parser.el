@@ -285,11 +285,12 @@
 
 (defun parser-ast-append ( production )
   "append to the AST."
-  (lexical-let
-    ((new-tail (cons production nil)))
+  (unless (and (boundp 'parser-drop-ast) (symbol-value 'parser-drop-ast))
+    (lexical-let
+      ((new-tail (cons production nil)))
 
-    (setcdr parse-tree new-tail)
-    (setq parse-tree new-tail) ))
+      (setcdr parse-tree new-tail)
+      (setq parse-tree new-tail) )))
 
 (defun parser-?consume-match ( match-result )
   "consume a token converting it to a production match if not so already."
@@ -467,6 +468,10 @@
 ;; The parser is built up from primitives with two combination generators
 ;; that nest Match Functions.
 
+;; I would really like to produce a cleaner parser, that is not so clumsily
+;; generated. If the generated code was taken in s-exp form nesting could
+;; be much more elegant, and maybe with an API as well.
+
 (defun parser-predicate-function ( match-func predicate )
   "Pass the Match Result of match-func to predicate."
   `(lambda ()
@@ -505,6 +510,22 @@
       (setq matched-once t)
       (parser-?consume-match production)) ))
 
+(defun parser-lookahead-closure ( match-func )
+  "The parser look-ahead closure performs parsing without consuming
+   input."
+  (parser-push)
+
+  (lexical-let
+    ((match-result (catch 'parser-match-fail (funcall match-func))))
+    (parser-pop)
+    match-result ))
+
+(defun parser-drop-closure ( match-func )
+  "Performs parsing without modifying the AST."
+  (let
+    ((parser-drop-ast t))
+    (funcall match-func)) )
+
 (defun parser-optional-closure ( match-result )
   "An optional closure predicate function that converts match
    failures to a match succeeded with nil match data."
@@ -521,6 +542,14 @@
 (defun parser-positive-function ( match-func )
   "Generate a positive closure of match-func."
   (parser-compound-function match-func ''parser-positive-closure))
+
+(defun parser-peek-function ( match-func )
+  "Generate a peek closure of match-func, parse result is logically preserved
+   but no input is consumed and the parse tree is not modified."
+
+  (parser-compound-function
+    (parser-compound-function match-func ''parser-lookahead-closure)
+    ''parser-drop-closure))
 
 (defun parser-optional-function ( match-func )
   "Generate an optional closure of match-func."
@@ -604,6 +633,7 @@
 (defun parser-compile-to-symbol ( function &optional name )
   "compile a Match Function as either a un-interned symbol when name is nil or
    a symbol queried by parser-match-function when name is given"
+  ;; tracing can be dynamic with a tracing parameter to the macro.
   ;; (message "compiling %s" (pp-to-string function))
   (if name
     (parser-match-function name function)
@@ -645,6 +675,9 @@
   "construct a more readable syntax for the grammar statement interpreter using nested cond
    forms as the mechanism. The compilation of Match Functions is implemented in the macro
    allowing the form to focus on parser generation."
+
+  ;; TODO: expected can be generated from the tables just like the code is but
+  ;;       with string work.
   `(let
      ((keyword (car ,grammar))
        (syntax  (cdr ,grammar)))
@@ -685,9 +718,10 @@
     "statement token|or|and|define or operator"
 
     (operators
-      (+  parser-positive-function)
-      (?  parser-optional-function)
-      (*  parser-kleene-function))
+      (+     parser-positive-function)
+      (?     parser-optional-function)
+      (*     parser-kleene-function)
+      (peek  parser-peek-function))
 
     (statements
       (token   (lambda (syntax)
