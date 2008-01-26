@@ -285,14 +285,13 @@
 
 (defun parser-ast-append ( production )
   "append to the AST."
-  (lexical-let
-    ((new-tail (cons production nil)))
-
-    (setcdr parse-tree new-tail)
-    (setq parse-tree (if (null (cdr new-tail))
-                       new-tail
-                       (do ((x (cdr new-tail) (cdr x))
-                            ((not (null (cdr x))) x)) nil)) )))
+  (if (consp parse-tree)
+    (progn
+      (setcdr parse-tree production)
+      (setq parse-tree (do ((x production))
+                           ((null (cdr x)) x)
+                         (setq x (cdr x))) ))
+    (setq parse-tree production)))
 
 (defun parser-?consume-match ( match-result )
   "consume a token converting it to a production match if not so already."
@@ -309,8 +308,10 @@
         (progn
           (parser-advance match-status)
 
-          (unless (and (symbolp match-data) (eq 'nil match-data))
-            (parser-ast-append match-data))
+          (unless (and (symbolp match-data) (null match-data))
+            (if (consp parse-tree)
+              (setq parse-tree (setcdr parse-tree (cons match-data nil)))
+              (setq parse-tree (cons match-data nil)) ))
 
           (throw 'consumed-match (parser-make-production-match nil)))
 
@@ -318,7 +319,7 @@
         (if match-data
           (progn
             (parser-ast-append match-data)
-            (throw 'consumed-match (parser-make-produciton-match nil)))) ))
+            (throw 'consumed-match (parser-make-production-match nil)))) ))
 
       match-result))
 
@@ -336,7 +337,7 @@
       ;; Attach the tree or return it as the completed AST.
       (if (boundp 'parse-tree)
         (progn
-          (parser-ast-append unattached-node)
+          (setq parse-tree (setcdr parse-tree (cons unattached-node nil)))
           (parser-make-production-match nil))
         (parser-make-production-match unattached-node)) )))
 
@@ -374,19 +375,21 @@
   "combine the matches with and. all of the match objects must return non-nil
    in the parser part or the parser will backtrack and return nil."
   (parser-push)
+  (let
+    ((parse-tree nil))
 
-  (if (catch 'parser-match-fail
-        (dolist (match-func match-list t)
-          (parser-trace-on match-func
+    (if (catch 'parser-match-fail
+          (dolist (match-func match-list t)
+            (parser-trace-on match-func
 
-            (lexical-let
-              ((match-result (funcall match-func)))
-              (parser-trace-match match-func match-result)
-              (parser-?consume-match match-result) )) ))
-    (progn
-      (parser-pop)
-      (parser-make-production-match nil))
-    (parser-backtrack) ))
+              (lexical-let
+                ((match-result (funcall match-func)))
+                (parser-trace-match match-func match-result)
+                (parser-?consume-match match-result) )) ))
+      (progn
+        (parser-pop)
+        (parser-make-production-match parse-tree))
+      (parser-backtrack) )))
 
 ;;----------------------------------------------------------------------
 ;; Match Functions
