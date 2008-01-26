@@ -327,7 +327,7 @@
         ((parse-tree unattached-node))
         (parser-?consume-match (funcall func-match)) )
 
-      ;; this either attaches the tree or returns it.
+      ;; Attach the tree or return it as the completed AST.
       (if (boundp 'parse-tree)
         (progn
           (parser-ast-append unattached-node)
@@ -429,7 +429,7 @@
    upper bound adjusted by decrement to inclusive. The type
    returned is chosen with a quoted type constructor symbol like
    cons or list."
-  (eval `(,type (match-beginning capture) (match-end capture)) ))
+  (funcall type (match-beginning capture) (match-end capture)) )
 
 (defun parser-token-constructor ( constructor )
   "Construct the Match Data constructor for the token as a single s-exp."
@@ -483,6 +483,9 @@
 ;; these two predicate operators are the two primitives needed to
 ;; implement greedy matching.
 
+;; TODO: if matched-once was changed to match-count and incremented
+;;       with incf, it would not be terribly hard to implement something
+;;       like ?4 which would minimally match 4 times.
 (defun parser-positive-closure ( match-func )
   "A positive closure compound function of unbounded greed."
   (lexical-let
