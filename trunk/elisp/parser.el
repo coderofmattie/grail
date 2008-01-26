@@ -739,7 +739,6 @@
                    ;; first try to compile
                    ((compiled (parser-compile-definition (cadr syntax))))
 
-                   (message "compiled is %s" (pp-to-string compiled))
                    ;; we should get an anon compiled function, otherwise using
                    ;; name is nutty.
                    (if (string-equal "parser-operator" compiled)
