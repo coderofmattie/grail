@@ -521,7 +521,7 @@
 
 (defun parser-drop-closure ( match-func )
   "Performs parsing without modifying the AST."
-  ;; shadow parse-tree and throwing it away.
+  ;; shadow parse-tree and throw it away.
   (let
     ((parse-tree nil))
     (funcall match-func)) )
@@ -598,8 +598,7 @@
     (signal 'parser-syntactic-error
       (parser-daignostic rule
         "Rule Right interpreter"
-        "expected a grammar list e.g: token,and,or ; or a symbol as a rule or token reference"))
-    ))
+        "expected a grammar list e.g: token,and,or ; or a symbol as a rule or token reference")) ))
 
 (defun parser-rule-right ( nil-warning rule-list )
   "Apply parser-eval-rule-right to a production right list."
@@ -610,10 +609,9 @@
       matchf-list
       (progn
         (message "%s" nil-warning)
-        (throw 'no-matches nil)))
-    ))
+        (throw 'no-matches nil))) ))
 
-(defun parser-node-function ( prod-operator prod-right )
+(defun parser-primitive-function ( prod-operator prod-right )
   "Bind a set of Match functions to a primitive operator, a single match is optimized
    as itself."
   (let
@@ -626,6 +624,12 @@
       `(lambda ()
          (apply ',prod-operator ',matchf-list )) )))
 
+(defun parser-operator-function ( prod-operator prod-right )
+  (if (or (eq 'parser-and prod-operator)
+          (eq 'parser-or  prod-operator))
+    (parser-primitive-function prod-operator prod-right)
+    (funcall prod-operator (parser-primitive-function 'parser-and prod-right)) ))
+
 ;;----------------------------------------------------------------------
 ;; Compilation
 ;;----------------------------------------------------------------------
@@ -633,11 +637,15 @@
 (defun parser-compile-to-symbol ( function &optional name )
   "compile a Match Function as either a un-interned symbol when name is nil or
    a symbol queried by parser-match-function when name is given"
-  ;; tracing can be dynamic with a tracing parameter to the macro.
-  ;; (message "compiling %s" (pp-to-string function))
-  (if name
-    (parser-match-function name function)
-    (make-anon-func "parser-operator" function)))
+  (catch 'pruned
+    (if (null function)
+      (throw 'pruned nil))
+
+    ;; tracing can be dynamic with a tracing parameter to the macro.
+    ;; (message "compiling %s" (pp-to-string function))
+    (if name
+      (parser-match-function name function)
+      (make-anon-func "parser-operator" function)) ))
 
 (defun parser-compile-production ( name match-function )
   "Compile a named production given a name and a generated Match Function."
@@ -647,6 +655,11 @@
 ;; Interpreter Syntax
 ;;----------------------------------------------------------------------
 
+(defun parser-string-atom ( atom )
+  (cond
+    ((characterp atom ) (make-string 1 atom))
+    ((symbolp atom)     (symbol-name atom)) ))
+
 (defun parser-lookup-table ( table body )
   "Expand into a lookup table contained within a cond clause that executes body if
    a match is found in the table."
@@ -654,7 +667,8 @@
       ((lookup (cond
                  ,@(mapcar
                      (lambda (statement-map)
-                       `((eq keyword ',(car statement-map)) ',(cadr statement-map))) table))))
+                       `((equal keyword ,(parser-string-atom (car statement-map)))
+                          ',(cadr statement-map))) table))))
       (if lookup
         ,body))) )
 
@@ -663,42 +677,65 @@
    and the parser-and operator."
   (list (parser-lookup-table table
           `(parser-compile-to-symbol
-             (funcall lookup (parser-node-function 'parser-and syntax))) )))
+             (parser-operator-function lookup syntax)) )))
 
 (defun parser-dispatch-statement ( table )
   "create the cond clauses for unique statements"
   (mapcar
     (lambda ( statement-map )
-      `((eq keyword ',(car statement-map)) (funcall ,(cadr statement-map) syntax))) table))
+      `((equal keyword ,(parser-string-atom (car statement-map)))
+         (funcall ,(cadr statement-map) syntax))) table))
 
-(defmacro parser-grammar ( grammar expected &rest tables )
+(defun parser-grammar-strings ( table )
+  (mapcar
+    (lambda ( gr-table )
+      (parser-string-atom (car gr-table))) table))
+
+(defmacro parser-grammar ( grammar &rest tables )
   "construct a more readable syntax for the grammar statement interpreter using nested cond
    forms as the mechanism. The compilation of Match Functions is implemented in the macro
    allowing the form to focus on parser generation."
 
-  ;; TODO: expected can be generated from the tables just like the code is but
-  ;;       with string work.
-  `(let
-     ((keyword (car ,grammar))
-       (syntax  (cdr ,grammar)))
+  (lexical-let
+    ((operator-strings nil)
+     (keyword-strings  nil))
 
-     (cond
-       ,@(apply 'append
-           (mapcar
-             (lambda (gr-table)
-               (lexical-let
-                 ((table-type (car gr-table))
-                  (table-def  (cdr gr-table)))
+    `(let
+       ((keyword (parser-string-atom (car ,grammar)))
+        (syntax  (cdr ,grammar)))
 
-                 (cond
-                   ((eq table-type 'operators)   (parser-dispatch-operator  table-def))
-                   ((eq table-type 'statements)  (parser-dispatch-statement table-def))
-                   ))) tables ))
+       (cond
+         ,@(apply 'append
+             (mapcar
+               (lambda (gr-table)
+                 (lexical-let
+                   ((table-type (car gr-table))
+                    (table-def  (cdr gr-table)))
+
+                   (cond
+                     ((eq table-type 'operators)
+                       (progn
+                         (setq operator-strings
+                           (append (parser-grammar-strings table-def) operator-strings))
+                         (parser-dispatch-operator  table-def)))
+
+                     ((eq table-type 'statements)
+                       (progn
+                         (setq keyword-strings
+                           (append (parser-grammar-strings table-def) keyword-strings))
+                         (parser-dispatch-statement table-def)))
+                     ))) tables ))
 
            ((signal 'parser-syntactic-error
               (parser-diagnostic keyword
-                "parser definition"
-                ,expected))) )))
+                "Grammar Interpreter Top-Level"
+                ,(infix-strings " "
+                   (list
+                     (infix-strings "|" keyword-strings)
+                     "Statement OR"
+                     (infix-strings "|" operator-strings)
+                     "Operator."))) ))
+         )) ))
 
 ;;----------------------------------------------------------------------
 ;; Grammar Interpreter.
@@ -708,18 +745,11 @@
   "parser-compile-definition compiles grammar statements which are lists
    with a keyword as the first symbol."
 
-  (unless (listp statement)
-    (signal 'parser-syntactic-error
-      (parser-diagnostic term
-        "parser definition"
-        "expected a definition list such as token|or|and|define")))
-
   (parser-grammar statement
-    "statement token|or|and|define or operator"
-
     (operators
+      (or    parser-or)
       (+     parser-positive-function)
-      (?     parser-optional-function)
+      (??    parser-optional-function)
       (*     parser-kleene-function)
       (peek  parser-peek-function))
 
@@ -729,28 +759,19 @@
 
       (and     (lambda (syntax)
                  (parser-compile-production (car syntax)
-                   (parser-node-function 'parser-and (cdr syntax)))))
-
-      (or      (lambda (syntax)
-                 (parser-compile-to-symbol (parser-node-function 'parser-or syntax))))
+                   (parser-primitive-function 'parser-and (cdr syntax)))))
 
       (name    (lambda (syntax)
-                 (lexical-let
-                   ;; first try to compile
-                   ((compiled (parser-compile-definition (cadr syntax))))
-
-                   ;; we should get an anon compiled function, otherwise using
-                   ;; name is nutty.
-                   (if (string-equal "parser-operator" compiled)
-                     (parser-compile-to-symbol (symbol-function compiled) (car syntax))
-                     (signal parser-syntax-error "name statement is for naming operators/or only"))
-                   )))
+                 (parser-compile-to-symbol
+                   (parser-primitive-function 'parser-and (cdr syntax))
+                   (car syntax))))
 
       ;; define discards the match functions as a return value so
       ;; tokens and rules can be defined before they are used.
       (define  (lambda (syntax)
+                 ;; BUG FIXME NOW: check for non-list values here.
                  (mapcar 'parser-compile-definition syntax)
-                 nil)) )))
+                 nil))) ))
 
 ;;----------------------------------------------------------------------
 ;; macro interface
@@ -808,7 +829,7 @@
                    ;; of the top-level definitions.
                    (lexical-let
                      ((parse (,(parser-compile-production 'start
-                                 (parser-node-function 'parser-or definition))) ))
+                                 (parser-primitive-function 'parser-or definition))) ))
                      (if parse
                        ;; if we have a production return the position at which the
                        ;; parser stopped along with the AST.
