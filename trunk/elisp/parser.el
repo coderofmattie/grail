@@ -305,7 +305,10 @@
       (if (numberp match-status)
         (progn
           (parser-advance match-status)
-          (parser-ast-append match-data)
+
+          (unless (and (symbolp match-data) (eq 'nil match-data))
+            (parser-ast-append match-data))
+
           (throw 'consumed-match (parser-make-production-match nil)))
 
         ;; alternative to a token is a possible un-consumed production.
@@ -437,6 +440,7 @@
   (cond
     ((eq nil constructor)    `(parser-token-bounds 'cons 0))
     ((listp constructor)     `(apply ',(make-anon-func "parser-user-handler") (parser-token-bounds 'list 0)))
+    ((eq 'null constructor)  'nil)
     ((functionp constructor) `(apply ',constructor (parser-token-bounds 'list 0)))
     ((numberp constructor)   `(parser-token-bounds 'cons ,constructor))
     ((symbolp constructor)   `(quote ',constructor))
@@ -451,7 +455,10 @@
   "Generate a token Match Function lambda."
   `(lambda ()
      (if (looking-at ,(cadr syntax))
-       (parser-make-token-match (cons '',(car syntax) ,(parser-token-constructor (caddr syntax)))) )))
+       (lexical-let
+         ((token ,(parser-token-constructor (caddr syntax))) )
+         (parser-make-token-match (if token (cons '',(car syntax) token))) ))
+     ))
 
 ;;----------------------------------------------------------------------
 ;; Parser Generator
