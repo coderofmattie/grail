@@ -285,12 +285,11 @@
 
 (defun parser-ast-append ( production )
   "append to the AST."
-  (unless (and (boundp 'parser-drop-ast) (symbol-value 'parser-drop-ast))
-    (lexical-let
-      ((new-tail (cons production nil)))
+  (lexical-let
+    ((new-tail (cons production nil)))
 
-      (setcdr parse-tree new-tail)
-      (setq parse-tree new-tail) )))
+    (setcdr parse-tree new-tail)
+    (setq parse-tree new-tail) ))
 
 (defun parser-?consume-match ( match-result )
   "consume a token converting it to a production match if not so already."
@@ -522,8 +521,9 @@
 
 (defun parser-drop-closure ( match-func )
   "Performs parsing without modifying the AST."
+  ;; shadow parse-tree and throwing it away.
   (let
-    ((parser-drop-ast t))
+    ((parse-tree nil))
     (funcall match-func)) )
 
 (defun parser-optional-closure ( match-result )
