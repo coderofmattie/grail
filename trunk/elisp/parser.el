@@ -289,7 +289,10 @@
     ((new-tail (cons production nil)))
 
     (setcdr parse-tree new-tail)
-    (setq parse-tree new-tail) ))
+    (setq parse-tree (if (null (cdr new-tail))
+                       new-tail
+                       (do ((x (cdr new-tail) (cdr x))
+                            ((not (null (cdr x))) x)) nil)) )))
 
 (defun parser-?consume-match ( match-result )
   "consume a token converting it to a production match if not so already."
