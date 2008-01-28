@@ -269,32 +269,25 @@
 ;; The AST constructor builds a tree out of the Match Results created
 ;; by parsing.
 
-;; Each non-terminal created by the and statement creates a new list
-;; that is dynamically scoped as parse-tree. The beginning of the list
-;; is stored lexically.
+;; parse-ast-descend creates a new tree initialized with a Production
+;; Left. parser-?consume-match populates the tree with either single
+;; tokens using parser-ast-append-element, or production lists with
+;; parse-ast-append-list.
 
-;; As the parse progresses terminals are added with
-;; parse-ast-append-match. When a production is derived for a
-;; non-terminal the scope of parse-tree is exited, and the completed
-;; sub-tree is joined to the parent production's parse-tree which is
-;; no longer shadowed.
+(defun parser-ast-append-list ( production )
+  "append a list to parse-tree setting the current tail as the tail of the
+   appended production."
+  (setcdr parse-tree production)
+  (setq parse-tree (do ((x production))
+                       ((null (cdr x)) x)
+                     (setq x (cdr x))) ))
 
-;; If there is no parent parse-tree bound it can only be the start
-;; symbol, so the value of head is returned from the function as the
-;; completed AST tree.
-
-(defun parser-ast-append ( production )
-  "append to the AST."
-  (if (consp parse-tree)
-    (progn
-      (setcdr parse-tree production)
-      (setq parse-tree (do ((x production))
-                           ((null (cdr x)) x)
-                         (setq x (cdr x))) ))
-    (setq parse-tree production)))
+(defun parser-ast-append-element ( match-data )
+  "append a single element to parse-tree"
+  (setq parse-tree (setcdr parse-tree (cons match-data nil))))
 
 (defun parser-?consume-match ( match-result )
-  "consume a token converting it to a production match if not so already."
+  "consume a token converting it to a data-less production match if not so already."
 
   (catch 'consumed-match
     (lexical-let
@@ -309,19 +302,16 @@
           (parser-advance match-status)
 
           (unless (and (symbolp match-data) (null match-data))
-            (if (consp parse-tree)
-              (setq parse-tree (setcdr parse-tree (cons match-data nil)))
-              (setq parse-tree (cons match-data nil)) ))
+            (parser-ast-append-element match-data))
 
           (throw 'consumed-match (parser-make-production-match nil)))
 
         ;; alternative to a token is a possible un-consumed production.
         (if match-data
           (progn
-            (parser-ast-append match-data)
-            (throw 'consumed-match (parser-make-production-match nil)))) ))
-
-      match-result))
+            (parser-ast-append-list match-data)
+            (throw 'consumed-match (parser-make-production-match nil)))) )
+      match-result) ))
 
 (defun parser-ast-descend ( non-terminal func-match )
   "start a new AST level"
@@ -337,7 +327,7 @@
       ;; Attach the tree or return it as the completed AST.
       (if (boundp 'parse-tree)
         (progn
-          (setq parse-tree (setcdr parse-tree (cons unattached-node nil)))
+          (parser-ast-append-element unattached-node)
           (parser-make-production-match nil))
         (parser-make-production-match unattached-node)) )))
 
@@ -375,21 +365,25 @@
   "combine the matches with and. all of the match objects must return non-nil
    in the parser part or the parser will backtrack and return nil."
   (parser-push)
-  (let
-    ((parse-tree nil))
+  (lexical-let
+    ((production (parser-make-production-match nil)))
 
-    (if (catch 'parser-match-fail
-          (dolist (match-func match-list t)
-            (parser-trace-on match-func
+    (let
+      ((parse-tree production))
 
-              (lexical-let
-                ((match-result (funcall match-func)))
-                (parser-trace-match match-func match-result)
-                (parser-?consume-match match-result) )) ))
+      (if (catch 'parser-match-fail
+            (dolist (match-func match-list t)
+              (parser-trace-on match-func
+
+                (lexical-let
+                  ((match-result (funcall match-func)))
+
+                  (parser-trace-match match-func match-result)
+                  (parser-?consume-match match-result) )) ))
       (progn
         (parser-pop)
-        (parser-make-production-match parse-tree))
-      (parser-backtrack) )))
+        production)
+      (parser-backtrack) )) ))
 
 ;;----------------------------------------------------------------------
 ;; Match Functions
