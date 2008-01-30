@@ -102,8 +102,13 @@
         (list-filter-nil (cdr list))
         (cons head (list-filter-nil (cdr list)))
         ))
-    nil
-    ))
+    nil))
+
+;; I really like this implementation, would map-filter-nil benefit from
+;; using consp ?
+(defun seq-filter-nil ( &rest list-seq )
+  "filter nil symbols from a list"
+  (list-filter-nil list-seq))
 
 ;; define-error originated in XEmacs. This implementation shares the
 ;; same name, but not the interface. I need to clone or copy the
