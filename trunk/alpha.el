@@ -5,6 +5,18 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
+(defun prefix-strings (prefix list)
+  (mapcar
+    (lambda ( string )
+      (concat prefix string))
+    list))
+
+(defun infix-strings ( infix list )
+  (apply 'concat (car list) (prefix-strings infix (cdr list))))
+
+(defun bracket-strings ( bracket list )
+  (apply 'concat (prefix-strings bracket list) bracket))
+
 ;;----------------------------------------------------------------------
 ;; stable-track  - canidate for inclusion in mattie.el
 ;;----------------------------------------------------------------------
