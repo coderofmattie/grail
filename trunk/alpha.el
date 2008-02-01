@@ -91,7 +91,7 @@
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
 
-(defmacro make-persistent-scope ( &rest defines )
+(defmacro make-scope ( &rest defines )
   "create a symbol table initializing SYMBOL with eval'd VALUE"
   (lexical-let
     ((table (make-vector (length defines) 0)))
@@ -100,7 +100,7 @@
             (set (intern (symbol-name (car pair)) table) (eval (cadr pair)))) defines)
     table))
 
-(defun persistent-let-bind ( scope body )
+(defun scope-persistent-bind ( scope body )
   "traverse the tree depth first pre-binding any symbol found in scope."
   (lexical-let
     ((atom (car body)))
@@ -108,7 +108,7 @@
     (if atom
       (cons
         (if (consp atom)
-          (pre-bind-body scope (car body))
+          (scope-persistent-bind scope (car body))
 
           (if (symbolp atom)
             (or
@@ -117,11 +117,11 @@
             atom))
 
         (if (cdr body)
-          (pre-bind-body scope (cdr body))
+          (scope-persistent-bind scope (cdr body))
           nil))
       nil)))
 
-(defmacro persistent-lexical-let ( scope &rest body )
+(defmacro scope-shared-lexical ( scope &rest body )
   "a persistent lexical binding. The objarray SCOPE appears lexically
    scoped in that a recursive traversal binds symbols of equal name
    in SCOPE. altering these pre-bound symbols with setq changes the
@@ -130,7 +130,31 @@
 
    Currently this is a experimental hack so it incurs the cost
    of a recursive pre-bind in addition to eval each time evaluated."
-  `(eval (persistent-let-bind ,scope ',(cons 'progn body))))
+  `(eval (scope-persistent-bind ,scope ',(cons 'progn body))))
+
+(defmacro scope-select-let ( scope &rest body )
+  "hello world"
+  `(let
+     ,(lexical-let
+        ((scope-table (car scope)))
+        (mapcar (lambda ( s )
+                  `(,s (symbol-value (intern ,(symbol-name s) ,scope-table))))
+          (cdr scope)))
+     ,@body))
+
+(defmacro scope-private-let ( scope &rest body )
+  "hello world"
+  `(let
+     ,(lexical-let
+        ((bindings nil))
+        (mapatoms
+          (lambda ( s )
+            (push `(,(read (symbol-name s))
+                     (symbol-value (intern ,(symbol-name s) ,scope)))
+              bindings))
+          (eval scope))
+        bindings)
+     ,@body))
 
 (defun maximize-frame ()
   "toggle maximization the current frame"
