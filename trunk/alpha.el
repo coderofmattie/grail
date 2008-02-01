@@ -111,7 +111,8 @@
           (pre-bind-body scope (car body))
 
           (if (symbolp atom)
-            (or (intern-soft (symbol-name atom) scope)
+            (or
+              (intern-soft (symbol-name atom) scope)
               atom)
             atom))
 
