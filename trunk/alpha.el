@@ -91,6 +91,46 @@
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
 
+(defmacro make-persistent-scope ( &rest defines )
+  "create a symbol table initializing SYMBOL with eval'd VALUE"
+  (lexical-let
+    ((table (make-vector (length defines) 0)))
+
+    (mapc (lambda ( pair )
+            (set (intern (symbol-name (car pair)) table) (eval (cadr pair)))) defines)
+    table))
+
+(defun persistent-let-bind ( scope body )
+  "traverse the tree depth first pre-binding any symbol found in scope."
+  (lexical-let
+    ((atom (car body)))
+
+    (if atom
+      (cons
+        (if (consp atom)
+          (pre-bind-body scope (car body))
+
+          (if (symbolp atom)
+            (or (intern-soft (symbol-name atom) scope)
+              atom)
+            atom))
+
+        (if (cdr body)
+          (pre-bind-body scope (cdr body))
+          nil))
+      nil)))
+
+(defmacro persistent-lexical-let ( scope &rest body )
+  "a persistent lexical binding. The objarray SCOPE appears lexically
+   scoped in that a recursive traversal binds symbols of equal name
+   in SCOPE. altering these pre-bound symbols with setq changes the
+   value in SCOPE allowing the values to persist beyond the form in
+   objarray SCOPE.
+
+   Currently this is a experimental hack so it incurs the cost
+   of a recursive pre-bind in addition to eval each time evaluated."
+  `(eval (persistent-let-bind ,scope ',(cons 'progn body))))
+
 (defun maximize-frame ()
   "toggle maximization the current frame"
   (interactive)
