@@ -86,7 +86,6 @@
     (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
     ))
 
-
 ;;----------------------------------------------------------------------
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
@@ -155,6 +154,18 @@
           (eval scope))
         bindings)
      ,@body))
+
+(defun pp-scope ( scope )
+  "little debugging routine"
+  (lexical-let
+    ((strings nil))
+
+    (mapatoms
+      (lambda ( s )
+        (push (format "symbol: %s = %s\n"
+                (symbol-name s)
+                (pp-to-string (symbol-value (intern (symbol-name s) scope)))) strings)) scope)
+    (apply 'concat strings)))
 
 (defun maximize-frame ()
   "toggle maximization the current frame"
