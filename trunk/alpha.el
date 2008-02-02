@@ -167,6 +167,18 @@
                 (pp-to-string (symbol-value (intern (symbol-name s) scope)))) strings)) scope)
     (apply 'concat strings)))
 
+(defun copy-scope ( scope )
+  "copy SCOPE an objarray so that the values are not shared unlike copy-sequence."
+  (lexical-let
+    ((copy (make-vector (length scope) 0)))
+
+    (mapatoms
+      (lambda ( s )
+        (lexical-let
+          ((name (symbol-name s)))
+          (set (intern name copy) (symbol-value (intern name scope))))) scope)
+    copy))
+
 (defun maximize-frame ()
   "toggle maximization the current frame"
   (interactive)
