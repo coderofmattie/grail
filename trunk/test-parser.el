@@ -18,6 +18,161 @@
         "the right thing"))))
 
 ;;----------------------------------------------------------------------
+;; parser function generation testing.
+;;----------------------------------------------------------------------
+
+;; test the single token/function case
+(setq test-function (parser-function-reduce parser-function-semantics
+                      `(predicate 'token)))
+
+
+;; test the sequence case
+(setq test-function (parser-function-reduce parser-function-semantics
+            `(predicate 'parser-predicate-and)
+            `(sequence '(foo bar baz))))
+
+;; test the closure case
+(setq test-function (parser-function-reduce parser-function-semantics
+            'greedy
+            `(sequence '(foo bar baz))))
+
+;; test input effects
+(setq test-function (parser-function-reduce parser-function-semantics
+            'input-discard
+            `(sequence '(foo bar baz))))
+
+;; test input effects and branching
+(setq test-function (parser-function-reduce parser-function-semantics
+            'input-branch
+            `(sequence '(foo bar baz))))
+
+(setq test-function (parser-function-reduce parser-function-semantics
+            'input-branch
+            `(sequence '(foo bar baz))))
+
+
+;; test the greedy closure.
+(setq test-function (parser-function-reduce parser-function-semantics
+            'greedy
+            'input-branch
+            `(sequence '(foo bar baz))))
+
+(pp-scope test-function)
+
+(lexical-let
+  ((validate (catch 'semantic-error
+               (parser-function-validate test-function))))
+  (unless (eq 't validate)
+    (message "invalid semantics: %s" (symbol-name validate)))
+
+  (pp (parser-function-generate test-function)))
+
+;;----------------------------------------------------------------------
+;; parser-function-simplify testing.
+;;----------------------------------------------------------------------
+
+;; any time there are more than one match function we need a primitive
+(pp (parser-function-simplify 'parser-primitive-and '(foo bar baz)))
+
+(pp (parser-function-simplify 'singleton nil
+      ))
+
+;; see what happens when closures are thrown into the mix.
+(pp (parser-function-simplify 'parser-primitive-and '(foo bar baz)
+      `(gen-closure 'parser-primitive-greedy)
+      ))
+
+(pp (parser-function-simplify 'singleton nil
+      `(gen-closure 'parser-primitive-greedy)
+      ))
+
+;; try out trap fail.
+(pp (parser-function-simplify 'singleton nil
+      'trap-fail
+      `(gen-closure 'parser-primitive-greedy)
+      ))
+
+;; try out the lexical stuffs
+(pp (parser-function-simplify 'singleton nil
+      'trap-fail
+      'matchahead
+      `(gen-closure 'parser-primitive-greedy)
+      ))
+
+;; try out the cond stuff
+(pp (parser-function-simplify 'singleton nil
+      'trap-fail
+      'backtrack
+      `(gen-closure 'parser-primitive-greedy)
+      ))
+
+(pp (parser-function-simplify 'parser-primitive-and '(foo bar baz)
+      'trap-fail
+      'backtrack
+      `(gen-closure 'parser-primitive-greedy)))
+
+;; this is what an and sequence should look like
+(pp (parser-function-simplify 'parser-primitive-and '(foo bar baz)
+      `(gen-match-effects `(parser-?consume-match ast-root))
+      `(gen-match-rvalue  `(parser-make-production-match nil))
+
+      'trap-fail
+      'backtrack
+      'ast-newroot))
+
+;; this is what a left production should look like, note that
+;; append-element is used instead of ?consume-match, so that
+;; the tree is attached as a node instead of a list.
+(pp  (parser-function-simplify 'parser-predicate-and match-list
+    `(gen-ast-root   'prod-foo)
+
+
+    `(gen-match-rvalue  `(parser-make-production-match nil))
+
+    'backtrack
+    'ast-new-production
+    'ast-attach-node
+    'trap-fail))
+
+(defun parser-ast-descend ( non-terminal func-match )
+  "start a new AST level"
+  (catch 'parser-match-fail
+    (lexical-let
+      ((unattached-node (cons non-terminal nil)))
+
+      ;; this step populates the detached node
+      (let
+        ((parse-tree unattached-node))
+        (parser-?consume-match (funcall func-match)) )
+
+      ;; Attach the tree or return it as the completed AST.
+      (if (boundp 'parse-tree)
+        (progn
+          (parser-ast-append-element unattached-node)
+          (parser-make-production-match nil))
+        (parser-make-production-match unattached-node)) )))
+
+
+
+
+            `(lambda ( start-pos )
+               (let
+                 ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+                 (save-excursion
+                   (goto-char start-pos)
+                   ;; note that the start symbol of the grammar is built in as an or combination
+                   ;; of the top-level definitions.
+                   (lexical-let
+                     ((parse (,(parser-compile-production 'start
+                                 (parser-primitive-function 'parser-or definition))) ))
+                     (if parse
+                       ;; if we have a production return the position at which the
+                       ;; parser stopped along with the AST.
+                       (cons (parser-pos) (parser-match-data parse))
+                       nil))
+                   )))
+
+;;----------------------------------------------------------------------
 ;; token interp phase
 ;;----------------------------------------------------------------------
 
@@ -63,7 +218,17 @@
   (+ (token word "[[:alpha:]]+") (token whitespace "[[:blank:]]+")))
 
 (parser-compile test-parser
-  (+ (token word "[[:alpha:]]+" parser-token-string) (? (token whitespace "[[:blank:]]+"))))
+  (+ (token word "[[:alpha:]]+" parser-token-string) (token whitespace "[[:blank:]]+")))
+
+(parser-compile test-parser
+  (+ (token word "[[:alpha:]]+" parser-token-string) (token whitespace "[[:blank:]]+" null)))
+
+(parser-compile test-parser
+  (+ (token word "[[:alpha:]]+" parser-token-string) (?? (token whitespace "[[:blank:]]+" null))))
+
+(parser-compile test-parser
+  (+ (token word "[[:alpha:]]+" parser-token-string) (token whitespace "[[:blank:]]+" null)))
+
 
 parser foo bar baz||
 
