@@ -290,7 +290,7 @@
   "Append a single node to the Parse Tree node."
   (setq parse-tree (setcdr parse-tree (cons node nil))))
 
-(defun parser-?consume-match ( match-result )
+(defun parser-consume-match ( match-result )
   "Consume any unconsumed AST in Match Result. The AST
    is cleared from the Match Result so that the AST is
    only modified once. The logical value of the Match
@@ -359,7 +359,7 @@
         (unless (parser-match-p match-result)
           (throw 'parser-match-fail nil))
 
-        (parser-?consume-match match-result))) ))
+        (parser-consume-match match-result))) ))
 
 (defun parser-predicate-greedy ( match-func )
   "A positive closure predicate that applies the given
@@ -370,7 +370,7 @@
     (catch 'parser-match-fail
       (do ((production (funcall match-func) (funcall match-func)))
           ((progn
-             (parser-?consume-match production)
+             (parser-consume-match production)
              (setq matched-once t)
              nil)) ))
     (if matched-once (parser-make-logical-match)) ))
@@ -390,7 +390,7 @@
    a closure has been specified the call will be placed in a
    lambda that is passed to the closure. The match result is
    consumed."
-  `(parser-?consume-match
+  `(parser-consume-match
      ,(lexical-let
        ((predicate nil))
 
