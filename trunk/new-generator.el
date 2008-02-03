@@ -311,10 +311,15 @@
           (throw 'consumed-match (parser-make-logical-match)))
 
         ;; alternative to a token is a possible un-consumed production.
-        ;; preserve the logical value while consuming.
+        ;; consumes anything it receives.
         (if match-data
           (parser-ast-merge-node match-data)
-          (throw 'consumed-match (cons match-status nil))))
+
+          (throw 'consumed-match
+            (if match-status
+              (parser-make-logical-match)
+              (cons nil nil)))))
+
       match-result)))
 
 ;;----------------------------------------------------------------------
@@ -422,11 +427,16 @@
 
     (push `(parser-push) gen-match-before)
 
-    (if (and gen-branch gen-branch-input)
+    (if (and gen-branch gen-input-branch)
       (progn
         (push `(parser-pop) gen-match-effects)
         (push `(parser-backtrack) gen-fail-effects))
       (push `(parser-pop) gen-match-after)) ))
+
+(defun parser-gen-node-transform ()
+  (if gen-ast-transform
+    `(cons (car ast-root) (funcall ',gen-ast-transform (parser-match-data ast-root)))
+    'ast-root))
 
 (defun parser-gen-ast-effects ()
   "generate ast effects for the function if any."
@@ -449,28 +459,48 @@
     (cond
 
       ;; 1: Optional node, must be immediately attached and gen-ast-value
-      ;;    left nil.
+      ;;    left nil on a conditional, or put in gen-ast-value.
       (gen-ast-node
         (progn
           (push `(put (car ast-root) 'parser-ast 'node) gen-match-after)
 
-          (if gen-branch
-            (push `(parser-ast-add-node ast-root)
-              (if gen-ast-branch
-                gen-match-effects
-                gen-match-after))) ))
+          (if gen-ast-branch
+            (push `(parser-ast-add-node ,(parser-gen-node-transform)) gen-match-effects)
+            (setq gen-ast-value `(progn
+                                   (parser-ast-add-node (parser-gen-node-transform))
+                                   nil))) ))
 
-      ;; 2: Optional AST transform must receive a match result and
-      ;;    return a match result.
+      ;; maybe transform and node are actually compatible now.
+      ;; 2: Optional AST transform must receive an AST tree
+      ;;    and return an AST tree only.
 
       (gen-ast-transform
-        (setq gen-ast-value `(funcall ',gen-ast-transform ast-root)))
+        (if gen-ast-branch
+          (push `(setq ast-root (funcall ',gen-ast-transform (parser-match-data ast-root)))
+            gen-match-effects)
+          (setq gen-ast-value `(funcall ',gen-ast-transform ast-root))))
 
-      ;; 3: no options, just attach ast root
-      ((setq gen-ast-value `(parser-match-data ast-root)))) ))
+
+      (gen-ast-branch
+        (push `(setq ast-root (parser-match-data ast-root)) gen-match-effects)))
+
+    (if gen-ast-branch
+      (push `(setq ast-root nil) gen-match-fail-effects)
+      (unless gen-ast-value
+        (setq gen-ast-value 'ast-root)))
+
+    (unless gen-ast-value
+      (setq gen-ast-value `(parser-match-data ast-root)))
+    ))
 
 (defun parser-gen-logic-phase ( generated )
   "generate the logic phase"
+
+  ;; an interesting experiment for the logic phase would be
+  ;; allowing a binary logical operator that combined a logical
+  ;; operator with a stateful logical predicate of the ast
+  ;; generated. Once the tree walk functions are built this will be
+  ;; very powerful.
 
   ;; the match result by this phase is always logic only as any
   ;; ast has already been consumed.
@@ -496,13 +526,8 @@
     (if gen-branch
       (progn
         ;; first set our rvalue if we will need it.
-        (setq gen-match-rvalue
-          (if (and eff-effect gen-ast-branch)
-            (if (eq 'function gen-return)
-              `(parser-make-production-match ,gen-ast-rvalue)
-              gen-ast-value)))
-
-        (setq gen-ast-value nil)
+        (if (eq 'function gen-return)
+          (setq gen-match-rvalue t))
 
         (setq generated
           `(if (parser-match-p ,generated)
@@ -512,7 +537,7 @@
         ))
 
     (cond
-      ((and gen-branch gen-logic-branch)
+      ((and gen-branch (or gen-logic-branch (eq 'function gen-return)))
         `(cons ,generated ,gen-ast-value))
 
       (save-result
@@ -603,6 +628,10 @@
     (if (and gen-sequence (not gen-predicate))
       (setq gen-predicate 'parser-predicate-and))
 
+    ;; always turn on trap fail for conditionals.
+    (if (and gen-branch (not gen-trap))
+      (setq gen-trap t))
+
     ;; NOTICE: effects cannot be generated until it's known if we
     ;; are branching.
 
@@ -662,7 +691,7 @@
 ;; what used to be defined in a single place is now generated directly into
 ;; the parser. The impact of this needs to be measured.
 
-;; It should be possible to determine if two parser functions are equivelent.
+;; It should be possible to determine if two parser functions are equivalent.
 ;; If so I can bind that function and use a symbol instead of generating a
 ;; full body each time. I could also possibly parameterize it, so that I
 ;; could bind a common part, and bind parameters in an anonymous lambda.
@@ -674,7 +703,7 @@
     (throw 'semantic-error 'set-once)
 
     (progn
-      (unless value
+      (unless (or (functionp value) value)
         (throw 'semantic-error 'nil-data))
       (set var value))))
 
@@ -682,7 +711,7 @@
   "Set a value in the semantics table if it is currently nil.
    throw semantic-error only if the new value is nil."
   (unless (symbol-value var)
-    (unless value
+    (unless (or (functionp value) value)
       (throw 'semantic-error 'nil-data))
     (set var value)))
 
@@ -700,6 +729,8 @@
     (if gen-ast-tail
       (parser-set-nil 'eff-ast t))
 
+    (if (or gen-ast-branch gen-input-branch gen-logic-branch)
+      (parser-set-nil 'gen-branch t))
     ) t)
 
 (defun parser-function-reduce ( semantics &rest statements )
@@ -734,6 +765,11 @@
                     (parser-set-once 'gen-input-branch t)))
 
                 ((eq primitive 'input-discard) (parser-set-once 'eff-input t))
+
+                ((eq primitive 'ast-branch)
+                  (progn
+                    (parser-set-once 'eff-ast t)
+                    (parser-set-once 'gen-ast-branch t)))
 
                 ;; low-level interface.
                 ((eq primitive 'closure)    (parser-set-once 'gen-closure data))
