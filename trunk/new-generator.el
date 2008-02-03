@@ -310,8 +310,15 @@
 
           (throw 'consumed-match (parser-make-logical-match)))
 
-        ;; alternative to a token is a possible un-consumed production.
-        ;; consumes anything it receives.
+        ;; The alternative to a token is a possible un-consumed
+        ;; production. Consumption occurs regardless of the logical
+        ;; sense of the Match Result. This keeps logic and AST
+        ;; orthogonal. It is a trivial change to make consumption
+        ;; conditional if the orthogonality is found to be too
+        ;; non-intuitive, but I doubt this orthogonality will be
+        ;; visible at the semantics level unless the user is
+        ;; deliberately introducing it.
+
         (if match-data
           (parser-ast-merge-node match-data)
 
@@ -348,7 +355,11 @@
     (parser-trace-on match-func
       (lexical-let ((match-result (funcall match-func)))
         (parser-trace-match match-func match-result)
-        (parser-?consume-match match-result) )) ))
+
+        (unless (parser-match-p match-result)
+          (throw 'parser-match-fail nil))
+
+        (parser-?consume-match match-result))) ))
 
 (defun parser-predicate-greedy ( match-func )
   "A positive closure predicate that applies the given
