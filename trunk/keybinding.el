@@ -38,6 +38,7 @@
        ;; just a string selecting what is hardwired in here.
 
        (cond
+         ((functionp completion-context) completion-context)
          ((symbolp completion-context) completion-context)
          ;; use lisp-complete-symbol for elisp
          ((string-equal completion-context "elisp") 'lisp-complete-symbol)
