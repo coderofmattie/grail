@@ -145,7 +145,7 @@
       (append eshell-visual-commands (list "ssh" "su" "telnet")))
 
     ;; ensure that none of my custom keybindings are affected.
-    (bind-my-tab-keys nil)
+    (bind-my-tab-keys 'pcomplete-expand-and-complete)
 
     ;; I rarely want to quit eshell. when I do I can use quit. map
     ;; the usual kill-buffer keybinding to rid-window.
