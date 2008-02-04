@@ -444,13 +444,28 @@
         (push `(parser-backtrack) gen-fail-effects))
       (push `(parser-pop) gen-match-after)) ))
 
-(defun parser-gen-node-transform ()
+(defun parser-gen-attach-transform ()
+  "Don't expect a match result"
   (if gen-ast-transform
     `(cons (car ast-root) (funcall ',gen-ast-transform (parser-match-data ast-root)))
+    ;; return AST root because this function is only called right before
+    ;; parser-ast-add-node which does not assume a Match Result argument,
+    ;; just AST.
     'ast-root))
 
 (defun parser-gen-ast-effects ()
   "generate ast effects for the function if any."
+
+  ;; TODO:
+
+  ;; this function could be much better documented by listing in the
+  ;; DOCSTRING all of the variables always set by the input
+  ;; conditionals. Basically specify the inputs and outputs of the
+  ;; intermediate table.
+
+  ;; once I figure out a consistent way to document these functions,
+  ;; starting with the easier one such as input effects, I need to
+  ;; make all the generator docs consistent.
   (catch 'done
     (unless eff-ast (throw 'done nil))
 
@@ -464,33 +479,38 @@
     ;; Initialize the tail pointer in the dynamic scope.
     (push `(parse-tree ast-root) gen-dynamic-scope)
 
-    ;; nodes get tagged with a symbol, so AST walks don't get confused
-    ;; by tokens. They are also immediately consumed as they are not
-    ;; match results, the only valid return value.
+    ;; a conditional selects the highest level of complexity first as
+    ;; the entry point for generating the code.
+
     (cond
 
-      ;; 1: Optional node, must be immediately attached and gen-ast-value
-      ;;    left nil on a conditional, or put in gen-ast-value.
+      ;; 1: Node: must be immediately attached and gen-ast-value left
+      ;;          nil. Otherwise consumption would merge a node
+      ;;          instead of adding it.
+
       (gen-ast-node
         (progn
+          ;; nodes get tagged with a symbol, so AST walks don't get
+          ;; confused by tokens.
           (push `(put (car ast-root) 'parser-ast 'node) gen-match-after)
 
           (if gen-ast-branch
-            (push `(parser-ast-add-node ,(parser-gen-node-transform)) gen-match-effects)
-            (setq gen-ast-value `(progn
-                                   (parser-ast-add-node (parser-gen-node-transform))
+            (push `(parser-ast-add-node ,(parser-gen-attach-transform)) gen-match-effects)
+            (push gen-ast-value `(progn
+                                   (parser-ast-add-node (parser-gen-attach-transform))
                                    nil))) ))
-
-      ;; maybe transform and node are actually compatible now.
-      ;; 2: Optional AST transform must receive an AST tree
-      ;;    and return an AST tree only.
+      ;; 2. AST transform only.
+      ;; within these effects the goal is to change the lexically scoped
+      ;; ast-root into either the AST part of the match only or nil.
 
       (gen-ast-transform
         (if gen-ast-branch
-          (push `(setq ast-root (funcall ',gen-ast-transform (parser-match-data ast-root)))
-            gen-match-effects)
-          (setq gen-ast-value `(funcall ',gen-ast-transform ast-root))))
+          (push
+            `(setq ast-root (funcall ',gen-ast-transform (parser-match-data ast-root)))
+            gen-match-effecs)
+          (setq gen-ast-value `(funcall ',gen-ast-transform (parser-match-data ast-root)))))
 
+      ;; 3. branch only.
 
       (gen-ast-branch
         (push `(setq ast-root (parser-match-data ast-root)) gen-match-effects)))
@@ -587,20 +607,21 @@
     (gen-sequence       nil)
     (gen-predicate      nil)
     (gen-closure        nil)
-    (gen-trap           nil)
+    (gen-trap           nil)  ;; internal, always turned on when needed.
 
     (gen-ast-transform  nil)
     (gen-ast-node       nil)  ;; this turns of merging so that lists can be nested,
                               ;; a non-nil value is what to insert.
 
-    (gen-logic-operator nil)
+    (gen-logic-operator nil)  ;; should be set to the logical operator function.
+    ;; function | match
+    (gen-return        'function)  ;; which logical result to return.
 
     ;; gen production captures the match result to the lexically
     ;; scoped production symbol.
     (gen-ast-add-node   nil)
-    (gen-ast-merge-node nil)
 
-    (gen-ast-tail       nil)
+    (gen-ast-tail       nil)  ;; internal primarily, though harmless to expose I think.
     (gen-ast-value      nil)  ;; the result of a AST effect that is not a node.
                               ;; will be combined with the logical result to
                               ;; keep ast/logic orthogonal.
@@ -608,19 +629,18 @@
 
     (gen-branch         nil)  ;; do we have branching ?
 
-    (gen-ast-branch     nil)  ;; does ast effects branch ?
+    (gen-ast-branch     nil)  ;; do ast effects branch ?
     (gen-input-branch   nil)  ;; do input effects branch ?
-    (gen-logic-branch   nil)  ;; default to return the logical value
+    (gen-logic-branch   nil)  ;; default to return the logical value.
                               ;; of the function instead of the match.
-    (gen-lexical-scope  nil)
+
+    (gen-lexical-scope  nil)  ;; pure internals
     (gen-dynamic-scope  nil)
 
     ;; before/after hooks.
     (gen-match-before   nil)
     (gen-match-after    nil)
 
-    ;; function | match
-    (gen-return        'function)  ;; which logical result to return.
     (gen-func-rvalue    nil)
 
     ;; branching on match results.
