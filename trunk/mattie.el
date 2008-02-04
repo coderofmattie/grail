@@ -49,10 +49,6 @@
 
 (setq require-final-newline t)             ;; some programs fail without a newline terminator
 
-;; the cursor
-(blink-cursor-mode -1)
-(set-cursor-color "yellow")
-
 ;; mode-line customization
 (display-time)                            ;; display the time on the modeline
 
@@ -175,6 +171,23 @@
       erc-nick "codermattie")
 
     (add-hook 'erc-mode-hook 'bind-my-paren-keys) ))
+
+;;----------------------------------------------------------------------
+;; sawfish.
+;;----------------------------------------------------------------------
+(eval-after-load "sawfish"
+  (add-hook 'sawfish-mode-hook
+    (lambda ()
+    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
+    ;; this function/keybinding should be used exclusively to avoid frustrating
+    ;; errors.
+      (local-set-key (kbd "C-x e") 'sawfish-eval-defun)
+
+      (bind-my-tab-keys 'sawfish-complete-symbol)
+
+      ;; bind-my-paren-keys is not required, because sawfish runs the elisp hooks
+      ;; evidently. just need to re-setup my tab key.
+      )))
 
 ;;----------------------------------------------------------------------
 ;;                           Diff
