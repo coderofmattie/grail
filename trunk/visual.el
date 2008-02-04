@@ -3,6 +3,14 @@
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 
+;; colors for the cursor and the background. Kept in visual.el since
+;; the colors need to be harmonious.
+
+(blink-cursor-mode -1)
+(set-cursor-color "yellow")
+
+(set-mouse-color "red")
+
 ;; the visual configuration for Emacs that is quite idiosyncratic.
 
 (defun simple-set-expand-prop ( set-op spec )
@@ -37,7 +45,7 @@
 (simple-set-theme user
   ;; default
   (default splice (:stipple nil
-                    :background "black"
+                    :background "grey8"
                     :foreground "grey70"
                     :inverse-video nil
                     :box nil
