@@ -53,7 +53,7 @@
 ;; I really like this implementation, would map-filter-nil benefit from
 ;; using consp ?
 (defun list-filter-nil ( list )
-  "filter nil symbols from a list"
+  "Filter nil symbols from a list"
   (if (consp list)
     (lexical-let
       ((head (car list)))
@@ -67,7 +67,7 @@
 ;; I really like this implementation, would map-filter-nil benefit from
 ;; using consp ?
 (defun seq-filter-nil ( &rest list-seq )
-  "filter nil symbols from a list"
+  "Filter nil symbols from a sequence."
   (list-filter-nil list-seq))
 
 ;; define-error originated in XEmacs. This implementation shares the
