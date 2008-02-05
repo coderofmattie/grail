@@ -45,7 +45,7 @@
 (simple-set-theme user
   ;; default
   (default splice (:stipple nil
-                    :background "grey8"
+                    :background "grey5"
                     :foreground "grey70"
                     :inverse-video nil
                     :box nil
