@@ -515,8 +515,8 @@
       (gen-ast-branch
         (push `(setq ast-root (parser-match-data ast-root)) gen-match-effects)))
 
-    (if gen-ast-branch
-      (push `(setq ast-root nil) gen-match-fail-effects)
+    (when gen-ast-branch
+      (push `(setq ast-root nil) gen-fail-effects)
       (unless gen-ast-value
         (setq gen-ast-value 'ast-root)))
 
@@ -582,6 +582,8 @@
     (progn
       (setq generated
         `(lexical-let*
+           ;; the reverse is required so that the lexical bindings
+           ;; of the logic phase will be ordered last.
            ,(reverse gen-lexical-scope)
 
            ,@(car (seq-filter-nil (append
@@ -666,8 +668,8 @@
     ;; NOTICE: effects cannot be generated until it's known if we
     ;; are branching.
 
-    (parser-gen-input-effects)
     (parser-gen-ast-effects)
+    (parser-gen-input-effects)
 
     (funcall (if gen-sexp 'seq-filter-nil 'parser-gen-lambda)
       gen-match-before
