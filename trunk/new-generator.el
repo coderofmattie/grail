@@ -333,8 +333,11 @@
 ;; Parser Predicates
 ;;----------------------------------------------------------------------
 
-;; Parser predicates are the lowest level primitives. When used as
-;; closures they can used delayed evaluation to implement repetition.
+;; Parser predicates are the lowest level primitives. They can assume
+;; that a AST tree tail has been scoped. Delayed evaluation allows
+;; them to implement sequence logic, repetition, and anything else
+;; that would require the parser function as an argument instead of
+;; the Match Result of a parser function.
 
 (defun parser-predicate-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
