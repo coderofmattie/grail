@@ -25,7 +25,6 @@
 (setq test-function (parser-function-reduce parser-function-semantics
                       `(predicate 'token)))
 
-
 ;; test the sequence case
 (setq test-function (parser-function-reduce parser-function-semantics
             `(predicate 'parser-predicate-and)
@@ -46,15 +45,20 @@
             'input-branch
             `(sequence '(foo bar baz))))
 
-(setq test-function (parser-function-reduce parser-function-semantics
-            'input-branch
-            `(sequence '(foo bar baz))))
-
-
-;; test the greedy closure.
+;; test the greedy closure with input branch.
 (setq test-function (parser-function-reduce parser-function-semantics
             'greedy
             'input-branch
+            `(sequence '(foo bar baz))))
+
+;; test AST discard BROKEN
+(setq test-function (parser-function-reduce parser-function-semantics
+            'ast-discard
+            `(sequence '(foo bar baz))))
+
+;; test the AST conditional
+(setq test-function (parser-function-reduce parser-function-semantics
+            'ast-branch
             `(sequence '(foo bar baz))))
 
 (pp-scope test-function)
