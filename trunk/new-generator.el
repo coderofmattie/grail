@@ -8,13 +8,10 @@
 
 ;; ->Features
 
-;; 0. Parsing is integrated directly into the language instead of
-;;    being a separate tool.
+;; 0. Parser construction is integrated directly into the lisp environment
+;;    with macro expansion of the grammar into a parsing function.
 
-;;    Evaluate a parser-compiler form with a symbol and a grammar
-;;    to generate a parser bound to your symbol.
-
-;; 1. PEG like grammar.
+;; 1. PEG like extensible grammar.
 
 ;; 2. Parse Data is is not hard-wired. Tokens can perform user defined
 ;;    functions or construct data from the bounds of a token match in
@@ -37,7 +34,7 @@
 ;;    need to C-h f functions in various context to see how the DocStrings look +
 ;;    read the DocString Style Guide.
 
-;; 3. Lazy binding for in-grammar recursion.
+;; 3. Lazy binding for in-grammar right recursion.
 
 ;; 3. Canonical tree walk implemented as parser-ast-node.
 
@@ -199,6 +196,8 @@
    is on the parser-trace list a parser-trace-flag dynamically scoped is
    bound to the boolean toggle for tracing that production."
 
+  ;; TODO: debug spec.
+
   ;; Using the dynamic scoping of let during the execution of the
   ;; compiled parser to scope parser-trace-flag gives tracing behavior
   ;; that precisely matches the execution of the parser.
@@ -335,9 +334,9 @@
 
 ;; Parser predicates are the lowest level primitives. They can assume
 ;; that a AST tree tail has been scoped. Delayed evaluation allows
-;; them to implement sequence logic, repetition, and anything else
-;; that would require the parser function as an argument instead of
-;; the Match Result of a parser function.
+;; them to implement sequence logic and repetition which are easier
+;; when the parser function is taken as an argument instead of
+;; a Match Result.
 
 (defun parser-predicate-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
@@ -388,11 +387,10 @@
      ,@(apply 'append (list-filter-nil generated))))
 
 (defun parser-gen-match-call ()
-  "parser-gen-match-call generates a call to either a predicate
-   with a list of match functions, or simply a match function. If
-   a closure has been specified the call will be placed in a
-   lambda that is passed to the closure. The match result is
-   consumed."
+  "parser-gen-match-call generates the match phase sufficient to
+   return a Match Result that is consumed by parser-consume-match.
+
+   inputs: gen-predicate, gen-sequence, gen-closure"
   `(parser-consume-match
      ,(lexical-let
        ((predicate nil))
@@ -409,6 +407,10 @@
            `(funcall ',gen-predicate) )))))
 
 (defun parser-gen-dynamic-scope ( generated )
+  "parser-gen-dynamic-scope interpolates the sexp generated
+   into a dynamic scope.
+
+   inputs: gen-dynamic-scope"
   (if gen-dynamic-scope
     `(let
        ,gen-dynamic-scope
@@ -416,8 +418,10 @@
   generated))
 
 (defun parser-gen-match-phase ( generated )
-  "parser-gen-match-rvalue generates the code to return a match value
-   from executing the match."
+  "parser-gen-match-phase creates a complete Match Phase that
+   returns a logical Match Result after consumption.
+
+   inputs: gen-trap"
   (lexical-let
     ((transform (parser-gen-dynamic-scope generated)))
 
@@ -427,6 +431,8 @@
       transform)))
 
 (defun parser-gen-with-effects ( effects rvalue )
+  "parser-gen-with-effects creates either a single sexp, or
+   if there are effects as well creates a progn form."
   (if effects
     `(progn
        ,@effects
@@ -435,7 +441,10 @@
       `,rvalue)))
 
 (defun parser-gen-input-effects ()
-  "generate input effects for the function if any."
+  "Create the input effects of the Parser Function.
+
+   input: eff-input, gen-branch, gen-input-branch
+   modifies: gen-match-before, gen-match-effects, gen-match-after"
   (catch 'done
     (unless eff-input (throw 'done nil))
 
@@ -448,7 +457,7 @@
       (push `(parser-pop) gen-match-after)) ))
 
 (defun parser-gen-attach-transform ()
-  "Don't expect a match result"
+  "parser-gen-ast-effects auxiliary function."
   (if gen-ast-transform
     `(cons (car ast-root) (funcall ',gen-ast-transform (parser-match-data ast-root)))
     ;; return AST root because this function is only called right before
