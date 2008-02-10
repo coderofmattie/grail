@@ -136,48 +136,6 @@
 
 ;; figuring out the names is driving me nuts.
 
-(defmacro make-scope ( &rest defines )
-  "create a symbol table initializing SYMBOL with eval'd VALUE"
-  (lexical-let
-    ((table (make-vector (length defines) 0)))
-
-    (mapc (lambda ( pair )
-            (set (intern (symbol-name (car pair)) table) (eval (cadr pair)))) defines)
-    table))
-
-(defun scope-bind-closure ( scope body )
-  "traverse the tree depth first pre-binding any symbol found in scope."
-  (lexical-let
-    ((atom (car body)))
-
-    (if atom
-      (cons
-        (if (consp atom)
-          (scope-bind-closure scope (car body))
-
-          (if (symbolp atom)
-            (or
-              (intern-soft (symbol-name atom) scope)
-              atom)
-            atom))
-
-        (if (cdr body)
-          (scope-bind-closure scope (cdr body))
-          nil))
-      nil)))
-
-(defmacro scope-shared-lexical ( scope &rest body )
-  "a persistent lexical binding. The objarray SCOPE appears lexically
-   scoped in that a recursive traversal binds symbols of equal name
-   in SCOPE. altering these pre-bound symbols with setq changes the
-   value in SCOPE allowing the values to persist beyond the form in
-   objarray SCOPE.
-
-   Currently this is a experimental hack so it incurs the cost
-   of a recursive pre-bind in addition to eval each time evaluated."
-  (declare (debug (symbolp body)))
-  `(eval (scope-bind-closure ,scope ',(cons 'progn body))))
-
 (defmacro scope-select-let ( scope &rest body )
   "hello world"
   `(let
@@ -187,45 +145,6 @@
                   `(,s (symbol-value (intern ,(symbol-name s) ,scope-table))))
           (cdr scope)))
      ,@body))
-
-(defmacro scope-private-let ( scope &rest body )
-  "hello world"
-  (declare (debug (symbolp body)))
-  `(let
-     ,(lexical-let
-        ((bindings nil))
-        (mapatoms
-          (lambda ( s )
-            (push `(,(read (symbol-name s))
-                     (symbol-value (intern ,(symbol-name s) ,scope)))
-              bindings))
-          (eval scope))
-        bindings)
-     ,@body))
-
-(defun pp-scope ( scope )
-  "little debugging routine"
-  (lexical-let
-    ((strings nil))
-
-    (mapatoms
-      (lambda ( s )
-        (push (format "symbol: %s = %s\n"
-                (symbol-name s)
-                (pp-to-string (symbol-value (intern (symbol-name s) scope)))) strings)) scope)
-    (apply 'concat strings)))
-
-(defun copy-scope ( scope )
-  "copy SCOPE an objarray so that the values are not shared unlike copy-sequence."
-  (lexical-let
-    ((copy (make-vector (length scope) 0)))
-
-    (mapatoms
-      (lambda ( s )
-        (lexical-let
-          ((name (symbol-name s)))
-          (set (intern name copy) (symbol-value (intern name scope))))) scope)
-    copy))
 
 (defun maximize-frame ()
   "toggle maximization the current frame"
