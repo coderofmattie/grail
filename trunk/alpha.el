@@ -87,8 +87,54 @@
     ))
 
 ;;----------------------------------------------------------------------
+;; unterminated lists experiments.
+;;----------------------------------------------------------------------
+
+(defun join-cons ( a b )
+  "like cons but joins as a list instead of nesting"
+  (let
+    ((new-a (if (cdr a) (cons a nil) a))
+     (new-b (if (cdr b) (cons b nil) b)) )
+    (setcdr new-a new-b)
+    new-a))
+
+(defun terminate-sequence ( &rest args )
+  "terminate sequence takes a all types concatenates into a list properly handling unterminated sequences"
+  (lexical-let
+    ((terminated nil))
+
+    (dolist (arg (reverse args))
+      (if (and (consp arg) (not (eq 'quote (car arg))))
+        (lexical-let
+          ((reverse-stack nil)
+            (sequence arg))
+
+          (while (consp sequence)
+            (push (car sequence) reverse-stack)
+            (setq sequence (cdr sequence)))
+
+          (if sequence (push sequence reverse-stack))
+          (setq terminated (append (reverse reverse-stack) terminated)))
+
+        (setq terminated (cons arg terminated)) ))
+    terminated))
+
+(defun terminated-list-p ( list )
+  "return true only if the list is nil terminated"
+  (if (consp list)
+    (lexical-let
+      ((element (cdr list)))
+
+      (while (consp element)
+        (setq element (cdr element)))
+
+      (eq nil element)) ))
+
+;;----------------------------------------------------------------------
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
+
+;; figuring out the names is driving me nuts.
 
 (defmacro make-scope ( &rest defines )
   "create a symbol table initializing SYMBOL with eval'd VALUE"
@@ -99,7 +145,7 @@
             (set (intern (symbol-name (car pair)) table) (eval (cadr pair)))) defines)
     table))
 
-(defun scope-persistent-bind ( scope body )
+(defun scope-bind-closure ( scope body )
   "traverse the tree depth first pre-binding any symbol found in scope."
   (lexical-let
     ((atom (car body)))
@@ -107,7 +153,7 @@
     (if atom
       (cons
         (if (consp atom)
-          (scope-persistent-bind scope (car body))
+          (scope-bind-closure scope (car body))
 
           (if (symbolp atom)
             (or
@@ -116,7 +162,7 @@
             atom))
 
         (if (cdr body)
-          (scope-persistent-bind scope (cdr body))
+          (scope-bind-closure scope (cdr body))
           nil))
       nil)))
 
@@ -129,7 +175,8 @@
 
    Currently this is a experimental hack so it incurs the cost
    of a recursive pre-bind in addition to eval each time evaluated."
-  `(eval (scope-persistent-bind ,scope ',(cons 'progn body))))
+  (declare (debug (symbolp body)))
+  `(eval (scope-bind-closure ,scope ',(cons 'progn body))))
 
 (defmacro scope-select-let ( scope &rest body )
   "hello world"
@@ -143,6 +190,7 @@
 
 (defmacro scope-private-let ( scope &rest body )
   "hello world"
+  (declare (debug (symbolp body)))
   `(let
      ,(lexical-let
         ((bindings nil))
