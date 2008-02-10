@@ -82,4 +82,95 @@
      (put ',symbol 'error-message ,message)
      ))
 
+;;----------------------------------------------------------------------
+;; closures
+;;----------------------------------------------------------------------
+
+;; these are experimental prototypes. The final versions need to be
+;; implemented at the C level.
+
+(defun scope-bind-closure ( closure body )
+  "traverse the tree depth first pre-binding any symbol found in closure."
+  (lexical-let
+    ((atom (car body)))
+
+    (if atom
+      (cons
+        (if (consp atom)
+          (scope-bind-closure closure (car body))
+
+          (if (symbolp atom)
+            (or
+              (intern-soft (symbol-name atom) closure)
+              atom)
+            atom))
+
+        (if (cdr body)
+          (scope-bind-closure closure (cdr body))
+          nil))
+      nil)))
+
+(defmacro save-lexical-closure ( closure &rest body )
+  "a persistent lexical binding. The objarray CLOSURE appears lexically
+   scoped in that a recursive traversal binds symbols of equal name
+   in CLOSURE. altering these pre-bound symbols with setq changes the
+   value in CLOSURE allowing the values to persist beyond the form in
+   objarray CLOSURE.
+
+   Currently this is a experimental hack so it incurs the cost
+   of a recursive pre-bind in addition to eval each time evaluated."
+;; doesn't work, I think because of the eval.
+;;  (declare (debug (symbolp body))) 
+  `(eval (scope-bind-closure ,closure ',(cons 'progn body))))
+
+(defmacro use-dynamic-closure ( closure &rest body )
+  "use a saved closure as a dynamic scope with private copy."
+  (declare (debug (symbolp body)))
+  `(let
+     ,(lexical-let
+        ((bindings nil))
+        (mapatoms
+          (lambda ( s )
+            (push `(,(read (symbol-name s))
+                     (symbol-value (intern ,(symbol-name s) ,closure)))
+              bindings))
+          (eval closure))
+        bindings)
+     ,@body))
+
+(defun pp-closure ( closure )
+  "pretty print a closure returning a string."
+  (lexical-let
+    ((strings nil))
+
+    (mapatoms
+      (lambda ( s )
+        (push (format "symbol: %s = %s\n"
+                (symbol-name s)
+                (pp-to-string (symbol-value (intern (symbol-name s) closure)))) strings)) closure)
+    (apply 'concat strings)))
+
+(defun copy-closure ( closure )
+  "copy CLOSURE an objarray so that the values are not shared unlike copy-sequence."
+  (lexical-let
+    ((copy (make-vector (length closure) 0)))
+
+    (mapatoms
+      (lambda ( s )
+        (lexical-let
+          ((name (symbol-name s)))
+          (set (intern name copy) (symbol-value (intern name closure))))) closure)
+    copy))
+
+(defmacro make-closure ( &rest defines )
+  "create a symbol table initializing SYMBOL with eval'd VALUE"
+  (lexical-let
+    ((table (make-vector (length defines) 0)))
+
+    (mapc (lambda ( pair )
+            (set (intern (symbol-name (car pair)) table) (eval (cadr pair)))) defines)
+    table))
+
+
+
 (provide 'mattie-elisp)
