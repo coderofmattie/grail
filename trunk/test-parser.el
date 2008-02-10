@@ -63,13 +63,23 @@
 
 (pp-scope test-function)
 
+;; make it read-only after the wipe and insert, make it elisp with highlighting.
+;; then it might be worthy as a utility function.
 (lexical-let
   ((validate (catch 'semantic-error
                (parser-function-validate test-function))))
-  (unless (eq 't validate)
-    (message "invalid semantics: %s" (symbol-name validate)))
+  (if (eq 't validate)
+    (lexical-let
+      ((review-buffer (get-buffer-create "generated")))
 
-  (pp (parser-function-generate test-function)))
+      (with-current-buffer review-buffer
+        (erase-buffer)
+        (insert (pp-to-string (parser-function-generate test-function))))
+
+      (pop-to-buffer review-buffer t))
+
+    (message "invalid semantics: %s" (symbol-name validate))) )
+
 
 ;;----------------------------------------------------------------------
 ;; parser-function-simplify testing.
