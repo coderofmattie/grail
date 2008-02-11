@@ -78,6 +78,12 @@
 ;; actually work. implications of recursively buried greed is ripe for
 ;; issues though.
 
+;; 2. tracing at the primitive level, generating instrumented parser functions.
+
+;; 3. Could tokens be emacs functions that bound the existing syntax anaylsis
+;;    of a buffer ? kind of a high level data structure builder on-top of the
+;;    existing function ?
+
 ;; ->Terminology
 
 ;; My reference for parsing terminology is the Dragon Book:
@@ -387,9 +393,9 @@ supplied as the single argument NODE."
         ;; orthogonal.
 
         ;; It is a trivial change to make consumption conditional if
-        ;; the orthogonality is found to be too non-intuitive, but I
-        ;; doubt this orthogonality will be visible at the semantics
-        ;; level unless the user is deliberately introducing it.
+        ;; the orthogonality is found to be too strange, but I doubt
+        ;; this orthogonality will be visible at the semantics level
+        ;; unless the user is deliberately introducing it.
 
         (when match-data
           (if (parser-ast-p match-data)
@@ -412,6 +418,8 @@ supplied as the single argument NODE."
 ;; them to implement sequence logic and repetition which are easier
 ;; when the parser function is taken as an argument instead of
 ;; a Match Result.
+
+;; and/or are sequence relational operators.
 
 (defun parser-predicate-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
@@ -518,6 +526,10 @@ supplied as the single argument NODE."
                               ;; of merged.
     (gen-ast-branch     nil)  ;; do ast effects branch ?
 
+    (gen-match-logic    nil)
+    (gen-function-logic nil)
+
+    ;; Deprecated for gen-match-logic
     (gen-logic-operator nil)  ;; should be set to the logical operator function.
 
     ;; Return value
@@ -872,34 +884,58 @@ supplied as the single argument NODE."
 ;; be extended in the grammar with validation. they can be integrated
 ;; directly as meta-operators or definitions of custom operators.
 
-;; Bloat:
+(defun parser-fold-primitive ( var value )
+  "Discard subsequent attempts to merge the primitive assuming
+   that it is a constant of all parser functions. Throw a
+   semantic-error 'incomplete only when the function and value of
+   VALUE are nil or void."
+  (unless (symbol-value var)
+    (unless (or (functionp value) value)
+      (throw 'semantic-error 'incomplete))
+    (set var value)))
 
-;; what used to be defined in a single place is now generated directly into
-;; the parser. The impact of this needs to be measured.
+(defun parser-merge-primitive ( var value )
+  "Set a value to the semantics table, assuming that valuable
+   is a variable value between parser functions.
 
-;; It should be possible to determine if two parser functions are equivalent.
-;; If so I can bind that function and use a symbol instead of generating a
-;; full body each time. I could also possibly parameterize it, so that I
-;; could bind a common part, and bind parameters in an anonymous lambda.
-
-(defun parser-set-once ( var value )
-  "Set a value to the semantics table, throw semantic-error if it
-   the symbol has already been set"
+   Throw semantic-error 'collision if it the symbol has already
+   been set."
   (if (symbol-value var)
-    (throw 'semantic-error 'set-once)
+    (throw 'semantic-error 'collision)
 
     (progn
       (unless (or (functionp value) value)
-        (throw 'semantic-error 'nil-data))
+        (throw 'semantic-error 'incomplete))
       (set var value))))
 
-(defun parser-set-nil ( var value )
-  "Set a value in the semantics table if it is currently nil.
-   throw semantic-error only if the new value is nil."
-  (unless (symbol-value var)
-    (unless (or (functionp value) value)
-      (throw 'semantic-error 'nil-data))
-    (set var value)))
+(defun parser-merge-exclusive ( mutex )
+  "When semantics are exclusive within a set of effects or a
+   phase a flag is used so that the first merge succeeds but
+   subsequent merges fail.
+
+   MUTEX variable is the sole argument. semantic-error 'collision
+   is thrown for subsequent attempts to set the mutex."
+  (if (symbol-value mutex)
+    (throw 'semantic-error 'collision)
+    (set mutex t)))
+
+(defun parser-exclusive-primitive ( mutex var value )
+  (parser-merge-exclusive mutex)
+  (parser-merge-primitive var value))
+
+(defun parser-combine-primitive ( mutex var value )
+  "This merge combines within a effect or phase mutex however
+   the semantic variable is still exclusive."
+  (parser-fold-primitive mutex t)
+  (parser-merge-primitive var value))
+
+(defun parser-combine-exclusive-of ( mutex of-mutex var value )
+  "stub."
+  (when (symbol-value of-mutex)
+    (throw 'semantic-error 'collision))
+
+  (parser-fold-primitive mutex t)
+  (parser-merge-primitive var value))
 
 (defun parser-function-reduce ( semantics &rest statements )
   ;; a proper reduce would catch the semantic errors, generate the function
@@ -923,74 +959,69 @@ supplied as the single argument NODE."
                 ;; high level functions.
 
                 ;; the match call
-                ((eq primitive 'predicate)   (parser-set-once 'gen-predicate data))
+                ((eq primitive 'predicate)   (parser-merge-primitive 'gen-predicate data))
 
-                ((eq primitive 'sequence)    (parser-set-once 'gen-sequence data))
-                ((eq primitive 'greedy)      (parser-set-once 'gen-closure 'parser-predicate-greedy))
+                ((eq primitive 'sequence)    (parser-merge-primitive 'gen-sequence data))
+                ((eq primitive 'greedy)      (parser-merge-primitive 'gen-closure 'parser-predicate-greedy))
 
                 ;; re-definition is not a collision.
                 ((eq primitive 'match-logic) (setq gen-return 'match))
 
                 ;; logic effects
 
+                ;; need a back-end logic variable
                 ;; optional only seems to make sense as something to do to the return value
                 ;; if there is a conditional.
-                ((eq primitive 'optional)
-                  (progn
-                    (parser-set-once 'eff-logic t)
-                    (parser-set-once 'gen-logic-operator 'parser-result-match)))
+                ((eq primitive 'always-match)
+                  (parser-combine-primitive
+                    'eff-logic
+                    'gen-function-logic 'parser-result-match))
 
-                ;; negate could be useful as a before match.
                 ((eq primitive 'negate-function)
-                  (progn
-                    (parser-set-once 'eff-logic t)
-                    (parser-set-once 'gen-logic-operator 'parser-result-negate)))
+                  (parser-combine-primitive
+                    'eff-logic
+                    'gen-function-logic 'parser-result-negate))
 
-                ((eq primitive 'negate-result)
-                  (progn
-                    (parser-set-once 'eff-logic t)
-                    (parser-set-once 'gen-logic-operator 'parser-result-negate)))
+                ((eq primitive 'negate-match)
+                  (parser-combine-primitive
+                    'eff-logic
+                    'gen-match-logic 'parser-result-negate))
 
                 ;; input effects
                 ((eq primitive 'input-branch)
-                  (progn
-                    (parser-set-once 'eff-input t)
-                    (parser-set-once 'gen-input-branch t)))
+                  (parser-exclusive-primitive
+                    'eff-input
+                    'gen-input-branch t))
 
-                ((eq primitive 'input-discard) (parser-set-once 'eff-input t))
+                ((eq primitive 'input-discard)
+                  (parser-merge-exclusive 'eff-input))
 
                 ;; ast effects
 
                 ;; discard is mutually exclusive with the other ops, which are
                 ((eq primitive 'ast-discard)
-                  (progn
-                    (parser-set-once 'eff-ast t)
-                    (parser-set-once 'gen-ast-discard t)))
+                  (parser-exclusive-primitive
+                    'eff-ast
+                    'gen-ast-discard t))
 
                 ((eq primitive 'ast-branch)
-                  (progn
-                    (when gen-ast-discard (throw 'semantic-error 'invalid))
-
-                    (parser-set-nil 'eff-ast t)
-                    (parser-set-once 'gen-ast-branch t)))
+                  (parser-combine-exclusive-of 'gen-ast-discard
+                    'eff-ast
+                    'gen-ast-branch t))
 
                 ((eq primitive 'ast-node)
-                   (progn
-                    (when gen-ast-discard (throw 'semantic-error 'invalid))
-
-                     (parser-set-nil 'eff-ast t)
-                     (parser-set-once 'gen-ast-node data)))
+                  (parser-combine-exclusive-of 'gen-ast-discard
+                    'eff-ast
+                    'gen-ast-node data))
 
                 ((eq primitive 'ast-transform)
-                  (progn
-                    (when gen-ast-discard (throw 'semantic-error 'invalid))
-
-                    (parser-set-nil 'eff-ast t)
-                    (parser-set-once 'gen-ast-transform data)))
+                  (parser-combine-exclusive-of 'gen-ast-discard
+                    'eff-ast
+                    'gen-ast-transform data))
 
                 ;; low-level interface.
-                ((eq primitive 'closure)    (parser-set-once 'gen-closure data))
-                ((eq primitive 'trap-fail)  (parser-set-nil  'gen-trap t))
+                ((eq primitive 'closure)    (parser-merge-primitive 'gen-closure data))
+                ((eq primitive 'trap-fail)  (parser-fold-primitive  'gen-trap t))
                 ))))  statements)
 
       )
