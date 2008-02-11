@@ -5,6 +5,12 @@
 ;;----------------------------------------------------------------------
 (message "%s" "loading darwin system configuration")
 
+;; for best font support on a laptop LCD, the font hinting setting of "medium"
+;; in the apple control panel works best, along with disabling anti-aliasing.
+(setq mac-allow-anti-aliasing nil)
+
+;; (setq ns-use-qd-smoothing nil)
+
 (setq mac-option-modifier 'meta)  ;; oh happy day !!!
                                   ;; no more hellish binding of meta
                                   ;; on the mac key. can use CarbonEmacs again.
