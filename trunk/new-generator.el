@@ -631,7 +631,7 @@ supplied as the single argument NODE."
    consists of a lexically scoped head and a dynamically scoped
    tail.
 
-   The first element of the list is always and identifier symbol
+   The first element of the list is always an identity symbol
    with the parser-ast property production. AST nodes that are
    not explicitly named are identified with a null symbol.
 
@@ -790,8 +790,17 @@ supplied as the single argument NODE."
 
     ;; a sequence requires a predicate to define sequence semantics.
     ;; default to and which makes sense for closures.
-    (if (and gen-sequence (not gen-predicate))
+    (when (and gen-sequence (not gen-predicate))
       (setq gen-predicate 'parser-predicate-and))
+
+    (when (or gen-ast-transform gen-closure gen-sequence)
+      (setq eff-ast t))
+
+    (when (or gen-ast-branch gen-input-branch gen-logic-branch)
+      (setq gen-branch t))
+
+    (when gen-branch
+      (setq gen-trap t))
 
     ;; NOTICE: effects cannot be generated until it's known if we
     ;; are branching.
@@ -866,21 +875,6 @@ supplied as the single argument NODE."
     (unless (or (functionp value) value)
       (throw 'semantic-error 'nil-data))
     (set var value)))
-
-(defun parser-function-validate ( semantics )
-  "Validate the high level specification, generate default code fragments."
-
-  ;; this isn't really a validate, it's more of a finalize, filling in defaults.
-  (save-lexical-closure semantics
-    (if (or gen-ast-transform gen-closure gen-sequence)
-      (parser-set-nil 'eff-ast t))
-
-    (if (or gen-ast-branch gen-input-branch gen-logic-branch)
-      (parser-set-nil 'gen-branch t))
-
-    (if gen-branch
-      (parser-set-nil 'gen-trap t))
-    ) t)
 
 (defun parser-function-reduce ( semantics &rest statements )
   ;; a proper reduce would catch the semantic errors, generate the function
