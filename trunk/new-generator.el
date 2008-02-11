@@ -53,6 +53,31 @@
 
 ;; 2. make left recursion work.
 
+;;    -> Phase 3: Experiments
+
+;; is it possible to make the parser lazy instead of greedy with a
+;; closure while still being top-down ?  with packrat optimization an
+;; interesting algorithm for efficiently constructing a correct lazy
+;; match for a sequence might be possible.
+
+;; If such an algorithm was found enabling something like CFG
+;; semantics then the parser compiler would be a much more interesting
+;; beast.
+
+;; lazy may need to be a sequence relational operator but that is quite odd.
+;; can top-down work right to left ? maybe I could scan back from a sync token
+;; and do the sequence matching in reverse.
+
+;; A B C
+
+;; A runs match. If it works it lets B take a crack at the next run. If B doesn't
+;; match it goes back to A for more greed. If B does match then B becomes A and
+;; C is bound as B until the sequence is exhausted.
+
+;; Since the tokens never actually implement greed themselves this may
+;; actually work. implications of recursively buried greed is ripe for
+;; issues though.
+
 ;; ->Terminology
 
 ;; My reference for parsing terminology is the Dragon Book:
@@ -428,11 +453,12 @@ supplied as the single argument NODE."
     (if matched-once (parser-result-match)) ))
 
 ;;----------------------------------------------------------------------
-;; Parser Function Generator.
+;; parser-function-generate
 ;;----------------------------------------------------------------------
 
-;; The Parser Function Generator generates the Match Functions from a
-;; specification of parser primitives or semantics.
+;; The Parser Function Generator generates Match Functions from a set
+;; of parser primitives that compose the parsing semantics of the
+;; function.
 
 ;; Parser primitives are the low level functions of a parser such as
 ;; back-tracking, positive closure, and matching logic.
@@ -646,7 +672,7 @@ supplied as the single argument NODE."
    A transform can be combined with a node.
 
    A node is immediately attached with parser-ast-add-node so
-   that the node is added rather than merged to the parent AST
+   that the node is added rather than merged into the parent AST
    tree.
 
    gen-ast-transform: The given function receives either a
@@ -788,22 +814,21 @@ supplied as the single argument NODE."
 (defun parser-function-generate ( parser-function-semantics )
   (use-dynamic-closure parser-function-semantics
 
-    ;; a sequence requires a predicate to define sequence semantics.
-    ;; default to and which makes sense for closures.
+    ;; a sequence requires a relational operator which
+    ;; defaults to and.
     (when (and gen-sequence (not gen-predicate))
       (setq gen-predicate 'parser-predicate-and))
 
     (when (or gen-ast-transform gen-closure gen-sequence)
       (setq eff-ast t))
 
+    ;; effects cannot be generated until it's known if we are
+    ;; branching.
     (when (or gen-ast-branch gen-input-branch gen-logic-branch)
       (setq gen-branch t))
 
     (when gen-branch
       (setq gen-trap t))
-
-    ;; NOTICE: effects cannot be generated until it's known if we
-    ;; are branching.
 
     (parser-gen-ast-effects)
     (parser-gen-input-effects)
@@ -822,7 +847,7 @@ supplied as the single argument NODE."
       gen-func-rvalue)))
 
 ;;----------------------------------------------------------------------
-;; parser-function-simplify
+;; parser-function-reduce
 ;;----------------------------------------------------------------------
 
 ;; be extended in the grammar with validation. they can be integrated
@@ -926,7 +951,6 @@ supplied as the single argument NODE."
                     (parser-set-once 'eff-logic t)
                     (parser-set-once 'gen-logic-operator 'parser-result-negate)))
 
-
                 ;; input effects
                 ((eq primitive 'input-branch)
                   (progn
@@ -971,3 +995,7 @@ supplied as the single argument NODE."
 
       )
     semantic-merge))
+
+;;----------------------------------------------------------------------
+;;
+;;----------------------------------------------------------------------
