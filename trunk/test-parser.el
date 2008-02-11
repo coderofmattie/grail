@@ -51,9 +51,14 @@
             'input-branch
             `(sequence '(foo bar baz))))
 
-;; test AST discard BROKEN
+;; test AST discard
 (setq test-function (parser-function-reduce parser-function-semantics
             'ast-discard
+            `(sequence '(foo bar baz))))
+
+(setq test-function (parser-function-reduce parser-function-semantics
+            'ast-discard
+            'input-branch
             `(sequence '(foo bar baz))))
 
 ;; test the AST conditional
@@ -61,7 +66,12 @@
             'ast-branch
             `(sequence '(foo bar baz))))
 
-(pp-scope test-function)
+;; test the AST conditional
+(setq test-function (parser-function-reduce parser-function-semantics
+            'ast-branch
+            `(sequence '(foo bar baz))))
+
+(pp-closure test-function)
 
 ;; make it read-only after the wipe and insert, make it elisp with highlighting.
 ;; then it might be worthy as a utility function.
