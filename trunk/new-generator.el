@@ -250,25 +250,40 @@
   "Make a matched non-terminal Match Result."
   (cons t tree))
 
-(defun parser-make-token-match ( data )
-  "Make a matched terminal Match Result."
-  (cons (parser-consumed) data))
+;; The NEW Result Match interface.
 
-(defun parser-make-logical-match ()
-  "Make a logical match true."
+;; TODO: migrate the token generator to parser-result-token.
+
+(defun parser-result-logic ( result )
+  "The logical part of a Match Result cons cell is returned."
+  (car result))
+
+(defun parser-result-ast ( result )
+  "The AST part of a Match Result cons cell is returned."
+  (cdr result))
+
+(defun parser-match-p ( result )
+  "return true if the logic is a match result"
+  (and result (parser-result-logic result)))
+
+(defun parser-result-negate ( result )
+  "negate the Match Result RESULT toggling the logical sense of the Match Result while
+   preserving the AST value."
+  (cons
+    (if (parser-result-logic result)
+      nil
+      t)
+    (parser-result-ast result)))
+
+(defun parser-result-match ( &optional ignore )
+  "return a data-less positive Match Result. Can be used as the
+   logical optional operator with an optional argument that is
+   ignored."
   (cons t nil))
 
-(defun parser-match-logic ( match-result )
-  "Return the data of a Match Result."
-  (car match-result))
-
-(defun parser-match-data ( match-result )
-  "Return the data of a Match Result."
-  (cdr match-result))
-
-(defun parser-match-p ( match-result )
-  "return true if the logic is a match result"
-  (and match-result (parser-match-logic match-result)))
+(defun parser-result-token ( ast )
+  "Return a token Match Result."
+  (cons (parser-consumed) ast))
 
 ;;----------------------------------------------------------------------
 ;; AST tree constructors
@@ -329,8 +344,8 @@ supplied as the single argument NODE."
 
   (catch 'consumed-match
     (lexical-let
-      ((match-status (parser-match-logic match-result))
-       (match-data   (parser-match-data match-result)))
+      ((match-status (parser-result-logic match-result))
+       (match-data   (parser-result-ast match-result)))
 
       (if (numberp match-status)
         (progn
@@ -339,7 +354,7 @@ supplied as the single argument NODE."
           (unless (and (symbolp match-data) (null match-data))
             (parser-ast-add-node match-data))
 
-          (throw 'consumed-match (parser-make-logical-match)))
+          (throw 'consumed-match (parser-result-match)))
 
         ;; The alternative to a token is a possible un-consumed
         ;; production. Consumption occurs regardless of the logical
@@ -358,7 +373,7 @@ supplied as the single argument NODE."
 
           (throw 'consumed-match
             (if match-status
-              (parser-make-logical-match)
+              (parser-result-match)
               (cons nil nil)))))
 
       match-result)))
@@ -388,7 +403,7 @@ supplied as the single argument NODE."
     nil))
 
 (defun parser-predicate-and ( &rest match-list )
-  (dolist (match-func match-list (parser-make-logical-match))
+  (dolist (match-func match-list (parser-result-match))
     (parser-trace-on match-func
       (lexical-let ((match-result (funcall match-func)))
         (parser-trace-match match-func match-result)
@@ -410,7 +425,7 @@ supplied as the single argument NODE."
              (parser-consume-match production)
              (setq matched-once t)
              nil)) ))
-    (if matched-once (parser-make-logical-match)) ))
+    (if matched-once (parser-result-match)) ))
 
 ;;----------------------------------------------------------------------
 ;; Parser Function Generator.
@@ -491,7 +506,6 @@ supplied as the single argument NODE."
     (eff-logic          nil)
 
     (gen-branch         nil)  ;; do we have branching ?
-
 
     (gen-ast-value      nil)  ;; the result of a AST effect that is not a node.
                               ;; will be combined with the logical result to
@@ -597,17 +611,17 @@ supplied as the single argument NODE."
         (push `(parser-backtrack) gen-fail-effects))
       (push `(parser-pop) gen-match-after)) ))
 
-;; I think this design for AST transform is fucked up. That function will need
-;; a way to determine if it's a token or a list it has been passed, which only
-;; exists in the head symbol potentially.
+;; AST effects
 
-(defun parser-gen-attach-transform ()
-  "parser-gen-ast-effects auxiliary function."
+(defun parser-gen-node-transform ()
+  "If gen-ast-transform is set Create the call to a AST transform
+   function. The identity of the AST before the transform is
+   preserved and returned with the transform result. Otherwise
+   return the AST value.
+
+   input: gen-ast-transform"
   (if gen-ast-transform
-    `(cons (car ast-root) (funcall ',gen-ast-transform (parser-match-data ast-root)))
-    ;; return AST root because this function is only called right before
-    ;; parser-ast-add-node which does not assume a Match Result argument,
-    ;; just AST.
+    `(cons (car ast-root) (cdr (funcall ',gen-ast-transform ast-root)))
     'ast-root))
 
 (defun parser-gen-ast-effects ()
@@ -617,19 +631,35 @@ supplied as the single argument NODE."
    consists of a lexically scoped head and a dynamically scoped
    tail.
 
-   The flag eff-ast alone will generate an AST node.
+   The first element of the list is always and identifier symbol
+   with the parser-ast property production. AST nodes that are
+   not explicitly named are identified with a null symbol.
+
+   The flag eff-ast alone will generate a new AST node that
+   shadows the existing AST tree.
+
    The remaining set of AST effects is either a branch-able
    gen-ast-discard or one of the effects below.
 
-   gen-ast-node stub.
+   gen-ast-node: An identity symbol is given to name the
+   node. It is marked with the parser-ast property production.
+   A transform can be combined with a node.
 
-   gen-ast-transform stub.
+   A node is immediately attached with parser-ast-add-node so
+   that the node is added rather than merged to the parent AST
+   tree.
+
+   gen-ast-transform: The given function receives either a
+   token or a AST node. The transform must produce a cons cell,
+   either a AST tree rooted with a AST node or arbitrary token
+   data.
 
    inputs: eff-ast, gen-ast-discard, gen-ast-node, gen-branch,
            gen-ast-branch, gen-ast-transform
 
    outputs: gen-ast-value, gen-lexical-scope, gen-dynamic-scope,
-            gen-match-after,gen-match-effects"
+            gen-match-after,gen-match-effects
+   "
 
   (catch 'done
     (unless eff-ast (throw 'done nil))
@@ -652,51 +682,41 @@ supplied as the single argument NODE."
         ;; the entry point for generating the code.
 
         (cond
-
-          ;; 1: Node: must be immediately attached and gen-ast-value left
-          ;;          nil. Otherwise consumption would merge a node
-          ;;          instead of adding it.
-
           (gen-ast-node
             (progn
-              ;; Trees get tagged with a symbol, so AST walks don't get
-              ;; confused by tokens.
               (push `(put (car ast-root) 'parser-ast 'production) gen-match-after)
 
               (if gen-ast-branch
-                (push `(parser-ast-add-node ,(parser-gen-attach-transform)) gen-match-effects)
+                (progn
+                  (push `(parser-ast-add-node ,(parser-gen-node-transform)) gen-match-effects)
+                  (setq gen-ast-value nil))
                 (setq gen-ast-value `(progn
-                                       (parser-ast-add-node (parser-gen-attach-transform))
+                                       (parser-ast-add-node ,(parser-gen-node-transform))
                                        nil))) ))
-          ;; 2. AST transform only.
-          ;; within these effects the goal is to change the lexically scoped
-          ;; ast-root into either the AST part of the match only or nil.
-
           (gen-ast-transform
             (if gen-ast-branch
               (push
-                `(setq ast-root (funcall ',gen-ast-transform (parser-match-data ast-root)))
-                gen-match-effecs)
-              (setq gen-ast-value `(funcall ',gen-ast-transform (parser-match-data ast-root)))))
+                `(setq ast-root (funcall ',gen-ast-transform ast-root))
+                gen-match-effects)
+              (setq gen-ast-value `(funcall ',gen-ast-transform ast-root)))) )
 
-          ;; 3. branch only.
+        (when (and
+                gen-ast-branch
+                (not gen-ast-node))
 
-;;;           (gen-ast-branch
-;;;             (push `(setq ast-root (parser-match-data ast-root)) gen-match-effects))
-          )
+          ;; the code generated assumes that side effects during a
+          ;; left to right evaluation will be visible in a rightmost
+          ;; value modified in a sexp evaluated left.
 
-        (when gen-ast-branch
           (push `(setq ast-root nil) gen-fail-effects)
           (unless gen-ast-value
             (setq gen-ast-value 'ast-root)))
-
-        (unless gen-ast-value
-          (setq gen-ast-value `(parser-match-data ast-root)))
-      ))
+        ))
     ))
 
 (defun parser-gen-logic-phase ( generated )
-  "generate the logic phase"
+  "Create the logic phase of the Parser Function evaluating the Match
+   Result returned by the match phase."
 
   ;; an interesting experiment for the logic phase would be
   ;; allowing a binary logical operator that combined a logical
@@ -773,10 +793,6 @@ supplied as the single argument NODE."
     (if (and gen-sequence (not gen-predicate))
       (setq gen-predicate 'parser-predicate-and))
 
-    ;; always turn on trap fail for conditionals.
-    (if (and gen-branch (not gen-trap))
-      (setq gen-trap t))
-
     ;; NOTICE: effects cannot be generated until it's known if we
     ;; are branching.
 
@@ -802,7 +818,6 @@ supplied as the single argument NODE."
 
 ;; be extended in the grammar with validation. they can be integrated
 ;; directly as meta-operators or definitions of custom operators.
-
 
 ;; parser-function-simplify is a key component to the parser compiler.
 ;; It generates the Match Functions that implement parser semantics.
@@ -855,6 +870,7 @@ supplied as the single argument NODE."
 (defun parser-function-validate ( semantics )
   "Validate the high level specification, generate default code fragments."
 
+  ;; this isn't really a validate, it's more of a finalize, filling in defaults.
   (save-lexical-closure semantics
     (if (or gen-ast-transform gen-closure gen-sequence)
       (parser-set-nil 'eff-ast t))
@@ -872,9 +888,9 @@ supplied as the single argument NODE."
   ;; made.
 
   (lexical-let
-    ((merged-semantics (copy-scope semantics)))
+    ((semantic-merge (copy-closure semantics)))
 
-    (save-lexical-closure merged-semantics
+    (save-lexical-closure semantic-merge
       (mapc
         (lambda (s)
           (catch 'next
@@ -888,10 +904,34 @@ supplied as the single argument NODE."
                 ;; high level functions.
 
                 ;; the match call
-                ((eq primitive 'predicate)  (parser-set-once 'gen-predicate data))
+                ((eq primitive 'predicate)   (parser-set-once 'gen-predicate data))
 
-                ((eq primitive 'sequence)   (parser-set-once 'gen-sequence data))
-                ((eq primitive 'greedy)     (parser-set-once 'gen-closure 'parser-predicate-greedy))
+                ((eq primitive 'sequence)    (parser-set-once 'gen-sequence data))
+                ((eq primitive 'greedy)      (parser-set-once 'gen-closure 'parser-predicate-greedy))
+
+                ;; re-definition is not a collision.
+                ((eq primitive 'match-logic) (setq gen-return 'match))
+
+                ;; logic effects
+
+                ;; optional only seems to make sense as something to do to the return value
+                ;; if there is a conditional.
+                ((eq primitive 'optional)
+                  (progn
+                    (parser-set-once 'eff-logic t)
+                    (parser-set-once 'gen-logic-operator 'parser-result-match)))
+
+                ;; negate could be useful as a before match.
+                ((eq primitive 'negate-function)
+                  (progn
+                    (parser-set-once 'eff-logic t)
+                    (parser-set-once 'gen-logic-operator 'parser-result-negate)))
+
+                ((eq primitive 'negate-result)
+                  (progn
+                    (parser-set-once 'eff-logic t)
+                    (parser-set-once 'gen-logic-operator 'parser-result-negate)))
+
 
                 ;; input effects
                 ((eq primitive 'input-branch)
@@ -936,4 +976,4 @@ supplied as the single argument NODE."
                 ))))  statements)
 
       )
-    merged-semantics))
+    semantic-merge))
