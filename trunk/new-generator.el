@@ -11,7 +11,9 @@
 ;; 0. Parser construction is integrated directly into the lisp environment
 ;;    with macro expansion of the grammar into a parsing function.
 
-;; 1. PEG like extensible grammar.
+;; 1. The grammar complexity scales from convenient matching to a
+;;    programmable parser by exposing the code generator when
+;;    necessary with a well defined semantic interpreter.
 
 ;; 2. The AST generated corresponds strictly to the parse tree only by
 ;;    default. The AST can be generated in tokens, and transformed in
@@ -208,14 +210,14 @@
     (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
     (lexical-let
-      ((toggle (apply 'or (mapcar (lambda ( trace-on )
+      ((toggle (eval (cons 'or (mapcar (lambda ( trace-on )
                                     ;; eq comparison of symbols does not work. A string
                                     ;; comparison is used for matching.
 
                                     ;; FIXME: symbol-value may remove this wart.
                                     (if (equal (symbol-name production) (car trace-on))
                                       (cdr trace-on)))
-                            parser-trace) )))
+                            parser-trace) ))))
       ;; a cons cell is returned so that a false value for the trace flag can be returned
       ;; without negating the truth value of the predicate itself.
       (if toggle
@@ -964,14 +966,17 @@ supplied as the single argument NODE."
                 ((eq primitive 'sequence)    (parser-merge-primitive 'gen-sequence data))
                 ((eq primitive 'greedy)      (parser-merge-primitive 'gen-closure 'parser-predicate-greedy))
 
-                ;; re-definition is not a collision.
-                ((eq primitive 'match-logic) (setq gen-return 'match))
-
                 ;; logic effects
 
                 ;; need a back-end logic variable
                 ;; optional only seems to make sense as something to do to the return value
                 ;; if there is a conditional.
+                ;; re-definition is not a collision.
+                ((eq primitive 'return-match)
+                  (parser-combine-primitive
+                    'eff-logic
+                    'gen-function-logic 'match))
+
                 ((eq primitive 'always-match)
                   (parser-combine-primitive
                     'eff-logic
