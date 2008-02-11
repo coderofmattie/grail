@@ -66,9 +66,48 @@
             'ast-branch
             `(sequence '(foo bar baz))))
 
-;; test the AST conditional
+;; test the AST transform.
+(setq test-function (parser-function-reduce parser-function-semantics
+            `(ast-transform 'transform-foo)
+            `(sequence '(foo bar baz))))
+
+(setq test-function (parser-function-reduce parser-function-semantics
+            `(ast-node 'left-prod)
+            `(ast-transform 'transform-foo)
+            `(sequence '(foo bar baz))))
+
 (setq test-function (parser-function-reduce parser-function-semantics
             'ast-branch
+            `(ast-transform 'transform-foo)
+            `(sequence '(foo bar baz))))
+
+;; AST node.
+(setq test-function (parser-function-reduce parser-function-semantics
+            `(ast-node 'prod-foo)
+            `(sequence '(foo bar baz))))
+
+;; something that looks like a left production.
+
+(setq test-function (parser-function-reduce parser-function-semantics
+             'ast-branch
+             'input-branch
+
+            `(ast-node 'prod-foo)
+            `(sequence '(foo bar baz))))
+
+(setq test-function (parser-function-reduce parser-function-semantics
+             'ast-branch
+             'input-branch
+
+            `(ast-node 'prod-foo)
+            `(ast-transform 'transform-foo)
+            `(sequence '(foo bar baz))))
+
+(setq test-function (parser-function-reduce parser-function-semantics
+             'ast-branch
+
+            `(ast-node 'prod-foo)
+            `(ast-transform 'transform-foo)
             `(sequence '(foo bar baz))))
 
 (pp-closure test-function)
@@ -89,7 +128,6 @@
       (pop-to-buffer review-buffer t))
 
     (message "invalid semantics: %s" (symbol-name validate))) )
-
 
 ;;----------------------------------------------------------------------
 ;; parser-function-simplify testing.
