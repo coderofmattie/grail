@@ -8,6 +8,7 @@
 
 (blink-cursor-mode -1)
 (set-cursor-color "yellow")
+(setq-default cursor-type 'hollow)
 
 (set-mouse-color "red")
 
