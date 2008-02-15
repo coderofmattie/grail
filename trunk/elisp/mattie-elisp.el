@@ -43,10 +43,10 @@
     ((overlay-list (overlays-at (point))))
 
     (when overlay-list
-      (apply 'or
-        (mapcar
-          (lambda ( overlay )
-            (if (overlay-get overlay mode-symbol) t)) overlay-list))) ))
+      (eval (cons 'or
+              (mapcar
+                (lambda ( overlay )
+                  (if (overlay-get overlay mode-symbol) t)) overlay-list)))) ))
 
 ;; I really like this implementation, would map-filter-nil benefit from
 ;; using consp ?
