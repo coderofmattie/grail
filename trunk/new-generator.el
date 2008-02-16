@@ -843,24 +843,27 @@ supplied as the single argument NODE."
 (defun parser-prune-result-phase ( generated )
   (lexical-let
     ((eval-phase (parser-prune-result-operator
-                   (if gen-lexical-scope
-                     `(lexical-let*
-                        ;; the reverse is required so that the lexical bindings
-                        ;; of the logic phase will be ordered last.
-                        ,(reverse gen-lexical-scope)
 
-                        ,@(if gen-eval-always
-                            (append gen-eval-always generated)
-                            generated))
+                   ;; gen-ast-value may only be meaningful inside the lexical-scope
+                   ;; so this is wrong.
+                   (if (or gen-branch gen-ast-value)
+                     `(cons
+                        (if (and gen-branch (eval-conjunct-p))
+                          generated
+                          `(parser-match-p ,generated))
+                        ,gen-ast-value)
                      generated))))
 
-    (if (or gen-branch gen-ast-value)
-      `(cons
-         (if (and gen-branch (eval-conjunct-p))
-           eval-phase
-           `(parser-match-p ,eval-phase))
-         ,gen-ast-value)
-      eval-phase)))
+    (if gen-lexical-scope
+      `(lexical-let*
+         ;; the reverse is required so that the lexical bindings
+         ;; of the logic phase will be ordered last.
+         ,(reverse gen-lexical-scope)
+
+         ,@(if gen-eval-always
+             (append gen-eval-always eval-phase)
+             eval-phase))
+      generated)))
 
 (defun parser-function-generate ( parser-function-semantics )
 "
