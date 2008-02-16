@@ -582,7 +582,7 @@ supplied as the single argument NODE."
     ;; the evaluation phase, and place their finish effects in either the
     ;; gen-eval-always fragments, or the branch fragments.
 
-    (gen-eval-setup   nil)
+    (gen-eval-setup     nil)
     (gen-eval-always    nil)
 
     ;; branching fragments.
@@ -796,9 +796,7 @@ supplied as the single argument NODE."
       (eq 'match gen-function))))
 
 (defun parser-prune-eval-phase ( generated )
-  "Generate the evaluation phase.
-
-  "
+  "Generate the evaluation phase stub."
   ;; an interesting experiment for the eval phase would be
   ;; allowing a binary logical operator that combined a logical
   ;; operator with a stateful logical predicate of the ast
@@ -839,6 +837,9 @@ supplied as the single argument NODE."
     `(,gen-function-operator generated)
     generated))
 
+(defun parser-eval-conjunct-p ()
+  (eq 'eval gen-function))
+
 (defun parser-prune-result-phase ( generated )
   (lexical-let
     ((eval-phase (parser-prune-result-operator
@@ -855,7 +856,7 @@ supplied as the single argument NODE."
 
     (if (or gen-branch gen-ast-value)
       `(cons
-         (if gen-branch
+         (if (and gen-branch (eval-conjunct-p))
            eval-phase
            `(parser-match-p ,eval-phase))
          ,gen-ast-value)
