@@ -1247,7 +1247,7 @@ and ast parts from either the match phase or evaluation phase.
     (cons semantics tape) ))
 
 (defun parser-semantic-interpreter-start ( machine-state instructions )
-  (parser-semantic-interpreter-continue
+  (parser-semantic-interpreter-run
     (cons (if machine-state
             machine-state
             (copy-closure parser-function-semantics))
