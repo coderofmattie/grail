@@ -89,13 +89,14 @@
 
 (defun scope-bind-closure ( closure body )
   "traverse the tree depth first pre-binding any symbol found in closure."
-  (lexical-let
-    ((atom (car body)))
 
-    (if atom
+  (if (consp body)
+    (lexical-let
+      ((atom (car body)))
+
       (cons
-        (if (consp atom)
-          (scope-bind-closure closure (car body))
+        (if (listp atom)
+          (scope-bind-closure closure atom)
 
           (if (symbolp atom)
             (or
@@ -103,10 +104,8 @@
               atom)
             atom))
 
-        (if (cdr body)
-          (scope-bind-closure closure (cdr body))
-          nil))
-      nil)))
+        (scope-bind-closure closure (cdr body))))
+    body))
 
 (defmacro save-lexical-closure ( closure &rest body )
   "a persistent lexical binding. The objarray CLOSURE appears lexically
@@ -117,8 +116,9 @@
 
    Currently this is a experimental hack so it incurs the cost
    of a recursive pre-bind in addition to eval each time evaluated."
-;; doesn't work, I think because of the eval.
-;;  (declare (debug (symbolp body))) 
+;; New theory for why this doesn't? work. scope-bind-closure mangled
+;; the code erroneously.
+  (declare (debug (symbolp body)))
   `(eval (scope-bind-closure ,closure ',(cons 'progn body))))
 
 (defmacro use-dynamic-closure ( closure &rest body )
