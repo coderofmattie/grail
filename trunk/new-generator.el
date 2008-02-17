@@ -1016,7 +1016,8 @@ and ast parts from either the match phase or evaluation phase.
    A diagnostic of the halt a symbol of: finished invalid unknown
    is cons'd with the unconsumed tape if any."
 
-  (lexical-let*
+  (let*  ;; save-lexical-closure does not play nice with lexical-let* for some reason.
+         ;; after debugging this can become lexical.
     ((i-current (car tape))
      (tape-next (cdr tape))
 
@@ -1105,7 +1106,8 @@ and ast parts from either the match phase or evaluation phase.
          ;; if gen-predicate and gen-sequence are it is a un-recoverable
          ;; error.
          (parser-resolve-predicate semantics)
-         nil)))
+         nil))
+      )
     (cond
       ((eq merge 'incomplete)
         (signal 'parser-semantic-error
