@@ -35,19 +35,26 @@
          (parser-semantic-interpreter-terminate
            (parser-semantic-interpreter-start nil instructions))) ))
 
-    (review-buffer (get-buffer-create "generated")))
+    (if (listp compiled)
+      (lexical-let
+        ((review-buffer (get-buffer-create "generated")))
 
-    (unless (listp compiled)
-      (message "failed!: %s" (symbol-name compiled)))
-
-    (with-current-buffer review-buffer
-      (erase-buffer)
-      (insert (pp-to-string compiled)))
-
-    (pop-to-buffer review-buffer t)) )
+        (with-current-buffer review-buffer
+          (erase-buffer)
+          (insert (pp-to-string compiled)))
+        (pop-to-buffer review-buffer t))
+      (message "failed!: %s" (symbol-name compiled))) ))
 
 ;; test the single token/function case
+
+;; gen-logic-branch is a void variable. kill the stale code.
 (parser-semantic-dump `(call 'token))
+
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  `(call 'baz)
+  'relation-or)
 
 ;; test the sequence case
 (setq test-function (parser-function-reduce parser-function-semantics
