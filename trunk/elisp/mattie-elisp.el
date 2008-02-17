@@ -31,8 +31,7 @@
        ,@(mapcar (lambda (binding)
                    (list 'define-key 'map (car binding) (cadr binding))) keys)
        map)
-     ,docstring)
-  )
+     ,docstring))
 
 (defun mode-overlay-at-point-p ( mode-symbol )
   "determine if the point is in a flyspell overlay. given a overlay list
@@ -77,8 +76,7 @@
   `(progn
      (put ',symbol
        'error-conditions (append '(error ,symbol) ',isa-list))
-     (put ',symbol 'error-message ,message)
-     ))
+     (put ',symbol 'error-message ,message) ))
 
 ;;----------------------------------------------------------------------
 ;; closures
