@@ -169,6 +169,4 @@
             (set (intern (symbol-name (car pair)) table) (eval (cadr pair)))) defines)
     table))
 
-
-
 (provide 'mattie-elisp)
