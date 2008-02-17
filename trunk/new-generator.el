@@ -45,6 +45,8 @@
 ;; This experiment calls forth the four horsemen of the Lisp
 ;; Apocalypse: eval,apply,lambda,macro.
 
+;; ille insidia vocat quattour virum equuae  : eval, 
+
 ;; ->TODO
 
 ;;   -> Phase 1: correctness
@@ -892,9 +894,6 @@ and ast parts from either the match phase or evaluation phase.
 "
   (use-dynamic-closure parser-function-semantics
 
-    (unless gen-predicate
-      (throw 'semantic-error 'invalid))
-
     ;; any time we have a closure, or sequence, we will always need to
     ;; setup a basic AST effect, even if AST effects were not explicitly
     ;; set by AST effects.
@@ -904,7 +903,7 @@ and ast parts from either the match phase or evaluation phase.
 
     ;; effects cannot be generated until it's known if we are
     ;; branching.
-    (when (or gen-ast-branch gen-input-branch gen-logic-branch)
+    (when (or gen-ast-branch gen-input-branch)
       (setq gen-branch t))
 
     ;; whenever there is conditionality trap match-fail.
@@ -926,7 +925,6 @@ and ast parts from either the match phase or evaluation phase.
 ;;----------------------------------------------------------------------
 ;; parser-semantic-union
 ;;----------------------------------------------------------------------
-
 
 (defun parser-fold-primitive ( var value )
   "Discard subsequent attempts to merge the semantic VAR assuming
@@ -981,6 +979,27 @@ and ast parts from either the match phase or evaluation phase.
   (parser-fold-primitive mutex t)
   (parser-merge-primitive var value))
 
+(defun parser-resolve-predicate ( semantics )
+  "parser-resolve-predicate stub."
+  (save-lexical-closure semantics
+    (when (null gen-predicate)
+      (cond
+        ((= 1 (length gen-sequence))
+          ;; simple optimization, when a sequence has only a single call
+          ;; make it the predicate.
+          (progn
+            (setq gen-predicate (car gen-sequence))
+            (setq gen-sequence nil)))
+
+        ((> (length gen-sequence) 1)
+          ;; the default relational operator is and. to get a
+          ;; specific relational operator make sure it's the
+          ;; first instruction after the call phase.
+          (setq gen-predicate 'parser-predicate-and))
+
+        ((signal 'parser-semantic-error "un-recoverable ordering violation: effects without a call"))
+        ))))
+
 (defun parser-semantic-union ( semantics tape )
   "parser-semantic-union
 
@@ -1012,10 +1031,10 @@ and ast parts from either the match phase or evaluation phase.
              ;; call phase
              ;;----------------------------------------------------------------------
 
-             ((eq primitive 'greedy)      (parser-merge-primitive 'gen-closure   'parser-predicate-greedy))
+             ((eq primitive 'greedy)       (parser-merge-primitive 'gen-closure   'parser-predicate-greedy))
 
-             ((eq primitive 'relation-or  (parser-merge-primitive 'gen-predicate 'parser-predicate-or)))
-             ((eq primitive 'relation-and (parser-merge-primitive 'gen-predicate 'parser-predicate-and)))
+             ((eq primitive 'relation-or)  (parser-merge-primitive 'gen-predicate 'parser-predicate-or))
+             ((eq primitive 'relation-and) (parser-merge-primitive 'gen-predicate 'parser-predicate-and))
 
              ;;----------------------------------------------------------------------
              ;; effects phase
@@ -1077,27 +1096,16 @@ and ast parts from either the match phase or evaluation phase.
                  'gen-ast-transform data))
 
              ;; when we don't know what it is.
-             ((throw 'semantic-error 'unkown)))
+             ((throw 'semantic-error 'unkown)) ))
 
-           ;; All of the instructions above will terminate the match
-           ;; call phase. Ensure that gen-predicate is set correctly
-           ;; so subsequent match calls will fail to merge.
+         ;; All of the instructions above will terminate the match
+         ;; call phase. Ensure that gen-predicate is set correctly
+         ;; so subsequent match calls will fail to merge.
 
-           (when (not gen-predicate)
-             (if (> (length gen-sequence) 1)
-               ;; the default relational operator is and. to get a
-               ;; specific relational operator make sure it's the
-               ;; first instruction after the call phase.
-               (setq gen-predicate 'parser-predicate-and)
-
-               ;; simple optimization, when a sequence has only a single call
-               ;; make it the predicate.
-               (progn
-                 (setq gen-predicate (car gen-sequence))
-                 (setq gen-sequence nil))))
-
-          nil))))
-
+         ;; if gen-predicate and gen-sequence are it is a un-recoverable
+         ;; error.
+         (parser-resolve-predicate semantics)
+         nil)))
     (cond
       ((eq merge 'incomplete)
         (signal 'parser-semantic-error
@@ -1257,6 +1265,8 @@ and ast parts from either the match phase or evaluation phase.
   "stub for when sugaring is put in")
 
 (defun parser-semantic-interpreter-terminate ( machine-state )
+  (parser-resolve-predicate (car machine-state))
+
   (lexical-let
     ((entry-point (catch 'semantic-error
                     (parser-function-generate (car machine-state)))))
