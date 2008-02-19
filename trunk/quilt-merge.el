@@ -13,30 +13,32 @@
   (concat file ".merge"))
 
 (defun working-copy-name ( file )
-  (concat file "/WC"))
+  (concat (file-name-nondirectory file) "/WC"))
 
 (defun merge-copy-name ( file )
-  (concat file "/Merge"))
+  (concat (file-name-nondirectory file) "/Merge"))
 
 (defun set-auto-mode-by-path ( file )
   (let
-    ((filename file)) ;; set-auto-mode uses filename. shadow it.
+    ((buffer-file-name file)) ;; set-auto-mode uses filename. shadow it.
     (set-auto-mode t)))
 
 (defun buffer-empty-p ()
   (not (> (point-max) (point-min))))
 
 (defun insert-published ( buffer file )
-  (= 0 (call-process "svn" nil (buffer nil) t "cat" file)))
+  (let
+    ((default-directory (file-name-directory file)))
+    (= 0 (call-process "svn" nil t t "cat" (file-name-nondirectory file)))))
 
-(defun load-or-copy-ancestor ( make-path make-name fetch-copy )
+(defun load-or-copy-ancestor ( file make-path make-name fetch-copy )
   (lexical-let*
     ((path    (funcall make-path file))
 
-     (buffer (or
-               (find-buffer-visiting path)
-               (find-file path)))
-     (name   (funcall make-name file)))
+     (buffer  (or
+                (find-buffer-visiting path)
+                (find-file path)))
+     (name    (funcall make-name file)))
 
   (with-current-buffer buffer
     (when (buffer-empty-p)
@@ -44,7 +46,8 @@
       (write-file path))
 
     (unless (string-equal (buffer-name) name)
-      (set-auto-mode-by-path file)) )
+      (set-auto-mode-by-path file)
+      (rename-buffer name)) )
 
     buffer))
 
@@ -58,6 +61,7 @@
   ;; the merge copy could be turned into a interface into quilt.
 
   (load-or-copy-ancestor
+    (expand-file-name file)
     'merge-copy-path
     'merge-copy-name
     'insert-published))
