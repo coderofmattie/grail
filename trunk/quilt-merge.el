@@ -32,6 +32,18 @@
     (= 0 (call-process "svn" nil t t "cat" (file-name-nondirectory file)))))
 
 (defun load-or-copy-ancestor ( file make-path make-name fetch-copy )
+  "load or copy the ancestor of FILE.
+
+   A buffer is either found or created. If it is an empty file
+   the ancestor of the file is inserted into the buffer.
+
+   Published -> Merge Copy -> Working Copy
+
+   The major mode is set using the original file-name so that the
+   extensions to differentiate the copies on disk do not baffle
+   set-auto-mode. The buffer is renamed to indicate that all the
+   buffer preparation work has been completed.
+  "
   (lexical-let*
     ((path    (funcall make-path file))
 
@@ -55,7 +67,10 @@
   (file-readable-p (merge-copy-path file)))
 
 (defun mc ( file )
-  "create the merge copy of the file"
+  "Find the Merge Copy of a source file in a existing buffer, by loading the file from disk,
+   or finally by checking out the latest published version.
+
+   The Merge Copy should not be directly modified normally, it's managed by quilt."
   (interactive "fFind source Merge Copy? ")
 
   ;; the merge copy could be turned into a interface into quilt.
@@ -74,8 +89,13 @@
   (file-readable-p (working-copy-path file)))
 
 (defun wc ( file )
+  "Find the Working Copy of a source file in a existing buffer, by loading the file from disk,
+   or finally by copying the Merge Copy.
+
+   The Working Copy is where new changes are made directly."
   (interactive "fFind source Working Copy? ")
   (load-or-copy-ancestor
+    file
     'working-copy-path
     'working-copy-name
     'insert-merge))
