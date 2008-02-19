@@ -134,18 +134,6 @@
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
 
-;; figuring out the names is driving me nuts.
-
-(defmacro scope-select-let ( scope &rest body )
-  "hello world"
-  `(let
-     ,(lexical-let
-        ((scope-table (car scope)))
-        (mapcar (lambda ( s )
-                  `(,s (symbol-value (intern ,(symbol-name s) ,scope-table))))
-          (cdr scope)))
-     ,@body))
-
 (defun maximize-frame ()
   "toggle maximization the current frame"
   (interactive)
