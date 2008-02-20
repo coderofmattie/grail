@@ -86,6 +86,48 @@
     (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
     ))
 
+(defun strip-list-last ( list )
+  "strip the last element from a list"
+  (if (consp (cdr list))
+    (cons
+      (car list)
+      (strip-list-last (cdr list)))
+    nil))
+
+(defun map-filter-nil ( func &rest seq )
+  "non-recursive version of map-filter-nil."
+  (lexical-let
+    ((value (cons nil nil)))
+
+    (dolist (element seq)
+      (when element
+        (lexical-let
+          ((transform (funcall func element)))
+          (when transform
+            (setcdr value (cons transform nil))))))
+    (cdr value)))
+
+(defun find-child-directory-in-ancestor ( child parent )
+  (catch 'done
+    (unless (file-accessible-directory-p parent) (throw 'done nil))
+
+    (mapc
+      (lambda ( dir )
+        (if (string-equal child dir)
+          (throw 'done (concat parent "/" child))))
+      (filter-ls parent nil
+        (type ?d)
+        (!path "^\\.\\.?")))
+
+    (find-child-directory-in-ancestor
+      child
+      (lexical-let
+        ((traverse (split-string parent "/" t)))
+
+        (unless traverse (throw 'done nil))
+
+        (concat "/" (infix-strings "/" (strip-list-last traverse))))) ))
+
 ;;----------------------------------------------------------------------
 ;; unterminated lists experiments.
 ;;----------------------------------------------------------------------
