@@ -114,8 +114,6 @@
 
    Currently this is a experimental hack so it incurs the cost
    of a recursive pre-bind in addition to eval each time evaluated."
-;; New theory for why this doesn't? work. scope-bind-closure mangled
-;; the code erroneously.
   (declare (debug (symbolp body)))
   `(eval (scope-bind-closure ,closure ',(cons 'progn body))))
 
