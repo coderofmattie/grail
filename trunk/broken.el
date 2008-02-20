@@ -250,110 +250,75 @@
   (auto-overlay-start 'paludis)
   )
 
-;;----------------------------------------------------------------------
-;;
-;;----------------------------------------------------------------------
 
-(pp (macroexpand '(scope-let foo
-                    (message "red is %s" red)
-                    (message "blue is %s" blue))))
-
-(pp (macroexpand '(scope-private-let foo
-                    (message "red is %s" red)
-                    (message "blue is %s" blue))))
-
-(scope-private-let foo
-  (message "red is %s" red)
-  (message "blue is %s" blue))
-
-(scope-copy-let
-  (foo red blue)
-  (message "red is %s" red)
-  (message "blue is %s" blue)
-  ;;(setq blue "rancid"))
-  )
-
-(scope-shared-lexical foo
+(save-lexical-closure foo
   (message "red is %s" red)
   (message "blue is %s" blue)
 
-  (setq blue "gimp")
-  )
+  (push "foo" list)
+  (push "bar" list)
 
-(scope-let foo
-  (message "red is %s" red)
-  (message "blue is %s" blue))
+  (message
+    (if (string-equal red "hot")
+      "definitely hot!"
+      "bad boom!"))
 
-(setq foo (make-scope
-            (red   "hot")
-            (blue  "cold")))
+  t)
 
-(setq bar (copy-sequence foo))
+(save-lexical-closure foo
+  (if (string-equal red "hot")
+    (progn
+      (message "hot path")
+      t)
+    (progn
+      (message "cold path")
+      nil)))
 
-(scope-shared-lexical baz
-  (message "red is %s" red)
-  (message "blue is %s" blue)
+(defun parser-sugar-semantics ( instructions )
+  (apply 'append
+    (mapcar
+      (lambda (i)
+        (lexical-let*
+          ((primitive (if (consp i) (car i) i))
+           (data      (if (consp i) (eval (cadr i))))
+           (expand    (gethash primitive parser-semantic-sugar)))
 
-  (setq blue "freezing")
-  )
+          (cond
+            ((functionp expand) (funcall 'expand data))
+            ((listp expand)     expand)
+            ((list i))) ))
+      instructions)))
+
+;; it's kind of a radical idea, but i could create a stack of the
+;; deferred interpreter states including pending instruction
+;; sequences. could be just the magic needed.
+
+;; there is a stack. pops of a lazy-deferred are compiled into the parent
+;; compile. That way nils are automatically ignored, but construction resumes
+;; naturally.
+(defun parser-semantic-interpreter-compile ( lazy-deferred &rest instructions )
+  (lexical-let
+    ((compiled nil)
+     (semantics (when lazy-defered
+                  (car lazy-deferred)))
+
+     (tape
+       (if lazy-deferred
+           (append
+             (parser-sugar-semantics instructions)
+             (cdr lazy-deferred))
+
+           nil)
+       (parser-sugar-semantics instructions)))
+
+    (unless semantics
+      (setq semantics (copy-closure parser-function-semantics)))
 
 
-(length foo)
-
-(pp-scope bar)
-(pp-scope foo)
-
-(set (intern "baz") (symbol-value (intern "red" foo)))
-
-(setq baz (copy-scope foo))
-  
-(pp-scope baz)
-
-(setq baz 'green)
-
-(pp foo)
-
-(set (intern "red" foo) "shit")
-(symbol-value (intern "red" foo))
-(symbol-value (intern "blue" foo))
+    (setq lazy-deferred (parser-function-reduce semantics tape))
 
 
-(setq foo (make-scope
-            (red   "hot")
-            (blue  "cold")))
-
-(pp-scope foo)
-
-"symbol: red = \"hot\"
-symbol: blue = \"cold\"
-"
-
-(scope-shared-lexical foo
-  (message "red is %s" red)
-  (message "blue is %s" blue)
-
-  (setq blue "freezing"))
-
-(pp-scope foo)
-"symbol: red = \"hot\"
-symbol: blue = \"freezing\"
-"
-
-(setq stuff (parser-function-reduce parser-function-semantics
-            `(predicate 'parser-predicate-and)
-            `(sequence '(foo bar baz))
-            'greedy))
-
-(pp-scope stuff)
-
-(lexical-let
-  ((validate (catch 'semantic-error
-               (parser-function-validate stuff))))
-  (unless (eq 't validate)
-    (message "invalid semantics: %s" (symbol-name validate)))
-
-  (pp (parser-function-generate stuff)))
-
+  ))
 
 
 
