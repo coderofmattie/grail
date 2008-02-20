@@ -13,10 +13,10 @@
   (concat file ".merge"))
 
 (defun working-copy-name ( file )
-  (concat (file-name-nondirectory file) "/WC"))
+  (concat (file-name-nondirectory file) "/wc"))
 
 (defun merge-copy-name ( file )
-  (concat (file-name-nondirectory file) "/Merge"))
+  (concat (file-name-nondirectory file) "/merge"))
 
 (defun set-auto-mode-by-path ( file )
   (let
@@ -103,4 +103,80 @@
     'working-copy-path
     'working-copy-name
     'insert-merge))
+
+(defvar merge-queue-directory-name "quilt-queue"
+  "the name of the quilt directory")
+
+(defun find-merge-queue ( dir )
+  (find-child-directory-in-ancestor merge-queue-directory-name dir))
+
+(defun ascend-to-checkout-root ( dir )
+  (if (and
+        (file-accessible-directory-p dir)
+        (file-writable-p (concat dir "/_")))
+
+    ;; okay, vc-backend is daft in that it returns the backend of a directory only with
+    ;; a trailing slash ?
+
+    ;; oddly enough vc-backend actually returns nil at the working copy root, even though
+    ;; you would think it would return a backend.
+    (if (vc-backend dir)
+      (lexical-let
+        ((traverse (strip-list-last (split-string dir "/" t))))
+
+        (if traverse
+          (lexical-let
+            ((found (ascend-to-checkout-root (concat "/" (infix-strings "/" traverse)))))
+            (if (eq 't found)
+              dir
+              found))
+          t))   ;; halt when list is exhausted
+      t)        ;; halt when the directory is no longer under version control.
+    t))         ;; halt when we don't have read and write permission for the directory.
+
+(defun find-checkout-root ( dir )
+  (lexical-let
+    ((found (ascend-to-checkout-root dir)))
+    (if (eq 't found)
+      dir
+      found)))
+
+(defun find-or-create-merge-queue ( dir )
+  ;; this could be turned into a single function, so that only one IO bound traverse is
+  ;; performed.
+  (lexical-let
+    ((queue (find-merge-queue dir)))
+
+    (unless queue
+      (setq queue (concat (find-checkout-root dir) "/" merge-queue-directory-name))
+      (make-directory queue t))
+
+    queue))
+
+(defun get-merge-queue ()
+  ;; should check that quilt-merge-target is set, to see if it's a buffer initialized
+  ;; by load-or-copy-ancestor
+  (unless (boundp 'quilt-merge-queue)
+    (make-local-variable 'quilt-merge-queue)
+    (setq quilt-merge-queue (find-or-create-merge-queue (file-name-directory (buffer-file-name)))))
+
+  quilt-merge-queue)
+
+(defun append-to-merge-plan ( commit-dir )
+  (with-current-buffer (find-file-literally (concat (get-merge-queue) "/merge-plan"))
+    (goto-char (point-max))
+    (insert (format "%s\n" commit-dir))
+    (basic-save-buffer)))
+
+;; completing read
+
+(defun new-commit ( name )
+  "Create a new commit in the Merge Queue. The commit is automatically
+   appended to the Merge Plan."
+  (interactive "Mcommit name? ")
+  (if (< (length name) 1)
+    (message "aborted new-commit.")
+    (save-excursion
+      (make-directory (concat (get-merge-queue) "/" name) t)
+      (append-to-merge-plan name)) ))
 
