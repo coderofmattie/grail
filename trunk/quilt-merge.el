@@ -53,6 +53,10 @@
      (name    (funcall make-name file)))
 
   (with-current-buffer buffer
+    (unless (boundp 'quilt-merge-target)
+      (make-local-variable 'quilt-merge-target)
+      (setq quilt-merge-target file))
+
     (when (buffer-empty-p)
       (funcall fetch-copy buffer file)
       (write-file path))
