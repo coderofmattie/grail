@@ -25,8 +25,7 @@
         (apply 'map-filter-nil func (cdr seq))
         ))
     (if (cdr seq)
-      (apply 'map-filter-nil func (cdr seq)))
-    ))
+      (apply 'map-filter-nil func (cdr seq))) ))
 
 ;;----------------------------------------------------------------------
 ;; String handling functions oriented towards manipulating path lists.
@@ -103,7 +102,11 @@
     ))
 
 (defmacro filter-ls (path path-type &rest filters)
-  "a form for flexibly filtering the result of listing a directory with attributes"
+  "filter-ls PATH PATH-TYPE
+  a form for flexibly filtering the result of listing a directory with attributes
+
+   t   absolute paths
+   nil relative paths"
   `(apply 'map-filter-nil
      (lambda ( path-pair )
        (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
