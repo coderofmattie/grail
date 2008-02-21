@@ -862,9 +862,9 @@ supplied as the single argument NODE."
          ;; of the logic phase will be ordered last.
          ,(reverse gen-lexical-scope)
 
-         ,@(if gen-eval-always
-             (append gen-eval-always eval-phase)
-             eval-phase))
+         ,(if gen-eval-always
+            (append gen-eval-always eval-phase)
+            eval-phase))
       generated)))
 
 (defun parser-function-generate ( parser-function-semantics )
