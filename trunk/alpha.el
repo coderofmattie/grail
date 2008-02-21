@@ -5,6 +5,12 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
+;;----------------------------------------------------------------------
+;; stable-track  - canidate for inclusion in mattie.el
+;;----------------------------------------------------------------------
+
+;; update darwin.el to use these functions.
+
 (defun prefix-strings (prefix list)
   "prefix all the strings of the list concatenating the result."
   (mapcar
@@ -20,19 +26,11 @@
 (defun bracket-strings ( bracket list )
   (apply 'concat (prefix-strings bracket list) bracket))
 
-;;----------------------------------------------------------------------
-;; stable-track  - canidate for inclusion in mattie.el
-;;----------------------------------------------------------------------
 
-;; these need documentation, and they will be ready to go into mattie-boot.el
 
-;; ready to go now, just needs review for documentation and old code cleanup
 
-;; (filter-ls "~/system/emacs/elisp" nil
-;;   (type ?d)
-;;   (!path "^\\.\\.?")))
 
-;; this can go in once it does the right thing outside of a overlay.
+;; this can go in when it doesn't rely on a auto-overlay function.
 (defun show-overlay-binding ( symbol )
   "show the overlay binding value of the symbol at the point"
   (interactive "Ssymbol? ")
@@ -81,6 +79,7 @@
         (message "aborted localizing distributed file"))
     )))
 
+;; as soon as it works on darwin it can go to stable.el.
 (defun copy-region-to-clipboard ()
   "copy the region to the clipboard"
   (interactive)
@@ -89,13 +88,7 @@
     (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
     ))
 
-(defun strip-list-last ( list )
-  "strip the last element from a list"
-  (if (consp (cdr list))
-    (cons
-      (car list)
-      (strip-list-last (cdr list)))
-    nil))
+;; with some more time for any bugs to show this can go to load-library.el.
 
 ;; stateful version by fledermous in #emacs (thanks)
 ;; not sure if this would work, is equal right ?
@@ -213,6 +206,8 @@
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
 
+;; these only work on X, when they work on the mac they can go into stable.el.
+
 (defun maximize-frame ()
   "toggle maximization the current frame"
   (interactive)
@@ -233,6 +228,10 @@
   (interactive)
   (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
     '(2 "_NET_WM_STATE_FULLSCREEN" 0)))
+
+;;----------------------------------------------------------------------
+;; deploy experiments.
+;;----------------------------------------------------------------------
 
 (defun deploy-url-elisp ( url file )
   "deploy the elisp on the host via url installing in the extras path"
