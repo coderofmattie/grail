@@ -50,21 +50,24 @@
 ;; gen-logic-branch is a void variable. kill the stale code.
 (parser-semantic-dump `(call 'token))
 
+;; check an explicit sequence
 (parser-semantic-dump
   `(call 'foo)
   `(call 'bar)
   `(call 'baz)
   'relation-or)
 
-;; test the sequence case
-(setq test-function (parser-function-reduce parser-function-semantics
-            `(predicate 'parser-predicate-and)
-            `(sequence '(foo bar baz))))
+;; check the default sequence
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  `(call 'baz))
 
 ;; test the closure case
-(setq test-function (parser-function-reduce parser-function-semantics
-            'greedy
-            `(sequence '(foo bar baz))))
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'greedy)
 
 ;; test input effects
 (setq test-function (parser-function-reduce parser-function-semantics
