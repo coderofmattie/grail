@@ -94,6 +94,12 @@
   'ast-discard)
 
 ;; test the AST conditional
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'ast-branch)
+
+;; test the AST conditional
 (setq test-function (parser-function-reduce parser-function-semantics
             'ast-branch
             `(sequence '(foo bar baz))))
