@@ -285,4 +285,15 @@
     (do-lisp-list 'copy-region-as-kill)
     ))
 
+;;----------------------------------------------------------------------
+;; list utilities.
+;;----------------------------------------------------------------------
+
+(defun strip-list-last ( list )
+  "strip the last element from a list"
+  (if (consp (cdr list))
+    (cons
+      (car list)
+      (strip-list-last (cdr list)))
+    nil))
 
