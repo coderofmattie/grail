@@ -757,17 +757,8 @@ supplied as the single argument NODE."
                 gen-match-effects)
               (setq gen-ast-value `(funcall ',gen-ast-transform ast-root)))) )
 
-        (when (and
-                gen-ast-branch
-                (not gen-ast-node))
-
-          ;; the code generated assumes that side effects during a
-          ;; left to right evaluation will be visible in a rightmost
-          ;; value modified in a sexp evaluated left.
-
-          (push `(setq ast-root nil) gen-fail-effects)
-          (unless gen-ast-value
-            (setq gen-ast-value 'ast-root)))
+        (unless gen-ast-value
+          (setq gen-ast-value 'ast-root))
         ))
     ))
 
@@ -811,10 +802,10 @@ supplied as the single argument NODE."
   (lexical-let
     ((eval-disjunct (parser-eval-disjunct-p)))
 
-    (when eval-disjunct
-      (push `(match ,generated) gen-lexical-scope)
-      (setq generated 'match)
-
+    (if eval-disjunct
+      (progn
+        (push `(match ,generated) gen-lexical-scope)
+        (setq generated 'match))
       (when gen-branch
         ;; if the evaluation result is the function logical result set
         ;; the match rvalue.
@@ -850,7 +841,7 @@ supplied as the single argument NODE."
                    ;; so this is wrong.
                    (if (or gen-branch gen-ast-value)
                      `(cons
-                        (if (and gen-branch (eval-conjunct-p))
+                        ,(if (and gen-branch (parser-eval-conjunct-p))
                           generated
                           `(parser-match-p ,generated))
                         ,gen-ast-value)
