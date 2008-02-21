@@ -103,13 +103,14 @@
 ;; (remove nil (mapcar fun (remove nil list)))
 
 ;; stateful version by sabetts in #emacs (thanks).
-;;(defun map-reduce (fn &rest list)
-;;  (let (acc v)
-;;    (while list
-;;      (setq v (pop list)
+
+;; (defun map-reduce (fn &rest list)
+;;   (let (acc v)
+;;     (while list
+;;       (setq v (pop list)
 ;;            v (and v (funcall v)))
 ;;      (when v (push v acc)))
-;;    acc))
+;;     acc))
 
 (defun map-filter-nil ( func &rest seq )
   "Filter the nil elements of sequence SEQ from the input and
@@ -148,7 +149,7 @@
 
         (unless traverse (throw 'done nil))
 
-        (concat "/" (infix-strings "/" (strip-list-last traverse))))) ))
+        (prefix-strings "/" (strip-list-last traverse)))) ))
 
 (defun line-at-point ()
   "return the entire line under the point as a string"
