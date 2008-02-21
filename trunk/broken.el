@@ -145,19 +145,6 @@
                         ,(make-char 'greek-iso8859-7 107))
                  nil))))))
 
-;; stateful version by fledermous in #emacs (thanks)
-;; (remove nil (mapcar fun (remove nil list)))
-
-;; stateful version by sabetts in #emacs (thanks).
-;;(defun map-reduce (fn &rest list)
-;;  (let (acc v)
-;;    (while list
-;;      (setq v (pop list)
-;;            v (and v (funcall v)))
-;;      (when v (push v acc)))
-;;    acc))
-
-
 (defun instrument-function-at-call ()
   "instrument the function indicated by the call at the point. Warning, will eval the defun."
   (interactive)
