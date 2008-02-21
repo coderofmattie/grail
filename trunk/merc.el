@@ -115,13 +115,17 @@
     'merc-wc-name
     'merc-insert-merge))
 
-(defvar merge-queue-directory-name "quilt-queue"
-  "the name of the quilt directory")
+;;----------------------------------------------------------------------
+;; merge-queue
+;;----------------------------------------------------------------------
 
-(defun find-merge-queue ( dir )
-  (find-child-directory-in-ancestor merge-queue-directory-name dir))
+;; locate or establish the merge-queue for this checkout. The FS location
+;; of the merge-queue is cached in a buffer local variable.
+
+;; Use the accessor get-merge-queue to return the path of the queue.
 
 (defun ascend-to-checkout-root ( dir )
+  "The recursive core of find-checkout-root. use that entry point instead."
   (if (and
         (file-accessible-directory-p dir)
         (file-writable-p (concat dir "/_")))
@@ -157,6 +161,12 @@
     (if (eq 't found)
       dir
       found)))
+
+(defun find-merge-queue ( dir )
+  (find-child-directory-in-ancestor merge-queue-directory-name dir))
+
+(defvar merge-queue-directory-name "quilt-queue"
+  "the name of the quilt directory")
 
 (defun find-or-create-merge-queue ( dir )
   "Find or create the merge-queue directory for this working copy checkout.
