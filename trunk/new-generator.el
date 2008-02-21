@@ -1105,7 +1105,7 @@ and ast parts from either the match phase or evaluation phase.
           (format "incomplete instruction %s is a fatal error." (pp-to-string i-current))))
 
       ((null merge)           (if tape-next
-                                (parser-function-reduce semantics tape-next)
+                                (parser-semantic-union semantics tape-next)
                                 (cons 'finished nil)))
       ((eq merge 'collision)  (cons 'invalid tape))
       ((eq merge 'unkown)     (cons 'unkown  tape))
