@@ -730,9 +730,7 @@ supplied as the single argument NODE."
     (push `(parse-tree ast-root) gen-dynamic-scope)
 
     (if gen-ast-discard
-      (if gen-branch
-        (push `(setq ast-root nil) gen-eval-always)
-        (setq gen-ast-value 'nil))
+      (setq gen-ast-value 'discard)
 
       (progn
         ;; a conditional selects the highest combinational complexity
@@ -844,7 +842,9 @@ supplied as the single argument NODE."
                         ,(if (and gen-branch (parser-eval-conjunct-p))
                           generated
                           `(parser-match-p ,generated))
-                        ,gen-ast-value)
+                        ,(if (eq 'discard gen-ast-value)
+                           'nil
+                           gen-ast-value))
                      generated))))
 
     (if gen-lexical-scope
