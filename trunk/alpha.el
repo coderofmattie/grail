@@ -298,13 +298,4 @@
 ;; local function library.
 ;;----------------------------------------------------------------------
 
-;; taken from the Lisp Intro text as rendered by:
-;; http://www.rattlesnake.com/intro/print_002delements_002dof_002dlist.html
-
-;; modified slightly to issue debugging bread-crumbs to the Messages buffer
-(defun debug-elements-of-list (list)
-  "Print each element of LIST on a line of its own."
-  (while list
-    (message "debug: element %s" (car list))
-    (setq list (cdr list))))
 
