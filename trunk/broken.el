@@ -133,6 +133,31 @@
 ;; misc.
 ;;----------------------------------------------------------------------
 
+(defun dedicated-p ()
+  (window-dedicated-p (get-buffer-window (current-buffer))))
+
+(defun is-ded ()
+  (interactive)
+  (message
+    (if (dedicated-p)
+      "yes"
+      "no")))
+
+(defun get-target ()
+  (interactive)
+  (message "target is %s" (merc-target)))
+
+;; (when merc-dedicate-source
+;;   (setq special-display-regexps
+;;     (append
+;;       '(".*/wc$"       (same-window . t))
+;;       '(".*/checkout$"  (same-window . t))
+;;       '(".*/merge$"     (same-window . t))
+;;       special-display-regexps)))
+
+;; (setq special-display-regexps nil)
+
+
 ;; This would be very cool if I had a better font for greek symbols.
 
 ;; from: http://www.emacswiki.org/cgi-bin/emacs-en/PrettyLambda
@@ -158,6 +183,10 @@
 
 ;; this may be obsolete with how cedet does a database of multiple files.
 
+(with-current-buffer "*scratch*"
+  (set (make-local-variable 'bar) 20))
+
+  
 (obsoloted 'gtags)
 (defun tune-gtags ()
   (gtags-mode)
