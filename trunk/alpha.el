@@ -129,6 +129,7 @@
         (concat "/" (infix-strings "/" (strip-list-last traverse))))) ))
 
 (defun line-at-point ()
+  "return the entire line under the point as a string"
   (save-excursion
     (filter-buffer-substring
       (progn
