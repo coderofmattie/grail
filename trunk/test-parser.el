@@ -80,21 +80,18 @@
   `(call 'bar)
   'input-branch)
 
-;; test the greedy closure with input branch.
-(setq test-function (parser-function-reduce parser-function-semantics
-            'greedy
-            'input-branch
-            `(sequence '(foo bar baz))))
-
 ;; test AST discard
-(setq test-function (parser-function-reduce parser-function-semantics
-            'ast-discard
-            `(sequence '(foo bar baz))))
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'ast-discard)
 
-(setq test-function (parser-function-reduce parser-function-semantics
-            'ast-discard
-            'input-branch
-            `(sequence '(foo bar baz))))
+;; test AST discard with a branch
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'input-branch
+  'ast-discard)
 
 ;; test the AST conditional
 (setq test-function (parser-function-reduce parser-function-semantics
