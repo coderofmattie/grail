@@ -18,6 +18,9 @@
 ;; buffer creation
 ;;----------------------------------------------------------------------
 
+(define-error merc-error "An error signal generated within merc.el")
+(define-error merc-unkown "Buffer was not created by merc so merc commands do not apply" merc-error)
+
 (defun merc-wc-path ( file )
   (concat file ".working-copy"))
 
@@ -179,11 +182,13 @@
 
     (unless queue
       (setq queue (concat (find-checkout-root dir) "/" merge-queue-directory-name))
-      (make-directory queue t))
+      (make-directory queue t)) ;; TODO: signal an IO error here, caught by all command entry points.
 
     queue))
 
 (defun get-merge-queue ()
+  (unless (boundp 'merc-target) (signal 'merc-unkown this-command))
+
   (unless (boundp 'merc-queue)
     (make-local-variable 'merc-queue)
     (setq merc-queue (find-or-create-merge-queue (file-name-directory (buffer-file-name)))))
