@@ -854,9 +854,7 @@ supplied as the single argument NODE."
          ,(reverse gen-lexical-scope)
 
          ,@(if gen-eval-always
-             (append gen-eval-always (if (listp eval-phase)
-                                       eval-phase
-                                       (list eval-phase)))
+             (append gen-eval-always (list eval-phase))
              (list eval-phase)))
       generated)))
 
