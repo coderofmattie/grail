@@ -6,12 +6,15 @@
 ;;----------------------------------------------------------------------
 
 (defun prefix-strings (prefix list)
+  "prefix all the strings of the list concatenating the result."
   (mapcar
     (lambda ( string )
       (concat prefix string))
     list))
 
 (defun infix-strings ( infix list )
+  "infix a list of strings by placing a deliminator betwixt the strings of the list.
+   The result is concatenated into a single string."
   (apply 'concat (car list) (prefix-strings infix (cdr list))))
 
 (defun bracket-strings ( bracket list )
