@@ -97,8 +97,27 @@
       (strip-list-last (cdr list)))
     nil))
 
+;; stateful version by fledermous in #emacs (thanks)
+;; not sure if this would work, is equal right ?
+
+;; (remove nil (mapcar fun (remove nil list)))
+
+;; stateful version by sabetts in #emacs (thanks).
+;;(defun map-reduce (fn &rest list)
+;;  (let (acc v)
+;;    (while list
+;;      (setq v (pop list)
+;;            v (and v (funcall v)))
+;;      (when v (push v acc)))
+;;    acc))
+
 (defun map-filter-nil ( func &rest seq )
-  "non-recursive version of map-filter-nil."
+  "Filter the nil elements of sequence SEQ from the input and
+   output of function FUNC.
+
+   FUNC is applied to the non-nil elements of SEQ ala mapcar. The
+   result is either a list or nil if filtering eliminated all
+   output."
   (lexical-let
     ((value (cons nil nil)))
 
