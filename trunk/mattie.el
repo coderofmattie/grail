@@ -317,6 +317,9 @@
 ;;                          tune-programming
 ;;----------------------------------------------------------------------
 
+;; enhanced merging setup.
+(load-config "merc.el")
+
 ;; latest and greatest template facility.
 (load-style "template.el" "XML enhanced else template mode not available.")
 
