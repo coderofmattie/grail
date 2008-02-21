@@ -74,10 +74,11 @@
   `(call 'foo)
   'input-discard)
 
-;; test input effects and branching
-(setq test-function (parser-function-reduce parser-function-semantics
-            'input-branch
-            `(sequence '(foo bar baz))))
+;; the first branching test.
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'input-branch)
 
 ;; test the greedy closure with input branch.
 (setq test-function (parser-function-reduce parser-function-semantics
