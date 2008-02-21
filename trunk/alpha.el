@@ -308,35 +308,3 @@
     (message "debug: element %s" (car list))
     (setq list (cdr list))))
 
-;; the first stab at a better merging system.
-
-(defun merge-changes ()
-  "Merge latest changes against the last checkout."
-  (interactive)
-  (let
-    ( (merge-file (buffer-file-name))
-      (wc-file (concat (buffer-file-name) ".merge"))
-      )
-
-    (save-excursion
-      (let
-        ((wc-buffer (progn
-                      (write-file wc-file)
-                      (buffer-name)))
-
-          ;; using vc-workfile-version is necessary so that subsequent merges
-          ;; get the correct head-buffer
-          (head-buffer (vc-find-version merge-file (vc-workfile-version merge-file)))
-
-          (merge-buffer (progn
-                          (vc-revert-file merge-file)
-                          (find-file merge-file)))
-        )
-
-        ;; ? check for an exit status from ediff
-        (ediff-merge-buffers head-buffer wc-buffer nil nil merge-file)
-
-        ;; ? make sure the changes were saved
-        ))
-      ))
-
