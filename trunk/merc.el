@@ -8,6 +8,10 @@
 ;; Use quilt to stage changes to a public repository supporting
 ;; cherry picking of changes into queues for committing.
 
+(defvar merc-advanced-merge nil
+  "turns on advanced merging with a quilt repository, off by default
+   until the merge functionality is completed.")
+
 ;;----------------------------------------------------------------------
 ;; utilities
 ;;----------------------------------------------------------------------
@@ -98,7 +102,11 @@
   (switch-to-buffer (merc-mc file)))
 
 (defun merc-insert-merge ( buffer file )
-  (with-current-buffer (mc file)
+  (with-current-buffer (merc-mc file)
+    (copy-to-buffer buffer (point-min) (point-max))))
+
+(defun merc-insert-checkout ( buffer file )
+  (with-current-buffer (merc-cc file)
     (copy-to-buffer buffer (point-min) (point-max))))
 
 (defun wc-exists-p ( file )
@@ -109,7 +117,9 @@
     file
     "working-copy"
     "wc"
-    'merc-insert-merge))
+    (if merc-advanced-merge
+      'merc-insert-merge
+      'merc-insert-checkout)))
 
 (defun wc ( file )
   "Find the Working Copy of a source file in a existing buffer, by loading the file from disk,
