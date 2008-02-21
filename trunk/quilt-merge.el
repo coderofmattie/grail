@@ -3,30 +3,41 @@
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 
+;; Modern Emacs Revision Consolidation
+
 ;; Use quilt to stage changes to a public repository supporting
 ;; cherry picking of changes into queues for committing.
 
-(defun working-copy-path ( file )
+;;----------------------------------------------------------------------
+;; utilities
+;;----------------------------------------------------------------------
+(defun buffer-empty-p ()
+  (not (> (point-max) (point-min))))
+
+;;----------------------------------------------------------------------
+;; buffer creation
+;;----------------------------------------------------------------------
+
+(defun merc-wc-path ( file )
   (concat file ".working-copy"))
 
-(defun merge-copy-path ( file )
-  (concat file ".merge"))
-
-(defun working-copy-name ( file )
+(defun merc-wc-name ( file )
   (concat (file-name-nondirectory file) "/wc"))
 
-(defun merge-copy-name ( file )
+(defun merc-mc-path ( file )
+  (concat file ".merge"))
+
+(defun merc-mc-name ( file )
   (concat (file-name-nondirectory file) "/merge"))
 
-(defun set-auto-mode-by-path ( file )
+(defun merc-set-auto-mode ( file )
+  "run set-auto-mode with the original file-name visible so that the
+   file extension based matching will work correctly"
   (let
     ((buffer-file-name file)) ;; set-auto-mode uses filename. shadow it.
     (set-auto-mode t)))
 
-(defun buffer-empty-p ()
-  (not (> (point-max) (point-min))))
-
-(defun insert-published ( buffer file )
+(defun merc-insert-checkout ( buffer file )
   (let
     ((default-directory (file-name-directory file)))
     (= 0 (call-process "svn" nil t t "cat" (file-name-nondirectory file)))))
@@ -37,7 +48,7 @@
    A buffer is either found or created. If it is an empty file
    the ancestor of the file is inserted into the buffer.
 
-   Published -> Merge Copy -> Working Copy
+   Checkout -> Merge Copy -> Working Copy
 
    The major mode is set using the original file-name so that the
    extensions to differentiate the copies on disk do not baffle
@@ -62,13 +73,13 @@
       (write-file path))
 
     (unless (string-equal (buffer-name) name)
-      (set-auto-mode-by-path file)
+      (merc-set-auto-mode file)
       (rename-buffer name)) )
 
     buffer))
 
 (defun mc-exists-p ( file )
-  (file-readable-p (merge-copy-path file)))
+  (file-readable-p (merc-mc-path file)))
 
 (defun mc ( file )
   "Find the Merge Copy of a source file in a existing buffer, by loading the file from disk,
@@ -81,16 +92,16 @@
 
   (load-or-copy-ancestor
     (expand-file-name file)
-    'merge-copy-path
-    'merge-copy-name
-    'insert-published))
+    'merc-mc-path
+    'merc-mc-name
+    'merc-insert-checkout))
 
-(defun insert-merge ( buffer file )
+(defun merc-insert-merge ( buffer file )
   (with-current-buffer (mc file)
     (copy-to-buffer buffer (point-min) (point-max))))
 
 (defun wc-exists-p ( file )
-  (file-readable-p (working-copy-path file)))
+  (file-readable-p (merc-wc-path file)))
 
 (defun wc ( file )
   "Find the Working Copy of a source file in a existing buffer, by loading the file from disk,
@@ -100,9 +111,9 @@
   (interactive "fFind source Working Copy? ")
   (load-or-copy-ancestor
     file
-    'working-copy-path
-    'working-copy-name
-    'insert-merge))
+    'merc-wc-path
+    'merc-wc-name
+    'merc-insert-merge))
 
 (defvar merge-queue-directory-name "quilt-queue"
   "the name of the quilt directory")
@@ -115,18 +126,17 @@
         (file-accessible-directory-p dir)
         (file-writable-p (concat dir "/_")))
 
-    ;; okay, vc-backend is daft in that it returns the backend of a directory only with
-    ;; a trailing slash ?
+    ;; vc-backend is not robust with inputs. If a directory is given without a trailing
+    ;; slash a nil value will be returned incorrectly for directories under version
+    ;; control.
 
-    ;; oddly enough vc-backend actually returns nil at the working copy root, even though
-    ;; you would think it would return a backend.
     (if (vc-backend dir)
       (lexical-let
         ((traverse (strip-list-last (split-string dir "/" t))))
 
         (if traverse
           (lexical-let
-            ((found (ascend-to-checkout-root (concat "/" (infix-strings "/" traverse)))))
+            ((found (ascend-to-checkout-root (prefix-strings "/" traverse))))
             (if (eq 't found)
               dir
               found))
@@ -135,6 +145,13 @@
     t))         ;; halt when we don't have read and write permission for the directory.
 
 (defun find-checkout-root ( dir )
+  "Find the ancestor directory that is the root of the checkout containing DIR.
+
+   Recursion halts on these conditions:
+   * exhausted path.
+   * directory is not: accesible,readable, and writable.
+   * directory is not under version control according to vc-backend.
+  "
   (lexical-let
     ((found (ascend-to-checkout-root dir)))
     (if (eq 't found)
@@ -162,8 +179,11 @@
 
   quilt-merge-queue)
 
+(defun merge-queue-merge-plan ()
+  (find-file-literally (concat (get-merge-queue) "/merge-plan")))
+
 (defun append-to-merge-plan ( commit-dir )
-  (with-current-buffer (find-file-literally (concat (get-merge-queue) "/merge-plan"))
+  (with-current-buffer (merge-queue-merge-plan)
     (goto-char (point-max))
     (insert (format "%s\n" commit-dir))
     (basic-save-buffer)))
@@ -179,4 +199,3 @@
     (save-excursion
       (make-directory (concat (get-merge-queue) "/" name) t)
       (append-to-merge-plan name)) ))
-
