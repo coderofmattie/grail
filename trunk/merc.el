@@ -21,18 +21,6 @@
 (define-error merc-error "An error signal generated within merc.el")
 (define-error merc-unkown "Buffer was not created by merc so merc commands do not apply" merc-error)
 
-(defun merc-wc-path ( file )
-  (concat file ".working-copy"))
-
-(defun merc-wc-name ( file )
-  (concat (file-name-nondirectory file) "/wc"))
-
-(defun merc-mc-path ( file )
-  (concat file ".merge"))
-
-(defun merc-mc-name ( file )
-  (concat (file-name-nondirectory file) "/merge"))
-
 (defun merc-set-auto-mode ( file )
   "run set-auto-mode with the original file-name visible so that the
    file extension based matching will work correctly"
@@ -45,7 +33,7 @@
     ((default-directory (file-name-directory file)))
     (= 0 (call-process "svn" nil t t "cat" (file-name-nondirectory file)))))
 
-(defun load-or-copy-ancestor ( file make-path make-name fetch-copy )
+(defun load-or-copy-ancestor ( file extension type &optional fetch-copy )
   "load or copy the ancestor of FILE.
 
    A buffer is either found or created. If it is an empty file
@@ -59,12 +47,15 @@
    buffer preparation work has been completed.
   "
   (lexical-let*
-    ((path    (funcall make-path file))
-
+    ((path    (expand-file-name
+                (if extension
+                  (concat file "." extension)
+                  file)))
      (buffer  (or
                 (find-buffer-visiting path)
                 (find-file path)))
-     (name    (funcall make-name file)))
+
+     (name    (concat (file-name-nondirectory file) "/" type)))
 
   (with-current-buffer buffer
     (unless (boundp 'merc-target)
@@ -72,8 +63,9 @@
       (setq merc-target file))
 
     (when (buffer-empty-p)
-      (funcall fetch-copy buffer file)
-      (write-file path))
+      (when (functionp fetch-copy)
+        (funcall fetch-copy buffer file)
+        (write-file path)))
 
     (unless (string-equal (buffer-name) name)
       (merc-set-auto-mode file)
@@ -81,8 +73,21 @@
 
     buffer))
 
+(defun merc-target ()
+  (if (boundp 'merc-target)
+    merc-target
+    (signal 'merc-unkown this-command)))
+
 (defun mc-exists-p ( file )
   (file-readable-p (merc-mc-path file)))
+
+(defun merc-mc ( file )
+  ;; the merge copy could be turned into a interface into quilt.
+  (load-or-copy-ancestor
+    file
+    "merge-copy"
+    "merge"
+    'merc-insert-checkout))
 
 (defun mc ( file )
   "Find the Merge Copy of a source file in a existing buffer, by loading the file from disk,
@@ -90,14 +95,7 @@
 
    The Merge Copy should not be directly modified normally, it's managed by quilt."
   (interactive "fFind source Merge Copy? ")
-
-  ;; the merge copy could be turned into a interface into quilt.
-
-  (load-or-copy-ancestor
-    (expand-file-name file)
-    'merc-mc-path
-    'merc-mc-name
-    'merc-insert-checkout))
+  (switch-to-buffer (merc-mc file)))
 
 (defun merc-insert-merge ( buffer file )
   (with-current-buffer (mc file)
@@ -106,17 +104,37 @@
 (defun wc-exists-p ( file )
   (file-readable-p (merc-wc-path file)))
 
+(defun merc-wc ( file )
+  (load-or-copy-ancestor
+    file
+    "working-copy"
+    "wc"
+    'merc-insert-merge))
+
 (defun wc ( file )
   "Find the Working Copy of a source file in a existing buffer, by loading the file from disk,
    or finally by copying the Merge Copy.
 
    The Working Copy is where new changes are made directly."
   (interactive "fFind source Working Copy? ")
+  (switch-to-buffer (merc-wc file)))
+
+(defun merc-cc ( file )
   (load-or-copy-ancestor
     file
-    'merc-wc-path
-    'merc-wc-name
-    'merc-insert-merge))
+    nil
+    "checkout"))
+
+(defun cc ( file )
+  "Find the Checkout copy of a source file"
+  (interactive "fFind source Checkout Copy? ")
+  (switch-to-buffer (merc-cc file)))
+
+(defun merc-diff ()
+  "merc diff is a simple form of cherry picking that uses ediff"
+  (interactive)
+  (save-excursion
+    (ediff-buffers (merc-cc (merc-target)) (current-buffer)) ))
 
 ;;----------------------------------------------------------------------
 ;; merge-queue
