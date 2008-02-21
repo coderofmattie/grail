@@ -87,7 +87,7 @@
   "create predicate filters for path/mode values"
   (cond
     ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
-    ((string-equal "path" attr-name) `(string-match-p ,attr-match (car path-pair)))
+    ((string-equal "path" attr-name) `(string-match ,attr-match (car path-pair)))
   ))
 
 (defun filter-ls-attributes ( filter-form )
