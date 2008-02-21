@@ -64,9 +64,9 @@
      (name    (funcall make-name file)))
 
   (with-current-buffer buffer
-    (unless (boundp 'quilt-merge-target)
-      (make-local-variable 'quilt-merge-target)
-      (setq quilt-merge-target file))
+    (unless (boundp 'merc-target)
+      (make-local-variable 'merc-target)
+      (setq merc-target file))
 
     (when (buffer-empty-p)
       (funcall fetch-copy buffer file)
@@ -184,13 +184,11 @@
     queue))
 
 (defun get-merge-queue ()
-  ;; should check that quilt-merge-target is set, to see if it's a buffer initialized
-  ;; by load-or-copy-ancestor
-  (unless (boundp 'quilt-merge-queue)
-    (make-local-variable 'quilt-merge-queue)
-    (setq quilt-merge-queue (find-or-create-merge-queue (file-name-directory (buffer-file-name)))))
+  (unless (boundp 'merc-queue)
+    (make-local-variable 'merc-queue)
+    (setq merc-queue (find-or-create-merge-queue (file-name-directory (buffer-file-name)))))
 
-  quilt-merge-queue)
+  merc-queue)
 
 (defun merge-queue-merge-plan ()
   (find-file-literally (concat (get-merge-queue) "/merge-plan")))
