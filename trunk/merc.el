@@ -159,8 +159,11 @@
       found)))
 
 (defun find-or-create-merge-queue ( dir )
-  ;; this could be turned into a single function, so that only one IO bound traverse is
-  ;; performed.
+  "Find or create the merge-queue directory for this working copy checkout.
+
+   The search for a existing merge-queue directory will continue above the
+   root of a checkout. If an existing queue is not found the queue will
+   be created at the root of the checkout."
   (lexical-let
     ((queue (find-merge-queue dir)))
 
