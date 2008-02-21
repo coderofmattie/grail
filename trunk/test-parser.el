@@ -70,9 +70,9 @@
   'greedy)
 
 ;; test input effects
-(setq test-function (parser-function-reduce parser-function-semantics
-            'input-discard
-            `(sequence '(foo bar baz))))
+(parser-semantic-dump
+  `(call 'foo)
+  'input-discard)
 
 ;; test input effects and branching
 (setq test-function (parser-function-reduce parser-function-semantics
