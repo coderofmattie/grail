@@ -61,20 +61,18 @@
 
      (name    (concat (file-name-nondirectory file) "/" type)))
 
-  (with-current-buffer buffer
-    (unless (boundp 'merc-target)
-      (make-local-variable 'merc-target)
-      (setq merc-target file))
+    (unless (string-equal (buffer-name buffer) name)
+      (with-current-buffer buffer
+        (when (buffer-empty-p)
+          (when (functionp fetch-copy)
+            (funcall fetch-copy buffer file)
+            (write-file path)))
 
-    (when (buffer-empty-p)
-      (when (functionp fetch-copy)
-        (funcall fetch-copy buffer file)
-        (write-file path)))
+        (merc-set-auto-mode file)
 
-    (unless (string-equal (buffer-name) name)
-      (merc-set-auto-mode file)
-      (rename-buffer name)) )
+        (set (make-local-variable 'merc-target) file)
 
+        (rename-buffer name)))
     buffer))
 
 (defun merc-target ()
