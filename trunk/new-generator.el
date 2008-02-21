@@ -753,7 +753,10 @@ supplied as the single argument NODE."
               (push
                 `(setq ast-root (funcall ',gen-ast-transform ast-root))
                 gen-match-effects)
-              (setq gen-ast-value `(funcall ',gen-ast-transform ast-root)))) )
+              (setq gen-ast-value `(funcall ',gen-ast-transform ast-root))))
+
+          (gen-ast-branch
+            (push `(setq ast-root nil) gen-fail-effects)))
 
         (unless gen-ast-value
           (setq gen-ast-value 'ast-root))
@@ -962,7 +965,7 @@ and ast parts from either the match phase or evaluation phase.
   (parser-fold-primitive mutex t)
   (parser-merge-primitive var value))
 
-(defun parser-combine-exclusive-of ( mutex of-mutex var value )
+(defun parser-combine-exclusive-of ( of-mutex mutex var value )
   "stub."
   (when (symbol-value of-mutex)
     (throw 'semantic-error 'collision))
