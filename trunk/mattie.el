@@ -28,6 +28,11 @@
 (setq inhibit-splash-screen t)                ;; definitely not a fan of the splash screen.
 (transient-mark-mode -1)                      ;; not a big fan of transient mark mode.
 
+(setq-default set-mark-command-repeat-pop t)  ;; C-u C-<spc> pops the mark, with this on
+                                              ;; simply repeating C-<spc> continues backwards through
+                                              ;; the ring. makes it easier to rewind back through a
+                                              ;; series of marks.
+
 (setq
   case-fold-search t
   current-language-environment "ASCII")
