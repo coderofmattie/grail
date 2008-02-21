@@ -128,6 +128,19 @@
 
         (concat "/" (infix-strings "/" (strip-list-last traverse))))) ))
 
+(defun line-at-point ()
+  (save-excursion
+    (filter-buffer-substring
+      (progn
+        (beginning-of-line)
+        (point))
+
+      (progn
+        (end-of-line)
+        (point))
+      nil
+      t)))
+
 ;;----------------------------------------------------------------------
 ;; unterminated lists experiments.
 ;;----------------------------------------------------------------------
