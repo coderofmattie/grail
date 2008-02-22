@@ -505,19 +505,20 @@ supplied as the single argument NODE."
 ;; The Parser Function Generator generates Match Functions from a set
 ;; of parser primitives.
 
-;; -> Semantics Table
+;; -> Semantics Closure
 
-;; The parser-function-semantics table is the data structure that
-;; glues these generator functions together. It is a set of flags and
-;; code fragments.
+;; The Semantics Closure is a table that glues the Function Generator
+;; together with a set of flags and code fragments.
 
-;; The compile part ensures that the semantics table is complete
-;; including dependencies such as normally invisible generation
-;; flags implied by the combination of semantics.
+;; The generator sets any flags that are inferred purely for the
+;; purpose of code generation.
 
-;; The generate part fills the semantics table with the necessary code
-;; fragments based on the flags and interpolates the fragments into a
-;; lambda or sexp.
+;; The two state-ful effects of a parser function, input and AST
+;; fill code fragments into the closure using the flags to take
+;; advantage of common structure in the function.
+
+;; The elisp is then generated as a nesting of the phases of a parser
+;; function.
 
 (setq parser-function-semantics
   (make-closure
