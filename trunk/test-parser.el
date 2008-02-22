@@ -131,15 +131,19 @@
   `(ast-node 'prod-left)
   `(ast-transform 'transform-foo))
 
-(setq test-function (parser-function-reduce parser-function-semantics
-            'ast-branch
-            `(ast-transform 'transform-foo)
-            `(sequence '(foo bar baz))))
+;; now for the awesome: node, transform, and branch in one go.
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  `(ast-node 'prod-left)
+  `(ast-transform 'transform-foo)
+  'ast-branch)
 
-;; AST node.
-(setq test-function (parser-function-reduce parser-function-semantics
-            `(ast-node 'prod-foo)
-            `(sequence '(foo bar baz))))
+;; simple AST node.
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  `(ast-node 'prod-left))
 
 ;; something that looks like a left production.
 
