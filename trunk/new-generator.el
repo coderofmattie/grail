@@ -879,8 +879,8 @@ The match phase structure has two major elements: a match
 function call and a optional dynamically scoped environment for
 the recursion.
 
-The evaluation phase is can manipulate the parser and the AST
-state with optional branching on the match result.
+The evaluation phase can manipulate the parser and the AST state
+with optional branching on the match result.
 
 The function phase composes a match result with the logic
 and ast parts from either the match phase or evaluation phase.
