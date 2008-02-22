@@ -99,10 +99,22 @@
   `(call 'bar)
   'ast-branch)
 
+;; important assumption. The generated parser code assumes a left to right eval
+;; with effects settling before the right argument is eval'd. This test
+;; should print 8 if this assumption holds, or 10 if this assumption is broken.
+
+;; using this assumption is a real cheat lisp wise, but I don't think the
+;; emacs optimizer is going to penalize me for it any time soon.
+
+(setq foo 9)
+(cons (setq foo 7) (+ foo 1))
+
 ;; test the AST transform.
-(setq test-function (parser-function-reduce parser-function-semantics
-            `(ast-transform 'transform-foo)
-            `(sequence '(foo bar baz))))
+
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  `(ast-transform 'transform-foo))
 
 (setq test-function (parser-function-reduce parser-function-semantics
             `(ast-node 'left-prod)
