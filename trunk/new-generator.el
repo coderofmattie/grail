@@ -1263,9 +1263,9 @@ and ast parts from either the match phase or evaluation phase.
       (lambda ( arg )
         (unless arg (signal 'parser-syntactic-error "production sugar requires a identifier argument"))
         (list
-          `(link ,arg)
+          `(link ',arg)
           'compile
-          `(ast-node ,arg))) sugar)
+          `(ast-node ',arg))) sugar)
 
     sugar))
 
