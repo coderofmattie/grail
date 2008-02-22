@@ -1147,12 +1147,13 @@ and ast parts from either the match phase or evaluation phase.
 (defun parser-call-function ( semantics match-function )
   "match-function is pushed onto the current sequence, returns t
    if there was a semantic collision, nil otherwise."
-  (save-lexical-closure semantics
-    (if gen-predicate
-      t
-      (progn
-        (push match-function gen-sequence)
-        nil)) ))
+  (if (value-from-closure 'gen-predicate semantics)
+    t
+    (progn
+      (set
+        (symbol-from-closure 'gen-sequence semantics)
+        (cons match-function (value-from-closure 'gen-sequence semantics)))
+      nil)))
 
 (defun parser-semantic-interpreter-run ( machine-state )
   "parser-semantic-interpreter-run executes the compilation
