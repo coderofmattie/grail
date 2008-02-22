@@ -744,7 +744,7 @@ supplied as the single argument NODE."
               (if gen-ast-branch
                 (progn
                   (push `(parser-ast-add-node ,(parser-gen-node-transform)) gen-match-effects)
-                  (setq gen-ast-value nil))
+                  (setq gen-ast-value 'discard))
                 (setq gen-ast-value `(progn
                                        (parser-ast-add-node ,(parser-gen-node-transform))
                                        nil))) ))
@@ -803,14 +803,16 @@ supplied as the single argument NODE."
   (lexical-let
     ((eval-disjunct (parser-eval-disjunct-p)))
 
-    (if eval-disjunct
-      (progn
-        (push `(match ,generated) gen-lexical-scope)
-        (setq generated 'match))
-      (when gen-branch
-        ;; if the evaluation result is the function logical result set
-        ;; the match rvalue.
-        (setq gen-match-rvalue t)))
+    (when eval-disjunct
+      (push `(match ,generated) gen-lexical-scope)
+      (setq generated 'match))
+
+    (when (and
+            gen-branch
+            (eq 'eval gen-function))
+      ;; if the evaluation result is the function logical result set
+      ;; the match rvalue.
+      (setq gen-match-rvalue t))
 
     ;; apply an evaluation logical operator, but only after the match
     ;; result has been saved if necessary.
