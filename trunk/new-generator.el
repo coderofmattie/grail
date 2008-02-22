@@ -1189,6 +1189,8 @@ and ast parts from either the match phase or evaluation phase.
 
             ((eq instruction 'link)
               (progn
+                (unless data (signal 'parser-syntactic-error "link instruction requires a identifier argument"))
+
                 (unless compiled
                   (signal 'parser-semantic-error "link instruction failed with a nil compiled register"))
 
