@@ -13,10 +13,11 @@
 ;; Exposing the internal semantics of the generated parser as a well
 ;; defined programming interface allows a parser writer to freely mix
 ;; the semantics of a grammar classes such as CFG and PEG with
-;; tailored parsing behavior. The programming interface is
-;; sufficiently powerful that user defined functions can be
-;; constrained to a few typed hooks without losing the ability to
-;; define useful or unusual parsers.
+;; tailored parsing behavior.
+
+;; The programming interface is powerful enough that user defined
+;; functions can be constrained to a few typed hooks without losing
+;; the ability to define useful or unusual parsers.
 
 ;; ->Benefits
 
