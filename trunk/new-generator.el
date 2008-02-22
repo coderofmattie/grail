@@ -1265,7 +1265,9 @@ and ast parts from either the match phase or evaluation phase.
         (list
           `(link ',arg)
           'compile
-          `(ast-node ',arg))) sugar)
+          `(ast-node ',arg)
+          'input-branch
+          'ast-branch)) sugar)
 
     sugar))
 
