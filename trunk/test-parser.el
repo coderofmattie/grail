@@ -23,6 +23,21 @@
 
 (parser-call-function (copy-closure parser-function-semantics) 'foo)
 
+(defun parser-sugar-dump ( &rest instructions )
+  (lexical-let
+    ((review-buffer (get-buffer-create "generated")))
+
+    (with-current-buffer review-buffer
+      (erase-buffer)
+
+      (insert
+        (pp-to-string
+          (let
+            ((parser-semantic-sugar (parser-create-sugar-table)))
+            (parser-sugar-semantics instructions)))))
+
+    (pop-to-buffer review-buffer t)))
+
 ;; make it read-only after the wipe and insert, make it elisp with highlighting.
 ;; then it might be worthy as a utility function.
 (defun parser-semantic-dump ( &rest instructions )
@@ -162,6 +177,12 @@
   'ast-branch
   'input-branch
   `(ast-node 'prod-foo))
+
+;;----------------------------------------------------------------------
+;; sugar testing
+;;----------------------------------------------------------------------
+(parser-sugar-dump
+  `(production 'foo))
 
 ;;----------------------------------------------------------------------
 ;; parser-function-simplify testing.
