@@ -145,31 +145,22 @@
   `(call 'bar)
   `(ast-node 'prod-left))
 
-;; something that looks like a left production.
+;; test both effects branching
 
-(setq test-function (parser-function-reduce parser-function-semantics
-             'ast-branch
-             'input-branch
-
-            `(ast-node 'prod-foo)
-            `(sequence '(foo bar baz))))
-
-(setq test-function (parser-function-reduce parser-function-semantics
-             'ast-branch
-             'input-branch
-
-            `(ast-node 'prod-foo)
-            `(ast-transform 'transform-foo)
-            `(sequence '(foo bar baz))))
-
-(parser-semantic-interpreter-start nil
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
   'ast-branch
+  'input-branch)
 
-  `(ast-node 'prod-foo)
-  `(ast-transform 'transform-foo)
-  `(sequence '(foo bar baz))))
+;; setup a typical looking left production, effects only, not the compilation issues.
 
-(pp-closure test-function)
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'ast-branch
+  'input-branch
+  `(ast-node 'prod-foo))
 
 ;;----------------------------------------------------------------------
 ;; parser-function-simplify testing.
