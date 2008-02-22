@@ -165,4 +165,11 @@
             (set (intern (symbol-name (car pair)) table) (eval (cadr pair)))) defines)
     table))
 
+(defun value-from-closure ( sym closure )
+  (symbol-value (intern (symbol-name sym) closure)))
+
+(defun symbol-from-closure ( sym closure )
+  (intern (symbol-name sym) closure))
+
+
 (provide 'mattie-elisp)
