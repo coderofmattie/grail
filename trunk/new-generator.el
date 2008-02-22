@@ -1293,10 +1293,12 @@ and ast parts from either the match phase or evaluation phase.
               (data      (if (consp i) (eval (cadr i))))
               (expand    (gethash primitive parser-semantic-sugar)))
 
-            (cond
-              ((functionp expand) (reverse (funcall expand data)))
-              ((listp expand)     (reverse expand))
-              ((list i))) ))
+            (or
+              (cond
+                ((functionp expand) (reverse (funcall expand data)))
+                ((listp expand)     (reverse expand)))
+              (list i))))
+
         instructions))))
 
 (defun parser-semantic-interpreter-start ( semantics instructions )
