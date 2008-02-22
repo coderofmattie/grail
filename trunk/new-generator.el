@@ -1255,6 +1255,20 @@ and ast parts from either the match phase or evaluation phase.
 
     (cons semantics tape) ))
 
+(defun parser-create-sugar-table ()
+  (lexical-let
+    ((sugar (make-hash-table :test 'eq)))
+
+    (puthash 'production
+      (lambda ( arg )
+        (unless arg (signal 'parser-syntactic-error "production sugar requires a identifier argument"))
+        (list
+          `(link ,arg)
+          'compile
+          `(ast-node ,arg))) sugar)
+
+    sugar))
+
 (defun parser-semantic-interpreter-start ( machine-state instructions )
   (parser-semantic-interpreter-run
     (cons (if machine-state
