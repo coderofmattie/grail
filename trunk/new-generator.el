@@ -1164,7 +1164,7 @@ and ast parts from either the match phase or evaluation phase.
    instructions.
 
    This function's portion of the instruction set recognized
-   is concerned with compilation whereas parser-function-reduce
+   is concerned with compilation whereas parser-semantic-union
    focuses on merging primitives into a set of semantics for
    a Parser Function."
 
