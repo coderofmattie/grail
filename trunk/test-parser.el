@@ -116,6 +116,12 @@
   `(call 'bar)
   `(ast-transform 'transform-foo))
 
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'ast-branch
+  `(ast-transform 'transform-foo))
+
 (setq test-function (parser-function-reduce parser-function-semantics
             `(ast-node 'left-prod)
             `(ast-transform 'transform-foo)
