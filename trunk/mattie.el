@@ -25,7 +25,9 @@
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
 
-(setq inhibit-splash-screen t)                ;; definitely not a fan of the splash screen.
+(setq initial-scratch-message nil)            ;; nix the scratch message, and the splash screen.
+(setq inhibit-splash-screen t)
+
 (transient-mark-mode -1)                      ;; not a big fan of transient mark mode.
 
 (setq-default set-mark-command-repeat-pop t)  ;; C-u C-<spc> pops the mark, with this on
