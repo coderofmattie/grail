@@ -57,7 +57,7 @@
                   file)))
      (buffer  (or
                 (find-buffer-visiting path)
-                (find-file path)))
+                (save-excursion (find-file path))))
 
      (name    (concat (file-name-nondirectory file) "/" type)))
 
