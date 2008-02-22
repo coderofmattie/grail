@@ -791,6 +791,9 @@ supplied as the single argument NODE."
       gen-branch
       (eq 'match gen-function))))
 
+(defun parser-eval-conjunct-p ()
+  (and gen-branch (eq 'eval gen-function)))
+
 (defun parser-prune-eval-phase ( generated )
   "Generate the evaluation phase stub."
   ;; an interesting experiment for the eval phase would be
@@ -802,41 +805,33 @@ supplied as the single argument NODE."
   ;; the match result by this phase is always logic only as any
   ;; ast has already been consumed.
 
-  (lexical-let
-    ((eval-disjunct (parser-eval-disjunct-p)))
+  (when (parser-eval-disjunct-p)
+    (push `(match ,generated) gen-lexical-scope)
+    (setq generated 'match))
 
-    (when eval-disjunct
-      (push `(match ,generated) gen-lexical-scope)
-      (setq generated 'match))
+  (when (parser-eval-conjunct-p)
+    ;; if the evaluation result is the function logical result set
+    ;; the match rvalue.
+    (setq gen-match-rvalue t))
 
-    (when (and
-            gen-branch
-            (eq 'eval gen-function))
-      ;; if the evaluation result is the function logical result set
-      ;; the match rvalue.
-      (setq gen-match-rvalue t))
+  ;; apply an evaluation logical operator, but only after the match
+  ;; result has been saved if necessary.
+  (if gen-eval-operator
+    (setq generated `(,gen-eval-operator ,generated)))
 
-    ;; apply an evaluation logical operator, but only after the match
-    ;; result has been saved if necessary.
-    (if gen-eval-operator
-      (setq generated `(,gen-eval-operator ,generated)))
-
-    ;; now we have a fragment we can conditionally evaluate for the branch
-    ;; in generated.
-    (if gen-branch
-      `(if (parser-match-p ,generated)
-         ,@(seq-filter-nil
-             (parser-gen-with-effects gen-match-effects gen-match-rvalue)
-             (parser-gen-with-effects gen-fail-effects  gen-fail-rvalue)))
-      generated) ))
+  ;; now we have a fragment we can conditionally evaluate for the branch
+  ;; in generated.
+  (if gen-branch
+    `(if (parser-match-p ,generated)
+       ,@(seq-filter-nil
+           (parser-gen-with-effects gen-match-effects gen-match-rvalue)
+           (parser-gen-with-effects gen-fail-effects  gen-fail-rvalue)))
+    generated))
 
 (defun parser-prune-result-operator ( generated )
   (if gen-function-operator
     `(,gen-function-operator generated)
     generated))
-
-(defun parser-eval-conjunct-p ()
-  (eq 'eval gen-function))
 
 (defun parser-prune-result-phase ( generated )
   (lexical-let
@@ -846,7 +841,7 @@ supplied as the single argument NODE."
                    ;; so this is wrong.
                    (if (or gen-branch gen-ast-value)
                      `(cons
-                        ,(if (and gen-branch (parser-eval-conjunct-p))
+                        ,(if (parser-eval-conjunct-p)
                           generated
                           `(parser-match-p ,generated))
                         ,(if (eq 'discard gen-ast-value)
