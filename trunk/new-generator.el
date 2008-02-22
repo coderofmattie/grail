@@ -1269,6 +1269,30 @@ and ast parts from either the match phase or evaluation phase.
 
     sugar))
 
+(defun parser-sugar-semantics ( instructions )
+  "parser-sugar-semantics expands simple instructions into larger sequences
+   of instructions creating higher level primitive building blocks for the
+   semantic interpreter.
+
+   Each instruction to the semantic interpreter is looked up in a
+   sugar table. If a match is found the instruction is replaced
+   with the substitution: a list or a function that generates a
+   list of instructions.
+  "
+  (apply 'append
+    (mapcar
+      (lambda (i)
+        (lexical-let*
+          ((primitive (if (consp i) (car i) i))
+           (data      (if (consp i) (eval (cadr i))))
+           (expand    (gethash primitive parser-semantic-sugar)))
+
+          (cond
+            ((functionp expand) (funcall expand data))
+            ((listp expand)     expand)
+            ((list i))) ))
+      instructions)))
+
 (defun parser-semantic-interpreter-start ( machine-state instructions )
   (parser-semantic-interpreter-run
     (cons (if machine-state
