@@ -194,6 +194,12 @@
 (parser-sugar-dump
   `(production 'foo))
 
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  'greedy
+  `(production 'foo))
+
 ;;----------------------------------------------------------------------
 ;; parser-function-simplify testing.
 ;;----------------------------------------------------------------------
