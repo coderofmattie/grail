@@ -1159,14 +1159,18 @@ and ast parts from either the match phase or evaluation phase.
         nil)) ))
 
 (defun parser-semantic-interpreter-run ( machine-state )
-  "parser-semantic-interpreter-run takes a machine-state
-   argument and resumes compiling parser functions by executing
-   instructions.
+  "parser-semantic-interpreter-run executes the compilation
+   instructions and applies parser-semantic-union to parser
+   primitives.
 
-   This function's portion of the instruction set recognized
-   is concerned with compilation whereas parser-semantic-union
-   focuses on merging primitives into a set of semantics for
-   a Parser Function."
+   The role of interpreter-run in the Parser Compiler design is
+   to produce a maximum of parser functions (greedy) from the
+   tape ensuring that the semantics closure in machine-state can
+   produce a parser function in a single step.
+
+   The instruction set recognized by the interpreter is divided
+   into compile instructions that implement essentially a linker
+   with an Elisp objarray as the mechanism."
 
   (lexical-let
     ((unrecognized nil)
@@ -1272,9 +1276,9 @@ and ast parts from either the match phase or evaluation phase.
     sugar))
 
 (defun parser-sugar-semantics ( instructions )
-  "parser-sugar-semantics expands simple instructions into larger sequences
-   of instructions creating higher level primitive building blocks for the
-   semantic interpreter.
+  "parser-sugar-semantics expands simple instructions into larger
+   sequences of instructions creating higher level primitive
+   building blocks for the semantic interpreter.
 
    Each instruction to the semantic interpreter is looked up in a
    sugar table. If a match is found the instruction is replaced
@@ -1308,10 +1312,17 @@ and ast parts from either the match phase or evaluation phase.
    is either a existing Parser Function Semantics closure, or nil
    which creates a new closure.
 
-   instructions is a list of instructions that are sugared.
+   instructions is a list of compile instructions and parser
+   primitives.
 
    The result is combined into a machine-state given to
-   parser-semantic-interpreter-run.
+   parser-semantic-interpreter-run to translate the semantics
+   into a parser.
+
+   The resulting machine-state is returned.
+
+   To produce an entry-point apply parser-semantic-interpreter-terminate
+   to the machine-state.
   "
   (parser-semantic-interpreter-run
     (cons (if semantics
