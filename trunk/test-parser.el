@@ -99,11 +99,6 @@
   `(call 'bar)
   'ast-branch)
 
-;; test the AST conditional
-(setq test-function (parser-function-reduce parser-function-semantics
-            'ast-branch
-            `(sequence '(foo bar baz))))
-
 ;; test the AST transform.
 (setq test-function (parser-function-reduce parser-function-semantics
             `(ast-transform 'transform-foo)
@@ -216,44 +211,6 @@
     'ast-new-production
     'ast-attach-node
     'trap-fail))
-
-(defun parser-ast-descend ( non-terminal func-match )
-  "start a new AST level"
-  (catch 'parser-match-fail
-    (lexical-let
-      ((unattached-node (cons non-terminal nil)))
-
-      ;; this step populates the detached node
-      (let
-        ((parse-tree unattached-node))
-        (parser-?consume-match (funcall func-match)) )
-
-      ;; Attach the tree or return it as the completed AST.
-      (if (boundp 'parse-tree)
-        (progn
-          (parser-ast-append-element unattached-node)
-          (parser-make-production-match nil))
-        (parser-make-production-match unattached-node)) )))
-
-
-
-
-            `(lambda ( start-pos )
-               (let
-                 ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
-                 (save-excursion
-                   (goto-char start-pos)
-                   ;; note that the start symbol of the grammar is built in as an or combination
-                   ;; of the top-level definitions.
-                   (lexical-let
-                     ((parse (,(parser-compile-production 'start
-                                 (parser-primitive-function 'parser-or definition))) ))
-                     (if parse
-                       ;; if we have a production return the position at which the
-                       ;; parser stopped along with the AST.
-                       (cons (parser-pos) (parser-match-data parse))
-                       nil))
-                   )))
 
 ;;----------------------------------------------------------------------
 ;; token interp phase
