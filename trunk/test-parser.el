@@ -116,16 +116,20 @@
   `(call 'bar)
   `(ast-transform 'transform-foo))
 
+;; test the AST transform combined with branching
+
 (parser-semantic-dump
   `(call 'foo)
   `(call 'bar)
   'ast-branch
   `(ast-transform 'transform-foo))
 
-(setq test-function (parser-function-reduce parser-function-semantics
-            `(ast-node 'left-prod)
-            `(ast-transform 'transform-foo)
-            `(sequence '(foo bar baz))))
+;; test the AST transform combined with a node.
+(parser-semantic-dump
+  `(call 'foo)
+  `(call 'bar)
+  `(ast-node 'prod-left)
+  `(ast-transform 'transform-foo))
 
 (setq test-function (parser-function-reduce parser-function-semantics
             'ast-branch
