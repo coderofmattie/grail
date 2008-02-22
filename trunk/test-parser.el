@@ -30,7 +30,8 @@
   (lexical-let
     ((compiled
        (let
-         ((match-table (parser-make-symbol-table)))
+         ((match-table (parser-make-symbol-table))
+          (parser-semantic-sugar (parser-create-sugar-table)))
 
          (parser-semantic-interpreter-terminate
            (parser-semantic-interpreter-start nil instructions))) ))
