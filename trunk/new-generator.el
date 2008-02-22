@@ -1278,30 +1278,57 @@ and ast parts from either the match phase or evaluation phase.
    sugar table. If a match is found the instruction is replaced
    with the substitution: a list or a function that generates a
    list of instructions.
+
+   The de-sugaring expansions are reversed permitting a natural
+   top-down order.
   "
-  (apply 'append
-    (mapcar
-      (lambda (i)
-        (lexical-let*
-          ((primitive (if (consp i) (car i) i))
-           (data      (if (consp i) (eval (cadr i))))
-           (expand    (gethash primitive parser-semantic-sugar)))
+  (when instructions
+    (apply 'append
+      (mapcar
+        (lambda (i)
+          (lexical-let*
+            ((primitive (if (consp i) (car i) i))
+              (data      (if (consp i) (eval (cadr i))))
+              (expand    (gethash primitive parser-semantic-sugar)))
 
-          (cond
-            ((functionp expand) (funcall expand data))
-            ((listp expand)     expand)
-            ((list i))) ))
-      instructions)))
+            (cond
+              ((functionp expand) (reverse (funcall expand data)))
+              ((listp expand)     (reverse expand))
+              ((list i))) ))
+        instructions))))
 
-(defun parser-semantic-interpreter-start ( machine-state instructions )
+(defun parser-semantic-interpreter-start ( semantics instructions )
+  "parser-semantic-interpreter-start SEMANTICS INSTRUCTIONS
+
+   start the interpreter with a semantics and instructions. semantics
+   is either a existing Parser Function Semantics closure, or nil
+   which creates a new closure.
+
+   instructions is a list of instructions that are sugared.
+
+   The result is combined into a machine-state given to
+   parser-semantic-interpreter-run.
+  "
   (parser-semantic-interpreter-run
-    (cons (if machine-state
-            machine-state
+    (cons (if semantics
+            semantics
             (copy-closure parser-function-semantics))
-      instructions)))
+      (parser-sugar-semantics instructions))))
 
 (defun parser-semantic-interpreter-continue ( machine-state instructions )
-  "stub for when sugaring is put in")
+  "parser-semantic-interpreter-continue MACHINE-STATE INSTRUCTIONS
+
+   resume the semantic interpreter with a machine state and a list of instructions.
+  "
+  (lexical-let
+    ((combine-instructions (list-filter-nil (cdr machine-state) (parser-sugar-semantics instructions))))
+
+    (parser-semantic-interpreter-run
+      (cons
+        (car machine-state)
+        (if (> (length combine-instructions) 1)
+          (apply 'append combine-instructions)
+          combine-instructions))) ))
 
 (defun parser-semantic-interpreter-terminate ( machine-state )
   (parser-resolve-predicate (car machine-state))
