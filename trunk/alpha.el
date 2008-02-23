@@ -26,10 +26,6 @@
 (defun bracket-strings ( bracket list )
   (apply 'concat (prefix-strings bracket list) bracket))
 
-
-
-
-
 ;; this can go in when it doesn't rely on a auto-overlay function.
 (defun show-overlay-binding ( symbol )
   "show the overlay binding value of the symbol at the point"
@@ -157,6 +153,41 @@
         (point))
       nil
       t)))
+
+(defun edebug-called-at-point ()
+  "Assuming that the point is over a symbol with a function definition instrument the
+   function for debugging with edebug."
+  (interactive)
+  (lexical-let
+    ((status (catch 'terminate
+               (save-excursion
+                 (lexical-let
+                   ((bounds (bounds-of-thing-at-point 'symbol)))
+
+                   (unless bounds (throw 'terminate t))
+
+                   (lexical-let
+                     ((name (filter-buffer-substring (car bounds) (cdr bounds) nil t)))
+
+                     (unless (> (length name) 0) (throw 'terminate t))
+
+                     (unless (intern-soft name) (throw 'terminate name))
+
+                     (lexical-let
+                       ((sym (intern name)))
+
+                       (unless (functionp sym) (throw 'terminate name))
+                       (find-function sym)
+                       (edebug-defun))) ))) ))
+
+    (message "%s"
+      (or
+        (cond
+          ((eq 't status) "failed! code at the point was not recognizable")
+          ((stringp status) (format
+                              "failed! code at the point: %s is not a symbol with a function definition"
+                              status)))
+          (format "instrumented %s" status))) ))
 
 ;;----------------------------------------------------------------------
 ;; unterminated lists experiments.
