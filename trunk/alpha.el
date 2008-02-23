@@ -161,33 +161,18 @@
   (lexical-let
     ((status (catch 'terminate
                (save-excursion
-                 (lexical-let
-                   ((bounds (bounds-of-thing-at-point 'symbol)))
+                 (let*
+                   ((func (function-called-at-point))
+                    (location (find-function-noselect func)))
 
-                   (unless bounds (throw 'terminate t))
+                   (unless (consp location) (throw 'terminate t))
 
-                   (lexical-let
-                     ((name (filter-buffer-substring (car bounds) (cdr bounds) nil t)))
+                   (with-current-buffer (car location)
+                     (goto-char (+ (cdr location) 1))
+                     (edebug-defun)))
+                 nil)) ))
 
-                     (unless (> (length name) 0) (throw 'terminate t))
-
-                     (unless (intern-soft name) (throw 'terminate name))
-
-                     (lexical-let
-                       ((sym (intern name)))
-
-                       (unless (functionp sym) (throw 'terminate name))
-                       (find-function sym)
-                       (edebug-defun))) ))) ))
-
-    (message "%s"
-      (or
-        (cond
-          ((eq 't status) "failed! code at the point was not recognizable")
-          ((stringp status) (format
-                              "failed! code at the point: %s is not a symbol with a function definition"
-                              status)))
-          (format "instrumented %s" status))) ))
+    (if status (message "failed! could not find the function at the point"))))
 
 ;;----------------------------------------------------------------------
 ;; unterminated lists experiments.
