@@ -154,6 +154,7 @@
       nil
       t)))
 
+;; looks like edebug-instrument-callee is the right thing tm.
 (defun edebug-called-at-point ()
   "Assuming that the point is over a symbol with a function definition instrument the
    function for debugging with edebug."
@@ -173,6 +174,15 @@
                  nil)) ))
 
     (if status (message "failed! could not find the function at the point"))))
+
+(defun consume-list ( consume list )
+  "consume-list CONSUME LIST
+
+   use a consume function to consume a list. unlike mapc instead
+   of consuming only a single element of the list at a time the
+   head, and the tail are passed to CONSUME so that a single call
+   can consume a variable n elements from list."
+  (while (setq list (funcall consume (car list) (cdr list)))))
 
 ;;----------------------------------------------------------------------
 ;; unterminated lists experiments.
