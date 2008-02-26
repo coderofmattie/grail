@@ -1155,7 +1155,7 @@ and ast parts from either the match phase or evaluation phase.
         (cons match-function (value-from-closure 'gen-sequence semantics)))
       nil)))
 
-(defun parser-semantic-interpreter-run ( machine-state )
+(defun parser-semantic-interpreter-run ( semantics instructions )
   "parser-semantic-interpreter-run executes the compilation
    instructions and applies parser-semantic-union to parser
    primitives.
@@ -1171,90 +1171,84 @@ and ast parts from either the match phase or evaluation phase.
 
   (lexical-let
     ((unrecognized nil)
-     (compiled  nil)
-     (semantics (car machine-state))
-     (tape      (cdr machine-state)))
+     (compiled  nil))
 
-    (while tape
-      (lexical-let*
-        ((i-current (car tape))
-         (tape-next (cdr tape))
+    (consume-list instructions
+      (lambda (cur-instr tape-next)
+        (lexical-let
+          ((instruction cur-instr)
+            (data       nil))
 
-         (instruction (if (consp i-current) (car i-current) i-current))
-         (data        (if (consp i-current) (eval (cadr i-current)))))
+          (when (consp cur-instr)
+            (setq instruction (car cur-instr))
+            (setq data (eval (cadr cur-instr))))
 
-        (setq tape
-          (cond
+          (or
             ;; strict order link gets first crack at the volatile compiled
             ;; register before it disappears.
 
-            ((eq instruction 'link)
-              (progn
-                (unless data (signal 'parser-syntactic-error "link instruction requires a identifier argument"))
+            (when (eq instruction 'link)
+              (unless data (signal 'parser-syntactic-error "link instruction requires a identifier argument"))
 
-                (unless compiled
-                  (signal 'parser-semantic-error "link instruction failed with a nil compiled register"))
+              (unless compiled
+                (signal 'parser-semantic-error "link instruction failed with a nil compiled register"))
 
-                (setq unrecognized nil)
+              (setq unrecognized nil)
 
-                (parser-link-function data compiled)
-                (setq compiled nil)
+              (parser-link-function data compiled)
+              (setq compiled nil)
 
-                tape-next))
+              tape-next)
 
             ;; flush compiled if a link instruction has not consumed it.
-            (compiled
-              (progn
-                (when (parser-call-function semantics compiled)
-                  (signal 'parser-semantic-error
-                    "impossible !? attempt to flush volatile compiled register resulted in a semantic collision"))
+            (when compiled
+              (when (parser-call-function semantics compiled)
+                (signal 'parser-semantic-error
+                  "impossible !? attempt to flush volatile compiled register resulted in a semantic collision"))
 
-                (setq unrecognized nil)
+              (setq unrecognized nil)
 
-                (setq compiled nil)
-
-                tape))
+              (setq compiled nil)
+              nil)
 
             ;; order is now arbitrary.
 
-            ((eq instruction 'compile)
-              (progn
-                (setq unrecognized nil)
+            (when (eq instruction 'compile)
+              (setq unrecognized nil)
 
-                (setq compiled (parser-function-generate semantics))
-                (setq semantics (copy-closure parser-function-semantics))
+              ;; FIXME parser-function-generate can throw errors.
+              (setq compiled (parser-function-generate semantics))
+              (setq semantics (copy-closure parser-function-semantics))
 
+              tape-next)
+
+            (when (eq instruction 'call)
+              (setq unrecognized nil)
+
+              (if (parser-call-function semantics (parser-link-function data))
+                (cons 'compile (cons cur-instr tape-next))
                 tape-next))
 
-            ((eq instruction 'call)
-              (progn
-                (setq unrecognized nil)
+            (when unrecognized
+              (signal 'parser-semantic-error (format
+                                               "unrecognized instruction %s" (pp-to-string cur-instr))))
+            (lexical-let*
+              ((semantic-halt (parser-semantic-union semantics (cons cur-instr tape-next)))
+               (diagnostic (car semantic-halt)))
 
-                (if (parser-call-function semantics (parser-link-function data))
-                  (cons 'compile tape)
-                  tape-next)))
-
-            ((if unrecognized
-               (signal 'parser-semantic-error (format
-                                                "unrecognized instruction %s" (pp-to-string i-current)))
-               (lexical-let*
-                 ((semantic-halt (parser-semantic-union semantics tape))
-                   (diagnostic (car semantic-halt)))
-
-                 (cond
-                   ((eq diagnostic 'finished) nil)
-                   ((eq diagnostic 'invalid) (cons 'compile (cdr semantic-halt)))
-                   ((eq diagnostic 'unkown)
-                     (progn
-                       (setq unrecognized t)
-                       (cdr semantic-halt))) )) ))
-            ))))
+              (cond
+                ((eq diagnostic 'finished) nil)
+                ((eq diagnostic 'invalid) (cons 'compile (cdr semantic-halt)))
+                ((eq diagnostic 'unkown)
+                  (progn
+                    (setq unrecognized t)
+                    (cdr semantic-halt))) )) ))))
 
     (when compiled
       (signal 'parser-semantic-error
         "error: exiting parser-semantic-interpreter-continue with non-nil compiled register."))
 
-    (cons semantics tape) ))
+    semantics))
 
 (defun parser-create-sugar-table ()
   (lexical-let
@@ -1269,7 +1263,6 @@ and ast parts from either the match phase or evaluation phase.
           `(ast-node ',arg)
           'input-branch
           'ast-branch)) sugar)
-
     sugar))
 
 (defun parser-sugar-semantics ( instructions )
@@ -1302,6 +1295,20 @@ and ast parts from either the match phase or evaluation phase.
 
         instructions))))
 
+
+(defun parser-sugar-arity ( key )
+  "return the number of arguments consumed by sugar. 0 indicates a lookup
+   failure."
+  (lexical-let
+    ((sugar (gethash key sugar-table)))
+
+    (if sugar
+      (+ 1
+        (if (functionp sugar)
+          (car (subr-arity sugar))
+          0))
+      0)))
+
 (defun parser-semantic-interpreter-start ( semantics instructions )
   "parser-semantic-interpreter-start SEMANTICS INSTRUCTIONS
 
@@ -1322,35 +1329,19 @@ and ast parts from either the match phase or evaluation phase.
    to the machine-state.
   "
   (parser-semantic-interpreter-run
-    (cons (if semantics
-            semantics
-            (copy-closure parser-function-semantics))
-      (parser-sugar-semantics instructions))))
+    (if semantics
+      semantics
+      (copy-closure parser-function-semantics))
+    (parser-sugar-semantics instructions)))
 
-(defun parser-semantic-interpreter-continue ( machine-state instructions )
-  "parser-semantic-interpreter-continue MACHINE-STATE INSTRUCTIONS
-
-   resume the semantic interpreter with a machine state and a list of instructions.
-  "
-  (lexical-let
-    ((combine-instructions (list-filter-nil (cdr machine-state) (parser-sugar-semantics instructions))))
-
-    (parser-semantic-interpreter-run
-      (cons
-        (car machine-state)
-        (if (> (length combine-instructions) 1)
-          (apply 'append combine-instructions)
-          combine-instructions))) ))
-
-(defun parser-semantic-interpreter-terminate ( machine-state )
-  (parser-resolve-predicate (car machine-state))
+(defun parser-semantic-interpreter-terminate ( semantics )
+  (parser-resolve-predicate semantics)
 
   (lexical-let
     ((entry-point (catch 'semantic-error
-                    (parser-function-generate (car machine-state)))))
+                    (parser-function-generate semantics))))
 
     (when (eq 'invalid entry-point)
       (signal 'parser-semantic-error (format "terminated with error: %s" (symbol-name entry-point))))
 
     entry-point))
-
