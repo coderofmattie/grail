@@ -154,27 +154,6 @@
       nil
       t)))
 
-;; looks like edebug-instrument-callee is the right thing tm.
-(defun edebug-called-at-point ()
-  "Assuming that the point is over a symbol with a function definition instrument the
-   function for debugging with edebug."
-  (interactive)
-  (lexical-let
-    ((status (catch 'terminate
-               (save-excursion
-                 (let*
-                   ((func (function-called-at-point))
-                    (location (find-function-noselect func)))
-
-                   (unless (consp location) (throw 'terminate t))
-
-                   (with-current-buffer (car location)
-                     (goto-char (+ (cdr location) 1))
-                     (edebug-defun)))
-                 nil)) ))
-
-    (if status (message "failed! could not find the function at the point"))))
-
 (defun consume-list ( consume list )
   "consume-list CONSUME LIST
 
