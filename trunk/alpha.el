@@ -185,7 +185,7 @@
       (setcdr before-split nil)
 
       (cons a-list b-list))
-    (cons (car list) (cdr list))))
+    (cons (cons (car list) nil) (cdr list))))
 
 (defun tail-iterator-merge ( a b )
   (setcdr a b)
@@ -216,6 +216,35 @@
    A and B are equal if their symbol names are a string match.
   "
   (string-equal (symbol-name a) (symbol-name b)))
+
+;; copied from the page:
+;; http://www.mail-archive.com/help-gnu-emacs@gnu.org/msg00056.html
+;; Author: Kevin Rodgers.
+
+(defun lambda-arity (function)
+  "Return minimum and maximum number of args allowed for FUNCTION.
+FUNCTION must be a symbol whose function binding is a lambda expression
+or a macro.
+The returned value is a pair (MIN . MAX).  MIN is the minimum number
+of args.  MAX is the maximum number or the symbol `many', for a lambda
+or macro with `&rest' args."
+  (let* ((arglist (help-function-arglist function))
+         (optional-arglist (memq '&optional arglist))
+         (rest-arglist (memq '&rest arglist)))
+    (cons (- (length arglist)
+             (cond (optional-arglist (length optional-arglist))
+                   (rest-arglist (length rest-arglist))
+                   (t 0)))
+          (cond (rest-arglist 'many)
+                (optional-arglist (+ (length arglist)
+                                     (length optional-arglist)
+                                     -1))
+                (t (length arglist))))))
+
+(defun function-arity ( function )
+  (if (subrp function)
+    (subr-arity function)
+    (lambda-arity function)))
 
 ;;----------------------------------------------------------------------
 ;; unterminated lists experiments.
