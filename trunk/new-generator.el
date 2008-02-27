@@ -1128,6 +1128,48 @@ and ast parts from either the match phase or evaluation phase.
       )))
 
 ;;----------------------------------------------------------------------
+;; Tokens
+;;----------------------------------------------------------------------
+
+;; The token part of the grammar definition contains a great deal of
+;; flexibility or construction options for tokens. The second argument
+;; is examined by type.
+
+(defun parser-token-bounds ( type capture )
+  "Return the bounds of the capture from match-{beg,end} with the
+   upper bound adjusted by decrement to inclusive. The type
+   returned is chosen with a quoted type constructor symbol like
+   cons or list."
+  (funcall type (match-beginning capture) (match-end capture)) )
+
+(defun parser-token-constructor ( constructor )
+  "Construct the Match Data constructor for the token as a single s-exp."
+
+  (cond
+    ((eq nil constructor)    `(parser-token-bounds 'cons 0))
+    ((listp constructor)     `(apply ',(make-anon-func "parser-user-handler") (parser-token-bounds 'list 0)))
+    ((eq 'null constructor)  'nil)
+    ((functionp constructor) `(apply ',constructor (parser-token-bounds 'list 0)))
+    ((numberp constructor)   `(parser-token-bounds 'cons ,constructor))
+    ((symbolp constructor)   `(quote ',constructor))
+
+    ;; all other constructor types are un-handled.
+    ((signal 'parser-syntactic-error
+       (parser-diagnostic constructor
+         "parser-token-constructor"
+         "lambda|function|number|symbol")))) )
+
+(defun parser-token-function ( id &rest syntax )
+  "Generate a token Match Function lambda."
+  (lexical-let
+    ((generated
+       `(lambda ()
+          (when (looking-at ,(car syntax))
+            (parser-make-token-match (cons '',id ,(parser-token-constructor (cdr syntax))))))))
+    (parser-compile-trace 'function generated)
+    generated))
+
+;;----------------------------------------------------------------------
 ;; parser-semantic-interpreter - Welcome to the Machine.
 ;;----------------------------------------------------------------------
 
@@ -1169,6 +1211,13 @@ and ast parts from either the match phase or evaluation phase.
         (cons match-function (value-from-closure 'gen-sequence semantics)))
       nil)))
 
+(defun parser-semantic-interpreter-terminate ( semantics )
+  (lexical-let
+    ((entry-point (parser-function-generate semantics)))
+
+    (parser-compile-trace 'function entry-point)
+    entry-point))
+
 (defun parser-semantic-interpreter-run ( semantics instructions )
   "parser-semantic-interpreter-run executes the compilation
    instructions and applies parser-semantic-union to parser
@@ -1182,6 +1231,11 @@ and ast parts from either the match phase or evaluation phase.
    The instruction set recognized by the interpreter is divided
    into compile instructions that implement essentially a linker
    with an Elisp objarray as the mechanism."
+
+  (parser-compile-trace 'semantics instructions)
+
+  (unless semantics
+    (setq semantics (copy-closure parser-function-semantics)))
 
   (lexical-let
     ((unrecognized nil)
@@ -1231,7 +1285,7 @@ and ast parts from either the match phase or evaluation phase.
               (setq unrecognized nil)
 
               ;; FIXME parser-function-generate can throw errors.
-              (setq compiled (parser-function-generate semantics))
+              (setq compiled (parser-semantic-interpreter-terminate semantics))
               (setq semantics (copy-closure parser-function-semantics))
 
               tape-next)
