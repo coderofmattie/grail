@@ -154,14 +154,68 @@
       nil
       t)))
 
-(defun consume-list ( consume list )
-  "consume-list CONSUME LIST
+(defun consume-list ( list consume )
+  "consume-list LIST CONSUME
 
    use a consume function to consume a list. unlike mapc instead
    of consuming only a single element of the list at a time the
    head, and the tail are passed to CONSUME so that a single call
    can consume a variable n elements from list."
   (while (setq list (funcall consume (car list) (cdr list)))))
+
+(defun apply-n-times ( func n x )
+  "apply-n-times FUNC N X
+
+   apply FUNC to X N times, With X set to the return
+   value of FUNC for each iteration.
+  "
+  (while (> n 0)
+    (setq x (funcall func x))
+    (decf n))
+  x)
+
+(defun split-list ( n list )
+  (if (> n 1)
+    (lexical-let
+      ((a-list list)
+        (b-list nil)
+        (before-split (apply-n-times 'cdr (- n 1) list)))
+
+      (setq b-list (cdr before-split))
+      (setcdr before-split nil)
+
+      (cons a-list b-list))
+    (cons (car list) (cdr list))))
+
+(defun tail-iterator-merge ( a b )
+  (setcdr a b)
+
+  (do ((x b))
+    ((null (cdr x)) x)
+    (setq x (cdr x))))
+
+(defun tail-iterator ( bind-to )
+  (set bind-to (cons nil nil))
+
+  (lexical-let
+    ((tail (symbol-value bind-to)))
+
+    (lambda ( x )
+      (if (listp x)
+        (setq tail (tail-iterator-merge tail x))
+        (progn
+          (setcdr tail (cons x nil))
+          (setq tail (cdr tail))) )) ))
+
+(defun tail-list ( list )
+  (cdr list))
+
+(defun eqn ( a b )
+  "eqn A B
+
+   A and B are equal if their symbol names are a string match.
+  "
+  (string-equal (symbol-name a) (symbol-name b)))
 
 ;;----------------------------------------------------------------------
 ;; unterminated lists experiments.
