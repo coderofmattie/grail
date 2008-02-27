@@ -1251,11 +1251,11 @@ and ast parts from either the match phase or evaluation phase.
             (setq instruction (car cur-instr))
             (setq data (eval (cadr cur-instr))))
 
-          (or
-            ;; strict order link gets first crack at the volatile compiled
-            ;; register before it disappears.
+          ;; strict order link gets first crack at the volatile compiled
+          ;; register before it disappears.
 
-            (when (eq instruction 'link)
+          (if (eq instruction 'link)
+            (progn
               (unless data (signal 'parser-syntactic-error "link instruction requires a identifier argument"))
 
               (unless compiled
@@ -1268,49 +1268,54 @@ and ast parts from either the match phase or evaluation phase.
 
               tape-next)
 
-            ;; flush compiled if a link instruction has not consumed it.
-            (when compiled
-              (when (parser-call-function semantics compiled)
-                (signal 'parser-semantic-error
-                  "impossible !? attempt to flush volatile compiled register resulted in a semantic collision"))
+            (progn
 
-              (setq unrecognized nil)
+              ;; flush compiled if a link instruction has not consumed it.
+              (when compiled
+                (when (parser-call-function semantics compiled)
+                  (signal 'parser-semantic-error
+                    "impossible !? attempt to flush volatile compiled register resulted in a semantic collision"))
 
-              (setq compiled nil)
-              nil)
+                (setq unrecognized nil)
 
-            ;; order is now arbitrary.
-
-            (when (eq instruction 'compile)
-              (setq unrecognized nil)
-
-              ;; FIXME parser-function-generate can throw errors.
-              (setq compiled (parser-semantic-interpreter-terminate semantics))
-              (setq semantics (copy-closure parser-function-semantics))
-
-              tape-next)
-
-            (when (eq instruction 'call)
-              (setq unrecognized nil)
-
-              (if (parser-call-function semantics (parser-link-function data))
-                (cons 'compile (cons cur-instr tape-next))
-                tape-next))
-
-            (when unrecognized
-              (signal 'parser-semantic-error (format
-                                               "unrecognized instruction %s" (pp-to-string cur-instr))))
-            (lexical-let*
-              ((semantic-halt (parser-semantic-union semantics (cons cur-instr tape-next)))
-               (diagnostic (car semantic-halt)))
+                (setq compiled nil))
 
               (cond
-                ((eq diagnostic 'finished) nil)
-                ((eq diagnostic 'invalid) (cons 'compile (cdr semantic-halt)))
-                ((eq diagnostic 'unkown)
+                ((eq instruction 'compile)
                   (progn
-                    (setq unrecognized t)
-                    (cdr semantic-halt))) )) ))))
+                    (setq unrecognized nil)
+
+                    ;; FIXME parser-function-generate can throw errors.
+                    (setq compiled (parser-semantic-interpreter-terminate semantics))
+                    (setq semantics (copy-closure parser-function-semantics))
+
+                    tape-next))
+
+                ((eq instruction 'call)
+                  (progn
+                    (setq unrecognized nil)
+
+                    (if (parser-call-function semantics (parser-link-function data))
+                      (cons 'compile (cons cur-instr tape-next))
+                      tape-next)))
+
+
+                (unrecognized (signal
+                                'parser-semantic-error
+                                (format "unrecognized instruction %s"
+                                  (pp-to-string cur-instr))))
+
+                ((lexical-let*
+                   ((semantic-halt (parser-semantic-union semantics (cons cur-instr tape-next)))
+                    (diagnostic (car semantic-halt)))
+
+                   (cond
+                     ((eq diagnostic 'finished) nil)
+                     ((eq diagnostic 'invalid) (cons 'compile (cdr semantic-halt)))
+                     ((eq diagnostic 'unkown)
+                       (progn
+                         (setq unrecognized t)
+                         (cdr semantic-halt))) )))) )) )))
 
     (when compiled
       (signal 'parser-semantic-error
@@ -1341,7 +1346,7 @@ and ast parts from either the match phase or evaluation phase.
     (puthash 'token
       (lambda ( id &rest syntax )
         (parser-link-function id (parser-token-function id syntax))
-        (list `(call ,id))) sugar)
+        (list `(call ',id))) sugar)
 
     (puthash 'transform
       (lambda ( func )
@@ -1408,7 +1413,7 @@ and ast parts from either the match phase or evaluation phase.
     (symbol-from-closure 'gen-sequence ancestor)
     (cons
       (if (parser-linked-call-only-p descent)
-        (value-from-closure 'gen-primitive descent)
+        (value-from-closure 'gen-predicate descent)
         (parser-semantic-interpreter-terminate descent))
       (value-from-closure 'gen-sequence ancestor)))
   ancestor)
@@ -1455,9 +1460,10 @@ and ast parts from either the match phase or evaluation phase.
       (lambda ( current next )
         (if (listp current)
           (lexical-let
-            ((descent (parser-decompose-grammar-form current)))
+            ((descent (parser-translate-grammar-form current)))
             (when descent
-              (parser-nest-descent semantic-closure descent)))
+              (parser-nest-descent semantic-closure descent))
+            next)
 
           (lexical-let
             ((primitive (parser-escaped-primitive current)))
