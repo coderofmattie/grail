@@ -628,7 +628,7 @@ supplied as the single argument NODE."
 
        (if gen-sequence
          (progn
-           (setq predicate `(apply ',gen-predicate '(,@gen-sequence)) )
+           (setq predicate `(apply ',gen-predicate '(,@(reverse gen-sequence))) )
            (if gen-closure
              `(funcall ',gen-closure ,(parser-prune-lambda predicate))
              predicate))
@@ -1343,85 +1343,153 @@ and ast parts from either the match phase or evaluation phase.
         (parser-link-function id (parser-token-function id syntax))
         (list `(call ,id))) sugar)
 
+    (puthash 'transform
+      (lambda ( func )
+        (list `(ast-transform ,func))) sugar)
+
     sugar))
 
-(defun parser-sugar-semantics ( instructions )
-  "parser-sugar-semantics expands simple instructions into larger
-   sequences of instructions creating higher level primitive
-   building blocks for the semantic interpreter.
-
-   Each instruction to the semantic interpreter is looked up in a
-   sugar table. If a match is found the instruction is replaced
-   with the substitution: a list or a function that generates a
-   list of instructions.
-
-   The de-sugaring expansions are reversed permitting a natural
-   top-down order.
+(defun parser-escaped-primitive ( symbol )
   "
-  (when instructions
-    (apply 'append
-      (mapcar
-        (lambda (i)
-          (lexical-let*
-            ((primitive (if (consp i) (car i) i))
-              (data      (if (consp i) (eval (cadr i))))
-              (expand    (gethash primitive parser-semantic-sugar)))
+  parser-escaped-primitive SYMBOL
 
-            (or
-              (cond
-                ((functionp expand) (reverse (funcall expand data)))
-                ((listp expand)     (reverse expand)))
-              (list i))))
-
-        instructions))))
-
-
-(defun parser-sugar-arity ( key )
-  "return the number of arguments consumed by sugar. 0 indicates a lookup
-   failure."
-  (lexical-let
-    ((sugar (gethash key sugar-table)))
-
-    (if sugar
-      (+ 1
-        (if (functionp sugar)
-          (car (subr-arity sugar))
-          0))
-      0)))
-
-(defun parser-semantic-interpreter-start ( semantics instructions )
-  "parser-semantic-interpreter-start SEMANTICS INSTRUCTIONS
-
-   start the interpreter with a semantics and instructions. semantics
-   is either a existing Parser Function Semantics closure, or nil
-   which creates a new closure.
-
-   instructions is a list of compile instructions and parser
-   primitives.
-
-   The result is combined into a machine-state given to
-   parser-semantic-interpreter-run to translate the semantics
-   into a parser.
-
-   The resulting machine-state is returned.
-
-   To produce an entry-point apply parser-semantic-interpreter-terminate
-   to the machine-state.
+  return the string of an escaped primitive if the symbol starts
+  with a / character.
   "
-  (parser-semantic-interpreter-run
-    (if semantics
-      semantics
-      (copy-closure parser-function-semantics))
-    (parser-sugar-semantics instructions)))
-
-(defun parser-semantic-interpreter-terminate ( semantics )
-  (parser-resolve-predicate semantics)
-
   (lexical-let
-    ((entry-point (catch 'semantic-error
-                    (parser-function-generate semantics))))
+    ((name (symbol-name symbol)))
+    (if (char-equal ?/ (aref name 0))
+      (substring name 1))))
 
-    (when (eq 'invalid entry-point)
-      (signal 'parser-semantic-error (format "terminated with error: %s" (symbol-name entry-point))))
+(defun parser-sugar-primitive ( primitive iterator next )
+  "parser-sugar-primitive PRIMITIVE ITERATOR NEXT
 
-    entry-point))
+   parser-sugar-primitive expands PRIMITIVE if there is
+   an expansion keyed in parser-semantic-sugar. The expansion
+   or the primitive is appended to the instruction sequence
+   with ITERATOR.
+
+   Expansion may consume one or all of the remaining atoms
+   from form given as the list NEXT. The tail of NEXT with
+   the consumption of expansion's N arity removed is returned.
+   "
+  ;; TODO convert PRIMITIVE argument to a string instead of a symbol.
+  ;; get rid of useless type conversions.
+  (lexical-let
+    ((expand (gethash (make-symbol primitive) parser-semantic-sugar)))
+
+    (if expand
+      (if (functionp expand)
+        (lexical-let
+          ((arity (cdr (function-arity expand))))
+
+          (if (eq 'many arity)
+            (progn
+              (funcall iterator (apply expand next))
+              nil)
+
+            (lexical-let
+              ((split (split-list arity next)))
+              (funcall iterator (apply expand (car split)))
+              (cdr split))))
+
+        (progn
+          (funcall iterator expand)
+          next))
+
+      (progn
+        (funcall iterator (intern primitive))
+        next))))
+
+(defun parser-nest-descent ( ancestor descent )
+  (parser-resolve-predicate descent)
+
+  (set
+    (symbol-from-closure 'gen-sequence ancestor)
+    (cons
+      (if (parser-linked-call-only-p descent)
+        (value-from-closure 'gen-primitive descent)
+        (parser-semantic-interpreter-terminate descent))
+      (value-from-closure 'gen-sequence ancestor)))
+  ancestor)
+
+(defun parser-nest-term ( ancestor-closure term term-semantics )
+  (parser-call-function ancestor-closure
+    (if term-semantics
+      (parser-semantic-interpreter-terminate
+        (parser-semantic-interpreter-run nil
+          (cons (list 'call term) (reverse term-semantics))))
+
+      (parser-link-function term) )))
+
+(defun parser-translate-grammar-form ( list )
+  "parser-translate-grammar-form list
+
+   Recursive compile of the parser definition syntax of a form or
+   list.  The descent is depth first. After the calls or terms of
+   the list have been resolved by descent the primitives are
+   compiled by parser-semantic-interpreter-run.
+
+   primitives are symbols escaped by a leading / character, eg:
+     /ast-branch
+   and can take arguments that should not be escaped.
+
+   Terms are either lists or Match Function identifiers. Any
+   sequence of primitives right adjacent to a term will be
+   merged with semantics of the left term instead of the form.
+  "
+  (let ;; changing this to a lexical-let bugs tail-iterator. why ?
+    ((semantic-closure (copy-closure parser-function-semantics))
+
+     (form-semantics nil)
+     (form-iterator nil)
+
+     (call-to nil)
+
+     (call-semantics nil)
+     (call-iterator nil))
+
+    (setq form-iterator (tail-iterator 'form-semantics))
+
+    (consume-list list
+      (lambda ( current next )
+        (if (listp current)
+          (lexical-let
+            ((descent (parser-decompose-grammar-form current)))
+            (when descent
+              (parser-nest-descent semantic-closure descent)))
+
+          (lexical-let
+            ((primitive (parser-escaped-primitive current)))
+
+            (if primitive
+              (parser-sugar-primitive
+                primitive
+                (if call-to
+                  call-iterator
+                  form-iterator)
+                next)
+
+              (progn
+                (when call-to
+                  (setq call-semantics (tail-list call-semantics))
+                  (parser-nest-term semantic-closure call-to call-semantics))
+
+                (setq call-to current)
+                (setq call-iterator (tail-iterator 'call-semantics))
+
+                next)) )) ))
+
+    (when call-to
+      (setq call-semantics (tail-list call-semantics))
+
+      (if call-semantics
+        (parser-nest-term semantic-closure call-to call-semantics)
+        (parser-call-function semantic-closure call-to)))
+
+    (setq form-semantics (tail-list form-semantics))
+
+    (when form-semantics
+      (parser-semantic-interpreter-run semantic-closure (reverse form-semantics)))
+
+    semantic-closure))
