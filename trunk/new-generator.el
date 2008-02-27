@@ -1239,7 +1239,7 @@ and ast parts from either the match phase or evaluation phase.
 
   (lexical-let
     ((unrecognized nil)
-     (compiled  nil))
+     (compiled nil))
 
     (consume-list instructions
       (lambda (cur-instr tape-next)
@@ -1318,19 +1318,31 @@ and ast parts from either the match phase or evaluation phase.
 
     semantics))
 
+;;----------------------------------------------------------------------
+;; grammar
+;;----------------------------------------------------------------------
+
+(define-hash-table-test 'eqn-hash 'eqn 'sxhash)
+
 (defun parser-create-sugar-table ()
   (lexical-let
-    ((sugar (make-hash-table :test 'eq)))
+    ((sugar (make-hash-table :test 'eqn-hash)))
 
     (puthash 'production
       (lambda ( arg )
         (unless arg (signal 'parser-syntactic-error "production sugar requires a identifier argument"))
         (list
-          `(link ',arg)
+          `(link ,arg)
           'compile
-          `(ast-node ',arg)
+          `(ast-node ,arg)
           'input-branch
           'ast-branch)) sugar)
+
+    (puthash 'token
+      (lambda ( id &rest syntax )
+        (parser-link-function id (parser-token-function id syntax))
+        (list `(call ,id))) sugar)
+
     sugar))
 
 (defun parser-sugar-semantics ( instructions )
