@@ -292,6 +292,18 @@
 
        (funcall code-func)) ))
 
+(defun parser-compile-trace ( type data )
+  (when (and (boundp 'parser-compile-trace) (bufferp parser-compile-trace))
+    (with-current-buffer parser-compile-trace
+      (goto-char (point-max))
+      (insert
+        (format
+          (cond
+            ((eq type 'function)  "generated:\n%s\n")
+            ((eq type 'semantics) "semantics: %s\n")
+            ((eq type 'syntax)    "syntax: %s\n"))
+          (pp-to-string data))))))
+
 ;;----------------------------------------------------------------------
 ;; Match Result
 ;;----------------------------------------------------------------------
@@ -860,6 +872,27 @@ supplied as the single argument NODE."
              (list eval-phase)))
       generated)))
 
+(defun parser-resolve-predicate ( semantics )
+  "parser-resolve-predicate stub."
+  (save-lexical-closure semantics
+    (when (null gen-predicate)
+      (cond
+        ((= 1 (length gen-sequence))
+          ;; simple optimization, when a sequence has only a single call
+          ;; make it the predicate.
+          (progn
+            (setq gen-predicate (car gen-sequence))
+            (setq gen-sequence nil)))
+
+        ((> (length gen-sequence) 1)
+          ;; the default relational operator is and. to get a
+          ;; specific relational operator make sure it's the
+          ;; first instruction after the call phase.
+          (setq gen-predicate 'parser-predicate-and))
+
+        ((signal 'parser-semantic-error "un-recoverable ordering violation: effects without a call"))
+        ))))
+
 (defun parser-function-generate ( parser-function-semantics )
 "
 The goal of this generator design is to produce elisp that
@@ -885,6 +918,8 @@ with optional branching on the match result.
 The function phase composes a match result with the logic
 and ast parts from either the match phase or evaluation phase.
 "
+  (parser-resolve-predicate parser-function-semantics)
+
   (use-dynamic-closure parser-function-semantics
 
     ;; any time we have a closure, or sequence, we will always need to
@@ -971,27 +1006,6 @@ and ast parts from either the match phase or evaluation phase.
 
   (parser-fold-primitive mutex t)
   (parser-merge-primitive var value))
-
-(defun parser-resolve-predicate ( semantics )
-  "parser-resolve-predicate stub."
-  (save-lexical-closure semantics
-    (when (null gen-predicate)
-      (cond
-        ((= 1 (length gen-sequence))
-          ;; simple optimization, when a sequence has only a single call
-          ;; make it the predicate.
-          (progn
-            (setq gen-predicate (car gen-sequence))
-            (setq gen-sequence nil)))
-
-        ((> (length gen-sequence) 1)
-          ;; the default relational operator is and. to get a
-          ;; specific relational operator make sure it's the
-          ;; first instruction after the call phase.
-          (setq gen-predicate 'parser-predicate-and))
-
-        ((signal 'parser-semantic-error "un-recoverable ordering violation: effects without a call"))
-        ))))
 
 (defun parser-semantic-union ( semantics tape )
   "parser-semantic-union
