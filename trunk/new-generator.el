@@ -145,7 +145,7 @@
 (define-error parser-syntactic-error "syntactic error" parser-compile-error)
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
-(defconst parser-release-number 0
+(defconst parser-release-version "0.0.1"
   "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
@@ -1566,7 +1566,7 @@ and ast parts from either the match phase or evaluation phase.
 
     (with-current-buffer parser-compile-trace
       (erase-buffer)
-      (insert (format "release: %d\ngrammar:\n%s\n" parser-release-number (pp-to-string form))))
+      (insert (format "release: %s\ngrammar:\n%s\n" parser-release-version (pp-to-string form))))
 
     (parser-semantic-interpreter-terminate
       (parser-translate-grammar-form form))
