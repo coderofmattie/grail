@@ -1573,6 +1573,17 @@ and ast parts from either the match phase or evaluation phase.
 
     (pop-to-buffer parser-compile-trace t)))
 
+(defun parser-interactive (parser)
+  "run test-parser interactively for testing and debugging."
+  (interactive "SParser? ")
+  (lexical-let
+    ((parse-result (funcall parser (point))))
+
+    (message "PROD match? %s"
+      (if parse-result
+        (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
+        "No"))) ))
+
 ;;----------------------------------------------------------------------
 ;; macro interface.
 ;;----------------------------------------------------------------------
@@ -1873,18 +1884,19 @@ and ast parts from either the match phase or evaluation phase.
         (throw 'terminate-compile nil))
 
       (condition-case diagnostic
-        (parser-semantic-interpreter-run
-          (parser-translate-grammar-form grammar)
-          (parser-sugar-form `(/entry-point)))
+        (progn
+          (parser-semantic-interpreter-run
+            (parser-translate-grammar-form grammar)
+            (parser-sugar-form `(/entry-point)))
 
-        (fset fn
-          (eval `(lambda ( start-pos )
-                   (save-excursion
-                     (let
-                       ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
-                       (goto-char start-pos)
+          (fset fn
+            (eval `(lambda ( start-pos )
+                     (save-excursion
+                       (let
+                         ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+                         (goto-char start-pos)
 
-                       (funcall ,(parser-link-function 'start)) ))) ))
+                         (funcall ',(parser-link-function 'start)) ))) )))
 
         (parser-syntatic-error
           (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
