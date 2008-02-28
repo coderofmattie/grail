@@ -473,7 +473,7 @@ supplied as the single argument NODE."
 
 ;; and/or are sequence relational operators.
 
-(defun parser-predicate-or ( &rest match-list )
+(defun parser-relation-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
    nil is returned if no matches are found"
   (catch 'match
@@ -489,7 +489,7 @@ supplied as the single argument NODE."
                (throw 'match match-result))) )))
     nil))
 
-(defun parser-predicate-and ( &rest match-list )
+(defun parser-relation-and ( &rest match-list )
   (dolist (match-func match-list (parser-result-match))
     (parser-trace-on match-func
       (lexical-let
@@ -897,7 +897,7 @@ supplied as the single argument NODE."
           ;; the default relational operator is and. to get a
           ;; specific relational operator make sure it's the
           ;; first instruction after the call phase.
-          (setq gen-predicate 'parser-predicate-and))
+          (setq gen-predicate 'parser-relation-and))
 
         ((signal 'parser-semantic-error "un-recoverable ordering violation: effects without a call"))
         ))))
@@ -1055,8 +1055,8 @@ and ast parts from either the match phase or evaluation phase.
 
              ((eq primitive 'greedy)       (parser-merge-primitive 'gen-closure   'parser-predicate-greedy))
 
-             ((eq primitive 'relation-or)  (parser-merge-primitive 'gen-predicate 'parser-predicate-or))
-             ((eq primitive 'relation-and) (parser-merge-primitive 'gen-predicate 'parser-predicate-and))
+             ((eq primitive 'relation-or)  (parser-merge-primitive 'gen-predicate 'parser-relation-or))
+             ((eq primitive 'relation-and) (parser-merge-primitive 'gen-predicate 'parser-relation-and))
 
              ;;----------------------------------------------------------------------
              ;; effects phase
