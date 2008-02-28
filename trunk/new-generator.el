@@ -985,7 +985,7 @@ and ast parts from either the match phase or evaluation phase.
    Throw semantic-error 'collision if it the symbol has already
    been set."
   (if (symbol-value var)
-    (throw 'semantic-error 'collision)
+    (throw 'semantic-error 'no-fold)
 
     (progn
       (unless (or (functionp value) value)
@@ -1004,8 +1004,12 @@ and ast parts from either the match phase or evaluation phase.
     (set mutex t)))
 
 (defun parser-exclusive-primitive ( mutex var value )
-  (parser-merge-exclusive mutex)
-  (parser-merge-primitive var value))
+  (if (eq 'collision (catch 'semantic-error
+                       (parser-merge-exclusive mutex)))
+    (if (symbol-value var)
+      (throw 'semantic-error 'no-fold)
+      (throw 'semantic-error 'collision))
+  (parser-merge-primitive var value)))
 
 (defun parser-combine-primitive ( mutex var value )
   "This merge combines within a effect or phase mutex however
@@ -1140,7 +1144,9 @@ and ast parts from either the match phase or evaluation phase.
                                 (parser-semantic-union semantics tape-next)
                                 (cons 'finished nil)))
 
-      ((eq merge 'collision)  (if (get primitive 'fold)
+      ((eq merge 'collision)  (cons 'invalid tape))
+
+      ((eq merge 'no-fold)    (if (get primitive 'fold)
                                 (parser-semantic-union semantics tape-next)
                                 (cons 'invalid tape)))
 
