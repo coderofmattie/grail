@@ -6,23 +6,9 @@
 
 ;; CURRENT
 
-;; I don't have a return phase, it's currently split imbetween the logic phase,
-;; the lexical scope, and the generator. I think I need to separate the return
-;; phase. The possibility of an operator going in to the return phase is significant.
-
 ;; making lambda optional for the parser entry point
 
 ;; optional returns match success when a match fails.
-
-;; where does the stuff like optional ? the matching logic go ? before or
-;; after the conditional ? putting the logic before the conditional could
-;; seriously screw up things like backtracking, but maybe that is a good thing.
-
-;; the logic should influence ast consumption. otherwise the grammar would
-;; possibly have semantics that do not paralell the definition. This is
-;; actually a real bug I have sniffed out here, since it is currently in
-;; the conditional which is wrong. Replace transform with logic.
-
 
 ;; I am looking at a higher level than the code generation switches. I
 ;; am looking at my three parser effects, match effect, logical
@@ -48,86 +34,12 @@
 
 ;; NEXT STEP
 
-;; then write the simplification part, building a shift reduction that transforms
-;; conflicts into nested functions. If the generated parser functions are essentially
-;; referentially transparent by virtue of doing the right thing when nested then
-;; the shift-reduce can eliminate all errors while possibly performing non-intuitive
-;; simplifications.
-
-;; dumping the intermediate table after all updates, and then the generated
-;; function
-
 ;; recovery mechanism: create a parser function that is an or of all
 ;; the terminals in the grammar.  keep moving the input pointer by one
 ;; until such a sync is found. In fact recover could just be an or of
 ;; non-terminals.
 
 ;; FOCUS:
-
-;; The first phase is to simply build the validator and think out the
-;; semantics properly. that should get me to a working generator. The
-;; next step after that is to create black box tests that verify that
-;; the semantics are preserved.  then combination testing of some sort
-;; could be created.
-
-(defun parser-function-simplify ( gen-predicate match-list &rest statements )
-  "The three main divisions are input consumption, matching logic, and AST.
-   This interface makes primitives in these three domains essentially
-   orthogonal.
-
-     match-before
-
-     [lexical]
-
-     production =
-
-
-     logical      ;; the logical part must go here, before the function rvalue,
-                  ;; but after trap-fail.
-
-     ;; if there was a function closure it would go here. The strangeness
-     ;; of setting up and tearing down the match environment more than
-     ;; once would have to be resolved.
-
-     trap-fail    ;; unless match-fail is caught inside the predicate
-                  ;; or match closure the failure inside the match environment
-                  ;; will go straight to the function match logic.
-
-     consumption  ;; if consumption is required, it goes inside the match environment.
-                  ;; the whole idea of it is wrong I think. In fact consumption is moving to the
-                  ;; predicates. this whole thing is just a issue because of the typing, delaying
-                  ;; input consumption only allows me to distinguish production tokens. I can
-                  ;; simply do a flag now.
-
-     [match-environment
-      match-consumption.
-
-         ;; match closure is delayed evaluation of the predicate in the match
-         ;; environment typically. having the same domain effects in after
-         ;; and conditional is suicide. what if they both pop ?
-
-         ;; what this boils down to is something like match-ahead needs to cancel
-         ;; the gen-match-effect of popping. a domain effect can be in conditional
-         ;; or unconditional, but not both. that is total crap.
-
-         ;; a domain is converted by conditionalizing. so matchahead becomes.
-
-         ;; domain effects need to be mutually exclusive ;; resulting in a new
-         ;; function.
-
-         ;; keep ast-new-root as the name, add a new flag called ast-production
-         ;; that does the attach instead of merge.
-
-         ;; ast-new-root changes the default rvalue.
-
-         match-closure <- (match-predicate ?match-list))) ]
-
-     match-after ;; if you want to mess with the environment residue before
-                 ;; rvalue, then here ya go. this is used by matchahead
-                 ;; which is going to throw input consumption away regardless.
-
-     function rvalue
-   "
 
 ;;----------------------------------------------------------------------
 ;; misc.
@@ -162,6 +74,8 @@
 
 ;; from: http://www.emacswiki.org/cgi-bin/emacs-en/PrettyLambda
 
+(functionp (intern "get-target"))
+
 (defun pretty-lambdas ()
   (interactive)
   (font-lock-add-keywords
@@ -170,12 +84,10 @@
                         ,(make-char 'greek-iso8859-7 107))
                  nil))))))
 
-(defun instrument-function-at-call ()
-  "instrument the function indicated by the call at the point. Warning, will eval the defun."
-  (interactive)
-  (save-excursion
-    (find-function)
-    (edebug-defun)))
+(examine-library)
+
+(find-function-noselect (read "repl"))
+(is-ded)
 
 ;;----------------------------------------------------------------------
 ;;          tags source code indexing
@@ -266,76 +178,27 @@
   (auto-overlay-start 'paludis)
   )
 
-
-(save-lexical-closure foo
-  (message "red is %s" red)
-  (message "blue is %s" blue)
-
-  (push "foo" list)
-  (push "bar" list)
-
-  (message
-    (if (string-equal red "hot")
-      "definitely hot!"
-      "bad boom!"))
-
-  t)
-
-(save-lexical-closure foo
-  (if (string-equal red "hot")
-    (progn
-      (message "hot path")
-      t)
-    (progn
-      (message "cold path")
-      nil)))
-
-(defun parser-sugar-semantics ( instructions )
-  (apply 'append
-    (mapcar
-      (lambda (i)
-        (lexical-let*
-          ((primitive (if (consp i) (car i) i))
-           (data      (if (consp i) (eval (cadr i))))
-           (expand    (gethash primitive parser-semantic-sugar)))
-
-          (cond
-            ((functionp expand) (funcall 'expand data))
-            ((listp expand)     expand)
-            ((list i))) ))
-      instructions)))
-
-;; it's kind of a radical idea, but i could create a stack of the
-;; deferred interpreter states including pending instruction
-;; sequences. could be just the magic needed.
-
-;; there is a stack. pops of a lazy-deferred are compiled into the parent
-;; compile. That way nils are automatically ignored, but construction resumes
-;; naturally.
-(defun parser-semantic-interpreter-compile ( lazy-deferred &rest instructions )
+;; there is a edebug function that does this. But I will hang on to the code
+;; because I became quite handy at locating a function body during this proccess.
+(defun edebug-called-at-point ()
+  "Assuming that the point is over a symbol with a function definition instrument the
+   function for debugging with edebug."
+  (interactive)
   (lexical-let
-    ((compiled nil)
-     (semantics (when lazy-defered
-                  (car lazy-deferred)))
+    ((status (catch 'terminate
+               (save-excursion
+                 (let*
+                   ((func (function-called-at-point))
+                    (location (find-function-noselect func)))
 
-     (tape
-       (if lazy-deferred
-           (append
-             (parser-sugar-semantics instructions)
-             (cdr lazy-deferred))
+                   (unless (consp location) (throw 'terminate t))
 
-           nil)
-       (parser-sugar-semantics instructions)))
+                   (with-current-buffer (car location)
+                     (goto-char (+ (cdr location) 1))
+                     (edebug-defun)))
+                 nil)) ))
 
-    (unless semantics
-      (setq semantics (copy-closure parser-function-semantics)))
-
-
-    (setq lazy-deferred (parser-function-reduce semantics tape))
-
-
-  ))
-
+    (if status (message "failed! could not find the function at the point"))))
 
 
 
