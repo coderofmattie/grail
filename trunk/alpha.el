@@ -219,7 +219,7 @@
 
 ;; copied from the page:
 ;; http://www.mail-archive.com/help-gnu-emacs@gnu.org/msg00056.html
-;; Author: Kevin Rodgers.
+;; Author: Kevin Rodgers, kevin.d.rodgers@gmail.com
 
 (defun lambda-arity (function)
   "Return minimum and maximum number of args allowed for FUNCTION.
