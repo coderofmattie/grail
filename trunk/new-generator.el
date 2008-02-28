@@ -257,14 +257,11 @@
     (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
     (lexical-let
-      ((toggle (eval (cons 'or (mapcar (lambda ( trace-on )
-                                    ;; eq comparison of symbols does not work. A string
-                                    ;; comparison is used for matching.
-
-                                    ;; FIXME: symbol-value may remove this wart.
-                                    (if (equal (symbol-name production) (car trace-on))
-                                      (cdr trace-on)))
-                            parser-trace) ))))
+      ((toggle (eval (cons 'or (mapcar
+                                 (lambda ( trace-on )
+                                   (if (eqn production (car trace-on))
+                                     (cdr trace-on)))
+                                 parser-trace) ))))
       ;; a cons cell is returned so that a false value for the trace flag can be returned
       ;; without negating the truth value of the predicate itself.
       (if toggle
@@ -276,6 +273,7 @@
    is on the parser-trace list a parser-trace-flag dynamically scoped is
    bound to the boolean toggle for tracing that production."
 
+  ;; FIXME: this debug spec is broken.
   (declare (debug symbolp body))
 
   ;; Using the dynamic scoping of let during the execution of the
@@ -481,18 +479,21 @@ supplied as the single argument NODE."
   (catch 'match
     (dolist (match-func match-list)
       (parser-trace-on match-func
+         (catch 'parser-match-fail
+           (lexical-let
+             ((match-result (funcall match-func)))
 
-        (catch 'parser-match-fail
-          (lexical-let ((match-result (funcall match-func)))
+             (parser-trace-match match-func match-result)
 
-            (parser-trace-match match-func match-result)
-            (throw 'match match-result)) )))
+             (when match-result
+               (throw 'match match-result))) )))
     nil))
 
 (defun parser-predicate-and ( &rest match-list )
   (dolist (match-func match-list (parser-result-match))
     (parser-trace-on match-func
-      (lexical-let ((match-result (funcall match-func)))
+      (lexical-let
+        ((match-result (funcall match-func)))
         (parser-trace-match match-func match-result)
 
         (unless (parser-match-p match-result)
@@ -1573,7 +1574,7 @@ and ast parts from either the match phase or evaluation phase.
 
     (pop-to-buffer parser-compile-trace t)))
 
-(defun parser-interactive (parser)
+(defun parser-interactive ( parser )
   "run test-parser interactively for testing and debugging."
   (interactive "SParser? ")
   (lexical-let
@@ -1583,6 +1584,24 @@ and ast parts from either the match phase or evaluation phase.
       (if parse-result
         (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
         "No"))) ))
+
+(defmacro parser-trace-list ( list &rest productions )
+  "create a parser trace list"
+  `(setq ,list
+    '(
+       ,@(mapcar
+           (lambda (trace)
+             `(',(car trace) . ,(cadr trace))) productions) )))
+
+(defun parser-trace (parser trace-list)
+  "run test-parser interactively for testing and debugging."
+  (interactive "SParser? 
+STrace List? ")
+  (let
+    ((parser-trace-buffer (generate-new-buffer (format "parser-trace:%s" (symbol-name parser))))
+     (parser-trace trace-list))
+
+    (parser-interactive parser) ))
 
 ;;----------------------------------------------------------------------
 ;; macro interface.
