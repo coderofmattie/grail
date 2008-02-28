@@ -185,12 +185,8 @@
 (defun parser-advance ( consumed )
   "Advance the input position of the parser to the next un-matched character."
 
-  (if (> consumed 0)
-    (lexical-let
-      ((pos (+ consumed (parser-pos))))
-      (progn
-        (setcar parser-position pos)
-        (goto-char pos))) ))
+  (when (> consumed 0)
+    (goto-char (setcar parser-position (+ consumed (parser-pos)))) ))
 
 (defun parser-consumed ()
   "The number of input characters consumed by the token's match in the input."
@@ -240,7 +236,11 @@
         'message)
 
       "%s at: %d match: %s"
-      (symbol-name match-func)
+
+      (if (symbolp match-func)
+        (symbol-name match-func)
+        "anonymous")
+
       (parser-pos)
       (pp-to-string match-result)) ))
 
@@ -268,7 +268,7 @@
         (cons t toggle)
         (cons nil nil) )) ))
 
-(defmacro parser-trace-on ( production &rest code )
+(defmacro parser-trace-on ( production &rest body )
   "parser-trace-on takes production and a code block code. If the production
    is on the parser-trace list a parser-trace-flag dynamically scoped is
    bound to the boolean toggle for tracing that production."
@@ -281,7 +281,7 @@
   ;; that precisely matches the execution of the parser.
 
   `(lexical-let*
-    ((code-func (lambda () ,@code))
+    ((code-func (lambda () ,@body))
       (trace-p (parser-trace-p ,production))
       (trace-toggle (cdr trace-p)) )
 
@@ -1139,7 +1139,11 @@ and ast parts from either the match phase or evaluation phase.
       ((null merge)           (if tape-next
                                 (parser-semantic-union semantics tape-next)
                                 (cons 'finished nil)))
-      ((eq merge 'collision)  (cons 'invalid tape))
+
+      ((eq merge 'collision)  (if (get primitive 'fold)
+                                (parser-semantic-union semantics tape-next)
+                                (cons 'invalid tape)))
+
       ((eq merge 'unkown)     (cons 'unkown  tape))
       )))
 
@@ -1345,6 +1349,10 @@ and ast parts from either the match phase or evaluation phase.
 
 (define-hash-table-test 'eqn-hash 'eqn 'sxhash)
 
+(defun weak-primitive ( p )
+  (put p 'fold t)
+  p)
+
 (defun parser-create-sugar-table ()
   (lexical-let
     ((sugar (make-hash-table :test 'eqn-hash)))
@@ -1354,10 +1362,12 @@ and ast parts from either the match phase or evaluation phase.
         `(link 'start)
         'compile
         `(ast-node 'start)
-        'ast-branch
-        'input-branch
-        'entry-point
-        'relation-or) sugar)
+
+        (weak-primitive 'ast-branch)
+        (weak-primitive 'input-branch)
+        (weak-primitive 'relation-or)
+
+        'entry-point) sugar)
 
     (puthash 'production
       (lambda ( arg )
