@@ -9,6 +9,9 @@
 
 ;; parser.el is a experimental parser-compiler DSL.
 
+;; - "This experiment calls forth the four horsemen of the Lisp
+;;    Apocalypse: eval,apply,lambda,macro."
+
 ;; ->Hypothesis
 
 ;; Exposing the internal semantics of the generated parser as a well
@@ -44,8 +47,9 @@
 ;;    syntax keeping the parser definitions concise for
 ;;    both simple and complex parsers.
 
-;; This experiment calls forth the four horsemen of the Lisp
-;; Apocalypse: eval,apply,lambda,macro.
+;; 2. Selective parse tracing for debugging parsers.
+
+;; 3. Generated code dumper for debugging the compiler.
 
 ;; ->TODO
 
@@ -140,6 +144,9 @@
 (define-error parser-compile-error   "parser error")
 (define-error parser-syntactic-error "syntactic error" parser-compile-error)
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
+
+(defconst parser-release-number 0
+  "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
 ;; Backtracking.
