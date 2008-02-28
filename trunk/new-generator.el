@@ -2,6 +2,7 @@
 ;; parser.el
 ;; Primary Author: Mike Mattie (codermattie@gmail.com)
 ;; Copyright (C) 2008 Mike Mattie
+;; License: LGPL
 ;; Description: Recursive Descent parser compiler with a lisp macro
 ;;              interface.
 ;;----------------------------------------------------------------------
@@ -46,15 +47,14 @@
 ;; This experiment calls forth the four horsemen of the Lisp
 ;; Apocalypse: eval,apply,lambda,macro.
 
-;; ille insidia vocat quattour virum equuae  : eval, 
-
 ;; ->TODO
 
 ;;   -> Phase 1: correctness
 
 ;; 0. new parser generator merged in, and debugged.
 
-;; 2. replace the generated cond tables in the grammar interpreter with hash tables
+;; * instead of predicates as a low level function, separate into relational operators
+;;   and closures.
 
 ;; 1. All of the PEG predicates (missing not)
 
@@ -1164,7 +1164,7 @@ and ast parts from either the match phase or evaluation phase.
   (lexical-let
     ((generated
        `(lambda ()
-          (when (looking-at ,(car syntax))
+          (when (looking-at ,@(car syntax))
             (parser-make-token-match (cons '',id ,(parser-token-constructor (cdr syntax))))))))
     (parser-compile-trace 'function generated)
     generated))
@@ -1427,21 +1427,21 @@ and ast parts from either the match phase or evaluation phase.
 
       (parser-link-function term) )))
 
-(defun parser-translate-grammar-form ( list )
-  "parser-translate-grammar-form list
+(defun parser-translate-grammar-form ( form )
+  "parser-translate-grammar-form FORM
 
-   Recursive compile of the parser definition syntax of a form or
-   list.  The descent is depth first. After the calls or terms of
-   the list have been resolved by descent the primitives are
-   compiled by parser-semantic-interpreter-run.
+   Recursive compile of the parser definition syntax of a FORM
+   The descent is depth first. After the calls or terms of the
+   list have been resolved by descent the primitives are compiled
+   by parser-semantic-interpreter-run.
 
    primitives are symbols escaped by a leading / character, eg:
      /ast-branch
    and can take arguments that should not be escaped.
 
    Terms are either lists or Match Function identifiers. Any
-   sequence of primitives right adjacent to a term will be
-   merged with semantics of the left term instead of the form.
+   sequence of primitives right adjacent to a term will be merged
+   with semantics of the term to the left, instead of the form.
   "
   (let ;; changing this to a lexical-let bugs tail-iterator. why ?
     ((semantic-closure (copy-closure parser-function-semantics))
@@ -1456,7 +1456,7 @@ and ast parts from either the match phase or evaluation phase.
 
     (setq form-iterator (tail-iterator 'form-semantics))
 
-    (consume-list list
+    (consume-list form
       (lambda ( current next )
         (if (listp current)
           (lexical-let
