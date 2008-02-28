@@ -327,14 +327,6 @@
 ;; terminal     ( match-symbol . ( start . end ) | "user value")
 ;; non-terminal ( match-symbol . "a list/tree of AST" )
 
-(defun parser-make-production-match ( tree )
-  "Make a matched non-terminal Match Result."
-  (cons t tree))
-
-;; The NEW Result Match interface.
-
-;; TODO: migrate the token generator to parser-result-token.
-
 (defun parser-result-logic ( result )
   "The logical part of a Match Result cons cell is returned."
   (car result))
@@ -1405,6 +1397,10 @@ and ast parts from either the match phase or evaluation phase.
       (progn
         (funcall iterator (intern primitive))
         next))))
+
+(defun parser-linked-call-only-p ( semantics )
+  (use-dynamic-closure semantics
+    (not (or eff-logic eff-input eff-ast gen-sequence))))
 
 (defun parser-nest-descent ( ancestor descent )
   (parser-resolve-predicate descent)
