@@ -1331,9 +1331,7 @@ and ast parts from either the match phase or evaluation phase.
         (list
           `(link ,arg)
           'compile
-          `(ast-node ,arg)
-          'input-branch
-          'ast-branch)) sugar)
+          `(ast-node ,arg) )) sugar)
 
     (puthash 'token
       (lambda ( id &rest syntax )
@@ -1343,6 +1341,12 @@ and ast parts from either the match phase or evaluation phase.
     (puthash 'transform
       (lambda ( func )
         (list `(ast-transform ,func))) sugar)
+
+    (puthash 'and
+      (list 'ast-branch 'input-branch 'relation-and) sugar)
+
+    (puthash 'or
+      'relation-or sugar)
 
     sugar))
 
