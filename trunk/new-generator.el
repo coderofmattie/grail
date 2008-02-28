@@ -56,6 +56,10 @@
 ;; * instead of predicates as a low level function, separate into relational operators
 ;;   and closures.
 
+;; * when sugar injects primitives, some of the primitives need to be "weak" in that
+;;   they are silently dropped when already specified. This aspect of the interface
+;;   needs some careful thought.
+
 ;; 1. All of the PEG predicates (missing not)
 
 ;; 3. Canonical tree walk implemented as parser-ast-node. a real pre-requisite to
@@ -1499,3 +1503,39 @@ and ast parts from either the match phase or evaluation phase.
       (parser-semantic-interpreter-run semantic-closure (reverse form-semantics)))
 
     semantic-closure))
+
+;;----------------------------------------------------------------------
+;; utilities
+;;----------------------------------------------------------------------
+
+(defun parser-token-string ( start end )
+  "Return a string of the input bounded by the token match."
+  (filter-buffer-substring start end nil t))
+
+;; make it read-only after the wipe and insert, make it elisp with highlighting.
+;; then it might be worthy as a utility function.
+(defun parser-compile-dump ( form )
+  "Dump the code generation of the parser compiler given a quoted form."
+    (condition-case diagnostic
+      (let
+        ((parser-compile-trace (get-buffer-create "parser-compile-trace"))
+
+         (parser-semantic-sugar (parser-create-sugar-table))
+         (match-table (parser-make-symbol-table)))
+
+        (with-current-buffer parser-compile-trace
+          (erase-buffer))
+
+        (parser-semantic-interpreter-terminate
+          (parser-translate-grammar-form form))
+
+        (pop-to-buffer parser-compile-trace t))
+
+      (parser-syntatic-error
+        (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
+
+      (parser-semantic-error
+        (message "Invalid semantics detected %s" (cdr diagnostic)))
+
+      (parser-compile-error
+        (message "Internal Parser Compiler error %s" (cdr diagnostic))) ))
