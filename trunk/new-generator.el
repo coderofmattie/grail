@@ -310,9 +310,10 @@
       (insert
         (format
           (cond
-            ((eq type 'function)  "generated:\n%s\n")
-            ((eq type 'semantics) "semantics: %s\n")
-            ((eq type 'syntax)    "syntax: %s\n"))
+            ((eq type 'function)   "generated:\n%s\n")
+            ((eq type 'primitives) "primitives: %s\n")
+            ((eq type 'semantics)  "semantics:\n%s\n")
+            ((eq type 'syntax)     "syntax: %s\n"))
           (pp-to-string data))))))
 
 ;;----------------------------------------------------------------------
@@ -538,8 +539,7 @@ supplied as the single argument NODE."
 (setq parser-function-semantics
   (make-closure
 
-    (gen-sexp           nil) ;; generate sexp form when t, more generalized entry
-                             ;; point may be the right thing.
+    (gen-entry-point    nil) ;; generate an entry point
 
     ;; Match Phase
     (gen-sequence       nil)  ;; a set of Match functions that imply gen-predicate
@@ -921,7 +921,12 @@ with optional branching on the match result.
 The function phase composes a match result with the logic
 and ast parts from either the match phase or evaluation phase.
 "
+  ;; FIXME: doesn't optimize a single term correctly because
+  ;;        parser-resolve-predicate was designed for semantic-union.
+
   (parser-resolve-predicate parser-function-semantics)
+
+  (parser-compile-trace 'semantics (pp-closure-filtered 'null parser-function-semantics))
 
   (use-dynamic-closure parser-function-semantics
 
@@ -944,7 +949,7 @@ and ast parts from either the match phase or evaluation phase.
     (parser-gen-ast-effects)
     (parser-gen-input-effects)
 
-    (funcall (if gen-sexp 'seq-filter-nil 'parser-prune-lambda)
+    (parser-prune-lambda
       gen-eval-setup
 
       (list
@@ -1106,6 +1111,8 @@ and ast parts from either the match phase or evaluation phase.
                  'eff-ast
                  'gen-ast-transform data))
 
+             ((eq primitive 'entry-point)  (parser-merge-exclusive 'gen-entry-point))
+
              ;; when we don't know what it is.
              ((throw 'semantic-error 'unkown)) ))
 
@@ -1168,7 +1175,7 @@ and ast parts from either the match phase or evaluation phase.
     ((generated
        `(lambda ()
           (when (looking-at ,@(car syntax))
-            (parser-make-token-match (cons '',id ,(parser-token-constructor (cdr syntax))))))))
+            (parser-result-token (cons '',id ,(parser-token-constructor (cdr syntax))))))))
     (parser-compile-trace 'function generated)
     generated))
 
@@ -1235,7 +1242,7 @@ and ast parts from either the match phase or evaluation phase.
    into compile instructions that implement essentially a linker
    with an Elisp objarray as the mechanism."
 
-  (parser-compile-trace 'semantics instructions)
+  (parser-compile-trace 'primitives instructions)
 
   (unless semantics
     (setq semantics (copy-closure parser-function-semantics)))
@@ -1336,10 +1343,21 @@ and ast parts from either the match phase or evaluation phase.
   (lexical-let
     ((sugar (make-hash-table :test 'eqn-hash)))
 
+    (puthash 'entry-point
+      (list
+        `(link 'start)
+        'compile
+        `(ast-node 'start)
+        'ast-branch
+        'input-branch
+        'entry-point
+        'relation-or) sugar)
+
     (puthash 'production
       (lambda ( arg )
         (unless arg (signal 'parser-syntactic-error "production sugar requires a identifier argument"))
         (list
+          `(call ,arg)
           `(link ,arg)
           'compile
           `(ast-node ,arg) )) sugar)
@@ -1412,6 +1430,21 @@ and ast parts from either the match phase or evaluation phase.
       (progn
         (funcall iterator (intern primitive))
         next))))
+
+(defun parser-sugar-form ( form )
+  (let
+    ((semantics nil)
+     (iterator nil))
+
+    (setq iterator (tail-iterator 'semantics))
+
+    (consume-list form
+      (lambda ( current next )
+        (parser-sugar-primitive
+          (parser-escaped-primitive current)
+          iterator
+          next)))
+      (reverse (tail-list semantics))))
 
 (defun parser-linked-call-only-p ( semantics )
   (use-dynamic-closure semantics
@@ -1524,10 +1557,7 @@ and ast parts from either the match phase or evaluation phase.
 (defun parser-compile-dump ( form )
   "Dump the code generation of the parser compiler given a quoted form."
   (let
-    ((parser-compile-trace (get-buffer-create "parser-compile-dump"))
-
-      (parser-semantic-sugar (parser-create-sugar-table))
-      (match-table (parser-make-symbol-table)))
+    ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
 
     (with-current-buffer parser-compile-trace
       (erase-buffer)
@@ -1649,6 +1679,7 @@ and ast parts from either the match phase or evaluation phase.
 
   takes a single argument ARG from form and expands to the sequence:
 
+    call ARG
     link ARG
     compile
     ast-node ARG
@@ -1824,36 +1855,38 @@ and ast parts from either the match phase or evaluation phase.
     /optional
 
     /negate-eval
+
+    stub.
   "
   (catch 'terminate-compile
-    (when (eq fn 'dump)
-      (parser-compile-dump grammar)
-      (throw 'terminate-compile nil))
+    (let
+      ((parser-semantic-sugar (parser-create-sugar-table))
+       (match-table (parser-make-symbol-table)))
 
-    (condition-case diagnostic
-      (progn
-        (fset parser
-          (eval
-            `(lambda ( start-pos )
-               (let
-                 ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
-                 (save-excursion
-                   (goto-char start-pos)
-                   ,(parser-semantic-interpreter-terminate
-                      (parser-semantic-interpreter-run
-                        (parser-translate-grammar-form grammar)
-                        (reverse (parser-sugar-form `(/production 'start /or)))))
-                   ))) )))
+      (when (eq fn 'dump)
+        (parser-compile-dump grammar)
+        (throw 'terminate-compile nil))
 
-      (parser-syntatic-error
-        (message "Syntactic error in grammar or semantics %s" (cdr diagnostic))
-        nil)
+      (condition-case diagnostic
+        (parser-semantic-interpreter-run
+          (parser-translate-grammar-form grammar)
+          (parser-sugar-form `(/entry-point)))
 
-      (parser-semantic-error
-        (message "Invalid semantics detected %s" (cdr diagnostic))
-        nil)
+        (fset fn
+          (eval `(lambda ( start-pos )
+                   (save-excursion
+                     (let
+                       ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+                       (goto-char start-pos)
 
-      (parser-compile-error
-        (message "Internal Parser Compiler error %s" (cdr diagnostic))
-        nil))
-    ))
+                       (funcall ,(parser-link-function 'start)) ))) ))
+
+        (parser-syntatic-error
+          (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
+
+        (parser-semantic-error
+          (message "Invalid semantics detected %s" (cdr diagnostic)))
+
+        (parser-compile-error
+          (message "Internal Parser Compiler error %s" (cdr diagnostic))) )))
+  nil)
