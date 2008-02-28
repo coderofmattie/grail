@@ -378,15 +378,15 @@
 ;; tokens which are arbitrarily structured data cons to an identity
 ;; symbol.
 
-(defun parser-make-ast ( foo )
+(defun parser-make-ast ()
   "Create an ast tree with a null identity."
   (lexical-let
-    ((ast (cons 'null  nil)))
-    (put ast 'parser-ast 'production)
+    ((ast (cons 'null nil)))
+    (put (car ast) 'parser-ast 'production)
     ast))
 
-(defun parser-ast-p ( foo )
-  (eq 'production (get (car foo) 'parser-ast)))
+(defun parser-ast-p ( node )
+  (eq 'production (get (car node) 'parser-ast)))
 
 (defun parser-ast-merge-node ( node )
   "parser-ast-merge-node NODE
