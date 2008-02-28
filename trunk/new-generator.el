@@ -759,9 +759,10 @@ supplied as the single argument NODE."
               (push `(put (car ast-root) 'parser-ast 'production) gen-eval-always)
 
               (if gen-ast-branch
-                (progn
-                  (push `(parser-ast-add-node ,(parser-gen-node-transform)) gen-match-effects)
-                  (setq gen-ast-value 'discard))
+                (unless gen-entry-point
+                  (progn
+                    (push `(parser-ast-add-node ,(parser-gen-node-transform)) gen-match-effects)
+                    (setq gen-ast-value 'discard)))
                 (setq gen-ast-value `(progn
                                        (parser-ast-add-node ,(parser-gen-node-transform))
                                        nil))) ))
@@ -826,8 +827,10 @@ supplied as the single argument NODE."
 
   (when (parser-eval-conjunct-p)
     ;; if the evaluation result is the function logical result set
-    ;; the match rvalue.
-    (setq gen-match-rvalue t))
+    ;; the match rvalue. gen-entry-point is a special case.
+    (setq gen-match-rvalue (if gen-entry-point
+                             `(cons (parser-pos) ,gen-ast-value)
+                             t)))
 
   ;; apply an evaluation logical operator, but only after the match
   ;; result has been saved if necessary.
@@ -854,7 +857,9 @@ supplied as the single argument NODE."
 
                    ;; gen-ast-value may only be meaningful inside the lexical-scope
                    ;; so this is wrong.
-                   (if (or gen-branch gen-ast-value)
+                   (if (and
+                         (not gen-entry-point)
+                         (or gen-branch gen-ast-value))
                      `(cons
                         ,(if (parser-eval-conjunct-p)
                           generated
