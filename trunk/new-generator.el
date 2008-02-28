@@ -1523,26 +1523,337 @@ and ast parts from either the match phase or evaluation phase.
 ;; then it might be worthy as a utility function.
 (defun parser-compile-dump ( form )
   "Dump the code generation of the parser compiler given a quoted form."
+  (let
+    ((parser-compile-trace (get-buffer-create "parser-compile-dump"))
+
+      (parser-semantic-sugar (parser-create-sugar-table))
+      (match-table (parser-make-symbol-table)))
+
+    (with-current-buffer parser-compile-trace
+      (erase-buffer)
+      (insert (format "release: %d\ngrammar:\n%s\n" parser-release-number (pp-to-string form))))
+
+    (parser-semantic-interpreter-terminate
+      (parser-translate-grammar-form form))
+
+    (pop-to-buffer parser-compile-trace t)))
+
+;;----------------------------------------------------------------------
+;; macro interface.
+;;----------------------------------------------------------------------
+
+(defmacro parser-compile ( fn &rest grammar )
+  "parser-compile FN &rest GRAMMAR
+
+  parser-compile translates a grammar into a scanner-less
+  Recursive Descent parser bound to the function of FN,
+  referred to as the Parser Function.
+
+  GRAMMAR is a form translated as a micro instruction set that
+  makes the parser compiler programmable. Hopefully this feature
+  will obsolete untyped action handlers and retain almost the
+  entirety of a useful parser within the grammar.
+
+  Using the compiled parser:
+
+  The sole argument to the Parser Function is a starting position
+  in the current buffer. The return value is the resume position
+  for another parse, along with the AST generated, or nil. A
+  single production of the start symbol is returned per-call.
+
+  The AST structure produced by the parser is documented under
+  PF -> AST Effects.
+
+  Compiler tools:
+
+  The compiler has tools for tracing the execution of a parser
+  and dumping the generated code generated for a parser.
+
+  To dump the generated code of the parser specify dump as the
+  FN symbol.
+
+  This will trace the compilation in a separate buffer
+  parser-compile-dump which is displayed in another window after
+  compilation terminates.
+
+  Form Syntax:
+
+  Each form contains either lists, primitives, or terms. Lists
+  are translated Depth first. Terms are calls to Parser Functions
+  defined elsewhere. Primitives are instructions to the Semantic
+  Interpreter that compiles Parser Functions. They are escaped
+  from terms by a \"/\" character.
+
+  PRIMITIVE: /and
+  TERM:      foo
+  LIST:      (/token whitespace \"[[:blank:]]+\")
+
+  Form Interpretation:
+
+  When a form is translated into a Form Function all of the terms
+  which are lists or plain calls are resolved by descent of the
+  translator and linking to produce the Call Phase of a Parser
+  Function.
+
+  The Parser Primitives [if any] and the Call Phase input to the
+  Semantic Interpreter which emits an entry point for the
+  Parser Function.
+
+  An escaped primitive is applied to the Form Function or the
+  Term. If the primitive is right of a term it is applied to
+  the nearest left term. If there are no terms left of the
+  primitive it is applied to the Form Function. see Example A.
+
+  ->Example A
+
+    form:    (/greedy /and foo /greedy bar)
+
+    matches: foo foo foo bar foo bar
+
+  In example A there are two terms foo and bar. The Term Relation
+  is \"and\" which requires that all terms match once in order.
+  The greedy closure /greedy matches the and of foo and bar one
+  or more times. foo is also greedy, that term matches one more
+  more times as well.
+
+  Term relations must be the last form primitive, or left of the
+  first term. Otherwise the default parser-relation-and will be
+  generated.
+
+  A sequence of primitives can be arbitrarily long. The Semantic
+  Interpreter will generated nested functions as needed to
+  preserve the semantics of a sequence.
+
+  A primitive sequence is interpreted right to left with
+  arbitrary primitive order Within the sequence delineated
+  by a set of three effects that can be combined in a Parser
+  Function.
+
+  The only form that cannot be compiled is primitives without
+  terms, or in canonical parsing terminology a production with
+  meta-operators must have at least one terminal/non-terminal to
+  apply those meta-operators to.
+
+    FI -> Sugaring
+
+  The primitives of the Semantic Interpreter are so simple that
+  they are almost always require a sequence to define useful
+  Parser Functions. A sugaring process expands primitives into
+  sequences of primitives and takes arguments from the form.
+
+  Arguments must not be escaped, and should be quoted if their
+  value is void as arguments are eval'd so that values from
+  compile time can be used in the generated parser.
+
+  /production 'foo
+
+  takes a single argument ARG from form and expands to the sequence:
+
+    link ARG
+    compile
+    ast-node ARG
+
+  The arity of a primitive is either 0 for a list or symbol, and
+  N for a function where N is zero or more as specified by the
+  argument list of the function.
+
+  Parser Functions:
+
+  Parser Functions have up to three phases: match call,
+  evaluation, and result. All parser functions return
+  a Match Result cons cell.
+
+    PF -> Match Phase:
+
+  The Match Call phase creates a recursion environment
+  if necessary, and executes the match calls to produce
+  a Match Result.
+
+  When there are many terms in a call phase a Term relation
+  function is given the ordered list of terms by delayed
+  evaluation.
+
+  If there is a closure function such as greedy it will receive
+  the term or term relation by delayed evaluation.
+
+  The recursion environment is a dynamic scoping of internal
+  variables, currently the AST. When a recursion environment
+  is created the AST of the parse is created as tree not
+  connected to the caller's tree.
+
+  This allows the caller to apply operations to the AST, and
+  conditionally attach it to the caller's tree.
+
+  An additional benefit of the recursion environment is that the
+  tail of the current node is scoped dynamically keeping AST
+  construction linear in complexity, and making append operations
+  easy internally.
+
+    PF -> Match result
+
+  The Match Result contains two parts. A logical match sense
+  that is non-nil or nil and the AST produced by the match.
+
+  The match sense is entirely independent of the AST, in other
+  words you can return a match false, and AST that is merged if
+  you wish.
+
+  As a general principle of the Semantic Interpreter the effects
+  are orthogonal until you define relationships such as:
+
+  /ast-branch
+
+  which means that the AST effects are applied only when the
+  match is positive. This is a relation between the logic
+  and AST.
+
+    PF -> Eval phase:
+
+  If there is branching, AST effects, or input effects for a
+  Parser Function an evaluation phase is constructed which
+  implements those effects before and after the Match Call.
+
+  The effects can be conditionalized with /[effect]-branch
+  primitives. A logical operator such as negate can be
+  applied to the branch evaluation of the Match Result
+  when needed.
+
+    PF -> Result Phase:
+
+  The result phase constructs the Match Result returned by the
+  Parse Function. By default the match sense of evaluation is
+  returned.
+
+  If the original Match Result of the Match Call must be returned
+  use /return-match.
+
+  A logical operator can be applied to the Result Phase
+  independent of a logical operator for the evaluation phase if
+  needed.
+
+    PF -> Input effects
+
+  When parsing the parser can remember and restore the input
+  position of the parser in a buffer. This is implemented as a
+  stack.
+
+  The position can be un-conditionally restored which is commonly
+  referred to as look-ahead with:
+
+    /input-discard
+
+  The position can be conditionally restored when the match fails
+  or back-track with:
+
+    /input-branch
+
+    PF -> AST Effects
+
+  The primary job of a parser is to construct a tree from pattern
+  matching within a sequence of text. AST effects specify how the
+  tree is constructed.
+
+  By default AST lists or productions of the parser are merged
+  into the parent node. This flattening is shown in Example B.
+
+  Example B:
+
+    form:     (and (and foo bar) (and baz bar))
+    produces: (foo bar baz bar)
+
+  Sub-trees are created with the Semantic Interpreter instruction
+  ast-node which is accessed from the form with:
+
+    /production NAME
+
+  Which causes a named node to be created as the root of the AST
+  tree scoped to the parse recursion. When the match call is
+  completed this node is added instead of merged to the current
+  node so it is not flattened. This is how you create AST trees.
+
+  The production primitive also immediately compiles the form,
+  and links the Parser Function as the definition of NAME,
+  allowing the production to be called by NAME.
+
+  AST trees consist entirely of nested production lists. It is
+  essential that the trees be walkable Which means that every
+  node must be labeled, and every tree [a node with children]
+  must be distinguishable from leaves.
+
+  All elements of a production list are cons cells with an
+  identifier symbol [void value], and a data part. A tree
+  has a 'parser-ast property with the value of 'production
+  attached to the identifier symbol of the cons cell.
+
+  This allows an AST walker to distinguish between the arbitrary
+  data of a leaf, and a descent into a tree. In canonical parsing
+  terms this is distinguishing between non-terminals and
+  terminals.
+
+    /transform FUNC
+
+  Applies transform function FUNC to the AST. FUNC is a lambda
+  that takes a AST tree as the sole argument and returns an AST
+  tree or nil.
+
+  The tree returned by FUNC must be either a proper AST tree as
+  described above with an identifier and
+  \":parser-ast 'production\" property.
+
+  transform combines with both /production and /ast-branch.
+
+    /ast-branch
+
+  A conditional relation of the AST effects with the match
+  sense of the Match Result. AST effects will be applied
+  only if the match sense is positive.
+
+  Otherwise AST effects are always applied.
+
+  Note that eval phase logical operators can be used to
+  transform the match sense.
+
+   /ast-discard
+
+  Unconditionally discard the AST produced by recursion. This
+  primitive is exclusive of all other AST primitives.
+
+    PF -> Logic Effects:
+
+    /negate-function
+    /optional
+
+    /negate-eval
+  "
+  (catch 'terminate-compile
+    (when (eq fn 'dump)
+      (parser-compile-dump grammar)
+      (throw 'terminate-compile nil))
+
     (condition-case diagnostic
-      (let
-        ((parser-compile-trace (get-buffer-create "parser-compile-trace"))
-
-         (parser-semantic-sugar (parser-create-sugar-table))
-         (match-table (parser-make-symbol-table)))
-
-        (with-current-buffer parser-compile-trace
-          (erase-buffer))
-
-        (parser-semantic-interpreter-terminate
-          (parser-translate-grammar-form form))
-
-        (pop-to-buffer parser-compile-trace t))
+      (progn
+        (fset parser
+          (eval
+            `(lambda ( start-pos )
+               (let
+                 ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+                 (save-excursion
+                   (goto-char start-pos)
+                   ,(parser-semantic-interpreter-terminate
+                      (parser-semantic-interpreter-run
+                        (parser-translate-grammar-form grammar)
+                        (reverse (parser-sugar-form `(/production 'start /or)))))
+                   ))) )))
 
       (parser-syntatic-error
-        (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
+        (message "Syntactic error in grammar or semantics %s" (cdr diagnostic))
+        nil)
 
       (parser-semantic-error
-        (message "Invalid semantics detected %s" (cdr diagnostic)))
+        (message "Invalid semantics detected %s" (cdr diagnostic))
+        nil)
 
       (parser-compile-error
-        (message "Internal Parser Compiler error %s" (cdr diagnostic))) ))
+        (message "Internal Parser Compiler error %s" (cdr diagnostic))
+        nil))
+    ))
