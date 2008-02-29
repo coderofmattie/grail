@@ -23,34 +23,40 @@
 
 (parser-call-function (copy-closure parser-function-semantics) 'foo)
 
-(defun parser-sugar-dump ( &rest instructions )
-  (lexical-let
-    ((review-buffer (get-buffer-create "generated")))
+(pp-to-string  (let
+                 ((parser-semantic-sugar (parser-create-sugar-table)))
+                 (parser-sugar-form `(/production 'start /or))))
 
-    (with-current-buffer review-buffer
-      (erase-buffer)
+(let
+  ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
 
-      (insert
-        (pp-to-string
-          (let
-            ((parser-semantic-sugar (parser-create-sugar-table)))
-            (parser-sugar-semantics instructions)))))
-
-    (pop-to-buffer review-buffer t)))
+  (parser-compile test-parser
+    /and
+    (/token word "[[:alpha:]]+")
+    (/token whitespace "[[:blank:]]+")) )
 
 ;; test the single token/function case
 
-;; gen-logic-branch is a void variable. kill the stale code.
-(parser-compile-dump
-  `(/token whitespace "[[:blank:]]+"))
+(parser-compile test-parser
+  (/token whitespace "[[:blank:]]+"))
 
-(parser-compile-dump
-  `(/or
-     (/token whitespace "[[:blank:]]+")
-     (/token word "[[:alpha:]]+")))
+;; simple test of the or relation.
+(parser-compile test-parser
+  (/token whitespace "[[:blank:]]+")
+  (/token word "[[:alpha:]]+"))
 
-(parser-compile-dump
-  `(/and foo bar))
+;; test the and operator.
+(parser-compile dump
+  /and
+  (/token word "[[:alpha:]]+")
+  (/token whitespace "[[:blank:]]+"))
+
+(parser-compile test-parser
+  /and
+  (/token word "[[:alpha:]]+")
+  (/token whitespace "[[:blank:]]+"))
+
+parser foo bar baz||
 
 ;; check an explicit sequence
 (parser-semantic-dump
