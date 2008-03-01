@@ -625,7 +625,6 @@ supplied as the single argument NODE."
    function after parser-consume-match strips any AST.
 
    inputs: gen-predicate, gen-sequence, gen-closure"
-;; FIXME: only quote symbols, lists should be unquoted. PITA = defun.
   `(parser-consume-match
      ,(lexical-let
        ((predicate nil))
@@ -856,8 +855,6 @@ supplied as the single argument NODE."
   (lexical-let
     ((eval-phase (parser-prune-result-operator
 
-                   ;; gen-ast-value may only be meaningful inside the lexical-scope
-                   ;; so this is wrong.
                    (if (and
                          (not gen-entry-point)
                          (or gen-branch gen-ast-value))
@@ -1362,6 +1359,11 @@ and ast parts from either the match phase or evaluation phase.
 (defun parser-create-sugar-table ()
   (lexical-let
     ((sugar (make-hash-table :test 'eqn-hash)))
+
+    ;; entry-point is unique in that the generator is tied into
+    ;; the sugar to generate valid code. The entry-point is an
+    ;; extreme corner case that makes a mess out of the already
+    ;; hairy enough generator.
 
     (puthash 'entry-point
       (list
