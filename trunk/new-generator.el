@@ -1629,20 +1629,19 @@ STrace List? ")
   "parser-compile FN &rest GRAMMAR
 
   parser-compile translates a grammar into a scanner-less
-  Recursive Descent parser bound to the function of FN,
+  Recursive Descent parser bound to the function of FN;
   referred to as the Parser Function.
 
-  GRAMMAR is a form translated as a micro instruction set that
-  makes the parser compiler programmable. Hopefully this feature
-  will obsolete untyped action handlers and retain almost the
-  entirety of a useful parser within the grammar.
+  GRAMMAR is a form translated into a micro instruction set
+  and assembled by the Semantic Interpreter to build and link Parser
+  Functions.
 
-  Using the compiled parser:
+  Using the generated Parser Function:
 
-  The sole argument to the Parser Function is a starting position
-  in the current buffer. The return value is the resume position
-  for another parse, along with the AST generated, or nil. A
-  single production of the start symbol is returned per-call.
+  The Parser Function is called with the starting position in the
+  current buffer as a required argument. The return value is a
+  production of the start symbol as a cons cell of the parser's
+  final position and the AST generated.
 
   The AST structure produced by the parser is documented under
   PF -> AST Effects.
@@ -1650,22 +1649,22 @@ STrace List? ")
   Compiler tools:
 
   The compiler has tools for tracing the execution of a parser
-  and dumping the generated code generated for a parser.
+  and dumping the source of a parser.
 
-  To dump the generated code of the parser specify dump as the
-  FN symbol.
+  To dump the Parser Source specify dump as the FN symbol. The
+  compile is traced in a separate buffer \"parser-compile-dump\"
+  which is displayed when the compile is complete. Note: the
+  compile dump omits the entry point FN function.
 
-  This will trace the compilation in a separate buffer
-  parser-compile-dump which is displayed in another window after
-  compilation terminates.
+  Stub: Tracing.
 
   Form Syntax:
 
   Each form contains either lists, primitives, or terms. Lists
-  are translated Depth first. Terms are calls to Parser Functions
-  defined elsewhere. Primitives are instructions to the Semantic
-  Interpreter that compiles Parser Functions. They are escaped
-  from terms by a \"/\" character.
+  are translated into terms depth first. Terms are calls to
+  Parser Functions defined elsewhere. Primitives are instructions
+  to the Semantic Interpreter escaped from terms by a \"/\"
+  character.
 
   PRIMITIVE: /and
   TERM:      foo
