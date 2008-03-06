@@ -160,8 +160,12 @@
    use a consume function to consume a list. unlike mapc instead
    of consuming only a single element of the list at a time the
    head, and the tail are passed to CONSUME so that a single call
-   can consume a variable n elements from list."
-  (while (setq list (funcall consume (car list) (cdr list)))))
+   can consume a variable n elements from list.
+
+   This function amounts to a TCO kludge allowing the function to
+   be expressed in a recursive form."
+  (while (setq list (funcall consume (car list) (cdr list))))
+  nil)
 
 (defun apply-n-times ( func n x )
   "apply-n-times FUNC N X
@@ -220,6 +224,8 @@
 ;; copied from the page:
 ;; http://www.mail-archive.com/help-gnu-emacs@gnu.org/msg00056.html
 ;; Author: Kevin Rodgers, kevin.d.rodgers@gmail.com
+
+(require 'help-fns)
 
 (defun lambda-arity (function)
   "Return minimum and maximum number of args allowed for FUNCTION.
