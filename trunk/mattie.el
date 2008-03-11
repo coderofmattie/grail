@@ -25,6 +25,7 @@
 ;; basic startup tuning.
 ;;----------------------------------------------------------------------
 
+(setq use-dialog-box nil)                     ;; kill the dialogs before they strike.
 (setq initial-scratch-message nil)            ;; nix the scratch message, and the splash screen.
 (setq inhibit-splash-screen t)
 
@@ -34,7 +35,6 @@
                                               ;; simply repeating C-<spc> continues backwards through
                                               ;; the ring. makes it easier to rewind back through a
                                               ;; series of marks.
-
 (setq
   case-fold-search t
   current-language-environment "ASCII")
