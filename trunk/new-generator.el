@@ -273,7 +273,7 @@
    is on the parser-trace list a parser-trace-flag dynamically scoped is
    bound to the boolean toggle for tracing that production."
 
-  ;; FIXME: this debug spec is broken.
+  ;; FIXME: debug why this debug spec is broken.
   (declare (debug symbolp body))
 
   ;; Using the dynamic scoping of let during the execution of the
@@ -315,7 +315,7 @@
           (pp-to-string data))))))
 
 ;;----------------------------------------------------------------------
-;; Match Result
+;; Match Result Type
 ;;----------------------------------------------------------------------
 
 ;; The parser functions have a standard structure for returning the
@@ -369,7 +369,7 @@
   (cons (parser-consumed) ast))
 
 ;;----------------------------------------------------------------------
-;; AST tree constructors
+;; AST Tree Type
 ;;----------------------------------------------------------------------
 
 ;; AST is a tree or list where the first element is an identity symbol
@@ -462,20 +462,15 @@ supplied as the single argument NODE."
       match-result)))
 
 ;;----------------------------------------------------------------------
-;; Parser Predicates
+;; Parser Term Relations and Closures.
 ;;----------------------------------------------------------------------
 
-;; Parser predicates are the lowest level primitives. They can assume
-;; that a AST tree tail has been scoped. Delayed evaluation allows
-;; them to implement sequence logic and repetition which are easier
-;; when the parser function is taken as an argument instead of
-;; a Match Result.
-
-;; and/or are sequence relational operators.
+;; Parser Term Relations are the lowest level primitives. Delayed
+;; evaluation allows them to implement sequence logic and repetition.
 
 (defun parser-relation-or ( &rest match-list )
   "Combine Match Functions by or ; the first successful match is returned.
-   nil is returned if no matches are found"
+   nil is returned if no matches are found."
   (catch 'match
     (dolist (match-func match-list)
       (parser-trace-on match-func
@@ -519,7 +514,7 @@ supplied as the single argument NODE."
 ;; parser-function-generate
 ;;----------------------------------------------------------------------
 
-;; The Parser Function Generator generates Match Functions from a set
+;; The Parser Function Generator generates Parser Functions from a set
 ;; of parser primitives.
 
 ;; -> Semantics Closure
@@ -1660,11 +1655,10 @@ STrace List? ")
 
   Form Syntax:
 
-  Each form contains either lists, primitives, or terms. Lists
-  are translated into terms depth first. Terms are calls to
-  Parser Functions defined elsewhere. Primitives are instructions
-  to the Semantic Interpreter escaped from terms by a \"/\"
-  character.
+  Each form contains lists, primitives, or terms. Lists are
+  translated into terms depth first. Terms are calls to Parser
+  Functions defined elsewhere. Primitives are instructions to the
+  Semantic Interpreter escaped from terms by a \"/\" character.
 
   PRIMITIVE: /and
   TERM:      foo
@@ -1672,18 +1666,20 @@ STrace List? ")
 
   Form Interpretation:
 
-  When a form is translated into a Form Function all of the terms
-  which are lists or plain calls are resolved by descent of the
-  translator and linking to produce the Call Phase of a Parser
-  Function.
+  When a form is translated all of the terms (lists or names) are
+  resolved by descent of the translator and linking - producing
+  the Call Phase of a Parser Function.
 
-  The Parser Primitives [if any] and the Call Phase input to the
-  Semantic Interpreter which emits an entry point for the
-  Parser Function.
+  The Parser Primitives [if any] are then Sugared (FI->Sugaring)
+  into instructions for the Semantic Interpreter. The
+  instructions and the Call Phase produced by the terms are
+  assembled into a Parser Function.
+
+  Primitive Associativity:
 
   An escaped primitive is applied to the Form Function or the
-  Term. If the primitive is right of a term it is applied to
-  the nearest left term. If there are no terms left of the
+  Term. If the primitive is right of a term it is applied to the
+  term immediately left. If there are no terms left of the
   primitive it is applied to the Form Function. see Example A.
 
   ->Example A
