@@ -7,14 +7,19 @@
 (pp-closure (closure-create test-closure))
 (setq foo-closure (closure-create test-closure))
 
+(pp-closure foo-closure)
+
 (save-lexical-closure foo-closure
   (message "red is %s" red)
   (message "blue is %s" blue))
 
+(save-lexical-closure foo-closure
+  (setq red "flaming")
+  (setq blue "ice"))
 
-  (message
-    (if (string-equal red "hot")
-      "definitely hot!"
-      "bad boom!"))
+(use-dynamic-closure
+  (test-closure foo-closure)
 
-  t)
+  (message "red is %s" red)
+  (message "blue is %s" blue))
+
