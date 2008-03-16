@@ -2,7 +2,8 @@
 
 (closure-define test-closure
   (red "hot")
-  (blue "cold"))
+  (blue "cold")
+  (symbol 'foo))
 
 (pp-closure (closure-create test-closure))
 (setq foo-closure (closure-create test-closure))
