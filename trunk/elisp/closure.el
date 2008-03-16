@@ -81,7 +81,7 @@
   `(eval (closure-bind-scope ,closure ',(cons 'progn body))))
 
 (defun closure-let-binding ( s closure )
-  `(,(read (symbol-name s)) ,(closure-value s closure)))
+  `(,(read (symbol-name s)) ,(closure-symbol s closure)))
 
 (defmacro use-dynamic-closure ( with-def &rest body )
   "use a saved closure as a dynamic scope with private copy."
@@ -163,7 +163,7 @@
       (lambda ( s )
         (lexical-let*
           ((name (symbol-name s))
-           (value (symbol-value (intern name closure))))
+           (value (symbol-value s)))
 
           (unless (funcall filter value)
             (push (format "symbol: %s = %s\n"
