@@ -1738,6 +1738,31 @@ based upon the structure required.
       (parser-compile-run closure (reverse (tail-list form-semantics)))
       closure)))
 
+(defun parser-compile-start ( grammar )
+  (condition-case diagnostic
+    (progn
+      (parser-compile-run
+        (parser-translate-form grammar)
+        (parser-translate-primitive "entry-point"))
+
+      `(lambda ( start-pos )
+         (save-excursion
+           (let
+             ((parser-trace-flag t)
+              (parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+             (goto-char start-pos)
+
+             (funcall ',(parser-pf-link 'start)) ))))
+
+      (parser-syntatic-error
+        (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
+
+      (parser-semantic-error
+        (message "Invalid semantics detected %s" (cdr diagnostic)))
+
+      (parser-compile-error
+        (message "ICE: Internal Parser Compiler error %s" (cdr diagnostic))) ))
+
 ;;----------------------------------------------------------------------
 ;; utilities
 ;;----------------------------------------------------------------------
@@ -1748,7 +1773,7 @@ based upon the structure required.
 
 ;; make it read-only after the wipe and insert, make it elisp with highlighting.
 ;; then it might be worthy as a utility function.
-(defun parser-compile-dump ( form )
+(defun parser-compile-dump ( grammar )
   "Dump the code generation of the parser compiler given a quoted form."
   (let
     ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
@@ -1757,10 +1782,8 @@ based upon the structure required.
       (erase-buffer)
       (insert (format "release: %s\ngrammar:\n%s\n" parser-release-version (pp-to-string form))))
 
-    (parser-compile-terminate
-      (parser-compile-run
-        (parser-translate-form form)
-        (parser-translate-primitive "entry-point")))
+    (parser-compile-trace 'function
+      (parser-compile-start grammar))
 
     (pop-to-buffer parser-compile-trace t)))
 
@@ -2083,37 +2106,15 @@ STrace List? ")
 
     stub.
   "
-  (catch 'terminate-compile
-    (let
-      ((parser-define-syntax (parser-create-syntax-table))
-       (match-table           (parser-make-pf-table)))
+  (let
+    ((parser-define-syntax (parser-create-syntax-table))
+     (match-table          (parser-make-pf-table)))
 
-      (when (eq fn 'dump)
+    (if (eq fn 'dump)
+      (progn
         (parser-compile-dump grammar)
-        (throw 'terminate-compile nil))
-
-      (condition-case diagnostic
-        (progn
-          (parser-compile-run
-            (parser-translate-form grammar)
-            (parser-translate-primitive "entry-point"))
-
-          (fset fn
-            (eval `(lambda ( start-pos )
-                     (save-excursion
-                       (let
-                         ((parser-trace-flag t)
-                          (parser-position (cons start-pos nil))) ;; initialize the backtrack stack
-                         (goto-char start-pos)
-
-                         (funcall ',(parser-pf-link 'start)) ))) )))
-
-        (parser-syntatic-error
-          (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
-
-        (parser-semantic-error
-          (message "Invalid semantics detected %s" (cdr diagnostic)))
-
-        (parser-compile-error
-          (message "ICE: Internal Parser Compiler error %s" (cdr diagnostic))) )))
-  nil)
+        nil)
+      (progn
+        (fset fn
+          (eval (parser-compile-start grammar)))
+        nil)) ))
