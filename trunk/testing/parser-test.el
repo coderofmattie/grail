@@ -21,21 +21,10 @@
 ;; parser function generation testing.
 ;;----------------------------------------------------------------------
 
-(parser-call-function (copy-closure parser-function-semantics) 'foo)
-
-(pp-to-string  (let
-                 ((parser-semantic-sugar (parser-create-sugar-table)))
-                 (parser-sugar-form `(/production 'start /or))))
-
-(let
-  ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
-
-  (parser-compile test-parser
-    /and
-    (/token word "[[:alpha:]]+")
-    (/token whitespace "[[:blank:]]+")) )
-
 ;; test the single token/function case
+
+(parser-compile dump
+  (/token whitespace "[[:blank:]]+"))
 
 (parser-compile test-parser
   (/token whitespace "[[:blank:]]+"))
