@@ -131,13 +131,6 @@
 
 ;; FROM: tune-programming
 
-;; (require 'paredit)
-
-;;  (paredit-mode +1)
-
-;;  (define-key paredit-mode-map (kbd "(") 'paredit-open-parenthesis)
-;;  (define-key paredit-mode-map (kbd ")") 'paredit-close-parenthesis)
-
 ;;  (local-set-key "\C-c/r" 'query-replace-regexp)
 
 
