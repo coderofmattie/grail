@@ -102,7 +102,7 @@
 
 (defmacro use-dynamic-closure-with ( with-def let-spec &rest body )
   "FIXME"
-  (declare (debug (symbolp body)))
+  (declare (debug (form form body)))
 
   (lexical-let
     ((definition    (eval (car with-def)))
