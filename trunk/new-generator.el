@@ -12,7 +12,7 @@
 ;; - "This experiment calls forth the four horsemen of the Lisp
 ;;    Apocalypse: eval,apply,lambda,macro."
 
-;; ->Hypothesis
+;; -> Hypothesis
 
 ;; Exposing the internal semantics of the generated parser as a well
 ;; defined programming interface allows a parser writer to freely mix
@@ -23,7 +23,7 @@
 ;; functions can be constrained to a few typed hooks without losing
 ;; the ability to define useful or unusual parsers.
 
-;; ->Benefits
+;; -> Benefits
 
 ;; A well defined programming interface has the following significant
 ;; advantages.
@@ -38,7 +38,7 @@
 ;; This compiler facilitates new parsing operators, making it a good
 ;; vehicle for experimenting with new grammar classes.
 
-;; ->Features
+;; -> Features
 
 ;; 0. Parser compilation is integrated directly into lisp
 ;;    with a macro DSL that returns an entry point.
@@ -51,28 +51,20 @@
 
 ;; 3. Generated code dumper for debugging the compiler.
 
-;; ->TODO
+;; -> The Plan
 
 ;;   -> Phase 1: correctness
 
 ;; 0. new parser generator merged in, and debugged.
 
-;; * instead of predicates as a low level function, separate into relational operators
-;;   and closures.
-
-;; * when sugar injects primitives, some of the primitives need to be "weak" in that
-;;   they are silently dropped when already specified. This aspect of the interface
-;;   needs some careful thought.
+;;    UPDATE: testing new co-routine design generator.
 
 ;; 1. All of the PEG predicates (missing not)
 
 ;; 3. Canonical tree walk implemented as parser-ast-node. a real pre-requisite to
 ;;    sane user implementation of transforms.
 
-;; 4. commented out message string in compile needs to be a debugging
-;;    option
-
-;; 5. implement a error recovery routine. This involves marking tokens as being
+;; 4. implement a error recovery routine. This involves marking tokens as being
 ;;    sync tokens, and generating a recovery function that scans for those tokens.
 
 ;;    -> Phase 2: optimization
@@ -84,52 +76,15 @@
 ;;    so far would be discarded. Instead filter the terminals out, and
 ;;    keep them in a table.
 
+;;    the lifetime of a memoization table for a recursion will be set
+;;    by term relation operators, so that unusual things like longest or
+;;    lazy can be implemented correctly.
+
 ;; 2. make left recursion work.
 
 ;;    -> Phase 3: Experiments
 
-;; Longest
-
-;; make a longest possible match operator. this would involve a primitive
-;; that would scope a token match counter. The recursive match with the
-;; highest token count would be returned. This approach to longest match
-;; assumes packrat optimization, and that constructing ast is a cheap
-;; operation.
-
-;; Lazy
-
-;; is it possible to make the parser lazy instead of greedy with a
-;; closure while still being top-down ?  with packrat optimization an
-;; interesting algorithm for efficiently constructing a correct lazy
-;; match for a sequence might be possible.
-
-;; If such an algorithm was found enabling something like CFG
-;; semantics then the parser compiler would be a much more interesting
-;; beast.
-
-;; lazy may need to be a sequence relational operator but that is quite odd.
-;; can top-down work right to left ? maybe I could scan back from a sync token
-;; and do the sequence matching in reverse.
-
-;; A B C
-
-;; A runs match. If it works it lets B take a crack at the next run. If B doesn't
-;; match it goes back to A for more greed. If B does match then B becomes A and
-;; C is bound as B until the sequence is exhausted.
-
-;; Since the tokens never actually implement greed themselves this may
-;; actually work. implications of recursively buried greed ?
-
-;; 2. tracing at the primitive level, generating instrumented parser functions.
-
-;; 3. Could tokens be emacs functions that bound the existing syntax anaylsis
-;;    of a buffer ? kind of a high level data structure builder on-top of the
-;;    existing function ?
-
-;; Badly formed inputs: a way to terminate a previous match ? something like the
-;; proposed super brace ? would it help with stuff like HTML parsing ?
-
-;; ->Terminology
+;;    ->Terminology
 
 ;; My reference for parsing terminology is the Dragon Book:
 
@@ -140,6 +95,7 @@
 
 (require 'cl)
 (require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil
+(require 'closure)
 
 (define-error parser-compile-error   "parser error")
 (define-error parser-syntactic-error "syntactic error" parser-compile-error)
@@ -428,7 +384,7 @@ supplied as the single argument NODE."
   (catch 'consumed-match
     (lexical-let
       ((match-status (parser-result-logic match-result))
-       (match-data   (parser-result-ast match-result)))
+       (match-data   (parser-result-ast   match-result)))
 
       (if (numberp match-status)
         (progn
@@ -462,563 +418,310 @@ supplied as the single argument NODE."
       match-result)))
 
 ;;----------------------------------------------------------------------
-;; Parser Term Relations and Closures.
+;; Parser Function Semantic Closure Type
 ;;----------------------------------------------------------------------
 
-;; Parser Term Relations are the lowest level primitives. Delayed
-;; evaluation allows them to implement sequence logic and repetition.
+(closure-define parser-function-semantics
 
-(defun parser-relation-or ( &rest match-list )
-  "Combine Match Functions by or ; the first successful match is returned.
-   nil is returned if no matches are found."
-  (catch 'match
-    (dolist (match-func match-list)
-      (parser-trace-on match-func
-         (catch 'parser-match-fail
-           (lexical-let
-             ((match-result (funcall match-func)))
+    ;; -> Call Phase
 
-             (parser-trace-match match-func match-result)
+    (pf-terms           nil)
+    ;; a list of Parser Functions that imply pf-relation as a Term
+    ;; Relation.
 
-             (when match-result
-               (throw 'match match-result))) )))
+    (pf-relation        nil)
+    ;; any Parser Function, usually a Term Relation.
+
+    (pf-closure         nil)
+    ;; A function that receives the Match Call phase as a lambda for
+    ;; delayed evaluation within the Recursion Environment.
+
+    (pf-call-phase      nil)
+    ;; The call phase is considered open when the only instructions
+    ;; processed are calls. the first non-call instruction that
+    ;; modifies the closure closes the call phase with a non-nil value.
+
+    ;; -> Match Evaluation Phase
+
+    (pf-eval-logic      nil)
+
+    ;; -> Input Domain
+
+    (pf-input-domain    nil)
+    (pf-input-branch    nil)
+
+    ;; -> AST domain
+
+    (pf-ast-domain      nil)
+    (pf-ast-branch      nil)
+
+    (pf-ast-discard     nil)
+    ;; Discard the ast tree.  Discard is mutually exclusive with the
+    ;; set below.
+
+    (pf-ast-transform   nil)
+    ;; user defined AST transform function.
+
+    (pf-ast-node        nil)
+    ;; Create named AST trees that are attached instead of merged. The
+    ;; value is the identifier for the tree.
+
+    ;; -> Rvalue phase
+
+    (pf-rvalue-phase   'eval)
+
+    ;;r-value is derived from:
+
+    ;; eval        : result of eval
+    ;; match       : the match result, discard eval except effects, AST is still orthogonal.
+    ;; entry-point : special case.
+
+    (pf-rvalue-logic    nil)
+    ;; apply an operator to the evaluation or match to alter the
+    ;; logical value returned.
+  )
+
+(defun parser-any-changed-except ( closure definition exceptions )
+  (catch 'terminate
+    (mapc
+      (lambda ( def )
+        (lexical-let
+          ((symbol     (car def))
+           (init-value (eval (cdr def))))
+
+          (unless (memq symbol exceptions)
+            (unless (eq init-value (closure-value (car def) closure))
+              (throw 'terminate t))) ))
+      definition)
     nil))
 
-(defun parser-relation-and ( &rest match-list )
-  (dolist (match-func match-list (parser-result-match))
-    (parser-trace-on match-func
-      (lexical-let
-        ((match-result (funcall match-func)))
-        (parser-trace-match match-func match-result)
+(defun parser-pf-new ()
+  "parser-pf-new
 
-        (unless (parser-match-p match-result)
-          (throw 'parser-match-fail nil))
-
-        (parser-consume-match match-result))) ))
-
-(defun parser-predicate-greedy ( match-func )
-  "A positive closure predicate that applies the given
-   Match Function as many times as it Matches and returns true
-   if one or more matches was made."
-  (lexical-let ((matched-once nil))
-
-    (catch 'parser-match-fail
-      (do ((production (funcall match-func) (funcall match-func)))
-          ((progn
-             (parser-consume-match production)
-             (setq matched-once t)
-             nil)) ))
-    (if matched-once (parser-result-match)) ))
-
-;;----------------------------------------------------------------------
-;; parser-function-generate
-;;----------------------------------------------------------------------
-
-;; The Parser Function Generator generates Parser Functions from a set
-;; of parser primitives.
-
-;; -> Semantics Closure
-
-;; The Semantics Closure is a table that glues the Function Generator
-;; together with a set of flags and code fragments.
-
-;; The generator sets any flags that are inferred purely for the
-;; purpose of code generation.
-
-;; The two state-ful effects of a parser function, input and AST
-;; fill code fragments into the closure using the flags to take
-;; advantage of common structure in the function.
-
-;; The elisp is then generated as a nesting of the phases of a parser
-;; function.
-
-(setq parser-function-semantics
-  (make-closure
-
-    (gen-entry-point    nil) ;; generate an entry point
-
-    ;; Match Phase
-    (gen-sequence       nil)  ;; a set of Match functions that imply gen-predicate
-                              ;; as a relational operator.
-
-    (gen-predicate      nil)  ;; a single Match Function or a relational operator.
-    (gen-closure        nil)  ;; pass the match call to closure for delayed evaluation.
-
-    ;; Eval Phase
-
-    ;; Parser Effects
-    (eff-input          nil)
-    (gen-input-branch   nil)  ;; do input effects branch ?
-
-    ;; logical effects
-    (eff-logic          nil)
-
-    (gen-function-operator nil)
-    (gen-eval-operator nil)
-
-    ;; ast effects
-    (eff-ast            nil)
-
-    (gen-ast-discard    nil)  ;; discard is mutually exclusive with the set below.
-                              ;; discard the ast tree.
-
-    (gen-ast-transform  nil)  ;; user defined AST transform.
-    (gen-ast-node       nil)  ;; Create named AST trees that are attached instead
-                              ;; of merged.
-    (gen-ast-branch     nil)  ;; do ast effects branch ?
-
-    ;; Function Phase
-
-    (gen-function      'eval) ;; match or eval, return the eval logical result, or the match
-                              ;; logical result.
-
-    ;; Validation and Generation Internals
-
-    (gen-trap           nil)  ;; internal, always turned on when needed. trap
-                              ;; parser-match-fail
-
-    (gen-branch         nil)  ;; do we have branching ?
-
-    ;; code fragments
-
-    (gen-ast-value      nil)  ;; the result of a AST effect that is not a node.
-                              ;; will be combined with the logical result to
-                              ;; keep ast/logic orthogonal.
-
-    ;; list of bindings required by evaluation. These are largely due
-    ;; to side? effect ordering.
-    (gen-lexical-scope  nil)
-
-    ;; list of bindings for a recursion environment, currently used to
-    ;; scope the AST tail.
-    (gen-dynamic-scope  nil)
-
-    ;; Functions that modify the parser/AST state need to run a setup before
-    ;; the evaluation phase, and place their finish effects in either the
-    ;; gen-eval-always fragments, or the branch fragments.
-
-    (gen-eval-setup     nil)
-    (gen-eval-always    nil)
-
-    ;; branching fragments.
-
-    (gen-match-effects  nil)
-    (gen-match-rvalue   nil)
-
-    (gen-fail-effects   nil)
-    (gen-fail-rvalue    nil)))
-
-(defun parser-prune-lambda ( &rest generated )
-  "parser-prune-lambda inserts a sequence of fragments into a lambda form pruning
-   nil fragments."
-  `(lambda ()
-     ,@(apply 'append (list-filter-nil generated))))
-
-(defun parser-gen-match-call ()
-  "The match call of a parser function includes the closure, predicate,
-   and sequence. Evaluation produces the logical Match Result of the
-   function after parser-consume-match strips any AST.
-
-   inputs: gen-predicate, gen-sequence, gen-closure"
-  `(parser-consume-match
-     ,(lexical-let
-       ((predicate nil))
-
-       (if gen-sequence
-         (progn
-           (setq predicate `(apply ',gen-predicate '(,@(reverse gen-sequence))) )
-           (if gen-closure
-             `(funcall ',gen-closure ,(parser-prune-lambda predicate))
-             predicate))
-
-         (if gen-closure
-           `(funcall ',gen-closure ',gen-predicate)
-           `(funcall ',gen-predicate) )))))
-
-(defun parser-prune-recursion-environment ( generated )
-  "parser-prune-recursion-environment interpolates the sexp generated
-   into a dynamic scope with the bindings of gen-dynamic-scope
-   from the semantics table.
-
-   inputs: gen-dynamic-scope"
-  (if gen-dynamic-scope
-    `(let
-       ,gen-dynamic-scope
-       ,generated)
-  generated))
-
-(defun parser-prune-match-phase ( generated )
-  "The match phase traps any parser-match-fail non-local exists
-   from the recursion of the match call. This trap is only
-   generated when there is conditional evaluation.
-
-   inputs: gen-trap"
+   Create a new Parser Function closure.
+  "
+  ;; This function is necessary because you currently cannot specify
+  ;; properties in define-closure.
   (lexical-let
-    ((transform (parser-prune-recursion-environment generated)))
+    ((closure (closure-create parser-function-semantics)))
 
-    (if gen-trap
-      `(catch 'parser-match-fail
-         ,transform)
-      transform)))
+    (put
+      (closure-symbol 'pf-rvalue-phase closure)
+      'parser-primitive 'weak)
 
-(defun parser-gen-input-effects ()
-  "Create the input effects of the Parser Function.
+    closure))
 
-   input: eff-input, gen-branch, gen-input-branch
-   modifies: gen-eval-setup, gen-match-effects, gen-eval-always"
-  (catch 'done
-    (unless eff-input (throw 'done nil))
+(defun parser-pf-closed-p ( pf-closure )
+  "parser-pf-closed-p CLOSURE
 
-    (push `(parser-push) gen-eval-setup)
+   Return t if CLOSURE has the pf-call-phase flag set, nil
+   otherwise. When pf-call-phase is set adding terms is a
+   collision.
+  "
+  (if (closure-value 'pf-call-phase pf-closure)
+    t))
 
-    (if (and gen-branch gen-input-branch)
-      (progn
-        (push `(parser-pop) gen-match-effects)
-        (push `(parser-backtrack) gen-fail-effects))
-      (push `(parser-pop) gen-eval-always)) ))
+(defun parser-pf-terms ( pf-closure )
+  (closure-value 'pf-terms pf-closure))
 
-;; AST effects
-
-(defun parser-gen-node-transform ()
-  "If gen-ast-transform is set Create the call to a AST transform
-   function. The identity of the AST before the transform is
-   preserved and returned with the transform result. Otherwise
-   return the AST value.
-
-   input: gen-ast-transform"
-  (if gen-ast-transform
-    `(cons (car ast-root) (cdr (funcall ',gen-ast-transform ast-root)))
-    'ast-root))
-
-(defun parser-gen-ast-effects ()
-  "Generate any AST effects for the parser function.
-
-   The most basic AST effect is creating a AST node or list which
-   consists of a lexically scoped head and a dynamically scoped
-   tail.
-
-   The first element of the list is always an identity symbol
-   with the parser-ast property production. AST nodes that are
-   not explicitly named are identified with a null symbol.
-
-   The flag eff-ast alone will generate a new AST node that
-   shadows the existing AST tree.
-
-   The remaining set of AST effects is either a branch-able
-   gen-ast-discard or one of the effects below.
-
-   gen-ast-node: An identity symbol is given to name the
-   node. It is marked with the parser-ast property production.
-   A transform can be combined with a node.
-
-   A node is immediately attached with parser-ast-add-node so
-   that the node is added rather than merged into the parent AST
-   tree.
-
-   gen-ast-transform: The given function receives either a
-   token or a AST node. The transform must produce a cons cell,
-   either a AST tree rooted with a AST node or arbitrary token
-   data.
-
-   gen-ast-value is either nil or a fragment that is the AST
-   evaluation value.
-
-   inputs: eff-ast, gen-ast-discard, gen-ast-node, gen-branch,
-           gen-ast-branch, gen-ast-transform
-
-   outputs: gen-ast-value, gen-lexical-scope, gen-dynamic-scope,
-            gen-eval-always,gen-match-effects
-   "
-
-  (catch 'done
-    (unless eff-ast (throw 'done nil))
-
-    ;; Initialize the head of the AST in the lexical scope.
-    (push `(ast-root ,(if gen-ast-node
-                        `(cons ',gen-ast-node nil)
-                        `(parser-make-ast))) gen-lexical-scope)
-
-    ;; Initialize the tail pointer in the dynamic scope.
-    (push `(parse-tree ast-root) gen-dynamic-scope)
-
-    (if gen-ast-discard
-      (setq gen-ast-value 'discard)
-
-      (progn
-        ;; a conditional selects the highest combinational complexity
-        ;; as the entry point for generating the code.
-
-        (cond
-          (gen-ast-node
-            (progn
-              (push `(put (car ast-root) 'parser-ast 'production) gen-eval-always)
-
-              (if gen-ast-branch
-                (unless gen-entry-point
-                  (progn
-                    (push `(parser-ast-add-node ,(parser-gen-node-transform)) gen-match-effects)
-                    (setq gen-ast-value 'discard)))
-                (setq gen-ast-value `(progn
-                                       (parser-ast-add-node ,(parser-gen-node-transform))
-                                       nil))) ))
-          (gen-ast-transform
-            (if gen-ast-branch
-              (push
-                `(setq ast-root (funcall ',gen-ast-transform ast-root))
-                gen-match-effects)
-              (setq gen-ast-value `(funcall ',gen-ast-transform ast-root))))
-
-          (gen-ast-branch
-            (push `(setq ast-root nil) gen-fail-effects)))
-
-        (unless gen-ast-value
-          (setq gen-ast-value 'ast-root))
-        ))
-    ))
-
-(defun parser-gen-with-effects ( effects rvalue )
-  "parser-gen-with-effects EFFECTS RVALUE
-
-   Create a return value with an optional list of side-effects.
-
-   the second parameter RVALUE is always returned. EFFECTS
-   can be a list or nil."
-  (if effects
-    `(progn
-       ,@effects
-       ,rvalue)
-    (if rvalue
-      `,rvalue)))
-
-(defun parser-eval-disjunct-p ()
-  (or
-    ;; ordering of eval-always forces a temporary
-    ;; save of the Match Result
-    gen-eval-always
-
-    ;; Save the Match Result from the match call
-    ;; because we will evaluate it twice.
-    (and
-      gen-branch
-      (eq 'match gen-function))))
-
-(defun parser-eval-conjunct-p ()
-  (and gen-branch (eq 'eval gen-function)))
-
-(defun parser-prune-eval-phase ( generated )
-  "Generate the evaluation phase stub."
-  ;; an interesting experiment for the eval phase would be
-  ;; allowing a binary logical operator that combined a logical
-  ;; operator with a stateful logical predicate of the ast
-  ;; generated. Once the tree walk functions are built this will be
-  ;; very powerful.
-
-  ;; the match result by this phase is always logic only as any
-  ;; ast has already been consumed.
-
-  (when (parser-eval-disjunct-p)
-    (push `(match ,generated) gen-lexical-scope)
-    (setq generated 'match))
-
-  (when (parser-eval-conjunct-p)
-    ;; if the evaluation result is the function logical result set
-    ;; the match rvalue. gen-entry-point is a special case.
-    (setq gen-match-rvalue (if gen-entry-point
-                             `(cons (parser-pos) ,gen-ast-value)
-                             t)))
-
-  ;; apply an evaluation logical operator, but only after the match
-  ;; result has been saved if necessary.
-  (if gen-eval-operator
-    (setq generated `(,gen-eval-operator ,generated)))
-
-  ;; now we have a fragment we can conditionally evaluate for the branch
-  ;; in generated.
-  (if gen-branch
-    `(if (parser-match-p ,generated)
-       ,@(seq-filter-nil
-           (parser-gen-with-effects gen-match-effects gen-match-rvalue)
-           (parser-gen-with-effects gen-fail-effects  gen-fail-rvalue)))
-    generated))
-
-(defun parser-prune-result-operator ( generated )
-  (if gen-function-operator
-    `(,gen-function-operator generated)
-    generated))
-
-(defun parser-prune-result-phase ( generated )
+(defun parser-pf-single-call-p ( pf-closure )
   (lexical-let
-    ((eval-phase (parser-prune-result-operator
+    ((terms (parser-pf-terms pf-closure)))
 
-                   (if (and
-                         (not gen-entry-point)
-                         (or gen-branch gen-ast-value))
-                     `(cons
-                        ,(if (parser-eval-conjunct-p)
-                          generated
-                          `(parser-match-p ,generated))
-                        ,(if (eq 'discard gen-ast-value)
-                           'nil
-                           gen-ast-value))
-                     generated))))
+    (if (and
+          terms
+          (< (length terms) 2)
+          (symbolp (car terms))
+          (not (parser-any-changed-except pf-closure parser-function-semantics '(pf-terms pf-call-phase))))
+      (car terms)) ))
 
-    (if gen-lexical-scope
-      `(lexical-let*
-         ;; the reverse is required so that the lexical bindings
-         ;; of the logic phase will be ordered last.
-         ,(reverse gen-lexical-scope)
-
-         ,@(if gen-eval-always
-             (append gen-eval-always (list eval-phase))
-             (list eval-phase)))
-      generated)))
-
-(defun parser-resolve-predicate ( semantics )
-  "parser-resolve-predicate stub."
-  (save-lexical-closure semantics
-    (when (null gen-predicate)
-      (cond
-        ((= 1 (length gen-sequence))
-          ;; simple optimization, when a sequence has only a single call
-          ;; make it the predicate.
-          (progn
-            (setq gen-predicate (car gen-sequence))
-            (setq gen-sequence nil)))
-
-        ((> (length gen-sequence) 1)
-          ;; the default relational operator is and. to get a
-          ;; specific relational operator make sure it's the
-          ;; first instruction after the call phase.
-          (setq gen-predicate 'parser-relation-and))
-
-        ((signal 'parser-semantic-error "un-recoverable ordering violation: effects without a call"))
-        ))))
-
-(defun parser-function-generate ( parser-function-semantics )
-"
-The goal of this generator design is to produce elisp that
-appears more human, where human is opportunistic pruning of
-redundant code.
-
-To do this a set of valid primitives in the form of a closure is
-taken as an input. It is assumed that this set is the largest
-possible set of primitives taken from a sequence of primitives.
-
-The largest valid set is computed largely by parser-semantic-union.
-
-The minimal structure is a ordered sequence of a match phase
-evaluation phase, and function phase.
-
-The match phase structure has two major elements: a match
-function call and a optional dynamically scoped environment for
-the recursion.
-
-The evaluation phase can manipulate the parser and the AST state
-with optional branching on the match result.
-
-The function phase composes a match result with the logic
-and ast parts from either the match phase or evaluation phase.
-"
-  ;; FIXME: doesn't optimize a single term correctly because
-  ;;        parser-resolve-predicate was designed for semantic-union.
-
-  (parser-resolve-predicate parser-function-semantics)
-
-  (parser-compile-trace 'semantics (pp-closure-filtered 'null parser-function-semantics))
-
-  (use-dynamic-closure parser-function-semantics
-
-    ;; any time we have a closure, or sequence, we will always need to
-    ;; setup a basic AST effect, even if AST effects were not explicitly
-    ;; set by AST effects.
-
-    (when (or gen-closure gen-sequence)
-      (setq eff-ast t))
-
-    ;; effects cannot be generated until it's known if we are
-    ;; branching.
-    (when (or gen-ast-branch gen-input-branch)
-      (setq gen-branch t))
-
-    ;; whenever there is conditionality trap match-fail.
-    (when gen-branch
-      (setq gen-trap t))
-
-    (parser-gen-ast-effects)
-    (parser-gen-input-effects)
-
-    (parser-prune-lambda
-      gen-eval-setup
-
-      (list
-        (parser-prune-result-phase
-          (parser-prune-eval-phase
-            (parser-prune-match-phase
-              (parser-gen-match-call))))) )))
+(defun parser-pf-call ( pf-closure call )
+  "match-function is pushed onto the current sequence, returns t
+   if there was a semantic collision, nil otherwise."
+  (if (parser-pf-closed-p pf-closure)
+    t
+    (progn
+      (set
+        (closure-symbol 'pf-terms pf-closure)
+        (cons call (parser-pf-terms pf-closure)))
+      nil)))
 
 ;;----------------------------------------------------------------------
-;; parser-semantic-union
+;; Parser Primitive Type
 ;;----------------------------------------------------------------------
 
-(defun parser-fold-primitive ( var value )
-  "Discard subsequent attempts to merge the semantic VAR assuming
-   that VALUE is a constant of all parser functions. Throw a
-   semantic-error 'incomplete only when the function and value of
-   VALUE are nil or void."
-  (unless (symbol-value var)
-    (unless (or (functionp value) value)
-      (throw 'semantic-error 'incomplete))
-    (set var value)))
+(defun parser-strong-primitive ( p &optional v )
+  (lexical-let
+    ((primitive (make-symbol (symbol-name p))))
 
-(defun parser-merge-primitive ( var value )
-  "Set a value to the semantics table, assuming that valuable
-   is a variable value between parser functions.
+    (set primitive (if v
+                     v
+                     t))
+    primitive))
 
-   Throw semantic-error 'collision if it the symbol has already
-   been set."
-  (if (symbol-value var)
-    (throw 'semantic-error 'no-fold)
+(defun parser-weak-primitive ( p &optional v )
+  (lexical-let
+    ((primitive (parser-strong-primitive p v)))
+
+    (put primitive 'parser-primitive 'weak)
+
+    primitive))
+
+(defun parser-weak-p ( p )
+  (eq (get p 'parser-primitive) 'weak))
+
+;;----------------------------------------------------------------------
+;; Compile Instruction Type
+;;----------------------------------------------------------------------
+
+(defun parser-instruction ( instr &optional data )
+  (if data
+    (cons instr data)
+    instr))
+
+;;----------------------------------------------------------------------
+;; Parser Feedback
+;;----------------------------------------------------------------------
+
+;; the two co-routines of the compile: Semantic Union and the Function
+;; Generator pass commands through feedback into the instruction
+;; sequence.
+
+;; these helpers construct r-values interpreted by parser-feedback.
+
+(defun parser-retry-after ( &rest before )
+  (cons 'retry (list-filter-nil before)))
+
+(defun parser-continue-after ( &rest before )
+  (cons 'continue (list-filter-nil before)))
+
+;;----------------------------------------------------------------------
+;; Semantic Union
+;;----------------------------------------------------------------------
+
+(defun parser-pf-set-primitive ( pf-symbol primitive )
+  "parser-pf-set-primitive PF-SYMBOL PRIMITIVE
+
+   Merge PRIMITIVE into PF-SYMBOL.
+
+   If PF-SYMBOL is set as a strong primitive collision is
+   returned; unless PRIMITIVE is weak, when PRIMITIVE is silently
+   discarded.
+
+   If PF-SYMBOL is a weak primitive the parser-primitive property
+   is cleared to nil and the value of PRIMITIVE is merged.
+
+   if PF-SYMBOL has no value, the value and primitive-property of
+   PRIMITIVE is merged silently.
+  "
+  (if (and
+        (symbol-value pf-symbol)
+        (not (parser-weak-p pf-symbol)))
+
+    (unless (parser-weak-p primitive)
+      'collision)
 
     (progn
-      (unless (or (functionp value) value)
-        (throw 'semantic-error 'incomplete))
-      (set var value))))
+      (put pf-symbol 'parser-primitive
+        (if (parser-weak-p pf-symbol)
+          nil
+          (get primitive 'parser-primitive)))
 
-(defun parser-merge-exclusive ( mutex )
-  "When semantics are exclusive within a set of effects or a
-   phase a flag is used so that the first merge succeeds but
-   subsequent merges fail.
+      (unless (symbol-value primitive)
+        (signal 'parser-semantic-error
+          (format "primitive %s is missing a value." (symbol-name primitive))))
 
-   MUTEX variable is the sole argument. semantic-error 'collision
-   is thrown for subsequent attempts to set the mutex."
-  (if (symbol-value mutex)
-    (throw 'semantic-error 'collision)
-    (set mutex t)))
+      (set pf-symbol (symbol-value primitive))
+      nil)))
 
-(defun parser-exclusive-primitive ( mutex var value )
-  (if (eq 'collision (catch 'semantic-error
-                       (parser-merge-exclusive mutex)))
-    (if (symbol-value var)
-      (throw 'semantic-error 'no-fold)
-      (throw 'semantic-error 'collision))
-  (parser-merge-primitive var value)))
+(defun parser-pf-fold-primitive ( pf-symbol primitive )
+  "parser-pf-fold-primitive PF-SYMBOL PRIMITIVE
 
-(defun parser-combine-primitive ( mutex var value )
-  "This merge combines within a effect or phase mutex however
-   the semantic variable is still exclusive."
-  (parser-fold-primitive mutex t)
-  (parser-merge-primitive var value))
+  If PF-SYMBOL was previously set subsequent primitives are silently
+  discarded
+  Merge primitive P, silently discarding subsequent primitives
+  assuming that V value is a constant non-nil such as 't.
 
-(defun parser-combine-exclusive-of ( of-mutex mutex var value )
-  "stub."
-  (when (symbol-value of-mutex)
-    (throw 'semantic-error 'collision))
+  invalidate the merge with 'incomplete only when the function
+  and value of V are nil or void.
+  "
+  (unless (symbol-value pf-symbol)
+    (parser-pf-set-primitive pf-symbol primitive)))
 
-  (parser-fold-primitive mutex t)
-  (parser-merge-primitive var value))
+(defun parser-merge-domain ( domain )
+  "parser-merge-domain DOMAIN
 
-(defun parser-semantic-union ( semantics tape )
-  "parser-semantic-union
+   When primitives are exclusive within DOMAIN enforce one domain per function.
+
+   'hard-collision is thrown for subsequent merges of a previous
+   value.
+  "
+  (if (symbol-value domain)
+    'collision
+    (progn
+      (set domain t)
+      nil)))
+
+(defun parser-merge-domain-exclusive ( domain pf-symbol primitive )
+  "parser-merge-domain-exclusive DOMAIN PF-SYMBOL PRIMITIVE
+
+   Merge PF-SYMBOL exclusive within DOMAIN with PRIMITIVE.
+
+   any parser-primitive properties for PF-SYMBOL or PRIMITIVE
+   supersede exclusion when PF-SYMBOL is not null.
+  "
+  (if (and
+        (eq 'collision (parser-merge-domain domain))
+        (null (symbol-value pf-symbol)))
+    'collision
+    (parser-pf-set-primitive pf-symbol primitive) ))
+
+(defun parser-merge-domain-exclusive-except ( except domain pf-symbol primitve )
+  "parser-merge-domain-exclusive-except EXCEPT DOMAIN PF-SYMBOL PRIMITIVE
+
+   Merge PF-SYMBOL exclusive within DOMAIN with
+   PRIMITIVE.
+
+   the exclusion is superseded by the parser-primitive
+   properties of PF-SYMBOL or primitive if PF-SYMBOL
+   or EXCEPT is not null.
+  "
+  (if (and
+        (eq 'collision (parser-merge-domain domain))
+        (null (symbol-value except))
+        (null (symbol-value pf-symbol)))
+    'collision
+    (parser-pf-set-primitive pf-symbol primitive) ))
+
+(defun parser-merge-domain-combine ( domain pf-symbol primitive )
+  "parser-merge-domain-combine DOMAIN PF-SYMBOL PRIMITIVE
+
+   Combine PF-SYMBOL within DOMAIN.
+  "
+  (parser-pf-fold-primitive domain t)
+  (parser-pf-set-primitive pf-symbol primitive))
+
+(defun parser-merge-domain-combine-except ( except domain pf-symbol primitive )
+  "FIXME"
+  (if (symbol-value except)
+    'collision
+    (progn
+      (parser-pf-fold-primitive domain t)
+      (parser-pf-set-primitive pf-symbol primitive))))
+
+;;----------------------------------------------------------------------
+;; semantic union co-routine.
+;;----------------------------------------------------------------------
+
+(defun parser-union-feedback ( signal )
+  (when signal
+    (parser-retry-after
+      (if (eq signal 'collsion)
+        (parser-instruction 'compile)
+        signal))))
+
+(defun parser-union-closure ( pf-closure )
+  "parser-union-closure SEMANTICS
 
    Merges semantic primitives from list TAPE into SEMANTICS.
    Each element of TAPE is a symbol or list pair evaluated
@@ -1033,117 +736,689 @@ and ast parts from either the match phase or evaluation phase.
    A diagnostic of the halt a symbol of: finished invalid unknown
    is cons'd with the unconsumed tape if any."
 
-  (let*  ;; save-lexical-closure does not play nice with lexical-let* for some reason.
-         ;; after debugging this can become lexical.
-    ((i-current (car tape))
-     (tape-next (cdr tape))
+  ;; FIXME: propogate the hooks through the domains. see if there are any other
+  ;;        useful hook points.
 
-     (primitive (if (consp i-current) (car i-current) i-current))
-     (data      (if (consp i-current) (eval (cadr i-current))))
+  (save-lexical-closure pf-closure
+    (lambda ( primitive )
+      (parser-union-feedback
+        (lexical-let
+          ((merge
+             (cond
+               ((not (symbolp primitive)) 'unknown)
 
-     (merge
-       (catch 'semantic-error
-         (save-lexical-closure semantics
-           (cond
-             ;;----------------------------------------------------------------------
-             ;; call phase
-             ;;----------------------------------------------------------------------
+               ;;----------------------------------------------------------------------
+               ;; call phase
+               ;;----------------------------------------------------------------------
 
-             ((eq primitive 'greedy)       (parser-merge-primitive 'gen-closure   'parser-predicate-greedy))
+               ((eqn primitive 'relation) (parser-pf-set-primitive 'pf-relation primitive))
+               ((eqn primitive 'closure)  (parser-pf-set-primitive 'pf-closure primitive))
 
-             ((eq primitive 'relation-or)  (parser-merge-primitive 'gen-predicate 'parser-relation-or))
-             ((eq primitive 'relation-and) (parser-merge-primitive 'gen-predicate 'parser-relation-and))
+               ;;----------------------------------------------------------------------
+               ;; Effects phase
+               ;;----------------------------------------------------------------------
 
-             ;;----------------------------------------------------------------------
-             ;; effects phase
-             ;;----------------------------------------------------------------------
+               ;; -> logic effects
 
-             ;; -> logic effects
+               ((eqn primitive 'eval-operator) (parser-pf-set-primitive 'pf-logic-domain primitive))
 
-             ((eq primitive 'return-match)
-               (parser-combine-primitive-exclusive-of 'gen-function-operator
-                 'eff-logic
-                 'gen-function 'match))
+               ;; -> Input Domain
 
-             ((eq primitive 'always-match)
-               (parser-combine-primitive
-                 'eff-logic
-                 'gen-function-operator 'parser-result-match))
+               ;; can merge with or without branching, only one input effect per function.
 
-             ((eq primitive 'negate-function)
-               (parser-combine-primitive
-                 'eff-logic
-                 'gen-function-operator 'parser-result-negate))
+               ((eqn primitive 'input-branch)
+                 (parser-merge-domain-exclusive 'pf-input-domain 'pf-input-branch primitive))
 
-             ((eq primitive 'negate-eval)
-               (parser-combine-primitive
-                 'eff-logic
-                 'gen-eval-operator 'parser-result-negate))
+               ((eqn primitive 'input-discard)
+                 (parser-merge-domain 'pf-input-domain))
 
-             ;; -> input effects
+               ;; -> AST Domain
 
-             ((eq primitive 'input-branch)
-               (parser-exclusive-primitive
-                 'eff-input
-                 'gen-input-branch t))
+               ((eqn primitive 'ast-branch)
+                 (parser-merge-domain-combine 'pf-ast-domain 'pf-ast-branch primitive))
 
-             ((eq primitive 'input-discard)
-               (parser-merge-exclusive 'eff-input))
+               ((eqn primitive 'ast-discard)
+                 (parser-merge-domain-exclusive-except 'ast-branch
+                   'pf-ast-domain 'pf-ast-discard primitive))
 
-             ;; -> ast effects
+               ((eqn primitive 'ast-node)
+                 (parser-merge-domain-combine-except 'pf-ast-discard
+                   'pf-ast-domain 'pf-ast-node primitive))
 
-             ;; discard is mutually exclusive with the other ops, which are
-             ((eq primitive 'ast-discard)
-               (parser-exclusive-primitive
-                 'eff-ast
-                 'gen-ast-discard t))
+               ((eqn primitive 'ast-transform)
+                 (parser-merge-domain-combine-except 'pf-ast-discard
+                   'pf-ast-domain 'pf-ast-transform data))
 
-             ((eq primitive 'ast-branch)
-               (parser-combine-exclusive-of 'gen-ast-discard
-                 'eff-ast
-                 'gen-ast-branch t))
+               ;; -> rvalue phase
 
-             ((eq primitive 'ast-node)
-               (parser-combine-exclusive-of 'gen-ast-discard
-                 'eff-ast
-                 'gen-ast-node data))
+               ;; TODO: an entry-point value for pf-rvalue-phase should
+               ;;       exclude setting pf-rvalue-logic
 
-             ((eq primitive 'ast-transform)
-               (parser-combine-exclusive-of 'gen-ast-discard
-                 'eff-ast
-                 'gen-ast-transform data))
+               ((eqn primitive 'return)          (parser-pf-set-primitive 'pf-rvalue-phase primitive))
 
-             ((eq primitive 'entry-point)  (parser-merge-exclusive 'gen-entry-point))
+               ((eqn primitive 'return-operator) (parser-pf-set-primitive 'pf-rvalue-logic primitive))
 
-             ;; when we don't know what it is.
-             ((throw 'semantic-error 'unkown)) ))
+               ;; when we don't know what it is.
+               (('unknown)) )))
 
-         ;; All of the instructions above will terminate the match
-         ;; call phase. Ensure that gen-predicate is set correctly
-         ;; so subsequent match calls will fail to merge.
+;;          (message "merge is %s\n" (pp-to-string merge))
 
-         ;; if gen-predicate and gen-sequence are it is a un-recoverable
-         ;; error.
-         (parser-resolve-predicate semantics)
-         nil))
-      )
+          ;; make sure that a modification of the semantic closure
+          ;; closes the call phase.
+          (when (and (null merge) (null pf-call-phase))
+            (setq pf-call-phase t))
+          merge))) ))
+
+;;----------------------------------------------------------------------
+;; parser-function-generate
+;;----------------------------------------------------------------------
+
+;; The Parser Function Generator generates Parser Functions from a
+;; Semantic Closure.
+
+(defun parser-prune-lambda ( &rest generated )
+  "parser-prune-lambda inserts a sequence of fragments into a lambda form pruning
+   nils."
+  `(lambda ()
+     ,@(apply 'append (list-filter-nil generated))))
+
+;;----------------------------------------------------------------------
+;; match phase
+;;----------------------------------------------------------------------
+
+(defun parser-emit-match-call ()
+  "The Match Call of a Parser Function includes the closure, predicate,
+   and terms. Evaluation produces the logical Match Result of the
+   function after parser-consume-match strips any AST.
+
+   pf-terms is reversed allowing the list to be constructed as a stack.
+
+   uses: pf-relation, pf-terms, pf-closure"
+  `(parser-consume-match
+     ,(lexical-let
+       ((predicate nil))
+
+       (if pf-terms
+         (progn
+           (setq predicate `(apply ',pf-relation '(,@(reverse pf-terms))) )
+           (if pf-closure
+             `(funcall ',pf-closure ,(parser-prune-lambda predicate))
+             predicate))
+
+         (if pf-closure
+           `(funcall ',pf-closure ',pf-relation)
+           `(funcall ',pf-relation) )))))
+
+(defun parser-prune-recursion-environment ( match-call )
+  "parser-prune-recursion-environment MATCH-CALL
+
+   The Match Call (parser-emit-match-call) is interpolated into a
+   dynamic scope with the bindings of pf-dynamic-scope from the
+   semantics table.
+
+   uses: pf-dynamic-scope"
+  (if pf-dynamic-scope
+    `(let
+       ,pf-dynamic-scope
+       ,match-call)
+  match-call))
+
+(defun parser-prune-match-phase ( match-call )
+  "parser-prune-match-phase
+
+   The match phase traps any parser-match-fail non-local exists
+   from the recursion of the match call. This trap is only
+   generated when there is conditional evaluation.
+
+   uses: pf-trap"
+  (lexical-let
+    ((call-env (parser-prune-recursion-environment match-call)))
+
+    (if pf-trap
+      `(catch 'parser-match-fail
+         ,call-env)
+      call-env)))
+
+;;----------------------------------------------------------------------
+;; Input Domain
+;;----------------------------------------------------------------------
+
+(defun parser-emit-input-domain ()
+  "Create the input effects of the Parser Function.
+
+   uses   : pf-input-domain, pf-branch, pf-input-branch
+   changes: pf-eval-setup, pf-match-effects, pf-fail-effects, pf-eval-effects
+  "
+  (catch 'done
+    (unless pf-input-domain (throw 'done nil))
+
+    (push `(parser-push) pf-eval-setup)
+
+    (if pf-input-branch
+      (progn
+        (push `(parser-pop) pf-match-effects)
+        (push `(parser-backtrack) pf-fail-effects))
+      (push `(parser-pop) pf-eval-effects)) ))
+
+;;----------------------------------------------------------------------
+;; AST Domain
+;;----------------------------------------------------------------------
+
+(defun parser-emit-node-transform ()
+  "Create the call to an AST transform function that preserves the
+   identity of the AST transformed.
+
+   uses: pf-ast-transform
+  "
+  (if pf-ast-transform
+    `(cons (car ast-root) (cdr (funcall ',pf-ast-transform ast-root)))
+    'ast-root))
+
+(defun parser-emit-ast-domain ()
+  "Generate any AST effects for the parser function.
+
+   The most basic AST effect is creating a AST node or list which
+   consists of a lexically scoped head and a dynamically scoped
+   tail.
+
+   Any AST effect will separate the logical and AST parts during
+   evaluation. This is indicated by a non-nil pf-ast-value.
+
+   pf-ast-value is nil or value interpreted as a code fragment or
+   signal.
+   "
+  (catch 'done
+    (unless pf-ast-domain (throw 'done nil))
+
+    ;; Initialize the head of the AST in the lexical scope.
+    (push `(ast-root ,(if pf-ast-node
+                        `(cons ',pf-ast-node nil)
+                        `(parser-make-ast))) pf-lexical-scope)
+
+    ;; Initialize the tail pointer in the dynamic scope.
+    (push `(parse-tree ast-root) pf-dynamic-scope)
+
+    (if pf-ast-discard
+      (setq pf-ast-value 'discard)
+
+      (progn
+        ;; a conditional selects the highest combinational complexity
+        ;; as the entry point for generating the code.
+
+        (cond
+          (pf-ast-node
+            (progn
+              (push `(put (car ast-root) 'parser-ast 'production) pf-eval-effects)
+
+              (setq pf-ast-value
+                (if pf-ast-branch
+                  (unless (eq pf-rvalue-phase 'entry-point)
+                    (progn
+                      (push `(parser-ast-add-node ,(parser-emit-node-transform)) pf-match-effects)
+                      'discard))
+                  `(progn
+                     (parser-ast-add-node ,(parser-emit-node-transform))
+                     nil))) ))
+
+          (pf-ast-transform
+            (if pf-ast-branch
+              (push
+                `(setq ast-root (funcall ',pf-ast-transform ast-root))
+                pf-match-effects)
+              (setq pf-ast-value `(funcall ',pf-ast-transform ast-root)))) )
+
+        (when pf-ast-branch
+          ;; deferred: does this generate dead code in any cases ?
+          (push `(setq ast-root nil) pf-fail-effects))
+
+        (unless pf-ast-value
+          (setq pf-ast-value 'ast-root))
+        ))
+    ))
+
+;;----------------------------------------------------------------------
+;; Eval Phase
+;;----------------------------------------------------------------------
+
+(defun parser-emit-value-with-effects ( effects rvalue )
+  "parser-emit-value-with-effects EFFECTS RVALUE
+
+   Create a return value with an optional list of side-effects.
+
+   the second parameter RVALUE is always returned. EFFECTS
+   can be a list or nil."
+  (if effects
+    `(progn
+       ,@effects
+       ,rvalue)
+    (if rvalue
+      `,rvalue)))
+
+(defun parser-return-discards-eval-p ()
+  (and
+    (or
+      pf-branch
+      pf-eval-logic)
+    (eq 'match pf-rvalue-phase)))
+
+(defun parser-save-result-p ()
+  (or
+    ;; eval-effects will always precede evaluation.  since the
+    ;; eval-effects evaluation cannot preserve the r-value of the
+    ;; match-call, binding is required.
+    pf-eval-effects
+
+    ;; when we lose the match call logical result in evaluation, but
+    ;; require it later to compute the r-value binding is required.
+    (parser-return-discards-eval-p) ))
+
+(defun parser-prune-eval-phase ( match-phase )
+  "Generate the evaluation phase stub."
+  ;; the match result by this phase is always logic only as any
+  ;; ast has already been consumed.
+
+  (when (parser-save-result-p)
+    (push `(match ,match-phase) pf-lexical-scope)
+    (setq match-phase 'match))
+
+  (setq pf-eval-value
     (cond
-      ((eq merge 'incomplete)
-        (signal 'parser-semantic-error
-          (format "incomplete instruction %s is a fatal error." (pp-to-string i-current))))
+      ;; the r-value of a branch match is either a entry-point special
+      ;; case of a complete match result, or a logical true value.
+      ((eq pf-rvalue-phase 'entry-point)
+        (progn
+          (setq pf-match-rvalue `(cons (parser-pos) ,pf-ast-value))
 
-      ((null merge)           (if tape-next
-                                (parser-semantic-union semantics tape-next)
-                                (cons 'finished nil)))
+          (when (null pf-eval-logic)
+            (setq pf-eval-logic 'parser-match-p))
 
-      ((eq merge 'collision)  (cons 'invalid tape))
+          'match))
 
-      ((eq merge 'no-fold)    (if (get primitive 'fold)
-                                (parser-semantic-union semantics tape-next)
-                                (cons 'invalid tape)))
+      (pf-branch
+        (progn
+          (setq pf-match-rvalue 't)
 
-      ((eq merge 'unkown)     (cons 'unkown  tape))
-      )))
+          (when (null pf-eval-logic)
+            (setq pf-eval-logic 'parser-match-p))
+
+          'logical))
+
+      (pf-eval-logic 'logical)))
+
+  (when pf-eval-logic
+    (setq match-phase `(,pf-eval-logic ,match-phase)))
+
+  (if pf-branch
+    `(if ,match-phase
+       ,@(seq-filter-nil
+           (parser-emit-value-with-effects pf-match-effects pf-match-rvalue)
+           (parser-emit-value-with-effects pf-fail-effects  pf-fail-rvalue)))
+    match-phase))
+
+;;----------------------------------------------------------------------
+;; Result Phase
+;;----------------------------------------------------------------------
+
+(defun parser-prune-result-operator ( generated )
+  (if pf-rvalue-logic
+    `(,pf-rvalue-logic generated)
+    generated))
+
+(defun parser-eval-did-split-result-p ()
+  (and
+    (not (eq 'entry-point pf-rvalue-phase))
+
+    (or
+      pf-ast-value
+      (eq 'logical pf-eval-value))) )
+
+(defun parser-prune-result-phase ( eval-phase )
+;; FIXME: do the documentation work as a backtrack from this
+;;        stage analysis wise.
+  (lexical-let
+    ((r-value (parser-prune-result-operator
+
+                (if (parser-eval-did-split-result-p)
+                  `(cons
+                     ,(cond
+                        ((parser-return-discards-eval-p)
+                          `(progn
+                             ,eval-phase
+                             (parser-match-p match)))
+
+                        ((eq 'match pf-eval-value)
+                          `(parser-match-p ,eval-phase))
+
+                        ((eq 'logical pf-eval-value)
+                          eval-phase))
+
+                     ,(if (or
+                            (null pf-ast-value)
+                            (eq 'discard pf-ast-value))
+                        'nil
+                        pf-ast-value))
+
+                  eval-phase) )))
+
+    (if pf-lexical-scope
+      `(lexical-let*
+         ;; the reverse is required so that the lexical bindings
+         ;; of the logic phase will be ordered last.
+         ,(reverse pf-lexical-scope)
+
+         ,@(if pf-eval-effects
+             (append pf-eval-effects (list eval-phase))
+             (list eval-phase)))
+      eval-phase)))
+
+(defun parser-pf-emit ( pf-closure )
+"parser-pf-emit CLOSURE
+
+The goal of this generator design is to produce elisp that
+appears more human, where human is opportunistic pruning of
+redundant code.
+
+To do this a set of valid primitives in the form of a closure is
+taken as an input. It is assumed that this set is the largest
+semantically valid set of primitives computed by
+parser-semantic-union.
+
+The minimal structure is a ordered sequence of a call phase
+evaluation phase, and function phase. The requirements of
+binding and special forms expand the minimal structure.
+
+Each of the domains adjusts it's filling of the code fragments
+based upon the structure required.
+"
+;;  (parser-compile-trace 'semantics (pp-closure-filtered 'null pf-closure))
+
+;;  (message "got here !")
+
+  (use-dynamic-closure-with
+    (parser-function-semantics pf-closure)
+
+    ((pf-trap           nil)
+     (pf-branch         nil)
+
+      ;; -> Binding structures.
+
+      (pf-lexical-scope  nil)
+      ;; list of bindings required by evaluation. These are largely due
+      ;; to side? effect ordering.
+
+      (pf-dynamic-scope  nil)
+      ;; list of bindings for a recursion environment, currently used to
+      ;; scope the AST tail.
+
+      ;; -> code fragments
+
+      (pf-eval-value     'match)
+
+      (pf-ast-value      nil)
+      ;; if the ast forces a split this is non-nil.
+
+      (pf-eval-setup     nil)
+      (pf-eval-effects   nil)
+
+      ;; Functions that modify the parser/AST state need to run a setup before
+      ;; the evaluation phase, and place their finish effects in either the
+      ;; gen-eval-always fragments, or the branch fragments.
+
+      ;; branching fragments.
+
+      (pf-match-effects  nil)
+      (pf-match-rvalue   nil)
+
+      (pf-fail-effects   nil)
+      (pf-fail-rvalue    nil))
+
+    (when (null pf-relation)
+      ;; set the default relation, optimize when there is only one term.
+
+      (cond
+        ((= 1 (length pf-terms))
+          ;; simple optimization, when a sequence has only a single call
+          ;; make it the predicate.
+          (progn
+            (setq pf-relation (car pf-terms))
+            (setq pf-terms nil)))
+
+        ((> (length pf-terms) 1)
+          ;; the default relational operator is and. to get a
+          ;; specific relational operator make sure it's the
+          ;; first instruction after the call phase.
+          (setq pf-relation 'parser-relation-and)) ))
+
+    ;; any time we have a closure, or sequence, we will always need to
+    ;; setup a basic AST effect, even if AST effects were not explicitly
+    ;; set by AST effects.
+
+    (when (or pf-closure pf-terms)
+      (setq pf-ast-domain t))
+
+    ;; effects cannot be generated until it's known if we are
+    ;; branching.
+    (when (or pf-ast-branch pf-input-branch)
+      (setq pf-branch t))
+
+    ;; whenever there is conditionality trap match-fail.
+    (when pf-branch
+      (setq pf-trap t))
+
+    (parser-emit-ast-domain)
+    (parser-emit-input-domain)
+
+    (parser-prune-lambda
+      pf-eval-setup
+
+      (list
+        (parser-prune-result-phase
+          (parser-prune-eval-phase
+            (parser-prune-match-phase
+              (parser-emit-match-call))))) )))
+
+;;----------------------------------------------------------------------
+;; compile co-routine
+;;----------------------------------------------------------------------
+
+(defvar parser-mtable-init-size 13
+  "initial size of the match-table objarray for storing match functions. the value
+   was chosen based on the recommendation of prime numbers for good hashing.
+
+   this value is a WAG. I still do not know how to compute a good value.")
+
+(defun parser-make-pf-table ()
+  "create a Match Function symbol table which is an objarray"
+  (make-vector parser-mtable-init-size 0))
+
+(defun parser-pf-link ( identifier &optional definition )
+  "Retrieve or define a Parser Function. the name of the production is required,
+   as well."
+  (lexical-let
+    ((identity (symbol-name identifier)))
+
+    (if (and
+          (functionp (intern identity match-table))
+          definition)
+
+      (signal 'parser-semantic-error (format "illegal redefinition of Match Function %s" identity))
+
+      (when definition
+        (fset (intern identity match-table) (eval definition))))
+
+    (intern identity match-table)))
+
+(defun parser-compile-terminate ( pf-closure )
+  (lexical-let
+    ((entry-point (parser-pf-single-call-p pf-closure)))
+
+    (unless entry-point
+      (setq entry-point (parser-pf-emit pf-closure))
+      (parser-compile-trace 'function entry-point))
+
+    entry-point))
+
+(defun parser-compile-closure ( semantics )
+  (lexical-let
+    ((closure semantics))
+
+    (lambda ( instruction data )
+;;      (message "compile instruction is %s %s\n" (pp-to-string instruction) (pp-to-string data))
+
+      (cond
+        ((eq instruction 'compile)
+          (parser-continue-after
+            'new-closure
+            (if data
+              (progn
+                (parser-pf-link data (parser-compile-terminate closure))
+                nil)
+              (parser-instruction 'call (parser-compile-terminate closure)) )))
+
+        ((eq instruction 'call)
+          (when (parser-pf-call closure (parser-pf-link data))
+            (parser-retry-after 'compile)))
+
+        ((parser-retry-after 'unknown)) ))))
+
+;;----------------------------------------------------------------------
+;; compiler core
+;;----------------------------------------------------------------------
+
+(defun parser-with-instruction ( f i )
+  "parser-with-instruction F I
+
+   apply function F to the instruction I extracting
+   the instruction and data from I into the two
+   arguments of F.
+
+   The value of F is returned.
+  "
+  (lexical-let
+    ((instruction i)
+     (data        nil))
+
+    (when (consp i)
+      (setq instruction (car i))
+      (setq data (cdr i)))
+
+    (funcall f instruction data)))
+
+(defun parser-feedback ( result present future )
+  (if (null result)
+    future
+    (lexical-let
+      ((splice-method (car result)))
+
+      (throw 'parser-compile-yield
+        (cond
+          ((eq splice-method 'retry)
+            (append (cdr result) (cons present future)))
+
+          ((eq splice-method 'continue)
+            (append (cdr result) future))
+          ))) ))
+
+(defun parser-co-compile ( closure )
+  "parser-co-compile CLOSURE
+
+  "
+  (lexical-let
+    ((continuation (parser-compile-closure closure)))
+
+    (lambda ( present future )
+      (parser-feedback (parser-with-instruction continuation present) present future))))
+
+(defun parser-co-union ( closure )
+  (lexical-let
+    ((continuation (parser-union-closure closure)))
+
+    (lambda ( present future )
+      (parser-feedback (funcall continuation present) present future))))
+
+(defun swap-cons ( x )
+  (cons (cdr x) (car x)))
+
+(defun parser-compile-run ( semantics instructions )
+  "parser-compile-run executes the compilation
+   instructions and applies parser-semantic-union to parser
+   primitives.
+
+   The role of interpreter-run in the Parser Compiler design is
+   to produce a maximum of parser functions (greedy) from the
+   tape ensuring that the semantics closure in machine-state can
+   produce a parser function in a single step.
+
+   The instruction set recognized by the interpreter is divided
+   into compile instructions that implement essentially a linker
+   with an Elisp objarray as the mechanism."
+
+  (parser-compile-trace 'primitives instructions)
+
+  (lexical-let*
+    ((closure    (if semantics
+                   semantics
+                   (parser-pf-new)))
+
+     (union      (parser-co-union closure))
+     (compile    (parser-co-compile closure))
+
+     (co-pair    (cons 'compile 'union))
+     (fail-count 0))
+
+    (while
+      (setq instructions
+        (lexical-let
+          ((yield (catch 'parser-compile-yield
+                    (consume-list instructions
+                      (if (eq 'union (car co-pair))
+                        union
+                        compile) )) ))
+
+;;;           (message "before yield: %s\n
+;;;                     after yield: %s\n
+;;;                     closure: %s\n"
+;;;             (pp-to-string instructions)
+;;;             (pp-to-string yield)
+;;;             (pp-closure closure))
+
+          (when yield
+            (parser-with-instruction
+              (lambda ( i data )
+                (cond
+                  ((eq i 'new-closure)
+                    (progn
+                      (setq closure   (parser-pf-new))
+                      (setq union     (parser-co-union closure))
+                      (setq compile   (parser-co-compile closure))
+
+                      (setq fail-count 0)
+                      (cdr yield)) )
+
+                  ((eq i 'unknown)
+                    (progn
+                      (incf fail-count)
+
+                      (when (> fail-count 2)
+                        (signal 'parser-syntactic-error
+                          (parser-diagnostic instructions
+                            "parser-compile-run"
+                            "a recognizable primitive or instruction")))
+
+                      (setq co-pair (swap-cons co-pair))
+                      (cdr yield)))
+
+                  ((eq i 'yield)
+                    (progn
+                      (setq fail-count 0)
+                      (setq co-pair (swap-cons co-pair))
+                      (cdr yield)))
+
+                  ((progn
+                     (setq fail-count 0)
+                     yield)) ))
+              (car yield)) ))))
+    closure))
 
 ;;----------------------------------------------------------------------
 ;; Tokens
@@ -1188,215 +1463,134 @@ and ast parts from either the match phase or evaluation phase.
     generated))
 
 ;;----------------------------------------------------------------------
-;; parser-semantic-interpreter - Welcome to the Machine.
+;; Parser Term Relations and Match Closures.
 ;;----------------------------------------------------------------------
 
-(defvar parser-mtable-init-size 13
-  "initial size of the match-table objarray for storing match functions. the value
-   was chosen based on the recommendation of prime numbers for good hashing.
+;; Parser Term Relations are the lowest level primitives. Delayed
+;; evaluation allows them to implement sequence logic.
 
-   this value is a WAG. I still do not know how to compute a good value.")
+(defun parser-relation-or ( &rest match-list )
+  "Combine Match Functions by or ; the first successful match is returned.
+   nil is returned if no matches are found."
+  (catch 'match
+    (dolist (match-func match-list)
+      (parser-trace-on match-func
+         (catch 'parser-match-fail
+           (lexical-let
+             ((match-result (funcall match-func)))
 
-(defun parser-make-symbol-table ()
-  "create a Match Function symbol table which is an objarray"
-  (make-vector parser-mtable-init-size 0))
+             (parser-trace-match match-func match-result)
 
-(defun parser-link-function ( identifier &optional definition )
-  "Retrieve or define a Match Function. the name of the production is required,
-   as well."
-  (lexical-let
-    ((identity (symbol-name identifier)))
+             (when match-result
+               (throw 'match match-result))) )))
+    nil))
 
-    (if (and
-          (functionp (intern identity match-table))
-          definition)
+(defun parser-relation-and ( &rest match-list )
+  (dolist (match-func match-list (parser-result-match))
+    (parser-trace-on match-func
+      (lexical-let
+        ((match-result (funcall match-func)))
+        (parser-trace-match match-func match-result)
 
-      (signal 'parser-semantic-error (format "illegal redefinition of Match Function %s" identity))
+        (unless (parser-match-p match-result)
+          (throw 'parser-match-fail nil))
 
-      (when definition
-        (fset (intern identity match-table) (eval definition))))
+        (parser-consume-match match-result))) ))
 
-    (intern identity match-table)))
+(defun parser-closure-greedy ( match-func )
+  "A positive closure predicate that applies the given
+   Match Function as many times as it Matches and returns true
+   if one or more matches was made."
+  (lexical-let ((matched-once nil))
 
-(defun parser-call-function ( semantics match-function )
-  "match-function is pushed onto the current sequence, returns t
-   if there was a semantic collision, nil otherwise."
-  (if (value-from-closure 'gen-predicate semantics)
-    t
-    (progn
-      (set
-        (symbol-from-closure 'gen-sequence semantics)
-        (cons match-function (value-from-closure 'gen-sequence semantics)))
-      nil)))
-
-(defun parser-semantic-interpreter-terminate ( semantics )
-  (lexical-let
-    ((entry-point (parser-function-generate semantics)))
-
-    (parser-compile-trace 'function entry-point)
-    entry-point))
-
-(defun parser-semantic-interpreter-run ( semantics instructions )
-  "parser-semantic-interpreter-run executes the compilation
-   instructions and applies parser-semantic-union to parser
-   primitives.
-
-   The role of interpreter-run in the Parser Compiler design is
-   to produce a maximum of parser functions (greedy) from the
-   tape ensuring that the semantics closure in machine-state can
-   produce a parser function in a single step.
-
-   The instruction set recognized by the interpreter is divided
-   into compile instructions that implement essentially a linker
-   with an Elisp objarray as the mechanism."
-
-  (parser-compile-trace 'primitives instructions)
-
-  (unless semantics
-    (setq semantics (copy-closure parser-function-semantics)))
-
-  (lexical-let
-    ((unrecognized nil)
-     (compiled nil))
-
-    (consume-list instructions
-      (lambda (cur-instr tape-next)
-        (lexical-let
-          ((instruction cur-instr)
-            (data       nil))
-
-          (when (consp cur-instr)
-            (setq instruction (car cur-instr))
-            (setq data (eval (cadr cur-instr))))
-
-          ;; strict order link gets first crack at the volatile compiled
-          ;; register before it disappears.
-
-          (if (eq instruction 'link)
-            (progn
-              (unless data (signal 'parser-syntactic-error "link instruction requires a identifier argument"))
-
-              (unless compiled
-                (signal 'parser-semantic-error "link instruction failed with a nil compiled register"))
-
-              (setq unrecognized nil)
-
-              (parser-link-function data compiled)
-              (setq compiled nil)
-
-              tape-next)
-
-            (progn
-
-              ;; flush compiled if a link instruction has not consumed it.
-              (when compiled
-                (when (parser-call-function semantics compiled)
-                  (signal 'parser-semantic-error
-                    "impossible !? attempt to flush volatile compiled register resulted in a semantic collision"))
-
-                (setq unrecognized nil)
-
-                (setq compiled nil))
-
-              (cond
-                ((eq instruction 'compile)
-                  (progn
-                    (setq unrecognized nil)
-
-                    ;; FIXME parser-function-generate can throw errors.
-                    (setq compiled (parser-semantic-interpreter-terminate semantics))
-                    (setq semantics (copy-closure parser-function-semantics))
-
-                    tape-next))
-
-                ((eq instruction 'call)
-                  (progn
-                    (setq unrecognized nil)
-
-                    (if (parser-call-function semantics (parser-link-function data))
-                      (cons 'compile (cons cur-instr tape-next))
-                      tape-next)))
-
-
-                (unrecognized (signal
-                                'parser-semantic-error
-                                (format "unrecognized instruction %s"
-                                  (pp-to-string cur-instr))))
-
-                ((lexical-let*
-                   ((semantic-halt (parser-semantic-union semantics (cons cur-instr tape-next)))
-                    (diagnostic (car semantic-halt)))
-
-                   (cond
-                     ((eq diagnostic 'finished) nil)
-                     ((eq diagnostic 'invalid) (cons 'compile (cdr semantic-halt)))
-                     ((eq diagnostic 'unkown)
-                       (progn
-                         (setq unrecognized t)
-                         (cdr semantic-halt))) )))) )) )))
-
-    (when compiled
-      (signal 'parser-semantic-error
-        "error: exiting parser-semantic-interpreter-continue with non-nil compiled register."))
-
-    semantics))
+    (catch 'parser-match-fail
+      (do ((production (funcall match-func) (funcall match-func)))
+          ((progn
+             (parser-consume-match production)
+             (setq matched-once t)
+             nil)) ))
+    (if matched-once (parser-result-match)) ))
 
 ;;----------------------------------------------------------------------
-;; grammar
+;; syntax
 ;;----------------------------------------------------------------------
 
-(define-hash-table-test 'eqn-hash 'eqn 'sxhash)
+(define-hash-table-test 'string-hash 'string-equal 'sxhash)
 
-(defun weak-primitive ( p )
-  (put p 'fold t)
-  p)
-
-(defun parser-create-sugar-table ()
+(defun parser-create-syntax-table ()
   (lexical-let
-    ((sugar (make-hash-table :test 'eqn-hash)))
+    ((syntax (make-hash-table :test 'string-hash)))
 
-    ;; entry-point is unique in that the generator is tied into
-    ;; the sugar to generate valid code. The entry-point is an
-    ;; extreme corner case that makes a mess out of the already
-    ;; hairy enough generator.
+    ;; call phase
 
-    (puthash 'entry-point
+    (puthash "relation"
+      (lambda ( term-relation )
+        (parser-strong-primitive 'relation term-relation)) syntax)
+
+    (puthash "or"
+      (parser-strong-primitive 'relation 'parser-relation-or) syntax)
+
+    (puthash "and"
       (list
-        `(link 'start)
-        'compile
-        `(ast-node 'start)
+        (parser-weak-primitive 'ast-branch)
+        (parser-weak-primitive 'input-branch)
+        (parser-strong-primitive 'relation 'parser-relation-and)) syntax)
 
-        (weak-primitive 'ast-branch)
-        (weak-primitive 'input-branch)
-        (weak-primitive 'relation-or)
+    (puthash "closure"
+      (lambda ( closure )
+        (parser-strong-primitive 'closure closure)) syntax)
 
-        'entry-point) sugar)
+    (puthash "greedy"
+      (parser-strong-primitive 'closure 'parser-closure-greedy) syntax)
 
-    (puthash 'production
-      (lambda ( arg )
-        (unless arg (signal 'parser-syntactic-error "production sugar requires a identifier argument"))
+    ;; eval phase
+
+    (puthash "negate-eval"
+      (parser-strong-primitive 'eval-operator 'parser-negate-match) syntax)
+
+    (puthash "production"
+      (lambda ( name )
         (list
-          `(call ,arg)
-          `(link ,arg)
-          'compile
-          `(ast-node ,arg) )) sugar)
+          (parser-instruction 'call name)
+          (parser-instruction 'compile name)
+          (parser-strong-primitive 'ast-node name))) syntax)
 
-    (puthash 'token
-      (lambda ( id &rest syntax )
-        (parser-link-function id (parser-token-function id syntax))
-        (list `(call ',id))) sugar)
+    (puthash "alias"
+      (lambda ( alias name )
+        (list
+          (parser-instruction 'call alias)
+          (parser-instruction 'compile alias)
+          (parser-strong-primitive 'ast-node name))) syntax)
 
-    (puthash 'transform
+    (puthash "entry-point"
+      ;; entry-point is unique in that the generator is tied into
+      ;; the syntax to generate valid code. The entry-point is an
+      ;; extreme corner case that makes a mess out of the already
+      ;; hairy enough generator.
+
+      (list
+        (parser-instruction 'compile 'start)
+        (parser-strong-primitive 'ast-node 'start)
+
+        (parser-weak-primitive 'ast-branch)
+        (parser-weak-primitive 'input-branch)
+        (parser-weak-primitive 'relation 'parser-relation-or)
+
+        (parser-strong-primitive 'return 'entry-point)) syntax)
+
+    (puthash "always-match"
+      (parser-strong-primitive 'return-operator 'parser-result-match) syntax)
+
+    (puthash "token"
+      (lambda ( id &rest token-syntax )
+        (parser-pf-link id (parser-token-function id token-syntax))
+        (parser-instruction 'call id)) syntax)
+
+    (puthash "transform"
       (lambda ( func )
-        (list `(ast-transform ,func))) sugar)
+        (parser-strong-primitive 'ast-transform func)) syntax)
 
-    (puthash 'and
-      (list 'ast-branch 'input-branch 'relation-and) sugar)
-
-    (puthash 'or
-      'relation-or sugar)
-
-    sugar))
+    syntax))
 
 (defun parser-escaped-primitive ( symbol )
   "
@@ -1410,22 +1604,22 @@ and ast parts from either the match phase or evaluation phase.
     (if (char-equal ?/ (aref name 0))
       (substring name 1))))
 
-(defun parser-sugar-primitive ( primitive iterator next )
-  "parser-sugar-primitive PRIMITIVE ITERATOR NEXT
+(defun parser-apply-primitive-syntax ( primitive iterator next )
+  "parser-apply-primitive-syntax PRIMITIVE ITERATOR NEXT
 
-   parser-sugar-primitive expands PRIMITIVE if there is
-   an expansion keyed in parser-semantic-sugar. The expansion
-   or the primitive is appended to the instruction sequence
-   with ITERATOR.
+   translates PRIMITIVE passing the resulting instruction list to
+   the iterator.
 
    Expansion may consume one or all of the remaining atoms
    from form given as the list NEXT. The tail of NEXT with
    the consumption of expansion's N arity removed is returned.
    "
-  ;; TODO convert PRIMITIVE argument to a string instead of a symbol.
-  ;; get rid of useless type conversions.
+
+  ;; FIXME: proper arity with argument checking instead of a blind
+  ;; apply of MAX.
+
   (lexical-let
-    ((expand (gethash (make-symbol primitive) parser-semantic-sugar)))
+    ((expand (gethash primitive parser-define-syntax)))
 
     (if expand
       (if (functionp expand)
@@ -1447,56 +1641,44 @@ and ast parts from either the match phase or evaluation phase.
           next))
 
       (progn
+        ;; I don't understand this, but I think it should be an eval instead.
+        ;; using intern limits it to a symbol.
         (funcall iterator (intern primitive))
         next))))
 
-(defun parser-sugar-form ( form )
+(defun parser-translate-primitive ( primitive &rest args )
   (let
-    ((semantics nil)
-     (iterator nil))
+    ((translation nil))
 
-    (setq iterator (tail-iterator 'semantics))
+    (parser-apply-primitive-syntax
+      primitive
+      (tail-iterator 'translation)
+      args)
 
-    (consume-list form
-      (lambda ( current next )
-        (parser-sugar-primitive
-          (parser-escaped-primitive current)
-          iterator
-          next)))
-      (reverse (tail-list semantics))))
+    (reverse (tail-list translation)) ))
 
-(defun parser-linked-call-only-p ( semantics )
-  (use-dynamic-closure semantics
-    (not (or eff-logic eff-input eff-ast gen-sequence))))
+(defun parser-nest-descent ( closure descent )
+  (if descent
+    (parser-compile-run closure
+      (list (parser-instruction 'call (parser-compile-terminate descent))))
+    closure))
 
-(defun parser-nest-descent ( ancestor descent )
-  (parser-resolve-predicate descent)
+(defun parser-nest-term ( closure term term-semantics )
+  (parser-compile-run closure
+    (list
+      (parser-instruction 'call
+        (parser-compile-terminate
+          (parser-compile-run nil
+            (cons (parser-instruction 'call term)
+              (if term-semantics (reverse term-semantics)))))))))
 
-  (set
-    (symbol-from-closure 'gen-sequence ancestor)
-    (cons
-      (if (parser-linked-call-only-p descent)
-        (value-from-closure 'gen-predicate descent)
-        (parser-semantic-interpreter-terminate descent))
-      (value-from-closure 'gen-sequence ancestor)))
-  ancestor)
-
-(defun parser-nest-term ( ancestor-closure term term-semantics )
-  (parser-call-function ancestor-closure
-    (if term-semantics
-      (parser-semantic-interpreter-terminate
-        (parser-semantic-interpreter-run nil
-          (cons (list 'call term) (reverse term-semantics))))
-
-      (parser-link-function term) )))
-
-(defun parser-translate-grammar-form ( form )
-  "parser-translate-grammar-form FORM
+(defun parser-translate-form ( form )
+  "parser-translate-form FORM
 
    Recursive compile of the parser definition syntax of a FORM
    The descent is depth first. After the calls or terms of the
    list have been resolved by descent the primitives are compiled
-   by parser-semantic-interpreter-run.
+   by parser-compiler-run.
 
    primitives are symbols escaped by a leading / character, eg:
      /ast-branch
@@ -1507,7 +1689,7 @@ and ast parts from either the match phase or evaluation phase.
    with semantics of the term to the left, instead of the form.
   "
   (let ;; changing this to a lexical-let bugs tail-iterator. why ?
-    ((semantic-closure (copy-closure parser-function-semantics))
+    ((closure (parser-pf-new))
 
      (form-semantics nil)
      (form-iterator nil)
@@ -1519,20 +1701,20 @@ and ast parts from either the match phase or evaluation phase.
 
     (setq form-iterator (tail-iterator 'form-semantics))
 
+;;    (message "translating form: %s\n" (pp-to-string form))
+
     (consume-list form
       (lambda ( current next )
         (if (listp current)
-          (lexical-let
-            ((descent (parser-translate-grammar-form current)))
-            (when descent
-              (parser-nest-descent semantic-closure descent))
+          (progn
+            (setq closure (parser-nest-descent closure (parser-translate-form current)))
             next)
 
           (lexical-let
             ((primitive (parser-escaped-primitive current)))
 
             (if primitive
-              (parser-sugar-primitive
+              (parser-apply-primitive-syntax
                 primitive
                 (if call-to
                   call-iterator
@@ -1541,27 +1723,20 @@ and ast parts from either the match phase or evaluation phase.
 
               (progn
                 (when call-to
-                  (setq call-semantics (tail-list call-semantics))
-                  (parser-nest-term semantic-closure call-to call-semantics))
+                  (setq closure
+                    (parser-nest-term closure call-to (tail-list call-semantics))))
 
                 (setq call-to current)
                 (setq call-iterator (tail-iterator 'call-semantics))
-
                 next)) )) ))
 
     (when call-to
-      (setq call-semantics (tail-list call-semantics))
+      (setq closure
+        (parser-nest-term closure call-to (tail-list call-semantics))))
 
-      (if call-semantics
-        (parser-nest-term semantic-closure call-to call-semantics)
-        (parser-call-function semantic-closure call-to)))
-
-    (setq form-semantics (tail-list form-semantics))
-
-    (when form-semantics
-      (parser-semantic-interpreter-run semantic-closure (reverse form-semantics)))
-
-    semantic-closure))
+    (if form-semantics
+      (parser-compile-run closure (reverse (tail-list form-semantics)))
+      closure)))
 
 ;;----------------------------------------------------------------------
 ;; utilities
@@ -1582,8 +1757,10 @@ and ast parts from either the match phase or evaluation phase.
       (erase-buffer)
       (insert (format "release: %s\ngrammar:\n%s\n" parser-release-version (pp-to-string form))))
 
-    (parser-semantic-interpreter-terminate
-      (parser-translate-grammar-form form))
+    (parser-compile-terminate
+      (parser-compile-run
+        (parser-translate-form form)
+        (parser-translate-primitive "entry-point")))
 
     (pop-to-buffer parser-compile-trace t)))
 
@@ -1714,10 +1891,10 @@ STrace List? ")
 
     FI -> Sugaring
 
-  The primitives of the Semantic Interpreter are so simple that
+  The instructions of the Semantic Interpreter are so simple that
   they are almost always require a sequence to define useful
   Parser Functions. A sugaring process expands primitives into
-  sequences of primitives and takes arguments from the form.
+  sequences of instructions and takes arguments from the form.
 
   Arguments must not be escaped, and should be quoted if their
   value is void as arguments are eval'd so that values from
@@ -1902,14 +2079,14 @@ STrace List? ")
     /negate-function
     /optional
 
-    /negate-eval
+    /negate-match
 
     stub.
   "
   (catch 'terminate-compile
     (let
-      ((parser-semantic-sugar (parser-create-sugar-table))
-       (match-table (parser-make-symbol-table)))
+      ((parser-define-syntax (parser-create-syntax-table))
+       (match-table           (parser-make-pf-table)))
 
       (when (eq fn 'dump)
         (parser-compile-dump grammar)
@@ -1917,18 +2094,19 @@ STrace List? ")
 
       (condition-case diagnostic
         (progn
-          (parser-semantic-interpreter-run
-            (parser-translate-grammar-form grammar)
-            (parser-sugar-form `(/entry-point)))
+          (parser-compile-run
+            (parser-translate-form grammar)
+            (parser-translate-primitive "entry-point"))
 
           (fset fn
             (eval `(lambda ( start-pos )
                      (save-excursion
                        (let
-                         ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+                         ((parser-trace-flag t)
+                          (parser-position (cons start-pos nil))) ;; initialize the backtrack stack
                          (goto-char start-pos)
 
-                         (funcall ',(parser-link-function 'start)) ))) )))
+                         (funcall ',(parser-pf-link 'start)) ))) )))
 
         (parser-syntatic-error
           (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
@@ -1937,5 +2115,5 @@ STrace List? ")
           (message "Invalid semantics detected %s" (cdr diagnostic)))
 
         (parser-compile-error
-          (message "Internal Parser Compiler error %s" (cdr diagnostic))) )))
+          (message "ICE: Internal Parser Compiler error %s" (cdr diagnostic))) )))
   nil)
