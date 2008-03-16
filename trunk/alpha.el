@@ -164,7 +164,8 @@
 
    This function amounts to a TCO kludge allowing the function to
    be expressed in a recursive form."
-  (while (setq list (funcall consume (car list) (cdr list))))
+  (when list
+    (while (setq list (funcall consume (car list) (cdr list)))))
   nil)
 
 (defun apply-n-times ( func n x )
@@ -198,6 +199,11 @@
     ((null (cdr x)) x)
     (setq x (cdr x))))
 
+(defun precise-list-p ( x )
+  (and
+    (consp x)
+    (consp (cdr x))))
+
 (defun tail-iterator ( bind-to )
   (set bind-to (cons nil nil))
 
@@ -205,7 +211,7 @@
     ((tail (symbol-value bind-to)))
 
     (lambda ( x )
-      (if (listp x)
+      (if (precise-list-p x)
         (setq tail (tail-iterator-merge tail x))
         (progn
           (setcdr tail (cons x nil))
