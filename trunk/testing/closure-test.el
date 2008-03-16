@@ -23,3 +23,15 @@
   (message "red is %s" red)
   (message "blue is %s" blue))
 
+
+(use-dynamic-closure-with
+  (test-closure foo-closure)
+
+  ((foo  "foo!")
+   (bar  "bar!"))
+
+   (message "red is %s" red)
+   (message "blue is %s" blue)
+
+   (message "foo is %s" foo)
+   (message "bar is %s" bar))
