@@ -412,8 +412,8 @@ supplied as the single argument NODE."
   "parser-ast-add-node NODE
 
 Adding a node X to ast Y simply makes X an element of Y. The
-structure if X is opaque to this operation unlike merging making
-it suitable for injecting arbitrary data into AST.
+structure of X is opaque to this operation unlike merging -
+suitable for injecting arbitrary data into AST.
 
 the A node is dynamically scoped as the tail while the X node is
 supplied as the single argument NODE."
