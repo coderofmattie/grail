@@ -837,8 +837,6 @@ supplied as the single argument NODE."
                ;; when we don't know what it is.
                (('unknown)) )))
 
-;;          (message "merge is %s\n" (pp-to-string merge))
-
           ;; make sure that a modification of the semantic closure
           ;; closes the call phase.
           (when (and (null merge) (null pf-call-phase))
@@ -878,7 +876,7 @@ supplied as the single argument NODE."
          (progn
            (setq predicate `(apply ',pf-relation '(,@(reverse pf-terms))) )
            (if pf-closure
-             `(funcall ',pf-closure ,(parser-prune-lambda predicate))
+             `(funcall ',pf-closure ,(parser-prune-lambda (list predicate)))
              predicate))
 
          (if pf-closure
@@ -1499,7 +1497,7 @@ based upon the structure required.
     ((generated
        `(lambda ()
           (when (looking-at ,@(car syntax))
-            (parser-result-token (cons '',id ,(parser-token-constructor (cdr syntax))))))))
+            (parser-result-token (cons ',id ,(parser-token-constructor (cdr syntax))))))))
     (parser-compile-trace
       "parser-token-function: emit token."
       (pp-to-string)
@@ -2156,10 +2154,7 @@ STrace List? ")
      (match-table          (parser-make-pf-table)))
 
     (if (eq fn 'dump)
-      (progn
-        (parser-compile-dump grammar)
-        nil)
-      (progn
-        (fset fn
-          (eval (parser-compile-start grammar)))
-        nil)) ))
+      (parser-compile-dump grammar)
+      (fset fn
+        (eval (parser-compile-start grammar))))
+    nil))
