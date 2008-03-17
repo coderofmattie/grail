@@ -17,6 +17,17 @@
         "test"
         "the right thing"))))
 
+(parser-pp-tape
+        (list
+        (parser-instruction 'compile 'start)
+        (parser-strong-primitive 'ast-node 'start)
+
+        (parser-weak-primitive 'ast-branch)
+        (parser-weak-primitive 'input-branch)
+        (parser-weak-primitive 'relation 'parser-relation-or)
+
+        (parser-strong-primitive 'return 'entry-point)))
+
 ;;----------------------------------------------------------------------
 ;; parser function generation testing.
 ;;----------------------------------------------------------------------
@@ -41,6 +52,12 @@
   (/token whitespace "[[:blank:]]+"))
 
 (parser-compile test-parser
+  /and
+  (/token word "[[:alpha:]]+")
+  (/token whitespace "[[:blank:]]+"))
+
+(parser-compile test-parser
+  /greedy
   /and
   (/token word "[[:alpha:]]+")
   (/token whitespace "[[:blank:]]+"))
