@@ -572,9 +572,9 @@ supplied as the single argument NODE."
 (defun parser-pp-instruction ( x )
   (if (consp x)
     (concat
-      "i " (symbol-name (car x)) " data= " (pp-to-string (cdr x)))
+      "i> " (symbol-name (car x)) " data= " (pp-to-string (cdr x)))
     (concat
-      "p " (symbol-name x) " v= " (pp-to-string (symbol-value x)))))
+      "p> " (symbol-name x) " v= " (pp-to-string (symbol-value x)))))
 
 (defun parser-pp-tape ( tape )
   (apply 'concat
@@ -598,7 +598,7 @@ supplied as the single argument NODE."
 
 (defmacro parser-compile-trace ( name conv &rest args )
   `(when (parser-compile-trace-p)
-     (parser-compile-trace-append (format "%s:\n\n" ,name))
+     (parser-compile-trace-append (format "%s\n\n" ,name))
 
      ,@(if args
          (mapcar
@@ -610,6 +610,10 @@ supplied as the single argument NODE."
                                  ,data))))
            args)
          'nil) ))
+
+(defmacro parser-compile-message ( from message )
+  (when (parser-compile-trace-p)
+     (parser-compile-trace-append (format "%s: %s\n" from message))))
 
 ;;----------------------------------------------------------------------
 ;; Parser Feedback
@@ -1284,7 +1288,9 @@ based upon the structure required.
       (setq entry-point (parser-pf-emit pf-closure))
       (parser-compile-trace
         "parser-compile-terminate: emit function."
-        (pp-to-string)
+        (pp-closure
+         pp-to-string)
+        pf-closure
         entry-point))
 
     entry-point))
@@ -1421,6 +1427,8 @@ based upon the structure required.
                 (cond
                   ((eq i 'new-closure)
                     (progn
+                      (parser-compile-message "parser-compile-run" "Creating new closure.")
+
                       (setq closure   (parser-pf-new))
                       (setq union     (parser-co-union closure))
                       (setq compile   (parser-co-compile closure))
@@ -1737,13 +1745,13 @@ based upon the structure required.
 
     (setq form-iterator (tail-iterator 'form-semantics))
 
-;;    (message "translating form: %s\n" (pp-to-string form))
-
     (consume-list form
       (lambda ( current next )
         (if (listp current)
           (progn
+            (parser-compile-message "parser-translate-form" "descend")
             (setq closure (parser-nest-descent closure (parser-translate-form current)))
+            (parser-compile-message "parser-translate-form" "return")
             next)
 
           (lexical-let
@@ -1784,8 +1792,7 @@ based upon the structure required.
       `(lambda ( start-pos )
          (save-excursion
            (let
-             ((parser-trace-flag t)
-              (parser-position (cons start-pos nil))) ;; initialize the backtrack stack
+             ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
              (goto-char start-pos)
 
              (funcall ',(parser-pf-link 'start)) ))))
@@ -1813,6 +1820,9 @@ based upon the structure required.
   "Dump the code generation of the parser compiler given a quoted form."
   (let
     ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
+
+    (with-current-buffer parser-compile-trace
+      (erase-buffer))
 
     (parser-compile-trace-append
       (format "release: %s\ngrammar:\n%s\n" parser-release-version (pp-to-string grammar)))
