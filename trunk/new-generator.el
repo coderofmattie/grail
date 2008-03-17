@@ -61,6 +61,8 @@
 
 ;; 1. All of the PEG predicates (missing not)
 
+;; 2. Fix the issue with tracing the start symbol.
+
 ;; 3. Canonical tree walk implemented as parser-ast-node. a real pre-requisite to
 ;;    sane user implementation of transforms.
 
@@ -94,7 +96,7 @@
 ;; 1986, Addison Wesley
 
 (require 'cl)
-(require 'mattie-elisp) ;; USES define-error make-anon-func list-filter-nil
+(require 'mattie-elisp)
 (require 'closure)
 
 (define-error parser-compile-error   "parser error")
@@ -212,6 +214,7 @@
   (catch 'abort
     (unless (and (boundp 'parser-trace) (listp parser-trace)) (throw 'abort nil))
 
+    ;; FIXME: replace this junk with assoc.
     (lexical-let
       ((toggle (eval (cons 'or (mapcar
                                  (lambda ( trace-on )
@@ -256,19 +259,6 @@
          (funcall code-func))
 
        (funcall code-func)) ))
-
-(defun parser-compile-trace ( type data )
-  (when (and (boundp 'parser-compile-trace) (bufferp parser-compile-trace))
-    (with-current-buffer parser-compile-trace
-      (goto-char (point-max))
-      (insert
-        (format
-          (cond
-            ((eq type 'function)   "generated:\n%s\n")
-            ((eq type 'primitives) "primitives: %s\n")
-            ((eq type 'semantics)  "semantics:\n%s\n")
-            ((eq type 'syntax)     "syntax: %s\n"))
-          (pp-to-string data))))))
 
 ;;----------------------------------------------------------------------
 ;; Match Result Type
@@ -578,6 +568,48 @@ supplied as the single argument NODE."
   (if data
     (cons instr data)
     instr))
+
+(defun parser-pp-instruction ( x )
+  (if (consp x)
+    (concat
+      "i " (symbol-name (car x)) " data= " (pp-to-string (cdr x)))
+    (concat
+      "p " (symbol-name x) " v= " (pp-to-string (symbol-value x)))))
+
+(defun parser-pp-tape ( tape )
+  (apply 'concat
+    (mapcar
+      (lambda (i)
+        (format "%s\n" (parser-pp-instruction i)))
+      tape)))
+
+;;----------------------------------------------------------------------
+;; compile trace
+;;----------------------------------------------------------------------
+
+(defun parser-compile-trace-p ()
+  "return non-nil if a compile trace is available"
+  (and (boundp 'parser-compile-trace) (bufferp parser-compile-trace)))
+
+(defun parser-compile-trace-append ( trace )
+  (with-current-buffer parser-compile-trace
+    (goto-char (point-max))
+      (insert trace)))
+
+(defmacro parser-compile-trace ( name conv &rest args )
+  `(when (parser-compile-trace-p)
+     (parser-compile-trace-append (format "%s:\n\n" ,name))
+
+     ,@(if args
+         (mapcar
+           (lambda ( data )
+             `(parser-compile-trace-append
+                (format "%s\n" (,(if (> (length conv) 1)
+                                   (pop conv)
+                                   (car conv))
+                                 ,data))))
+           args)
+         'nil) ))
 
 ;;----------------------------------------------------------------------
 ;; Parser Feedback
@@ -1130,10 +1162,6 @@ binding and special forms expand the minimal structure.
 Each of the domains adjusts it's filling of the code fragments
 based upon the structure required.
 "
-;;  (parser-compile-trace 'semantics (pp-closure-filtered 'null pf-closure))
-
-;;  (message "got here !")
-
   (use-dynamic-closure-with
     (parser-function-semantics pf-closure)
 
@@ -1201,7 +1229,7 @@ based upon the structure required.
     (when (or pf-ast-branch pf-input-branch)
       (setq pf-branch t))
 
-    ;; whenever there is conditionality trap match-fail.
+    ;; whenever there is conditional evaluation trap match-fail.
     (when pf-branch
       (setq pf-trap t))
 
@@ -1254,7 +1282,10 @@ based upon the structure required.
 
     (unless entry-point
       (setq entry-point (parser-pf-emit pf-closure))
-      (parser-compile-trace 'function entry-point))
+      (parser-compile-trace
+        "parser-compile-terminate: emit function."
+        (pp-to-string)
+        entry-point))
 
     entry-point))
 
@@ -1263,8 +1294,6 @@ based upon the structure required.
     ((closure semantics))
 
     (lambda ( instruction data )
-;;      (message "compile instruction is %s %s\n" (pp-to-string instruction) (pp-to-string data))
-
       (cond
         ((eq instruction 'compile)
           (parser-continue-after
@@ -1284,6 +1313,11 @@ based upon the structure required.
 ;;----------------------------------------------------------------------
 ;; compiler core
 ;;----------------------------------------------------------------------
+
+;; The merging rules of the semantic union, the recovery mechanism of
+;; emitting and nesting, and the feedback mechanism that couple them
+;; as co-routines encompass the mechanism that reduces the grammar
+;; classes to a uniform function design.
 
 (defun parser-with-instruction ( f i )
   "parser-with-instruction F I
@@ -1353,8 +1387,6 @@ based upon the structure required.
    into compile instructions that implement essentially a linker
    with an Elisp objarray as the mechanism."
 
-  (parser-compile-trace 'primitives instructions)
-
   (lexical-let*
     ((closure    (if semantics
                    semantics
@@ -1371,16 +1403,17 @@ based upon the structure required.
         (lexical-let
           ((yield (catch 'parser-compile-yield
                     (consume-list instructions
-                      (if (eq 'union (car co-pair))
+                      (if (lexical-let
+                            ((current (car co-pair)))
+
+                            (parser-compile-trace
+                              (concat "parser-compile-run: applying " (symbol-name current))
+                              (parser-pp-tape)
+                              instructions)
+
+                            (eq 'union current))
                         union
                         compile) )) ))
-
-;;;           (message "before yield: %s\n
-;;;                     after yield: %s\n
-;;;                     closure: %s\n"
-;;;             (pp-to-string instructions)
-;;;             (pp-to-string yield)
-;;;             (pp-closure closure))
 
           (when yield
             (parser-with-instruction
@@ -1459,7 +1492,10 @@ based upon the structure required.
        `(lambda ()
           (when (looking-at ,@(car syntax))
             (parser-result-token (cons '',id ,(parser-token-constructor (cdr syntax))))))))
-    (parser-compile-trace 'function generated)
+    (parser-compile-trace
+      "parser-token-function: emit token."
+      (pp-to-string)
+      generated)
     generated))
 
 ;;----------------------------------------------------------------------
@@ -1778,11 +1814,12 @@ based upon the structure required.
   (let
     ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
 
-    (with-current-buffer parser-compile-trace
-      (erase-buffer)
-      (insert (format "release: %s\ngrammar:\n%s\n" parser-release-version (pp-to-string form))))
+    (parser-compile-trace-append
+      (format "release: %s\ngrammar:\n%s\n" parser-release-version (pp-to-string grammar)))
 
-    (parser-compile-trace 'function
+    (parser-compile-trace
+      "parser-compile-dump: dumping entry-point"
+      (pp-to-string)
       (parser-compile-start grammar))
 
     (pop-to-buffer parser-compile-trace t)))
@@ -1848,8 +1885,7 @@ STrace List? ")
 
   To dump the Parser Source specify dump as the FN symbol. The
   compile is traced in a separate buffer \"parser-compile-dump\"
-  which is displayed when the compile is complete. Note: the
-  compile dump omits the entry point FN function.
+  which is displayed when the compile is complete.
 
   Stub: Tracing.
 
@@ -1903,9 +1939,8 @@ STrace List? ")
   preserve the semantics of a sequence.
 
   A primitive sequence is interpreted right to left with
-  arbitrary primitive order Within the sequence delineated
-  by a set of three effects that can be combined in a Parser
-  Function.
+  arbitrary primitive order Within the sequence delineated by the
+  effects that can be combined in a Parser Function.
 
   The only form that cannot be compiled is primitives without
   terms, or in canonical parsing terminology a production with
