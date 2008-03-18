@@ -868,8 +868,7 @@ supplied as the single argument NODE."
    function after parser-consume-match strips any AST.
 
    pf-terms is reversed allowing the list to be constructed as a stack.
-
-   uses: pf-relation, pf-terms, pf-closure"
+  "
   `(parser-consume-match
      ,(lexical-let
        ((predicate nil))
@@ -891,8 +890,7 @@ supplied as the single argument NODE."
    The Match Call (parser-emit-match-call) is interpolated into a
    dynamic scope with the bindings of pf-dynamic-scope from the
    semantics table.
-
-   uses: pf-dynamic-scope"
+  "
   (if pf-dynamic-scope
     `(let
        ,pf-dynamic-scope
@@ -905,8 +903,7 @@ supplied as the single argument NODE."
    The match phase traps any parser-match-fail non-local exists
    from the recursion of the match call. This trap is only
    generated when there is conditional evaluation.
-
-   uses: pf-trap"
+  "
   (lexical-let
     ((call-env (parser-prune-recursion-environment match-call)))
 
@@ -920,11 +917,7 @@ supplied as the single argument NODE."
 ;;----------------------------------------------------------------------
 
 (defun parser-emit-input-domain ()
-  "Create the input effects of the Parser Function.
-
-   uses   : pf-input-domain, pf-branch, pf-input-branch
-   changes: pf-eval-setup, pf-match-effects, pf-fail-effects, pf-eval-effects
-  "
+  "Create the input effects of the Parser Function."
   (catch 'done
     (unless pf-input-domain (throw 'done nil))
 
@@ -943,8 +936,6 @@ supplied as the single argument NODE."
 (defun parser-emit-node-transform ()
   "Create the call to an AST transform function that preserves the
    identity of the AST transformed.
-
-   uses: pf-ast-transform
   "
   (if pf-ast-transform
     `(cons (car ast-root) (cdr (funcall ',pf-ast-transform ast-root)))
@@ -1360,9 +1351,7 @@ based upon the structure required.
           ))) ))
 
 (defun parser-co-compile ( closure )
-  "parser-co-compile CLOSURE
-
-  "
+  "parser-co-compile CLOSURE"
   (lexical-let
     ((continuation (parser-compile-closure closure)))
 
@@ -1391,8 +1380,8 @@ based upon the structure required.
 
    The instruction set recognized by the interpreter is divided
    into compile instructions that implement essentially a linker
-   with an Elisp objarray as the mechanism."
-
+   with an Elisp objarray as the mechanism.
+  "
   (lexical-let*
     ((closure    (if semantics
                    semantics
@@ -1558,6 +1547,9 @@ based upon the structure required.
 ;;----------------------------------------------------------------------
 ;; syntax
 ;;----------------------------------------------------------------------
+
+;; The parser hacking resides in the syntax where instruction sequences
+;; are presented through an interface.
 
 (define-hash-table-test 'string-hash 'string-equal 'sxhash)
 
@@ -1814,10 +1806,17 @@ based upon the structure required.
   "Return a string of the input bounded by the token match."
   (filter-buffer-substring start end nil t))
 
-;; make it read-only after the wipe and insert, make it elisp with highlighting.
-;; then it might be worthy as a utility function.
 (defun parser-compile-dump ( grammar )
   "Dump the code generation of the parser compiler given a quoted form."
+
+  ;; The goal of dumping is to ensure that any user can create an
+  ;; observation of the compiler's behavior that is complete enough
+  ;; for analysis.
+
+  ;; Compiler Version, User Grammar, emitted code, compile core
+  ;; tracing, and light recursion tracing of form translation to
+  ;; delineate the compilation of a form in the output.
+
   (let
     ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
 
