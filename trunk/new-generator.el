@@ -101,6 +101,8 @@
 
 (define-error parser-compile-error   "parser error")
 (define-error parser-syntactic-error "syntactic error" parser-compile-error)
+
+;; is this even useful anymore ?
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
 (defconst parser-release-version "0.0.1"
@@ -574,7 +576,7 @@ supplied as the single argument NODE."
     (concat
       "i> " (symbol-name (car x)) " data= " (pp-to-string (cdr x)))
     (concat
-      "p> " (symbol-name x) " v= " (pp-to-string (symbol-value x)))))
+      "p> " (symbol-name x) " v= " (if (boundp x) (pp-to-string (symbol-value x)) "void"))))
 
 (defun parser-pp-tape ( tape )
   (apply 'concat
@@ -835,7 +837,7 @@ supplied as the single argument NODE."
                ((eqn primitive 'return-operator) (parser-pf-set-primitive 'pf-rvalue-logic primitive))
 
                ;; when we don't know what it is.
-               (('unknown)) )))
+               (t 'unknown) )))
 
           ;; make sure that a modification of the semantic closure
           ;; closes the call phase.
@@ -1795,8 +1797,8 @@ based upon the structure required.
 
              (funcall ',(parser-pf-link 'start)) ))))
 
-      (parser-syntatic-error
-        (message "Syntactic error in grammar or semantics %s" (cdr diagnostic)))
+      (parser-syntactic-error
+        (message "Syntactic Error: %s" (cdr diagnostic)))
 
       (parser-semantic-error
         (message "Invalid semantics detected %s" (cdr diagnostic)))
