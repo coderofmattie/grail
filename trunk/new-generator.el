@@ -1195,6 +1195,8 @@ based upon the structure required.
       (pf-fail-effects   nil)
       (pf-fail-rvalue    nil))
 
+    ;; FIXME: this optimization is still hosed.
+
     (when (null pf-relation)
       ;; set the default relation, optimize when there is only one term.
 
@@ -1244,15 +1246,15 @@ based upon the structure required.
 ;; compile co-routine
 ;;----------------------------------------------------------------------
 
-(defvar parser-mtable-init-size 13
-  "initial size of the match-table objarray for storing match functions. the value
+(defvar parser-pf-table-tuning 13
+  "initial size of the parser-pf-table objarray for storing match functions. the value
    was chosen based on the recommendation of prime numbers for good hashing.
 
    this value is a WAG. I still do not know how to compute a good value.")
 
 (defun parser-make-pf-table ()
   "create a Match Function symbol table which is an objarray"
-  (make-vector parser-mtable-init-size 0))
+  (make-vector parser-pf-table-tuning 0))
 
 (defun parser-pf-link ( identifier &optional definition )
   "Retrieve or define a Parser Function. the name of the production is required,
@@ -1261,15 +1263,15 @@ based upon the structure required.
     ((identity (symbol-name identifier)))
 
     (if (and
-          (functionp (intern identity match-table))
+          (functionp (intern identity parser-pf-table))
           definition)
 
       (signal 'parser-semantic-error (format "illegal redefinition of Match Function %s" identity))
 
       (when definition
-        (fset (intern identity match-table) (eval definition))))
+        (fset (intern identity parser-pf-table) (eval definition))))
 
-    (intern identity match-table)))
+    (intern identity parser-pf-table)))
 
 (defun parser-compile-terminate ( pf-closure )
   (lexical-let
@@ -1655,7 +1657,7 @@ based upon the structure required.
   ;; apply of MAX.
 
   (lexical-let
-    ((expand (gethash primitive parser-define-syntax)))
+    ((expand (gethash primitive parser-syntax)))
 
     (if expand
       (if (functionp expand)
@@ -1725,15 +1727,19 @@ based upon the structure required.
    with semantics of the term to the left, instead of the form.
   "
   (let ;; changing this to a lexical-let bugs tail-iterator. why ?
-    ((closure (parser-pf-new))
+    ((closure        (parser-pf-new))
 
      (form-semantics nil)
-     (form-iterator nil)
+     (form-iterator  nil)
 
-     (call-to nil)
+     (call-to        nil)
 
      (call-semantics nil)
-     (call-iterator nil))
+     (call-iterator  nil)
+
+     (effect-only    (when (eq 'define (car form))
+                       (setq form (cdr form))
+                       t)))
 
     (setq form-iterator (tail-iterator 'form-semantics))
 
@@ -1770,11 +1776,24 @@ based upon the structure required.
       (setq closure
         (parser-nest-term closure call-to (tail-list call-semantics))))
 
-    (if form-semantics
-      (parser-compile-run closure (reverse (tail-list form-semantics)))
-      closure)))
+    (lexical-let
+      ((rvalue (if form-semantics
+                 (parser-compile-run closure (reverse (tail-list form-semantics)))
+                 closure)))
+
+      (if effect-only
+        (progn
+          (parser-compile-message "parser-translate-form" "discarding effect-only descent.")
+          nil)
+        rvalue)) ))
 
 (defun parser-compile-start ( grammar )
+  "parser-compile-start GRAMMAR
+
+   Start the compilation process with GRAMMAR producing either a
+   un-evaluated entry-point lambda for the start production or
+   nil.
+  "
   (condition-case diagnostic
     (progn
       (parser-compile-run
@@ -1790,17 +1809,43 @@ based upon the structure required.
              (funcall ',(parser-pf-link 'start)) ))))
 
       (parser-syntactic-error
-        (message "Syntactic Error: %s" (cdr diagnostic)))
+        (message "Syntactic Error: %s" (cdr diagnostic))
+        nil)
 
       (parser-semantic-error
-        (message "Invalid semantics detected %s" (cdr diagnostic)))
+        (message "Semantic Error: %s" (cdr diagnostic))
+        nil)
 
       (parser-compile-error
-        (message "ICE: Internal Parser Compiler error %s" (cdr diagnostic))) ))
+        (message "ICE: Internal Parser Compiler error %s" (cdr diagnostic))
+        nil) ))
 
 ;;----------------------------------------------------------------------
 ;; utilities
 ;;----------------------------------------------------------------------
+
+(defun parser-define ( fn parser )
+  "parser-define SYMBOL PARSER
+
+   Set SYMBOL as a compiled parser. Use like this:
+
+   (parser-define 'foo (parser-compile grammar))
+
+   You can then call the parser as a normal function
+   symbol:
+
+   (foo)
+
+   The return value is either the symbol, or nil if the
+   parser failed to compile.
+  "
+
+    (when parser
+      (lexical-let
+        ((parser-binding  (intern (symbol-name fn))))
+
+        (fset parser-binding (eval parser))
+        parser-binding)))
 
 (defun parser-token-string ( start end )
   "Return a string of the input bounded by the token match."
@@ -1866,12 +1911,11 @@ STrace List? ")
 ;; macro interface.
 ;;----------------------------------------------------------------------
 
-(defmacro parser-compile ( fn &rest grammar )
-  "parser-compile FN &rest GRAMMAR
+(defmacro parser-compile ( &rest grammar )
+  "parser-compile &rest GRAMMAR
 
-  parser-compile translates a grammar into a scanner-less
-  Recursive Descent parser bound to the function of FN;
-  referred to as the Parser Function.
+  parser-compile translates a grammar into a Recursive Descent
+  parser returning a lambda entry-point for the start symbol.
 
   GRAMMAR is a form translated into a micro instruction set
   and assembled by the Semantic Interpreter to build and link Parser
@@ -2151,11 +2195,9 @@ STrace List? ")
     stub.
   "
   (let
-    ((parser-define-syntax (parser-create-syntax-table))
-     (match-table          (parser-make-pf-table)))
+    ((parser-syntax   (parser-create-syntax-table))
+     (parser-pf-table (parser-make-pf-table)))
 
-    (if (eq fn 'dump)
-      (parser-compile-dump grammar)
-      (fset fn
-        (eval (parser-compile-start grammar))))
-    nil))
+    (if (eq 'dump (car grammar))
+      (parser-compile-dump (cdr grammar))
+      (parser-compile-start grammar)) ))
