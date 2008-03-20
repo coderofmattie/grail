@@ -37,13 +37,17 @@
 (parser-compile dump
   (/token whitespace "[[:blank:]]+"))
 
-(parser-compile test-parser
-  (/token whitespace "[[:blank:]]+"))
+(parser-define 'test-parser
+  (parser-compile
+    (/token whitespace "[[:blank:]]+")))
+
+(functionp 'test-parser)
 
 ;; simple test of the or relation.
-(parser-compile test-parser
-  (/token whitespace "[[:blank:]]+")
-  (/token word "[[:alpha:]]+"))
+(parser-define 'test-parser
+  (parser-compile
+    (/token whitespace "[[:blank:]]+")
+    (/token word "[[:alpha:]]+")))
 
 ;; test the and operator.
 (parser-compile dump
@@ -51,16 +55,18 @@
   (/token word "[[:alpha:]]+")
   (/token whitespace "[[:blank:]]+"))
 
-(parser-compile test-parser
-  /and
-  (/token word "[[:alpha:]]+")
-  (/token whitespace "[[:blank:]]+"))
+(parser-define 'test-parser
+  (parser-compile
+    /and
+    (/token word "[[:alpha:]]+")
+    (/token whitespace "[[:blank:]]+")))
 
-(parser-compile test-parser
-  /greedy
-  /and
-  (/token word "[[:alpha:]]+")
-  (/token whitespace "[[:blank:]]+"))
+(parser-define 'test-parser
+  (parser-compile
+    /greedy
+    /and
+    (/token word "[[:alpha:]]+")
+    (/token whitespace "[[:blank:]]+")))
 
 parser foo bar baz||
 
