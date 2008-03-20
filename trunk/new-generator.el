@@ -1684,7 +1684,7 @@ based upon the structure required.
         (funcall iterator (intern primitive))
         next))))
 
-(defun parser-translate-primitive ( primitive &rest args )
+(defun parser-expand-primitive ( primitive &rest args )
   (let
     ((translation nil))
 
@@ -1798,7 +1798,7 @@ based upon the structure required.
     (progn
       (parser-compile-run
         (parser-translate-form grammar)
-        (parser-translate-primitive "entry-point"))
+        (parser-expand-primitive "entry-point"))
 
       `(lambda ( start-pos )
          (save-excursion
@@ -1863,7 +1863,8 @@ based upon the structure required.
   ;; delineate the compilation of a form in the output.
 
   (let
-    ((parser-compile-trace (get-buffer-create "parser-compile-dump")))
+    ((parser-compile-trace (get-buffer-create "parser-compile-dump"))
+     (compiled nil))
 
     (with-current-buffer parser-compile-trace
       (erase-buffer))
@@ -1874,9 +1875,10 @@ based upon the structure required.
     (parser-compile-trace
       "parser-compile-dump: dumping entry-point"
       (pp-to-string)
-      (parser-compile-start grammar))
+      (setq compiled (parser-compile-start grammar)))
 
-    (pop-to-buffer parser-compile-trace t)))
+    (pop-to-buffer parser-compile-trace t)
+    compiled))
 
 (defun parser-interactive ( parser )
   "run test-parser interactively for testing and debugging."
@@ -1926,7 +1928,8 @@ STrace List? ")
   The Parser Function is called with the starting position in the
   current buffer as a required argument. The return value is a
   production of the start symbol as a cons cell of the parser's
-  final position and the AST generated.
+  final position and the AST generated, or nil if no match is
+  found.
 
   The AST structure produced by the parser is documented under
   PF -> AST Effects.
@@ -1936,9 +1939,10 @@ STrace List? ")
   The compiler has tools for tracing the execution of a parser
   and dumping the source of a parser.
 
-  To dump the Parser Source specify dump as the FN symbol. The
-  compile is traced in a separate buffer \"parser-compile-dump\"
-  which is displayed when the compile is complete.
+  To dump the Parser Source specify dump as the first symbol of
+  the grammar. The compile is traced in a separate buffer
+  \"parser-compile-dump\" which is displayed when the compile is
+  complete.
 
   Stub: Tracing.
 
@@ -1959,10 +1963,9 @@ STrace List? ")
   resolved by descent of the translator and linking - producing
   the Call Phase of a Parser Function.
 
-  The Parser Primitives [if any] are then Sugared (FI->Sugaring)
-  into instructions for the Semantic Interpreter. The
-  instructions and the Call Phase produced by the terms are
-  assembled into a Parser Function.
+  The Parser Primitives [if any] are then translated into
+  instructions. The compiler Core assembles the Call Phase and
+  the instructions into a Parser Function.
 
   Primitive Associativity:
 
@@ -1987,8 +1990,8 @@ STrace List? ")
   first term. Otherwise the default parser-relation-and will be
   generated.
 
-  A sequence of primitives can be arbitrarily long. The Semantic
-  Interpreter will generated nested functions as needed to
+  A sequence of primitives can be arbitrarily long. The Compiler
+  Core will generated nested functions as needed to
   preserve the semantics of a sequence.
 
   A primitive sequence is interpreted right to left with
@@ -2000,12 +2003,13 @@ STrace List? ")
   meta-operators must have at least one terminal/non-terminal to
   apply those meta-operators to.
 
-    FI -> Sugaring
+    FI -> Primitive Syntax Expansion
 
-  The instructions of the Semantic Interpreter are so simple that
-  they are almost always require a sequence to define useful
-  Parser Functions. A sugaring process expands primitives into
-  sequences of instructions and takes arguments from the form.
+  The instructions of the Compiler Core are refined to the degree
+  that multiple instruction are needed to define useful Parser
+  Functions. A Primitive Expansion process expands primitives
+  into sequences of instructions, taking arguments from the form
+  when expected.
 
   Arguments must not be escaped, and should be quoted if their
   value is void as arguments are eval'd so that values from
