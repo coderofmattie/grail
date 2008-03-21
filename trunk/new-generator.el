@@ -2034,7 +2034,7 @@ STrace List? ")
   evaluation, and result. All parser functions return
   a Match Result cons cell.
 
-    PF -> Match Phase:
+    PF -> Call Phase:
 
   The Match Call phase creates a recursion environment
   if necessary, and executes the match calls to produce
