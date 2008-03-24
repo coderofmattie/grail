@@ -43,8 +43,8 @@
       (prefix-strings "/opt/local/"
         '("bin" "sbin"))              ;; Mac Ports.
 
-      (list (getenv "PATH"))          ;; existing PATH
-      )))
+      (list (getenv "PATH")))         ;; existing PATH
+    ))
 
 (setenv "PERL5LIB"
   (string-join ":"
