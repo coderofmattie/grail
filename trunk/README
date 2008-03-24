@@ -34,7 +34,7 @@ shift-tab  -> switches to the other window.
 
 alt-tab    -> switches buffers
 
-ctrl-z     -> terminates recursion instead of signalling the window manager
+ctrl-z     -> terminates recursion ; replaces signalling the window manager
               to minimize Emacs.
 
 the search functions are regex by default.
