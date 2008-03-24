@@ -26,6 +26,17 @@
 (defun bracket-strings ( bracket list )
   (apply 'concat (prefix-strings bracket list) bracket))
 
+(defun string-prefix-list ( prefix list )
+  "string-prefix-list PREFIX LIST
+
+   transform a list of strings concatenating PREFIX
+   to each element of the list.
+  "
+  (mapcar
+    (lambda ( x )
+      (concat prefix x))
+    list))
+
 ;; this can go in when it doesn't rely on a auto-overlay function.
 (defun show-overlay-binding ( symbol )
   "show the overlay binding value of the symbol at the point"
