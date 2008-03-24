@@ -1,3 +1,53 @@
+;;    -> Phase 3: Experiments
+
+  ;; an interesting experiment for the eval phase would be
+  ;; allowing a binary logical operator that combined a logical
+  ;; operator with a stateful logical predicate of the ast
+  ;; generated. Once the tree walk functions are built this will be
+  ;; very powerful.
+
+;; Longest
+
+;; make a longest possible match operator. this would involve a primitive
+;; that would scope a token match counter. The recursive match with the
+;; highest token count would be returned. This approach to longest match
+;; assumes packrat optimization, and that constructing ast is a cheap
+;; operation.
+
+;; Lazy
+
+;; is it possible to make the parser lazy instead of greedy with a
+;; closure while still being top-down ?  with packrat optimization an
+;; interesting algorithm for efficiently constructing a correct lazy
+;; match for a sequence might be possible.
+
+;; If such an algorithm was found enabling something like CFG
+;; semantics then the parser compiler would be a much more interesting
+;; beast.
+
+;; lazy may need to be a sequence relational operator but that is quite odd.
+;; can top-down work right to left ? maybe I could scan back from a sync token
+;; and do the sequence matching in reverse.
+
+;; A B C
+
+;; A runs match. If it works it lets B take a crack at the next run. If B doesn't
+;; match it goes back to A for more greed. If B does match then B becomes A and
+;; C is bound as B until the sequence is exhausted.
+
+;; Since the tokens never actually implement greed themselves this may
+;; actually work. implications of recursively buried greed ?
+
+;; 2. tracing at the primitive level, generating instrumented parser functions.
+
+;; 3. Could tokens be emacs functions that bound the existing syntax anaylsis
+;;    of a buffer ? kind of a high level data structure builder on-top of the
+;;    existing function ?
+
+;; Badly formed inputs: a way to terminate a previous match ? something like the
+;; proposed super brace ? would it help with stuff like HTML parsing ?
+
+
 What about a sepia interface to mod_perl ? could it work like slime ?
 could it work over ssh ?
 
@@ -110,5 +160,11 @@ installation log can go in that region.
    hunk recovery. The ability to scrub all the plus and minuses to
    restore the text encompassed by a hunk to it's original content.
 
+
+-> quit-merge.el <-
+
+first I need to make the problem more clear and visualize it correctly as phase 1:
+
+phase 2 will be a insanely awesome scheme program, but phase 1 will use quilt as is.
 
 
