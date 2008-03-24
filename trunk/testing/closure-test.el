@@ -3,7 +3,8 @@
 (closure-define test-closure
   (red "hot")
   (blue "cold")
-  (symbol 'foo))
+  (symbol 'foo)
+  (number 0))
 
 (pp-closure (closure-create test-closure))
 (setq foo-closure (closure-create test-closure))
@@ -13,6 +14,13 @@
 (save-lexical-closure foo-closure
   (message "red is %s" red)
   (message "blue is %s" blue))
+
+(funcall
+  (save-lexical-closure foo-closure
+    (lambda ()
+      (setq number (+ number 1)))))
+
+(foo-lambda)
 
 (save-lexical-closure foo-closure
   (setq red "flaming")

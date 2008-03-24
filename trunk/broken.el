@@ -193,6 +193,22 @@
 
     (if status (message "failed! could not find the function at the point"))))
 
+;; I really like this implementation, would map-filter-nil benefit from
+;; using consp ?
+
+;; could use remq 'nil list
+(defun list-filter-nil ( list )
+  "Filter nil symbols from a list"
+  (if (consp list)
+    (lexical-let
+      ((head (car list)))
+
+      (if (eq head 'nil)
+        (list-filter-nil (cdr list))
+        (cons head (list-filter-nil (cdr list)))
+        ))
+    nil))
+
 
 
 

@@ -55,6 +55,14 @@
   (/token word "[[:alpha:]]+")
   (/token whitespace "[[:blank:]]+"))
 
+;; test define
+(parser-define 'test-parser
+  (parser-compile dump
+    (define
+      (/token word "[[:alpha:]]+")
+      (/token whitespace "[[:blank:]]+"))
+    /and word whitespace))
+
 (parser-define 'test-parser
   (parser-compile
     /and
@@ -70,9 +78,9 @@
 
 parser foo bar baz||
 
-;; check an explicit sequence
-(parser-semantic-dump
-  `(/relation-or foo bar))
+;; failure test now
+(parser-compile dump
+  /bogus foo bar)
 
 ;; check the default sequence
 (parser-semantic-dump

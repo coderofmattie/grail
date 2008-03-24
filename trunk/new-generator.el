@@ -80,6 +80,9 @@
 ;;    by term relation operators, so that unusual things like longest or
 ;;    lazy can be implemented correctly.
 
+;; memoization is part of the input domain. The lifetime of memoization
+;; needs to be a property on the input stack.
+
 ;; 2. make left recursion work.
 
 ;;    -> Phase 3: Experiments
@@ -1369,18 +1372,18 @@ based upon the structure required.
   (cons (cdr x) (car x)))
 
 (defun parser-compile-run ( semantics instructions )
-  "parser-compile-run executes the compilation
-   instructions and applies parser-semantic-union to parser
-   primitives.
+  "parser-compile-run SEMANTICS INSTRUCTIONS
 
-   The role of interpreter-run in the Parser Compiler design is
-   to produce a maximum of parser functions (greedy) from the
-   tape ensuring that the semantics closure in machine-state can
-   produce a parser function in a single step.
+   parser-compile-run consumes instructions using a co-routine
+   like design to split the job of interpreting instructions
+   into a compile and union part.
 
-   The instruction set recognized by the interpreter is divided
-   into compile instructions that implement essentially a linker
-   with an Elisp objarray as the mechanism.
+   The compile part performs linking and emitting, while the
+   union part greedy packs a Parser Function with semantics.
+
+   Both of the co-routines communicate through the instruction
+   list with feedback. The core itself performs the switching
+   between the co-routines, and manages the closures.
   "
   (lexical-let*
     ((closure    (if semantics
@@ -1837,13 +1840,12 @@ based upon the structure required.
    The return value is either the symbol, or nil if the
    parser failed to compile.
   "
+  (when parser
+    (lexical-let
+      ((parser-binding  (intern (symbol-name fn))))
 
-    (when parser
-      (lexical-let
-        ((parser-binding  (intern (symbol-name fn))))
-
-        (fset parser-binding (eval parser))
-        parser-binding)))
+      (fset parser-binding (eval parser))
+      parser-binding)))
 
 (defun parser-token-string ( start end )
   "Return a string of the input bounded by the token match."
@@ -1981,17 +1983,18 @@ STrace List? ")
 
   In example A there are two terms foo and bar. The Term Relation
   is \"and\" which requires that all terms match once in order.
+
   The greedy closure /greedy matches the and of foo and bar one
-  or more times. foo is also greedy, that term matches one more
-  more times as well.
+  or more times. foo is also greedy with positive closure as
+  well.
 
   Term relations must be the last form primitive, or left of the
   first term. Otherwise the default parser-relation-and will be
   generated.
 
   A sequence of primitives can be arbitrarily long. The Compiler
-  Core will generated nested functions as needed to
-  preserve the semantics of a sequence.
+  Core will generated nested functions as needed to preserve the
+  semantics of a sequence.
 
   A primitive sequence is interpreted right to left with
   arbitrary primitive order Within the sequence delineated by the
@@ -2028,17 +2031,29 @@ STrace List? ")
   N for a function where N is zero or more as specified by the
   argument list of the function.
 
-  Parser Functions:
+  -> Parser Functions
 
-  Parser Functions have up to three phases: match call,
-  evaluation, and result. All parser functions return
-  a Match Result cons cell.
+  Parser Functions are the core abstraction of the generated
+  parser. Each parser Function has up to three phases:
 
-    PF -> Call Phase:
+  * Call
+  * Evaluation
+  * Result.
 
-  The Match Call phase creates a recursion environment
-  if necessary, and executes the match calls to produce
-  a Match Result.
+  All parser functions return a Match Result cons cell.
+
+  Call Phase:
+
+  The Match Call phase creates a recursion environment if
+  necessary, and executes the match calls to produce a Match
+  Result.
+
+  The recursion environment is a recursive scoping of internal
+  variables - currently the AST. When a recursion environment is
+  created the AST tree modified by the parser function is not
+  connected to the caller's tree so that the isolated tree can
+  easily be transformed and conditionally attached to the
+  caller's tree.
 
   When there are many terms in a call phase a Term relation
   function is given the ordered list of terms by delayed
@@ -2047,20 +2062,7 @@ STrace List? ")
   If there is a closure function such as greedy it will receive
   the term or term relation by delayed evaluation.
 
-  The recursion environment is a dynamic scoping of internal
-  variables, currently the AST. When a recursion environment
-  is created the AST of the parse is created as tree not
-  connected to the caller's tree.
-
-  This allows the caller to apply operations to the AST, and
-  conditionally attach it to the caller's tree.
-
-  An additional benefit of the recursion environment is that the
-  tail of the current node is scoped dynamically keeping AST
-  construction linear in complexity, and making append operations
-  easy internally.
-
-    PF -> Match result
+  Match result:
 
   The Match Result contains two parts. A logical match sense
   that is non-nil or nil and the AST produced by the match.
@@ -2069,7 +2071,7 @@ STrace List? ")
   words you can return a match false, and AST that is merged if
   you wish.
 
-  As a general principle of the Semantic Interpreter the effects
+  As a general principle of Parser Function Semantics the effects
   are orthogonal until you define relationships such as:
 
   /ast-branch
@@ -2078,18 +2080,18 @@ STrace List? ")
   match is positive. This is a relation between the logic
   and AST.
 
-    PF -> Eval phase:
+  Evaluation phase:
 
   If there is branching, AST effects, or input effects for a
   Parser Function an evaluation phase is constructed which
-  implements those effects before and after the Match Call.
+  implements those effects.
 
   The effects can be conditionalized with /[effect]-branch
   primitives. A logical operator such as negate can be
   applied to the branch evaluation of the Match Result
   when needed.
 
-    PF -> Result Phase:
+  Result Phase:
 
   The result phase constructs the Match Result returned by the
   Parse Function. By default the match sense of evaluation is
@@ -2102,7 +2104,7 @@ STrace List? ")
   independent of a logical operator for the evaluation phase if
   needed.
 
-    PF -> Input effects
+  Input effects:
 
   When parsing the parser can remember and restore the input
   position of the parser in a buffer. This is implemented as a
@@ -2118,7 +2120,7 @@ STrace List? ")
 
     /input-branch
 
-    PF -> AST Effects
+  AST Effects:
 
   The primary job of a parser is to construct a tree from pattern
   matching within a sequence of text. AST effects specify how the
