@@ -5,6 +5,9 @@
 ;; License: LGPL-V3
 ;;----------------------------------------------------------------------
 
+(defconst closure-release-version "0.0.1"
+  "the release number of closure.el")
+
 ;; these are experimental prototypes. The final versions need to be
 ;; implemented at the C level.
 
