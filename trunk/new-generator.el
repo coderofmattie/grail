@@ -61,8 +61,6 @@
 
 ;; 1. All of the PEG predicates (missing not)
 
-;; 2. Fix the issue with tracing the start symbol.
-
 ;; 3. Canonical tree walk implemented as parser-ast-node. a real pre-requisite to
 ;;    sane user implementation of transforms.
 
@@ -1916,25 +1914,26 @@ STrace List? ")
 (defmacro parser-compile ( &rest grammar )
   "parser-compile &rest GRAMMAR
 
-  parser-compile translates a grammar into a Recursive Descent
-  parser returning a lambda entry-point for the start symbol.
+  parser-compile translates GRAMMAR into a Recursive Descent
+  parser returning a lambda entry-point for the Start Symbol.
 
-  GRAMMAR is a form translated into a micro instruction set
-  and assembled by the Semantic Interpreter to build and link Parser
-  Functions.
+  GRAMMAR lists and symbols are a parser definition described in
+  [Syntax].
 
-  Using the generated Parser Function:
+  -> Use
 
-  The Parser Function is called with the starting position in the
-  current buffer as a required argument. The return value is a
-  production of the start symbol as a cons cell of the parser's
-  final position and the AST generated, or nil if no match is
-  found.
+  (entry-point START)
+
+  The compiled Parser Function is called with the starting
+  position in the current buffer as a required argument. The
+  return value is a production of the start symbol as a cons cell
+  of the parser's final position and the AST generated, or nil if
+  no match is found.
 
   The AST structure produced by the parser is documented under
-  PF -> AST Effects.
+  [AST Effects].
 
-  Compiler tools:
+  -> Compiler tools
 
   The compiler has tools for tracing the execution of a parser
   and dumping the source of a parser.
@@ -1944,11 +1943,11 @@ STrace List? ")
   \"parser-compile-dump\" which is displayed when the compile is
   complete.
 
-  Stub: Tracing.
+  FIXME: Tracing.
 
-  Form Syntax:
+  -> Syntax
 
-  Each form contains lists, primitives, or terms. Lists are
+  Each form contains lists, Primitives, or Terms. Lists are
   translated into terms depth first. Terms are calls to Parser
   Functions defined elsewhere. Primitives are instructions to the
   Semantic Interpreter escaped from terms by a \"/\" character.
@@ -1957,15 +1956,15 @@ STrace List? ")
   TERM:      foo
   LIST:      (/token whitespace \"[[:blank:]]+\")
 
-  Form Interpretation:
+  Translation:
 
-  When a form is translated all of the terms (lists or names) are
-  resolved by descent of the translator and linking - producing
-  the Call Phase of a Parser Function.
+  When a form is translated all of the lists and Terms are
+  resolved by descent and linking - producing the Call Phase of a
+  Parser Function.
 
   The Parser Primitives [if any] are then translated into
-  instructions. The compiler Core assembles the Call Phase and
-  the instructions into a Parser Function.
+  compiler instructions. The Compiler Core assembles the Call
+  Phase and the instructions into a Parser Function.
 
   Primitive Associativity:
 
@@ -2003,17 +2002,18 @@ STrace List? ")
   meta-operators must have at least one terminal/non-terminal to
   apply those meta-operators to.
 
-    FI -> Primitive Syntax Expansion
+  Primitive Expansion
 
-  The instructions of the Compiler Core are refined to the degree
-  that multiple instruction are needed to define useful Parser
-  Functions. A Primitive Expansion process expands primitives
-  into sequences of instructions, taking arguments from the form
-  when expected.
+  The instructions of the Compiler Core are highly refined and
+  multiple instructions are often needed to define useful Parser
+  Functions.
+
+  A Primitive Expansion expands primitives into sequences of
+  instructions, taking any arguments needed from the form.
 
   Arguments must not be escaped, and should be quoted if their
-  value is void as arguments are eval'd so that values from
-  compile time can be used in the generated parser.
+  value is void. Arguments are eval'd so that compile time values
+  can be used in the generated parser.
 
   /production 'foo
 
