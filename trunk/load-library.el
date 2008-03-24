@@ -49,7 +49,7 @@
   ;; list values.
   ;;
   ;; The result is a single string value.
-  (concat
+  (apply 'concat
     (car list)
     (if (cdr list) (prefix-strings prefix (cdr list))) ))
 
