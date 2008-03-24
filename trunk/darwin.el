@@ -46,22 +46,24 @@
       (list (getenv "PATH")))          ;; existing PATH
     ))
 
-;; (setenv "PERL5LIB"
-;;   (string-join ":"
-;;       (prefix-strings (getenv "HOME")
+(setenv "PERL5LIB"
+  (string-join ":"
+      (prefix-strings (getenv "HOME")
 
-;;         '( "/projects/Fault"
-;;            "/projects/rc"
-;;            "/projects/cherry"
-;;            "/projects/cmdline"
-;;            "/projects/xstruct"
-;;            "/projects/listy"
-;;            "/system/cpan/lib/perl5/site_perl"
-;;            "/system/cpan/lib/perl5/5.8.8"
-;;            ))))
+        '( "/projects/Fault"
+           "/projects/rc"
+           "/projects/cherry"
+           "/projects/cmdline"
+           "/projects/xstruct"
+           "/projects/listy"
+           "/system/cpan/lib/perl5/site_perl"
+           "/system/cpan/lib/perl5/5.8.8"
+           ))))
 
-;; (setenv "TOOLKIT" "/usr/home/mattie/vcntl/reforged")
-;; (setenv "WORK" "/usr/home/mattie/vcntl/commercial")
+;; repository paths.
+
+(setenv "TOOLKIT" "/usr/home/mattie/vcntl/reforged")
+(setenv "WORK" "/usr/home/mattie/vcntl/commercial")
 
 
 
