@@ -18,29 +18,21 @@
 
 ---> BUGS <---
 
-* highlighting sexp is still not working on linux. why ? it works
-  on emacs.app 0.9.x
-
 * simple-set-theme doesn't clear properties before setting. a good example
   is the flyspell underline. because it is merging instead of replacing it
   is displaying in the orange specified by flyspell.
 
 * tool-bar-mode nil has no effect on Emacs.app (might be fixed now with a negative argument)
 
-
 * flypsell in comments only seems to analyze the text after I pass over the
   word with the cursor. This is probably a configuration issue.
 
 ---> TODO <---
 
-* mop up the darwin file. This will involve moving the new string functions out
-  of alpha.el into replacements inside load-library.el
-
-  also a function should be created that adjusts both the PATH environment
+* darwin: a function should be created that adjusts both the PATH environment
   variable and exec-path
 
-* make a font where the parens are not flush left/right, but rather centered
-  within the cell. Also add to this font a lamba char that does not suck.
+* custom font: add a lamba char that does not suck.
 
 * create a toggle for the menu-bar for when I need to browse it.
 
