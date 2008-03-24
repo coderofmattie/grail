@@ -97,7 +97,7 @@
 ;; 1986, Addison Wesley
 
 (require 'cl)
-(require 'mattie-elisp)
+(require 'parser-fn)
 (require 'closure)
 
 (define-error parser-compile-error   "parser error")
@@ -106,7 +106,7 @@
 ;; is this even useful anymore ?
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
-(defconst parser-release-version "0.0.1"
+(defconst parser-release-version "0.0.2"
   "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
@@ -1473,7 +1473,7 @@ based upon the structure required.
 
   (cond
     ((eq nil constructor)    `(parser-token-bounds 'cons 0))
-    ((listp constructor)     `(apply ',(make-anon-func "parser-user-handler") (parser-token-bounds 'list 0)))
+    ((listp constructor)     `(apply ',(bind-eval-lambda "parser-user-handler") (parser-token-bounds 'list 0)))
     ((eq 'null constructor)  'nil)
     ((functionp constructor) `(apply ',constructor (parser-token-bounds 'list 0)))
     ((numberp constructor)   `(parser-token-bounds 'cons ,constructor))
@@ -2207,3 +2207,5 @@ STrace List? ")
     (if (eq 'dump (car grammar))
       (parser-compile-dump (cdr grammar))
       (parser-compile-start grammar)) ))
+
+(provide 'parser)
