@@ -43,25 +43,15 @@
     list))
 
 (defun string-join (prefix list)
-  ;; This is analgous to the perl5 join function.
+  ;; This is analogous to the perl5 join function.
   ;; given a <prefix> and a <list> of strings join the
   ;; strings with <prefix> as a seperator between the
   ;; list values.
   ;;
   ;; The result is a single string value.
   (concat
-    prefix (car list)
-    (if (cdr list) (string-join prefix (cdr list)))
-    ))
-
-(defun string-prefix-list (prefix list)
-  (cons
-    (concat prefix (car list))
-
-    (cond
-      ((cdr list) (string-prefix-list prefix (cdr list)))
-       ('()))
-      ))
+    (car list)
+    (if (cdr list) (prefix-strings prefix (cdr list))) ))
 
 (defun path-join (list)
   (concat
