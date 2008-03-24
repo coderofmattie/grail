@@ -2002,7 +2002,7 @@ STrace List? ")
   meta-operators must have at least one terminal/non-terminal to
   apply those meta-operators to.
 
-  Primitive Expansion
+  Primitive Expansion:
 
   The instructions of the Compiler Core are highly refined and
   multiple instructions are often needed to define useful Parser
