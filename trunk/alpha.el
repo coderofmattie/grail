@@ -9,13 +9,6 @@
 ;; stable-track  - canidate for inclusion in mattie.el
 ;;----------------------------------------------------------------------
 
-;; update darwin.el to use these functions.
-
-(defun infix-strings ( infix list )
-  "infix a list of strings by placing a deliminator betwixt the strings of the list.
-   The result is concatenated into a single string."
-  (apply 'concat (car list) (prefix-strings infix (cdr list))))
-
 (defun bracket-strings ( bracket list )
   (apply 'concat (prefix-strings bracket list) bracket))
 
