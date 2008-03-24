@@ -263,7 +263,8 @@
         (goto-char (point-max))
         (insert-file-contents-literally (locate-library source-file))
         (goto-char (point-max))
-        (insert (format "\n")) )) ))
+        (insert (format "\n")) )
+      t) ))
 
 (defun combine-library ( source-file )
   "combine-library"
