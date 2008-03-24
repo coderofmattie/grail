@@ -78,7 +78,9 @@
    Currently this is a experimental hack so it incurs the cost
    of a recursive pre-bind in addition to eval each time evaluated."
   (declare (debug (symbolp body)))
-  `(eval (closure-bind-scope ,closure ',(cons 'progn body))))
+  `(eval (closure-bind-scope ,closure ',(if (eq 'lambda (car body))
+                                          body
+                                          (cons 'progn body)))))
 
 (defun closure-let-binding ( s closure )
   `(,(read (symbol-name s)) ,(closure-symbol s closure)))
