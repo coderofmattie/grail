@@ -3,6 +3,8 @@
 ;; emacs does not get environment variables set from .profile and like
 ;; because it is launched by finder. Correct key environment variables.
 ;;----------------------------------------------------------------------
+(require 'cm-string)
+
 (message "%s" "loading darwin system configuration")
 
 ;; for best font support on a laptop LCD, the font hinting setting of "medium"

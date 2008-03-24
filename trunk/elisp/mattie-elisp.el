@@ -42,5 +42,6 @@
 (require 'cm-compat)
 (require 'cm-list)
 (require 'cm-lisp)
+(require 'cm-string)
 
 (provide 'mattie-elisp)

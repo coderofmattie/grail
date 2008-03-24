@@ -9,9 +9,6 @@
 ;; stable-track  - canidate for inclusion in mattie.el
 ;;----------------------------------------------------------------------
 
-(defun bracket-strings ( bracket list )
-  (apply 'concat (prefix-strings bracket list) bracket))
-
 ;; this can go in when it doesn't rely on a auto-overlay function.
 (defun show-overlay-binding ( symbol )
   "show the overlay binding value of the symbol at the point"
@@ -69,41 +66,6 @@
     ((x-select-enable-clipboard t))
     (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
     ))
-
-;; with some more time for any bugs to show this can go to load-library.el.
-
-;; stateful version by fledermous in #emacs (thanks)
-;; not sure if this would work, is equal right ?
-
-;; (remove nil (mapcar fun (remove nil list)))
-
-;; stateful version by sabetts in #emacs (thanks).
-
-;; (defun map-reduce (fn &rest list)
-;;   (let (acc v)
-;;     (while list
-;;       (setq v (pop list)
-;;            v (and v (funcall v)))
-;;      (when v (push v acc)))
-;;     acc))
-
-(defun map-filter-nil ( func &rest seq )
-  "Filter the nil elements of sequence SEQ from the input and
-   output of function FUNC.
-
-   FUNC is applied to the non-nil elements of SEQ ala mapcar. The
-   result is either a list or nil if filtering eliminated all
-   output."
-  (lexical-let
-    ((value (cons nil nil)))
-
-    (dolist (element seq)
-      (when element
-        (lexical-let
-          ((transform (funcall func element)))
-          (when transform
-            (setcdr value (cons transform nil))))))
-    (cdr value)))
 
 (defun find-child-directory-in-ancestor ( child parent )
   (catch 'done

@@ -193,6 +193,12 @@
 
     (if status (message "failed! could not find the function at the point"))))
 
+(defun path-join (list)
+  (concat
+    (car list) ":"
+    (if (cdr list) (string-join (cdr list)))
+    ))
+
 ;; I really like this implementation, would map-filter-nil benefit from
 ;; using consp ?
 

@@ -13,51 +13,24 @@
 (require 'cl) ;; need the common-lisp macros such as lexical-let
 
 (defun map-filter-nil ( func &rest seq )
-  "map-filter-nil. apply the function to the arguements ala mapcar.
-   Filter any nil elements of the sequence before the function is
-   applied, and after the function is applied."
+  "map-filter-nil FUNC LIST
 
-  (if (car seq)
-    (let
-      ((result (funcall func (car seq))))
-      (if result
-        (cons result (apply 'map-filter-nil func (cdr seq)))
-        (apply 'map-filter-nil func (cdr seq))
-        ))
-    (if (cdr seq)
-      (apply 'map-filter-nil func (cdr seq))) ))
+   Filter the nil elements of LIST from the input and output of
+   function FUNC.
 
-;;----------------------------------------------------------------------
-;; String handling functions oriented towards manipulating path lists.
-;; These are essential for the earliest part of the init process,
-;; modifying the library loading path.
-;;----------------------------------------------------------------------
+   FUNC is applied to the non-nil elements of SEQ ala mapcar. The
+   result is either a list or nil if filtering eliminated all
+   output."
+  (lexical-let
+    ((value (cons nil nil)))
 
-(defun prefix-strings ( prefix list )
-  "prefix-strings PREFIX LIST
-
-   transform LIST concatenating the strings with PREFIX."
-  (mapcar
-    (lambda ( string )
-      (concat prefix string))
-    list))
-
-(defun string-join (prefix list)
-  ;; This is analogous to the perl5 join function.
-  ;; given a <prefix> and a <list> of strings join the
-  ;; strings with <prefix> as a seperator between the
-  ;; list values.
-  ;;
-  ;; The result is a single string value.
-  (apply 'concat
-    (car list)
-    (if (cdr list) (prefix-strings prefix (cdr list))) ))
-
-(defun path-join (list)
-  (concat
-    (car list) ":"
-    (if (cdr list) (string-join (cdr list)))
-    ))
+    (dolist (element seq)
+      (when element
+        (lexical-let
+          ((transform (funcall func element)))
+          (when transform
+            (setcdr value (cons transform nil))))))
+    (cdr value)))
 
 ;;----------------------------------------------------------------------
 ;; loading
