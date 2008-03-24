@@ -32,22 +32,19 @@
                                    "/opt/local/sbin") exec-path))
 
 (setenv "PATH"
-  ;; adjust PATH to locate commands
-  (concat
+  (string-join ":"
 
-    (string-join ":"
-      (append
-        (prefix-strings (getenv "HOME") ;; add User Local commands
-          '( "/system/bin"
-             "/projects/rc"
-             "/projects/cherry" ))
+    (append
+      (prefix-strings (getenv "HOME") ;; add User Local commands
+        '( "/system/bin"
+           "/projects/rc"
+           "/projects/cherry" ))
 
-        (prefix-strings "/opt/local/"
-          '("bin" "sbin"))              ;; Mac Ports.
-        ))
+      (prefix-strings "/opt/local/"
+        '("bin" "sbin"))              ;; Mac Ports.
 
-    ":" (getenv "PATH")
-    ))
+      (list (getenv "PATH"))          ;; existing PATH
+      )))
 
 (setenv "PERL5LIB"
   (string-join ":"
