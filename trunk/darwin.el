@@ -36,24 +36,21 @@
   (concat
 
     (string-join ":"
-      (append '()
-
-        (string-prefix-list (getenv "HOME") ;; add User Local commands
+      ((prefix-strings (getenv "HOME") ;; add User Local commands
           '( "/system/bin"
              "/projects/rc"
              "/projects/cherry" ))
 
-        '( "/opt/local/bin"
-           "/opt/local/sbin") ;; macports
-
-        )) ;; add the third party package manager directories
+        (prefix-strings "/opt/local/"
+          '("bin" "sbin"))              ;; Mac Ports.
+        ))
 
     ":" (getenv "PATH")
     ))
 
 (setenv "PERL5LIB"
   (string-join ":"
-      (string-prefix-list (getenv "HOME")
+      (prefix-strings (getenv "HOME")
 
         '( "/projects/Fault"
            "/projects/rc"
