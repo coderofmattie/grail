@@ -33,6 +33,15 @@
 ;; modifying the library loading path.
 ;;----------------------------------------------------------------------
 
+(defun prefix-strings ( prefix list )
+  "prefix-strings PREFIX LIST
+
+   transform LIST concatenating the strings with PREFIX."
+  (mapcar
+    (lambda ( string )
+      (concat prefix string))
+    list))
+
 (defun string-join (prefix list)
   ;; This is analgous to the perl5 join function.
   ;; given a <prefix> and a <list> of strings join the
