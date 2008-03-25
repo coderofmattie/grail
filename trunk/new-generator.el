@@ -20,8 +20,8 @@
 ;; tailored parsing behavior.
 
 ;; The programming interface is powerful enough that user defined
-;; functions can be constrained to a few typed hooks without losing
-;; the ability to define useful or unusual parsers.
+;; functions can be reduced to a few typed hooks without losing the
+;; ability to define useful or unusual parsers.
 
 ;; -> Benefits
 
@@ -29,11 +29,19 @@
 ;; advantages.
 
 ;; Increasing the generality of the parser compiler beyond a single
-;; grammar class brings more of the parser within formal validation
-;; reducing the opportunity to introduce defects.
+;; grammar class:
 
-;; The parser definition is more concise since the general hosting
-;; language is less often needed to complete a parser.
+;; * brings more of the parser sum within formal validation reducing
+;;   the opportunity to introduce defects.
+
+;; * The ability to articulate a variety of phenomena [grammar classes here]
+;;   with the analysis of expression implied by the compiler facilitates
+;;   repeatable and defensible implementation.
+
+;; The sum parser definition is more concise by virtue of raising the
+;; abstraction level and encompassing more of the parser's true extent
+;; of definition = less call-outs to write because the parser is
+;; generating more code for you.
 
 ;; This compiler facilitates new parsing operators, making it a good
 ;; vehicle for experimenting with new grammar classes.
@@ -71,11 +79,6 @@
 
 ;; 1. Implement packrat backtrack optimization.
 
-;;    better idea. When a backtrack occurs a nil will be returned to
-;;    the parse-ast-descend predicate. Normally the parse tree constructed
-;;    so far would be discarded. Instead filter the terminals out, and
-;;    keep them in a table.
-
 ;;    the lifetime of a memoization table for a recursion will be set
 ;;    by term relation operators, so that unusual things like longest or
 ;;    lazy can be implemented correctly.
@@ -106,7 +109,7 @@
 ;; is this even useful anymore ?
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
-(defconst parser-release-version "0.0.2"
+(defconst parser-release-version "0.0.3"
   "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
@@ -638,6 +641,13 @@ supplied as the single argument NODE."
 ;; Semantic Union
 ;;----------------------------------------------------------------------
 
+;; parser-pf-{set,merge,fold}-* express the rules for membership
+;; in a valid set of Parser Function semantics (the closure). The
+;; closure is not modified until validity is checked.
+
+;; These functions either return nil, or a feedback signal used
+;; to select a recovery method.
+
 (defun parser-pf-set-primitive ( pf-symbol primitive )
   "parser-pf-set-primitive PF-SYMBOL PRIMITIVE
 
@@ -762,18 +772,18 @@ supplied as the single argument NODE."
 (defun parser-union-closure ( pf-closure )
   "parser-union-closure SEMANTICS
 
-   Merges semantic primitives from list TAPE into SEMANTICS.
-   Each element of TAPE is a symbol or list pair evaluated
-   as a Parser Semantic Primitive. SEMANTICS is a valid set of
-   primitives as a closure.
+   Merge semantic primitives from list TAPE into SEMANTICS.
 
-   A greedy iteration attempts to produce a valid union
-   of SEMANTICS and the primitives of TAPE. A valid union
-   updates SEMANTICS and consumes the primitive from TAPE.
+   Each element of TAPE is a symbol (primitive) or list
+   pair (instruction). The primitives are merged by the union to
+   greedy pack a closure with primitives; the effect is to
+   constant fold the emitted code to a great degree rendering the
+   compiled code aesthetically pleasing, and provably minimal.
 
-   An invalid union or exhausting TAPE halts parser-semantic-union.
-   A diagnostic of the halt a symbol of: finished invalid unknown
-   is cons'd with the unconsumed tape if any."
+   When a primitive merge produces a collision or invalid Parser
+   Function semantics a retry-after-compile is fed back into the
+   instruction stream.
+   "
 
   ;; FIXME: propogate the hooks through the domains. see if there are any other
   ;;        useful hook points.
@@ -1216,8 +1226,9 @@ based upon the structure required.
           (setq pf-relation 'parser-relation-and)) ))
 
     ;; any time we have a closure, or sequence, we will always need to
-    ;; setup a basic AST effect, even if AST effects were not explicitly
-    ;; set by AST effects.
+    ;; setup an AST recursion environment, even if there are no AST
+    ;; effects. Term Relation Operators depend on the AST scoping to
+    ;; construct a AST sequence of any sort.
 
     (when (or pf-closure pf-terms)
       (setq pf-ast-domain t))
@@ -1231,9 +1242,13 @@ based upon the structure required.
     (when pf-branch
       (setq pf-trap t))
 
+    ;; generate code fragments for the domains now that the function
+    ;; structure is fully known.
+
     (parser-emit-ast-domain)
     (parser-emit-input-domain)
 
+    ;; interpolate the fragments into the structure with "pruning".
     (parser-prune-lambda
       pf-eval-setup
 
@@ -1589,6 +1604,7 @@ based upon the structure required.
 
     (puthash "production"
       (lambda ( name )
+        ;; a node named and called NAME.
         (list
           (parser-instruction 'call name)
           (parser-instruction 'compile name)
@@ -1596,6 +1612,7 @@ based upon the structure required.
 
     (puthash "alias"
       (lambda ( alias name )
+        ;; a term that creates a node NAME, called ALIAS.
         (list
           (parser-instruction 'call alias)
           (parser-instruction 'compile alias)
@@ -1781,6 +1798,9 @@ based upon the structure required.
       ((rvalue (if form-semantics
                  (parser-compile-run closure (reverse (tail-list form-semantics)))
                  closure)))
+
+      ;; rvalue: even though it's only evaluated once, it must be evaluated forcing it
+      ;; outside the if special form.
 
       (if effect-only
         (progn
