@@ -70,8 +70,7 @@
     (cons my-extras-dir
       (filter-ls my-extras-dir t
         (type ?d)
-        (!path "^\\.\\.?")))
-    ))
+        (!name "^\\."))) ))
 
 ;;----------------------------------------------------------------------
 ;; Host specific adaptation
