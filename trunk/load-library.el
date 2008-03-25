@@ -22,15 +22,15 @@
    result is either a list or nil if filtering eliminated all
    output."
   (lexical-let
-    ((value (cons nil nil)))
+    ((rvalue nil))
 
     (dolist (element seq)
       (when element
         (lexical-let
           ((transform (funcall func element)))
           (when transform
-            (setcdr value (cons transform nil))))))
-    (cdr value)))
+            (push transform rvalue)))))
+    (reverse rvalue)))
 
 ;;----------------------------------------------------------------------
 ;; loading
@@ -60,7 +60,7 @@
   (cond
     ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
     ((string-equal "path" attr-name) `(string-match ,attr-match (car path-pair)))
-  ))
+    ((string-equal "name" attr-name) `(string-match ,attr-match (file-name-nondirectory (car path-pair)))) ))
 
 (defun filter-ls-attributes ( filter-form )
   "implement the various attribute filters for the filter-ls form"
