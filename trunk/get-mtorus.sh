@@ -4,4 +4,4 @@
 
 # http://mtorus.berlios.de/
 
-cvs -z3 -d:pserver:anonymous@cvs.mtorus.berlios.de:/cvsroot/mtorus co mtorus
+cd elisp/ && cvs -z3 -d:pserver:anonymous@cvs.mtorus.berlios.de:/cvsroot/mtorus co mtorus
