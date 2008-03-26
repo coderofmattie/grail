@@ -78,6 +78,45 @@
 
 parser foo bar baz||
 
+(parser-compile
+  dump
+  (/token repo-name         "\\([^[:blank:]]+\\):" 1))
+
+(parser-compile
+  dump
+  (/production foo (/token whitespace "[[:blank:]]+" null)))
+
+(parser-define 'paludis-query
+  (parser-compile
+    dump
+    (define
+      (/token whitespace        "[[:blank:]]+"  null)
+      (/token pkg-name          "[^[:blank:]]+" parser-token-string)
+      (/token repo-name         "\\([^[:blank:]]+\\):" 1)
+
+      (/term pkg-version /or
+        (/token pkg-ver-masked "\\\(\\([^[:blank:]]+\\)\\\)[^[:blank:]]+" 1)
+        (/token pkg-ver-stable "[^[:blank:]]+" parser-token-string)
+        (/token pkg-slot       "{:[[:digit:]]+}" null))
+      )
+
+    (/production package (/token package-record "\\\*" null) whitespace pkg-name)
+    (/production repository whitespace repo-name whitespace (/greedy pkg-version whitespace)) ))
+
+
+(parser-define 'paludis-query
+  (parser-compile
+    dump
+    (define
+      (/token whitespace        "[[:blank:]]+" null)
+      (/token pkg-name          "[^[:blank:]]+" parser-token-string)
+      (/token repo-name         "\\([^[:blank:]]+\\):" 1)
+      )
+
+    /and (/token package-record "\\\*" null) whitespace pkg-name)
+    ;; ^^ this list is the breaker, why ?
+    )
+
 ;; failure test now
 (parser-compile dump
   /bogus foo bar)
@@ -177,45 +216,6 @@ parser foo bar baz||
   'ast-branch
   'input-branch
   `(ast-node 'prod-foo))
-
-;;----------------------------------------------------------------------
-;; sugar testing
-;;----------------------------------------------------------------------
-(parser-sugar-dump
-  `(production 'foo))
-
-(parser-semantic-dump
-  `(call 'foo)
-  `(call 'bar)
-  'greedy
-  `(production 'foo))
-
-;;----------------------------------------------------------------------
-;; token interp phase
-;;----------------------------------------------------------------------
-
-(defmacro test-interp-token ( &rest syntax )
-  (lexical-let
-    ((compile (catch 'syntax-error
-                (parser-interp-token (cdr syntax)))))
-
-    (if (stringp compile)
-      (message "%s" compile)
-      compile)
-    ))
-
-(defun run-test-interp-token ( match-function )
-  (lexical-let
-    ((result (funcall match-function)))
-    (message "TI match? %s AST %s" (if (car result) "yes" "no") (pp (cdr result)))
-    ))
-
-(defun run-test-token ()
-  (interactive)
-  (run-test-interp-token (test-interp-token token whitespace "[[:blank:]]+")))
-
-(pp (macroexpand
-      (test-interp-token token whitespace "[[:blank:]]")))
 
 ;;----------------------------------------------------------------------
 ;; test tokens
