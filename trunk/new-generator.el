@@ -1659,6 +1659,17 @@ based upon the structure required.
 
     syntax))
 
+(defun parser-pp-defined-syntax ()
+  (lexical-let
+    ((name-list nil))
+
+    (maphash
+      (lambda ( name v )
+        (push name-list name))
+      parser-syntax)
+
+    (apply 'concat (mapcar (lambda (x) (concat "|" x)) name-list)) ))
+
 (defun parser-escaped-primitive ( symbol )
   "
   parser-escaped-primitive SYMBOL
@@ -1688,30 +1699,28 @@ based upon the structure required.
   (lexical-let
     ((expand (gethash primitive parser-syntax)))
 
-    (if expand
-      (if (functionp expand)
-        (lexical-let
-          ((arity (cdr (function-arity expand))))
+    (unless expand
+      (signal 'parser-syntactic-error (parser-expr-diagnostic
+                                        expand
+                                        "syntax"
+                                        (parser-pp-defined-syntax))))
+    (if (functionp expand)
+      (lexical-let
+        ((arity (cdr (function-arity expand))))
 
-          (if (eq 'many arity)
-            (progn
-              (funcall iterator (apply expand next))
-              nil)
+        (if (eq 'many arity)
+          (progn
+            (funcall iterator (apply expand next))
+            nil)
 
-            (lexical-let
-              ((split (split-list arity next)))
-              (funcall iterator (apply expand (car split)))
-              (cdr split))))
+          (lexical-let
+            ((split (split-list arity next)))
+            (funcall iterator (apply expand (car split)))
+            (cdr split))))
 
         (progn
           (funcall iterator expand)
-          next))
-
-      (progn
-        ;; I don't understand this, but I think it should be an eval instead.
-        ;; using intern limits it to a symbol.
-        (funcall iterator (intern primitive))
-        next))))
+          next)) ))
 
 (defun parser-expand-primitive ( primitive &rest args )
   (let
