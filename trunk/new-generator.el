@@ -1789,6 +1789,9 @@ based upon the structure required.
 
     (consume-list form
       (lambda ( current next )
+;;;         (parser-compile-message "parser-translate-form" (format "c:n %s %s"
+;;;                                                           (pp-to-string current)
+;;;                                                           (pp-to-string next)))
         (if (listp current)
           (progn
             (when call-to
