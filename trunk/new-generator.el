@@ -622,7 +622,7 @@ supplied as the single argument NODE."
            args)
          'nil) ))
 
-(defmacro parser-compile-message ( from message )
+(defun parser-compile-message ( from message )
   (when (parser-compile-trace-p)
      (parser-compile-trace-append (format "%s: %s\n" from message))))
 
@@ -1064,18 +1064,15 @@ supplied as the single argument NODE."
     (push `(match ,match-phase) pf-lexical-scope)
     (setq match-phase 'match))
 
-  (setq pf-eval-value
-    (cond
-      ;; the r-value of a branch match is either a entry-point special
-      ;; case of a complete match result, or a logical true value.
-      ((eq pf-rvalue-phase 'entry-point)
-        (progn
-          (setq pf-match-rvalue `(cons (parser-pos) ,pf-ast-value))
+  (cond
+    ;; the r-value of a branch match is either a entry-point special
+    ;; case of a complete match result, or a logical true value.
+    ((eq pf-rvalue-phase 'entry-point)
+      (progn
+        (setq pf-match-rvalue `(cons (parser-pos) ,pf-ast-value))
 
-          (when (null pf-eval-logic)
-            (setq pf-eval-logic 'parser-match-p))
-
-          'match))
+        (when (null pf-eval-logic)
+          (setq pf-eval-logic 'parser-match-p)) ))
 
       (pf-branch
         (progn
@@ -1084,9 +1081,9 @@ supplied as the single argument NODE."
           (when (null pf-eval-logic)
             (setq pf-eval-logic 'parser-match-p))
 
-          'logical))
+          (setq pf-eval-value 'logical) ))
 
-      (pf-eval-logic 'logical)))
+      (pf-eval-logic (setq pf-eval-value 'logical)))
 
   (when pf-eval-logic
     (setq match-phase `(,pf-eval-logic ,match-phase)))
@@ -1108,12 +1105,12 @@ supplied as the single argument NODE."
     generated))
 
 (defun parser-eval-did-split-result-p ()
-  (and
-    (not (eq 'entry-point pf-rvalue-phase))
+  (when (and
+          (not (eq 'entry-point pf-rvalue-phase))
 
-    (or
-      pf-ast-value
-      (eq 'logical pf-eval-value))) )
+          (or
+            pf-ast-value
+            (eq 'logical pf-eval-value))) t))
 
 (defun parser-prune-result-phase ( eval-phase )
 ;; FIXME: do the documentation work as a backtrack from this
@@ -1150,8 +1147,8 @@ supplied as the single argument NODE."
          ,(reverse pf-lexical-scope)
 
          ,@(if pf-eval-effects
-             (append pf-eval-effects (list eval-phase))
-             (list eval-phase)))
+             (append pf-eval-effects (list r-value))
+             (list r-value)))
       eval-phase)))
 
 (defun parser-pf-emit ( pf-closure )
