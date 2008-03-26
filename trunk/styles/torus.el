@@ -13,6 +13,11 @@
 
 (global-set-key (kbd "M-RET")      'mtorus-select-current-element)
 
+(global-set-key (kbd "<M-tab>")
+  (lambda ()
+    (interactive)
+    (mtorus-next-element)
+    (mtorus-select-current-element) ))
 
 
 
