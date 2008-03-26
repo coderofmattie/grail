@@ -204,7 +204,7 @@
         'parser-trace-message
         'message)
 
-      "%s at: %d match: %s"
+      "%s at: %d match: %s\n"
 
       (if (symbolp match-func)
         (symbol-name match-func)
@@ -1942,7 +1942,7 @@ based upon the structure required.
     '(
        ,@(mapcar
            (lambda (trace)
-             `(',(car trace) . ,(cadr trace))) productions) )))
+             `(,(car trace) . ,(cadr trace))) productions) )))
 
 (defun parser-trace (parser trace-list)
   "run test-parser interactively for testing and debugging."
@@ -1950,7 +1950,7 @@ based upon the structure required.
 STrace List? ")
   (let
     ((parser-trace-buffer (generate-new-buffer (format "parser-trace:%s" (symbol-name parser))))
-     (parser-trace trace-list))
+     (parser-trace (eval trace-list)))
 
     (parser-interactive parser) ))
 
