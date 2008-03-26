@@ -1510,7 +1510,7 @@ based upon the structure required.
     ((generated
        `(lambda ()
           (when (looking-at ,@(car syntax))
-            (parser-result-token (cons ',id ,(parser-token-constructor (cdr syntax))))))))
+            (parser-result-token (cons ',id ,(parser-token-constructor (cadr syntax))))))))
     (parser-compile-trace
       "parser-token-function: emit token."
       (pp-to-string)
@@ -1650,7 +1650,7 @@ based upon the structure required.
 
     (puthash "token"
       (lambda ( id &rest token-syntax )
-        (parser-pf-link id (parser-token-function id token-syntax))
+        (parser-pf-link id (apply 'parser-token-function id token-syntax))
         (parser-instruction 'call id)) syntax)
 
     (puthash "transform"
