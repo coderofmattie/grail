@@ -247,6 +247,7 @@
 
 (load-style "xml.el" "nxml not be available")
 (load-style "complete.el" "icicles not be available - minibuffer extremely degraded.")
+;; (load-style "torus.el" "M-Torus will not be available - cycling extremely degraded.")
 
 ;;======================================================================
 ;;                  Phase 4: Programming
