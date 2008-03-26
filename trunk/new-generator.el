@@ -1502,7 +1502,7 @@ based upon the structure required.
               ,(let
                  ((constructor (if (listp syntax) (cadr syntax) syntax)))
 
-                 (if (and (symbolp constructor) (eqn 'null constructor))
+                 (if (and (symbolp constructor) (eq 'null constructor))
                    'nil
                    `(cons
                       ',id
