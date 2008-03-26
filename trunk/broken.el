@@ -215,7 +215,29 @@
         ))
     nil))
 
+;; example posted to help-gnu-emacs
 
+(setq my-warnings '("-Wall"))
+(setq my-optimization '("-O2"))
+
+(defun create-compile-command ( target source )
+  (string-join " " (cons
+                     (or (getenv "CC") "gcc")
+                     (append my-warnings my-optimization (list "-o" target source)))))
+
+(create-compile-command "foo" "foo.c")
+
+(defun my-compile ()
+  (interactive)
+  (lexical-let*
+    ((source    (file-name-nondirectory buffer-file-name))
+     (target    (file-name-sans-extension source)))
+
+    (if (file-readable-p (concat (file-name-directory buffer-file-name) "Makefile"))
+      (compile)
+      (let
+        (compile-command (create-compile-command))
+        (compile))) ))
 
 
 
