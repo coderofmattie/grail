@@ -43,6 +43,9 @@
 ;; of definition = less call-outs to write because the parser is
 ;; generating more code for you.
 
+;; If you do need call-outs you should expect a good API and hooks
+;; at all vital points of a Parser Function.
+
 ;; This compiler facilitates new parsing operators, making it a good
 ;; vehicle for experimenting with new grammar classes.
 
@@ -66,6 +69,8 @@
 ;; 0. new parser generator merged in, and debugged.
 
 ;;    UPDATE: testing new co-routine design generator.
+
+;;    fix the token syntax and call-out API, make regex captures slick.
 
 ;; 1. All of the PEG predicates (missing not)
 
@@ -1487,30 +1492,33 @@ based upon the structure required.
    cons or list."
   (funcall type (match-beginning capture) (match-end capture)) )
 
-(defun parser-token-constructor ( constructor )
-  "Construct the Match Data constructor for the token as a single s-exp."
-
-  (cond
-    ((eq nil constructor)    `(parser-token-bounds 'cons 0))
-    ((listp constructor)     `(apply ',(bind-eval-lambda "parser-user-handler") (parser-token-bounds 'list 0)))
-    ((eq 'null constructor)  'nil)
-    ((functionp constructor) `(apply ',constructor (parser-token-bounds 'list 0)))
-    ((numberp constructor)   `(parser-token-bounds 'cons ,constructor))
-    ((symbolp constructor)   `(quote ',constructor))
-
-    ;; all other constructor types are un-handled.
-    ((signal 'parser-syntactic-error
-       (parser-diagnostic constructor
-         "parser-token-constructor"
-         "lambda|function|number|symbol")))) )
-
 (defun parser-token-function ( id &rest syntax )
   "Generate a token Match Function lambda."
   (lexical-let
     ((generated
        `(lambda ()
-          (when (looking-at ,@(car syntax))
-            (parser-result-token (cons ',id ,(parser-token-constructor (cadr syntax))))))))
+          (when (looking-at ,(car syntax))
+            (parser-result-token
+              ,(let
+                 ((constructor (if (listp syntax) (cadr syntax) syntax)))
+
+                 (if (and (symbolp constructor) (eqn 'null constructor))
+                   'nil
+                   `(cons
+                      ',id
+                      ,(cond
+                         ((eq nil constructor)    `(parser-token-bounds 'cons 0))
+                         ((listp constructor)     `(apply ',(bind-eval-lambda "parser-user-handler")
+                                                     (parser-token-bounds 'list 0)))
+                         ((numberp constructor)   `(parser-token-bounds 'cons ,constructor))
+                         ((functionp constructor) `(apply ',constructor (parser-token-bounds 'list 0)))
+                         ((symbolp constructor)   `(quote ',constructor))
+
+                         ;; all other constructor types are un-handled.
+                         ((signal 'parser-syntactic-error
+                            (parser-diagnostic constructor
+                              "parser-token-constructor"
+                              "lambda|function|number|symbol"))) ))) )) ))))
     (parser-compile-trace
       "parser-token-function: emit token."
       (pp-to-string)
