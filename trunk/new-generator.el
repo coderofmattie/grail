@@ -1320,7 +1320,11 @@ based upon the structure required.
               (parser-instruction 'call (parser-compile-terminate closure)) )))
 
         ((eq instruction 'call)
-          (when (parser-pf-call closure (parser-pf-link data))
+          (when (parser-pf-call
+                  closure
+                  (if (symbolp data)
+                    (parser-pf-link data)
+                    (parser-pf-link (make-symbol "anonymous-term")  data)))
             (parser-retry-after 'compile)))
 
         ((parser-retry-after 'unknown)) ))))
@@ -1617,6 +1621,13 @@ based upon the structure required.
           (parser-instruction 'call alias)
           (parser-instruction 'compile alias)
           (parser-strong-primitive 'ast-node name))) syntax)
+
+    (puthash "term"
+      (lambda ( name )
+        ;; a term that does not create nodes.
+        (list
+          (parser-instruction 'call name)
+          (parser-instruction 'compile name) )) syntax)
 
     (puthash "entry-point"
       ;; entry-point is unique in that the generator is tied into
