@@ -90,6 +90,7 @@ parser foo bar baz||
   (parser-compile
     dump
     (define
+      (/token recod-delim       "\n" null)
       (/token whitespace        "[[:blank:]]+"  null)
       (/token pkg-name          "[^[:blank:]]+" parser-token-string)
       (/token repo-name         "\\([^[:blank:]]+\\):" 1)
@@ -101,8 +102,11 @@ parser foo bar baz||
       )
 
     (/production package (/token package-record "\\\*" null) whitespace pkg-name)
-    (/production repository whitespace repo-name whitespace (/greedy pkg-version whitespace)) ))
+    (/production repository whitespace repo-name whitespace (/lazy (/greedy pkg-version whitespace) record-delim) ))
 
+(parser-trace-list paludis-trace
+  (package t)
+  (repository t))
 
 (parser-define 'paludis-query
   (parser-compile
