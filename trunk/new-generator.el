@@ -361,7 +361,7 @@ supplied as the single argument NODE."
     ((children (cdr node)))
 
     (setcdr parse-tree children)
-    (setq parse-tree (do ((x chilren))
+    (setq parse-tree (do ((x children))
                        ((null (cdr x)) x)
                        (setq x (cdr x))) )))
 
@@ -1748,10 +1748,11 @@ based upon the structure required.
   (parser-compile-run closure
     (list
       (parser-instruction 'call
-        (parser-compile-terminate
-          (parser-compile-run nil
-            (cons (parser-instruction 'call term)
-              (if term-semantics (reverse term-semantics)))))))))
+        (if term-semantics
+          (parser-compile-terminate
+            (parser-compile-run nil
+              (cons (parser-instruction 'call term) (reverse term-semantics))))
+          term)))))
 
 (defun parser-translate-form ( form )
   "parser-translate-form FORM
@@ -1790,6 +1791,11 @@ based upon the structure required.
       (lambda ( current next )
         (if (listp current)
           (progn
+            (when call-to
+              (setq closure
+                (parser-nest-term closure call-to (tail-list call-semantics)))
+              (setq call-to nil))
+
             (parser-compile-message "parser-translate-form" "descend")
             (setq closure (parser-nest-descent closure (parser-translate-form current)))
             (parser-compile-message "parser-translate-form" "return")
