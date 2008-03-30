@@ -1670,10 +1670,10 @@ based upon the structure required.
 
     (maphash
       (lambda ( name v )
-        (push name-list name))
+        (push name name-list))
       parser-syntax)
 
-    (apply 'concat (mapcar (lambda (x) (concat "|" x)) name-list)) ))
+    (apply 'concat (mapcar (lambda (x) (concat "|" x)) (cdr name-list))) ))
 
 (defun parser-escaped-primitive ( symbol )
   "
@@ -1705,10 +1705,9 @@ based upon the structure required.
     ((expand (gethash primitive parser-syntax)))
 
     (unless expand
-      (signal 'parser-syntactic-error (parser-expr-diagnostic
-                                        expand
+      (signal 'parser-syntactic-error (parser-diagnostic primitive
                                         "syntax"
-                                        (parser-pp-defined-syntax))))
+                                        (format "a primitive / escaped symbol - one of: %s" (parser-pp-defined-syntax)))))
     (if (functionp expand)
       (lexical-let
         ((arity (cdr (function-arity expand))))
