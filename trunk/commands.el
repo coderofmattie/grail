@@ -1,19 +1,9 @@
 ;;----------------------------------------------------------------------
-;; stable.el
+;; commands.el
 ;; Primary Author: Mike Mattie
 ;; Copyright: Mike Mattie (2007)
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
-
-;; this function was created because file-readable-p is strangely
-;; akward in that it returns t instead of the path it was given which
-;; neccesitates this silly wrapper. Consider sending this upstream as
-;; a patch or add-on to file-readable-p"
-
-(defun file-if-readable ( file )
-  "if file is a readable path return file or nil"
-  (if (file-readable-p file)
-    file))
 
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"
