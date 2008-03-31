@@ -16,7 +16,7 @@
 ;; undistributed features.
 ;;----------------------------------------------------------------------
 
-(use-styles "xml" "complete" "spell" "tab")
+(use-styles "xml" "spell" "tab")
 
 ;; (load-style "torus.el" "M-Torus will not be available - cycling extremely degraded.")
 
