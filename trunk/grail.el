@@ -194,6 +194,12 @@
 
 (load-user-elisp "elisp.el")
 
+;; Annoying Emacs.app 0.9-rc2 compat.
+(unless (functionp 'window-system)
+  (defun window-system ()
+    "grail.el replacement for window system function."
+    window-system))
+
 (unless noninteractive
   ;; only loaded when there is an active terminal.
   (load-user-elisp "keys.el")
