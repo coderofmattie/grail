@@ -21,9 +21,9 @@
 ;; load.el                    | entry point for emacs startup and phase #1
 ;;                              of the configuration.
 ;;
-;; load-library.el            | library of functions essential to phase #1
+;; loader-fn.el               | library of functions essential to phase #1
 ;;
-;; mattie.el                   | contains customization of emacs that is
+;; user.el                    | contains customization of emacs that is
 ;;                               robust, starts phase #2
 ;;
 ;; local/(*)                  | elisp maintained by the user.

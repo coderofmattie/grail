@@ -1,5 +1,5 @@
 ;;----------------------------------------------------------------------
-;; mattie.el
+;; user.el
 ;; written by: Mike Mattie
 ;;
 ;; My configuration for versions 22.1 and 23.x

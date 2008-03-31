@@ -93,7 +93,7 @@ parser foo bar baz||
   (parser-compile
     dump
     (define
-      (/token recod-delim       "\n" null)
+      (/token recod-delim       "\n+[[:blank:]]*" null)
       (/token whitespace        "[[:blank:]]+"  null)
       (/token pkg-name          "[^[:blank:]]+" parser-token-string)
       (/token repo-name         "\\([^[:blank:]]+\\):" 1)
