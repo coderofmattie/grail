@@ -91,6 +91,11 @@
                (insert (format "; errors loading %s\n" std-path)))
              nil)) ))
 
+(defun file-if-readable ( file )
+  "if file is a readable path return file or nil"
+  (if (file-readable-p file)
+    file))
+
 (defun load-elisp-if-exists ( path )
   (lexical-let
     ((std-path  (file-if-readable path)))
@@ -106,27 +111,36 @@
 ;; load the rest of the loader, and any customizations.
 ;;----------------------------------------------------------------------
 
-(load-user-elisp "loader-fn.el")
-(load-user-elisp "loader-cfg.el")
+(load-user-elisp "loader-fn.el")        ;; library used by the loader.
+(load-user-elisp "loader-cfg.el")       ;; file for user to change paths
+                                        ;; and select styles to load.
+(setq load-filter-dot-dirs "^\\.")
 
 (let
   ((extended-load-path
      (condition-case nil
-       (append
-         ;; overide distributed elisp with local modifications by
-         ;; inserting a "local" directory at the beginning of the
-         ;; load list
-         (cons user-local-emacs load-path)
+       (apply 'append
+         (seq-filter-nil
+           ;; overide distributed elisp with local modifications by
+           ;; inserting a "local" directory at the beginning of the
+           ;; load list
+           (if (file-accessible-directory-p user-local)
+             (list user-local-emacs))
 
-         (cons user-local-elisp
-           (filter-ls user-local-elisp t
-             (type ?d)
-             (!name "^\\.")))
+           load-path
 
-         (cons user-dist-elisp
-           (filter-ls user-dist-elisp t
-             (type ?d)
-             (!name "^\\."))) )
+           (if (file-accessible-directory-p user-local-elisp)
+             (cons user-local-elisp
+               (filter-ls user-local-elisp t
+                 (type ?d)
+                 (!name load-filter-dot-dirs))))
+
+           (if (file-accessible-directory-p user-dist-elisp)
+             (cons user-dist-elisp
+               (filter-ls user-dist-elisp t
+                 (type ?d)
+                 (!name load-filter-dot-dirs))))))
+
        (error nil)) ))
 
   (if (and extended-load-path (listp extended-load-path))
@@ -155,5 +169,7 @@
   (load-user-elisp "user.el")
 
   (if (window-system)
-    (load-user-elisp "gui.el")) )
+    (load-user-elisp "gui.el"))
+
+  (load-requested-styles))
 
