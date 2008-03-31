@@ -61,6 +61,16 @@
       (cons a-list b-list))
     (cons (cons (car list) nil) (cdr list))))
 
+(defun or-fn-list ( list )
+  "iterate through the list of functions. If a function returns t for
+   success terminate the iteration. It's a fancy or that assumes a list
+   of functions."
+  (catch 'terminate
+    (dolist (func list)
+      (if (funcall func)
+        (throw 'terminate t)))
+    nil))
+
 ;;----------------------------------------------------------------------
 ;; tail iterator
 ;;----------------------------------------------------------------------
