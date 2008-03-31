@@ -3,6 +3,7 @@
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 (require 'flyspell)
+(require 'dwim-tab)
 
 (setq-default
   ispell-program-name "aspell"                     ;; use aspell.

@@ -32,6 +32,11 @@
             (push transform rvalue)))))
     (reverse rvalue)))
 
+(defun file-if-readable ( file )
+  "if file is a readable path return file or nil"
+  (if (file-readable-p file)
+    file))
+
 ;;----------------------------------------------------------------------
 ;; loading
 ;;----------------------------------------------------------------------

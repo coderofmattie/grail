@@ -42,6 +42,8 @@
 (toggle-uniquify-buffer-names)                ;; more intelligent unique buffer names, will automatically
                                               ;; simplify buffer names when collisions are reduced.
 
+(setq require-final-newline t)                ;; some programs fail without a newline terminator
+
 ;;======================================================================
 ;;         Phase 2: Visual Asthethics & Global Key Bindings
 ;;======================================================================
@@ -53,8 +55,6 @@
 (menu-bar-mode -1)                            ;; disable the menu bar as well
 
 (message "%s" "init Phase: 1 complete")
-
-(setq require-final-newline t)             ;; some programs fail without a newline terminator
 
 ;; mode-line customization
 (display-time)                            ;; display the time on the modeline
@@ -147,13 +147,9 @@
     (setq eshell-visual-commands
       (append eshell-visual-commands (list "ssh" "su" "telnet")))
 
-    ;; ensure that none of my custom keybindings are affected.
-    (bind-my-tab-keys 'pcomplete-expand-and-complete)
-
     ;; I rarely want to quit eshell. when I do I can use quit. map
     ;; the usual kill-buffer keybinding to rid-window.
-    (local-set-key (kbd "C-x k") 'rid-window)
-    ))
+    (local-set-key (kbd "C-x k") 'rid-window) ))
 
 ;;----------------------------------------------------------------------
 ;;                    Tramp remote access
@@ -175,9 +171,7 @@
     (setq
       erc-default-server "irc.freenode.net"
       erc-default-port "6667"
-      erc-nick "codermattie")
-
-    (add-hook 'erc-mode-hook 'bind-my-paren-keys) ))
+      erc-nick "codermattie") ))
 
 ;;----------------------------------------------------------------------
 ;; sawfish.
@@ -190,7 +184,7 @@
     ;; errors.
       (local-set-key (kbd "C-x e") 'sawfish-eval-defun)
 
-      (bind-my-tab-keys 'sawfish-complete-symbol)
+      (dwim-tab-localize 'sawfish-complete-symbol)
 
       ;; bind-my-paren-keys is not required, because sawfish runs the elisp hooks
       ;; evidently. just need to re-setup my tab key.

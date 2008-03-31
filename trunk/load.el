@@ -86,6 +86,29 @@
   "load a path relative to the configuration directory"
   (load-file (concat user-elisp-root path)))
 
+(defun robust-load-elisp ( path )
+  (condition-case nil
+    (load std-path)
+    (error (progn
+             ;; duplicate the message to both *Messages* as a log
+             ;; and to the *scratch* buffer where it is highly visible.
+             (message "errors loading: %s\n" std-path)
+             (with-current-buffer "*scratch*"
+               (goto-char (point-max))
+               (insert (format "; errors loading %s\n" std-path)))
+             nil)) ))
+
+(defun load-elisp-if-exists ( path )
+  (lexical-let
+    ((std-path  (file-if-readable path)))
+
+    (when std-path
+      (robust-load-elisp std-path)) ))
+
+(defun load-user-elisp ( path )
+  (when path
+    (load-elisp-if-exists (concat user-elisp-root path))))
+
 (load-config "load-library.el")
 
 (setq load-path
@@ -111,17 +134,15 @@
 ;; each host system has a site file that normalizes the platform
 ;; and extends the library search space for extra libraries it manages.
 ;;----------------------------------------------------------------------
-(cond
-  ;; Gentoo has a file that tunes emacs and loads the third party
-  ;; components managed by the package manager.
-  ((string-equal "gnu/linux" system-type)
-    (load-file "/usr/share/emacs/site-lisp/site-gentoo.el"))
-
-  ;; on darwin assume carbon-emacs.
-  ((string-equal "darwin" system-type) (load-config "darwin.el"))
-  )
+(load-user-elisp
+  (cond
+    ((string-equal "gnu/linux" system-type)  "linux.el")
+    ((string-equal "darwin"    system-type)  "darwin.el")))
 
 (unless noninteractive
   ;; only loaded when there is an active terminal.
-  (load-config "mattie.el"))
+  (load-user-elisp "keys.el")
+  (load-user-elisp "commands.el")
+
+  (load-user-elisp "user.el"))
 
