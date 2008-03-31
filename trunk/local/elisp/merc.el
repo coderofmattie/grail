@@ -241,3 +241,5 @@
     (save-excursion
       (make-directory (concat (get-merge-queue) "/" name) t)
       (append-to-merge-plan name)) ))
+
+(provide 'merc)
