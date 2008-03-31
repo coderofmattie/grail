@@ -28,14 +28,27 @@
 ;;                              so that emacs session state does not mix with
 ;;                              source which is very different in lifetime and
 ;;                              content management.
-;;
+
+;; all of the following paths are relative to user-elisp-root. Files that
+;; do not exist are silently ignored.
+
 ;; grail.el                   | entry point for emacs startup and phase #1
 ;;                              of the configuration.
 ;;
 ;; grail-fn.el                | library of functions essential to phase #1
 ;;
-;; user.el                    | contains customization of emacs that is
-;;                               robust, starts phase #2
+;; elisp.el                   | user elisp functions, should not be (interactive) only:
+                              | loaded by --script
+
+;; user.el                    | user customization of Emacs.
+
+;; commands.el                | user commands only loaded in interactive Emacs
+;; keys.el                    | user key-binding customization
+;; interface.el               | modify the mainline Emacs interface, gui agnostic.
+;; gui.el                     | only loaded with a window-system
+
+;; linux.el                   | only loaded on gnu/linux.
+;; darwin.el                  | only loaded on darwin.
 ;;
 ;; local/(*)                  | elisp maintained by the user.
 ;;      emacs/                | local elisp that modifies or replaces packages/files distributed
