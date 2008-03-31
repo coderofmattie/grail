@@ -53,11 +53,6 @@
 ;;
 ;;----------------------------------------------------------------------
 
-(eval-after-load "dwim-tab"
-  (add-hook 'emacs-lisp-mode-hook
-    (lambda ()
-      (dwim-tab-localize 'lisp-complete-symbol))))
-
 (eval-after-load "erc"
   (progn
     (setq
