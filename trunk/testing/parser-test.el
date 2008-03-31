@@ -32,6 +32,9 @@
 ;; parser function generation testing.
 ;;----------------------------------------------------------------------
 
+;; this seems to trigger correct pp-to-string behavior.
+(pp-to-string 'foo)
+
 ;; test the single token/function case
 
 (parser-compile dump
