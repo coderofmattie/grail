@@ -75,6 +75,10 @@
   (concat user-dist-dir "elisp/")
   "The directory containing third-party elisp extensions of Emacs.")
 
+(defvar user-dist-elpa
+  (concat user-dist-dir "elpa/")
+  "ELPA managed third party elisp.")
+
 (require 'cl)
 
 ;; FIXME: need setter functions when paths need to be re-computed as
@@ -162,6 +166,8 @@
   (cond
     ((string-equal "gnu/linux" system-type)  "linux.el")
     ((string-equal "darwin"    system-type)  "darwin.el")))
+
+(load-elpa-when-installed)
 
 (load-user-elisp "elisp.el")
 
