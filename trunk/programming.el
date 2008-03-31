@@ -67,7 +67,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;;                          tune-programming
+;; very custom
 ;;----------------------------------------------------------------------
 
 ;; enhanced merging setup.
@@ -84,7 +84,6 @@
 
 (defun configure-for-programming ()
   "Enable my programming customizations for the buffer"
-  (interactive "Mlanguage? ")
 
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
@@ -94,8 +93,6 @@
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
-
-  (set (make-local-variable 'source-language) lang)
 
   ;; create a default register that shortens repeated
   ;; register commands
@@ -115,7 +112,15 @@
   (local-set-key (kbd "C-l w") 'set-default-register)
   (local-set-key (kbd "C-l i") 'insert-default-register)
 
-  (else-xml-init))
+  ;; here is where C-xe will expand templates
+  (local-set-key (kbd "C-l e") 'else-expand-placeholder)
+  (local-set-key (kbd "C-l n") 'else-next-placeholder)
+
+  (local-set-key (kbd "C-l k") 'else-kill-placeholder)
+
+  (local-set-key (kbd "C-l l") 'else-show-token-names)
+
+  (else-xml))
 
 ;;----------------------------------------------------------------------
 ;; elisp
@@ -150,6 +155,7 @@
 
     (add-hook 'cperl-mode-hook
       (lambda ()
+        (set (make-local-variable 'source-language) "perl5")
         (configure-for-programming)
         (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))) ))
 

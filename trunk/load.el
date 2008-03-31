@@ -75,6 +75,8 @@
   (concat user-dist-dir "elisp/")
   "The directory containing third-party elisp extensions of Emacs.")
 
+(require 'cl)
+
 ;; FIXME: need setter functions when paths need to be re-computed as
 ;;        side-effects.
 
@@ -84,14 +86,14 @@
 
 (defun robust-load-elisp ( path )
   (condition-case nil
-    (load std-path)
+    (load path)
     (error (progn
              ;; duplicate the message to both *Messages* as a log
              ;; and to the *scratch* buffer where it is highly visible.
-             (message "errors loading: %s\n" std-path)
+             (message "errors loading: %s\n" path)
              (with-current-buffer "*scratch*"
                (goto-char (point-max))
-               (insert (format "; errors loading %s\n" std-path)))
+               (insert (format "; errors loading %s\n" path)))
              nil)) ))
 
 (defun file-if-readable ( file )
@@ -127,7 +129,7 @@
            ;; overide distributed elisp with local modifications by
            ;; inserting a "local" directory at the beginning of the
            ;; load list
-           (if (file-accessible-directory-p user-local)
+           (if (file-accessible-directory-p user-local-emacs)
              (list user-local-emacs))
 
            load-path

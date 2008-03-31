@@ -333,4 +333,20 @@
         (insert-buffer-substring merge-from)
         ))))
 
+(defun else-xml ()
+  (catch 'dont-install
+
+    (unless (and (boundp 'source-language) (stringp source-language))
+      (throw 'dont-install nil))
+
+    (unless (else-xml-load-language source-language)
+      (throw 'dont-install nil))
+
+    ;; localize the current language to the buffer and set it properly
+    (else-establish-language source-language)
+
+    (else-mode)
+
+    (else-xml-load-language-alist source-language) ))
+
 (provide 'else-xml)

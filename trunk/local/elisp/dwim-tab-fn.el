@@ -3,6 +3,6 @@
 ;;----------------------------------------------------------------------
 
 (require 'cm-list)
-(require 'cm-elisp)
+(require 'cm-lisp)
 
 (provide 'dwim-tab-fn)

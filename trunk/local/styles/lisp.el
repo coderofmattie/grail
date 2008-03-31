@@ -32,8 +32,6 @@
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
-    (tune-programming "elisp")
-
     ;; this binding is very important. normal evaluation of defuns such as defvar
     ;; and defcustom do not change the default value because the form only sets
     ;; the value if nil.

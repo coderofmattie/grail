@@ -10,7 +10,6 @@
 ;;----------------------------------------------------------------------
 ;; utilities.
 ;;----------------------------------------------------------------------
-(require 'cl) ;; need the common-lisp macros such as lexical-let
 
 (defun list-filter-nil ( list )
   "Filter nil symbols from a list"
