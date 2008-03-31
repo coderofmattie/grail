@@ -1,7 +1,10 @@
 ;;----------------------------------------------------------------------
 ;; grail.el
 ;; Primary Author: Mike Mattie
-;;
+;; Copyright (C) 2008 Mike Mattie
+;; License: LGPL-v3
+;;----------------------------------------------------------------------
+
 ;; Grail is an attempt to seek the Holy Grail of Emacs Theory:
 ;; unification of all the various essential bits of elisp in a sane
 ;; deployment.
@@ -12,7 +15,6 @@
 ;; This file serves as the entry-point for a Emacs configuration. You
 ;; should link .emacs to this file at the root of the directory
 ;; grail-elisp-root.
-;;----------------------------------------------------------------------
 
 (defconst grail-release-version "0.0.1"
   "the release number of grail.el")
