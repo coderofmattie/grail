@@ -45,7 +45,7 @@
             (funcall completion-function)
             (indent-for-tab-command))) )) ))
 
-(defun dwim-tab-localize ( completion-context )
+(defun dwim-tab-localize ( &optional completion-context )
   ;; when setting up major/minor modes adapt my global key-bindings to
   ;; the modes of the buffer. Local key-bindings that shadow my global
   ;; key-bindings are unset or replaced with contextualized variations
