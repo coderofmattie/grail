@@ -1,12 +1,13 @@
 ;;----------------------------------------------------------------------
 ;; grail-fn.el
 ;; Primary Author: Mike Mattie
+;; Copyright (C) 2008 Mike Mattie
 ;; License: LPGL-v3
-;;
+;;----------------------------------------------------------------------
+
 ;; definitions that are essential to the Emacs boot. This was split
 ;; from my general utility collection so that the risk of introducing
 ;; bugs/complexity early in the boot process could be minimized.
-;;----------------------------------------------------------------------
 
 ;;----------------------------------------------------------------------
 ;; utilities.
