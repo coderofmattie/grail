@@ -38,7 +38,7 @@
 ;; grail-fn.el                | library of functions essential to phase #1
 ;;
 ;; elisp.el                   | user elisp functions, should not be (interactive) only:
-                              | loaded by --script
+;;                            | loaded by --script
 
 ;; user.el                    | user customization of Emacs.
 
