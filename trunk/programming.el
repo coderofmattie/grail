@@ -82,7 +82,7 @@
 ;; some mundane asthetics and keybindings plus whatever dwim input
 ;; expansion I can cook up.
 
-(defun tune-programming ( lang )
+(defun configure-for-programming ()
   "Enable my programming customizations for the buffer"
   (interactive "Mlanguage? ")
 
@@ -118,61 +118,65 @@
   (else-xml-init))
 
 ;;----------------------------------------------------------------------
+;; elisp
+;;----------------------------------------------------------------------
+(add-hook 'emacs-lisp-mode-hook 'configure-for-programming)
+
+;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
-(require 'cperl-mode)
 (defalias 'perl-mode 'cperl-mode)
 
 (setq
   auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
-                             ("\\.pm$"      . cperl-mode)
-                             ) auto-mode-alist )
+                            ("\\.pm$"      . cperl-mode)
+                             ) auto-mode-alist ))
 
-  else-mode-xml-alist (cons '("perl5" . ("perl5.xml"
-                                          "loop.xml"))
-                        else-mode-xml-alist)
+(eval-after-load "cperl-mode"
+  (progn
+    (setq
+      else-mode-xml-alist (cons '("perl5" . ("perl5.xml"
+                                             "loop.xml"))
+                            else-mode-xml-alist)
 
-  cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
-  cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
+      cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
+      cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
 
-  cperl-indent-parens-as-block t   ;; This was a critical fix , no more
-                                   ;; data structure indenting to the opening brace
+      cperl-indent-parens-as-block t   ;; This was a critical fix , no more
+                                       ;; data structure indenting to the opening brace
 
-  cperl-indent-level 2             ;; indentation adjustments
-  cperl-continued-statement-offset 2
-  )
+      cperl-indent-level 2             ;; indentation adjustments
+      cperl-continued-statement-offset 2)
 
-(add-hook 'cperl-mode-hook
-  (lambda ()
-    (tune-programming "perl5")
-
-    (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
-    ))
+    (add-hook 'cperl-mode-hook
+      (lambda ()
+        (configure-for-programming)
+        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))) ))
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
 ;;----------------------------------------------------------------------
 
-(require 'cc-mode)                        ;; cc-mode foundation for
-					  ;; code editing
-(setq auto-mode-alist (append '(
-				 ("\\.c$"       . c-mode)
-				 ("\\.cc$"      . c++-mode)
-				 ("\\.cpp$"     . c++-mode)
-				 ("\\.h$"       . c++-mode)
-				 ) auto-mode-alist ))
+(setq auto-mode-alist (append '(("\\.c$"       . c-mode)
+				("\\.cc$"      . c++-mode)
+				("\\.cpp$"     . c++-mode)
+				("\\.h$"       . c++-mode)
+                                 ) auto-mode-alist ))
 
-(add-hook 'c-mode-common-hook
-  (lambda ()
-    (c-setup-filladapt)            ;; adaptive fill for maintaining
-				   ;; indenting inside comments
+(eval-after-load "cc-mode"
+  (add-hook 'c-mode-common-hook
+    (lambda ()
+      (configure-for-programming)
 
-    (c-set-style "linux")          ;; base off of linux style
+      (c-setup-filladapt)            ;; adaptive fill for maintaining
+                                     ;; indenting inside comments
 
-    (setq c-basic-offset 2)               ;; tabs are 2 spaces
-    (c-set-offset 'substatement-open '0)  ;; hanging braces
+      (c-set-style "linux")          ;; base off of linux style
 
-    (c-toggle-auto-hungry-state 1) ;; auto-hungry newline and
-				   ;; whitespace delete
-    ))
+      (setq c-basic-offset 2)               ;; tabs are 2 spaces
+      (c-set-offset 'substatement-open '0)  ;; hanging braces
+
+      (c-toggle-auto-hungry-state 1) ;; auto-hungry newline and
+                                     ;; whitespace delete
+      )) )
 
