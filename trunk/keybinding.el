@@ -1,5 +1,5 @@
 ;;----------------------------------------------------------------------
-;; keybinding.el
+;; keys.el
 ;; Primary Author: Mike Mattie (codermattie@gmail.com)
 ;;
 ;; keybinding tools and configuration.
@@ -52,6 +52,10 @@
 ;; S-TAB  = Shift tab cycles between windows.
 
 (global-set-key (kbd "<S-tab>") 'other-window)
+
+(defun mattie-tab-switching ()
+  (local-unset-key (kbd "<M-tab>"))
+  (local-unset-key (kbd "<S-tab>")))
 
 
 
