@@ -26,7 +26,6 @@
 ;; mattie.el                   | contains customization of emacs that is
 ;;                               robust, starts phase #2
 ;;
-;;
 ;; local/(*)                  | elisp maintained by the user.
 ;;      emacs/                | local elisp that modifies or replaces packages distributed
 ;;                              with the mainline.
@@ -34,6 +33,9 @@
 ;;
 ;;      patches/              | patches against distributed emacs files required
 ;;                              by my config.
+;;      styles/               | modules that combine loading/deploying required packages
+;;                              with configuration that blends those packages into a
+;;                              harmonious "style" of using Emacs.
 
 ;; dist/(*)
 ;;     elisp/                 | elisp maintained and distributed by a Third Party.
@@ -61,6 +63,10 @@
   (concat user-local-dir "elisp/")
   "The directory containing Emacs libraries created and maintained by the
    user.")
+
+(defvar user-local-styles
+  (concat user-local-dir "styles/")
+  "The directory containing Emacs style modules.")
 
 (defvar user-dist-dir
   (concat user-elisp-root "dist/"))
