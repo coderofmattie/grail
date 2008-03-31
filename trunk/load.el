@@ -1,11 +1,18 @@
 ;;----------------------------------------------------------------------
-;; load.el
+;; grail.el
 ;; Primary Author: Mike Mattie
 ;;
-;; This file extends load-path according to the configuration's
-;; fs structure, and adapts to the host platform according to
-;; the value of system-type.
+;; An attempt to seek the Emacs Holy Grail: unification of all the
+;; various essential bits of elisp in a sane deployment.
+;;
+;; This file serves as the entry-point for a Emacs configuration. You
+;; should link .emacs to this file at the root of the directory
+;; grail-elisp-root.
 ;;----------------------------------------------------------------------
+
+(defvar grail-elisp-root
+  (or (getenv "USER_ELISP") (concat (getenv "HOME") "/system/emacs/"))
+  "The root of the user's elisp tree")
 
 ;; This code will assume a FS structure like this:
 ;;
@@ -18,16 +25,16 @@
 ;;                              source which is very different in lifetime and
 ;;                              content management.
 ;;
-;; load.el                    | entry point for emacs startup and phase #1
+;; grail.el                   | entry point for emacs startup and phase #1
 ;;                              of the configuration.
 ;;
-;; loader-fn.el               | library of functions essential to phase #1
+;; grail-fn.el                | library of functions essential to phase #1
 ;;
 ;; user.el                    | contains customization of emacs that is
 ;;                               robust, starts phase #2
 ;;
 ;; local/(*)                  | elisp maintained by the user.
-;;      emacs/                | local elisp that modifies or replaces packages distributed
+;;      emacs/                | local elisp that modifies or replaces packages/files distributed
 ;;                              with the mainline.
 ;;      elisp/                | elisp maintained by the user that complements the mainline.
 ;;
@@ -39,44 +46,43 @@
 
 ;; dist/(*)
 ;;     elisp/                 | elisp maintained and distributed by a Third Party.
+;;                              Usually this is for projects you contribute to where
+;;                              you want to keep a VCS checkout.
+;;     elpa/                  | elisp maintained by ELPA.
 
 ;; The files user-elisp-root are not in the load-path and must be loaded with explicit paths.
 
-(defvar user-elisp-root
-  (or (getenv "USER_ELISP") (concat (getenv "HOME") "/system/emacs/"))
-  "The root of the user's elisp tree")
-
-(defvar user-local-dir
-  (concat user-elisp-root "local/")
+(defvar grail-local-dir
+  (concat grail-elisp-root "local/")
   "The directory containing the user's local modifications to emacs
    and elisp.
 
-   user-local-emacs and user-local-elisp are the preferred
+   grail-local-emacs and grail-local-elisp are the preferred
    variables for accessing user specific elisp paths.")
 
-(defvar user-local-emacs
-  (concat user-local-dir "emacs/")
+(defvar grail-local-emacs
+  (concat grail-local-dir "emacs/")
   "The directory containing Emacs packages that over-ride the packages
    distributed with Emacs.")
 
-(defvar user-local-elisp
-  (concat user-local-dir "elisp/")
+(defvar grail-local-elisp
+  (concat grail-local-dir "elisp/")
   "The directory containing Emacs libraries created and maintained by the
    user.")
 
-(defvar user-local-styles
-  (concat user-local-dir "styles/")
+(defvar grail-local-styles
+  (concat grail-local-dir "styles/")
   "The directory containing Emacs style modules.")
 
-(defvar user-dist-dir
-  (concat user-elisp-root "dist/"))
+(defvar grail-dist-dir
+  (concat grail-elisp-root "dist/"))
 
-(defvar user-dist-elisp
-  (concat user-dist-dir "elisp/")
+(defvar grail-dist-elisp
+  (concat grail-dist-dir "elisp/")
   "The directory containing third-party elisp extensions of Emacs.")
 
-(defvar user-dist-elpa
-  (concat user-dist-dir "elpa/")
+(defvar grail-dist-elpa
+  (concat grail-dist-dir "elpa/")
   "ELPA managed third party elisp.")
 
 (require 'cl)
@@ -94,10 +100,10 @@
     (error (progn
              ;; duplicate the message to both *Messages* as a log
              ;; and to the *scratch* buffer where it is highly visible.
-             (message "errors loading: %s\n" path)
+             (message "grail.el: errors loading %s\n" path)
              (with-current-buffer "*scratch*"
                (goto-char (point-max))
-               (insert (format "; errors loading %s\n" path)))
+               (insert (format "; grail.el: errors loading %s\n" path)))
              nil)) ))
 
 (defun file-if-readable ( file )
@@ -107,21 +113,21 @@
 
 (defun load-elisp-if-exists ( path )
   (lexical-let
-    ((std-path  (file-if-readable path)))
+    ((accessible-path  (file-if-readable path)))
 
-    (when std-path
-      (robust-load-elisp std-path)) ))
+    (when accessible-path
+      (robust-load-elisp accessible-path)) ))
 
 (defun load-user-elisp ( path )
   (when path
-    (load-elisp-if-exists (concat user-elisp-root path))))
+    (load-elisp-if-exists (concat grail-elisp-root path))))
 
 ;;----------------------------------------------------------------------
 ;; load the rest of the loader, and any customizations.
 ;;----------------------------------------------------------------------
 
-(load-user-elisp "loader-fn.el")        ;; library used by the loader.
-(load-user-elisp "loader-cfg.el")       ;; file for user to change paths
+(load-user-elisp "loader-fn.el")         ;; library used by the loader.
+(load-user-elisp "grail-cfg.el")        ;; file for user to change paths
 
 (setq load-filter-dot-dirs "^\\.")
 
@@ -133,20 +139,20 @@
            ;; overide distributed elisp with local modifications by
            ;; inserting a "local" directory at the beginning of the
            ;; load list
-           (if (file-accessible-directory-p user-local-emacs)
-             (list user-local-emacs))
+           (if (file-accessible-directory-p grail-local-emacs)
+             (list grail-local-emacs))
 
            load-path
 
-           (if (file-accessible-directory-p user-local-elisp)
-             (cons user-local-elisp
-               (filter-ls user-local-elisp t
+           (if (file-accessible-directory-p grail-local-elisp)
+             (cons grail-local-elisp
+               (filter-ls grail-local-elisp t
                  (type ?d)
                  (!name load-filter-dot-dirs))))
 
-           (if (file-accessible-directory-p user-dist-elisp)
-             (cons user-dist-elisp
-               (filter-ls user-dist-elisp t
+           (if (file-accessible-directory-p grail-dist-elisp)
+             (cons grail-dist-elisp
+               (filter-ls grail-dist-elisp t
                  (type ?d)
                  (!name load-filter-dot-dirs))))))
 
@@ -154,7 +160,7 @@
 
   (if (and extended-load-path (listp extended-load-path))
     (setq load-path extended-load-path)
-    (message "load.el: unable to form an extended load-path. check for problems loading loader-fn.el.") ))
+    (message "grail.el: unable to form an extended load-path. check for problems loading grail-fn.el.") ))
 
 ;;----------------------------------------------------------------------
 ;; Host specific adaptation

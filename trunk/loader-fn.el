@@ -1,5 +1,5 @@
 ;;----------------------------------------------------------------------
-;; load-library.el
+;; grail-fn.el
 ;; Primary Author: Mike Mattie
 ;;
 ;; definitions that are essential to the Emacs boot. This was split
@@ -39,18 +39,13 @@
             (push transform rvalue)))))
     (reverse rvalue)))
 
-(defun file-if-readable ( file )
-  "if file is a readable path return file or nil"
-  (if (file-readable-p file)
-    file))
-
 ;;----------------------------------------------------------------------
 ;; styles
 ;;----------------------------------------------------------------------
 
 (defun load-style ( style-name )
   (lexical-let*
-    ((load-name  (concat user-local-styles style-name ".el"))
+    ((load-name  (concat grail-local-styles style-name ".el"))
      (style-file (file-if-readable load-name)))
 
     (if style-file
@@ -74,37 +69,6 @@
     (lambda ( name )
       (push name requested-styles-list))
     request-list))
-
-;;----------------------------------------------------------------------
-;; elpa
-;;----------------------------------------------------------------------
-
-(defconst elpa-url
-  "http://tromey.com/elpa/")
-
-(defun load-elpa-when-installed ()
-  (when (and
-         (file-accessible-directory-p user-dist-elpa)
-         (load-elisp-if-exists (concat user-dist-elpa "package.el")))
-    (setq-default package-user-dir user-dist-elpa)
-    (package-initialize)))
-
-(defun load-install-elpa ()
-  (interactive)
-  (condition-case nil
-      (progn
-        (make-directory user-dist-elpa t)
-
-        (with-temp-buffer
-          (url-insert-file-contents (concat elpa-url "package.el"))
-          (write-file (concat user-dist-elpa "package.el")))
-
-        (load-elpa-when-installed))
-
-    (error
-     (progn
-       (message "ELPA installation failed.\n")
-       nil)) ))
 
 ;;----------------------------------------------------------------------
 ;; filter-ls: a general purpose tools for filtering directory listings.
@@ -144,3 +108,34 @@
                (cons (car attr-list) (nth 9 attr-list)))
        ;; get the list of files.
        (directory-files-and-attributes ,path ,path-type)) ))
+
+;;----------------------------------------------------------------------
+;; elpa
+;;----------------------------------------------------------------------
+
+(defconst elpa-url
+  "http://tromey.com/elpa/")
+
+(defun load-elpa-when-installed ()
+  (when (and
+         (file-accessible-directory-p grail-dist-elpa)
+         (load-elisp-if-exists (concat grail-dist-elpa "package.el")))
+    (setq-default package-user-dir grail-dist-elpa)
+    (package-initialize)))
+
+(defun grail-install-elpa ()
+  (interactive)
+  (condition-case nil
+      (progn
+        (make-directory grail-dist-elpa t)
+
+        (with-temp-buffer
+          (url-insert-file-contents (concat elpa-url "package.el"))
+          (write-file (concat grail-dist-elpa "package.el")))
+
+        (load-elpa-when-installed))
+
+    (error
+     (progn
+       (message "ELPA installation failed.\n")
+       nil)) ))
