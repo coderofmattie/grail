@@ -2,8 +2,12 @@
 ;; grail.el
 ;; Primary Author: Mike Mattie
 ;;
-;; An attempt to seek the Emacs Holy Grail: unification of all the
-;; various essential bits of elisp in a sane deployment.
+;; Grail is an attempt to seek the Holy Grail of Emacs Theory:
+;; unification of all the various essential bits of elisp in a sane
+;; deployment.
+;;
+;; Grail on a more basic level is a grand load-path hack for the Elisp
+;; coder who can't leave anything alone.
 ;;
 ;; This file serves as the entry-point for a Emacs configuration. You
 ;; should link .emacs to this file at the root of the directory
