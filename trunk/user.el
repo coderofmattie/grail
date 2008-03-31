@@ -175,7 +175,7 @@
 
 ;; load in-development features. if it is partial or completely broken
 ;; use broken.el
-(load-user-elisp "alpha.el")
+(load-user-elisp "experiments/alpha.el")
 
 (load-user-elisp "programming.el")
 
