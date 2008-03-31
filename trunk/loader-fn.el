@@ -49,20 +49,32 @@
 ;; loading
 ;;----------------------------------------------------------------------
 
-(defmacro load-style ( file error )
-  "Load a style which is a combination of techniques that depend on features
-   which are not distributed by Emacs."
-  `(condition-case nil
-     (load (concat user-local-styles ,file))
-     (error (progn
-              ;; duplicate the message to both *Messages* as a log
-              ;; and to the *scratch* buffer where it is highly visible.
-              (message "initialization failed %s" ,error)
-              (with-current-buffer "*scratch*"
-                (goto-char (point-max))
-                (insert (format "; !degraded configuration! %s\n" ,error)))
-              ))
-     ))
+(defun load-style ( style-name )
+  (lexical-let*
+    ((load-name  (concat user-local-styles style-name ".el"))
+     (style-file (file-if-readable load-name)))
+
+    (if style-file
+      (robust-load-elisp style-file)
+      (progn
+        (message "load-style (loader-fn.el): could not load style %s from: %s\n"
+          style-name
+          load-name)
+        nil)) ))
+
+(defvar requested-styles-list
+  nil
+  "List of styles requested by the user.")
+
+(defun load-requested-styles ()
+  (mapc 'load-style
+    requested-styles-list))
+
+(defun use-styles ( &rest request-list )
+  (mapc
+    (lambda ( name )
+      (push name requested-styles-list))
+    request-list))
 
 ;;----------------------------------------------------------------------
 ;; filter-ls: a general purpose tools for filtering directory listings.
@@ -101,5 +113,4 @@
      (mapcar (lambda ( attr-list )
                (cons (car attr-list) (nth 9 attr-list)))
        ;; get the list of files.
-       (directory-files-and-attributes ,path ,path-type))
-     ))
+       (directory-files-and-attributes ,path ,path-type)) ))
