@@ -43,7 +43,7 @@
 ;; The files user-elisp-root are not in the load-path and must be loaded with explicit paths.
 
 (defvar user-elisp-root
-  (concat (getenv "HOME") "/system/emacs/")
+  (or (getenv "USER_ELISP") (concat (getenv "HOME") "/system/emacs/"))
   "The root of the user's elisp tree")
 
 (defvar user-local-dir
@@ -75,16 +75,9 @@
   (concat user-dist-dir "elisp/")
   "The directory containing third-party elisp extensions of Emacs.")
 
-;; here we need to load user-paths.el or some such thing so the user
-;; can tune the paths.
-
-;; first load a small file containing only the functions that are essential
-;; to constructing the load path. Once the load-path, system adaptation,
-;; site-file have been loaded we can be less paranoid.
-
-(defun load-config ( path )
-  "load a path relative to the configuration directory"
-  (load-file (concat user-elisp-root path)))
+;;----------------------------------------------------------------------
+;; define a robust loading command.
+;;----------------------------------------------------------------------
 
 (defun robust-load-elisp ( path )
   (condition-case nil
@@ -109,24 +102,36 @@
   (when path
     (load-elisp-if-exists (concat user-elisp-root path))))
 
-(load-config "load-library.el")
+;;----------------------------------------------------------------------
+;; load the rest of the loader, and any customizations.
+;;----------------------------------------------------------------------
 
-(setq load-path
-  (append
-    ;; overide distributed elisp with local modifications by
-    ;; inserting a "local" directory at the beginning of the
-    ;; load list
-    (cons user-local-emacs load-path)
+(load-user-elisp "loader-fn.el")
+(load-user-elisp "loader-cfg.el")
 
-    (cons user-local-elisp
-      (filter-ls user-local-elisp t
-        (type ?d)
-        (!name "^\\.")))
+(let
+  ((extended-load-path
+     (condition-case nil
+       (append
+         ;; overide distributed elisp with local modifications by
+         ;; inserting a "local" directory at the beginning of the
+         ;; load list
+         (cons user-local-emacs load-path)
 
-    (cons user-dist-elisp
-      (filter-ls user-dist-elisp t
-        (type ?d)
-        (!name "^\\."))) ))
+         (cons user-local-elisp
+           (filter-ls user-local-elisp t
+             (type ?d)
+             (!name "^\\.")))
+
+         (cons user-dist-elisp
+           (filter-ls user-dist-elisp t
+             (type ?d)
+             (!name "^\\."))) )
+       (error nil)) ))
+
+  (if (and extended-load-path (listp extended-load-path))
+    (setq load-path extended-load-path)
+    (message "load.el: unable to form an extended load-path. check for problems loading loader-fn.el.") ))
 
 ;;----------------------------------------------------------------------
 ;; Host specific adaptation
@@ -143,6 +148,7 @@
   ;; only loaded when there is an active terminal.
   (load-user-elisp "keys.el")
   (load-user-elisp "commands.el")
+  (load-user-elisp "interface.el")
 
   (load-user-elisp "user.el"))
 
