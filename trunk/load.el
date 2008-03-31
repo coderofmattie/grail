@@ -11,11 +11,12 @@
 ;;
 ;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
 ;;                              it like /var
-;;  my-emacs-dir =
-;;   $HOME/system/emacs       | keep my emacs configuration under version
-;;                              control seperate from any emacs default path
-;;                              so that odd files don't show up from emacs
-;;                              sessions.
+;;
+;;  user-elisp-root           | all of my emacs customization and elisp. I keep
+;;                              it outside of .emacs.d and under version control
+;;                              so that emacs session state does not mix with
+;;                              source which is very different in lifetime and
+;;                              content management.
 ;;
 ;; load.el                    | entry point for emacs startup and phase #1
 ;;                              of the configuration.
@@ -25,24 +26,19 @@
 ;; mattie.el                   | contains customization of emacs that is
 ;;                               robust, starts phase #2
 ;;
-;; *.el                       | my libraries,code, and parts of the customization
-;;                              that may fail.
 ;;
-;; patches/                   | patches against distributed emacs files required
+;; local/(*)                  | elisp maintained by the user.
+;;      emacs/                | local elisp that modifies or replaces packages distributed
+;;                              with the mainline.
+;;      elisp/                | elisp maintained by the user that complements the mainline.
+;;
+;;      patches/              | patches against distributed emacs files required
 ;;                              by my config.
-;;
-;; local/(*)                  | distributed files that have been locally modified
-;;
-;; elisp/(*)                  | Third party extensions that are not distributed by
-;;                              emacs and not integrated through host package management.
-;;                              This is the highest maintenance burden.
 
-;; The config files are relocated to the $HOME/system/emacs so the config/code
-;; under version control is not stomped on or cluttered by all the traffic
-;; into the standard location: session and intra-session state.
+;; dist/(*)
+;;     elisp/                 | elisp maintained and distributed by a Third Party.
 
-;; * only system/emacs/{local,elisp} are placed in the load-path. the files in system/emacs
-;;   are assumed to chain manually.
+;; The files user-elisp-root are not in the load-path and must be loaded with explicit paths.
 
 (defvar user-elisp-root
   (concat (getenv "HOME") "/system/emacs/")
