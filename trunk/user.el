@@ -12,6 +12,18 @@
 ;; be loaded via load-style.
 ;;----------------------------------------------------------------------
 
+;;----------------------------------------------------------------------
+;; undistributed features.
+;;----------------------------------------------------------------------
+
+(use-styles "xml" "complete" "spell" "tab")
+
+;; (load-style "torus.el" "M-Torus will not be available - cycling extremely degraded.")
+
+;;----------------------------------------------------------------------
+;;                    General Modifications
+;;----------------------------------------------------------------------
+
 ;; disable customization, automatic persistence of configuration changes.
 ;; I personally don't like customize as I prefer emacs to start with
 ;; a state I have personally defined and reviewed.
@@ -21,16 +33,6 @@
 
 (setq custom-file "/dev/null")
 
-;;----------------------------------------------------------------------
-;; window system
-;;----------------------------------------------------------------------
-
-(setq use-dialog-box nil)                     ;; kill the dialogs before they strike.
-
-;;----------------------------------------------------------------------
-;;                    General Modifications
-;;----------------------------------------------------------------------
-
 (setq make-backup-files nil)            ;; backups, currently off until fixed.
 
 (setq
@@ -38,12 +40,6 @@
   current-language-environment "ASCII")
 
 (setq require-final-newline t)                ;; some programs fail without a newline terminator
-
-;;======================================================================
-;;         Phase 2: Visual Asthethics & Global Key Bindings
-;;======================================================================
-
-(load-user-elisp "visual.el")                 ;; visual theme.
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
@@ -123,7 +119,6 @@
 ;;----------------------------------------------------------------------
 ;;                    Tramp remote access
 ;;----------------------------------------------------------------------
-
 (require 'tramp)
 
 (setq tramp-default-method "scp2")
@@ -182,234 +177,5 @@
 ;; use broken.el
 (load-user-elisp "alpha.el")
 
-;;----------------------------------------------------------------------
-;; undistributed features.
-;;----------------------------------------------------------------------
+(load-user-elisp "programming.el")
 
-(load-style "xml.el" "nxml not be available")
-(load-style "complete.el" "icicles not be available - minibuffer extremely degraded.")
-;; (load-style "torus.el" "M-Torus will not be available - cycling extremely degraded.")
-
-;;======================================================================
-;;                  Phase 4: Programming
-;;======================================================================
-(message "%s" "init Phase: 3 complete")
-
-;;----------------------------------------------------------------------
-;;                       misc.
-;;----------------------------------------------------------------------
-
-;; found this on emacs-wiki , all scripts are automatically made executable.
-(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
-
-;;----------------------------------------------------------------------
-;;                   whitespace dogma
-;;----------------------------------------------------------------------
-
-;; space vs. tab, trailing, can get into alot of trouble committing
-;; "dirty" files.
-
-(setq-default indent-tabs-mode nil)
-(setq-default show-trailing-whitespace t)
-
-;; make sure tabs are impossible to miss.
-(global-hi-lock-mode 1)
-(highlight-regexp "\t")
-
-;;----------------------------------------------------------------------
-;;                      font-lock engine
-;;----------------------------------------------------------------------
-
-;; tune font-lock, important for hairy files.
-(setq jit-lock-contextually nil          ;; only refontify modified lines
-      jit-lock-defer-contextually t      ;; until 5 seconds has passed
-      jit-lock-stealth-time 10)          ;; refontify 10 seconds after no input
-
-
-(auto-composition-mode 0) ;; 23.x this is buggy, definitely for 23.0.60
-
-;;----------------------------------------------------------------------
-;;                          GUD
-;;----------------------------------------------------------------------
-
-;; (require 'speedbar)                       ;; the speedbar is handy for GUD
-
-(setq                     ;; cmd window + src
-  gdb-show-main t)
-
-;;----------------------------------------------------------------------
-;;                          Ediff
-;;----------------------------------------------------------------------
-
-;; I will enventually create my interactive merge interface with this
-;; mode as a foundation. Until then tweak the basics.
-
-(require 'ediff)		          ;; 2-3 way merge tool, can be used
-					  ;; for cherry picking and splitting
-
-(setq
-  ediff-custom-diff-options "-U3"         ;; same for ediff
-
-  ediff-split-window-function 'split-window-horizontally
-  ediff-merge-split-window-function 'split-window-horizontally
-
-  ediff-use-toolbar-p nil              ;; doesnt work ? disable the toolbar in ediff
-  ediff-window-setup-function 'ediff-setup-windows-plain ;; this should work.
-  )
-
-;;----------------------------------------------------------------------
-;;                          tune-programming
-;;----------------------------------------------------------------------
-
-;; enhanced merging setup.
-(require 'merc)
-
-;; latest and greatest template facility.
-(load-style "template.el" "XML enhanced else template mode not available.")
-
-;; this is insanely great. It displays the function you are "in" in terms
-;; of the point. Really nice for reading long functions.
-
-(which-function-mode)
-
-;; some mundane asthetics and keybindings plus whatever dwim input
-;; expansion I can cook up.
-
-(defun set-default-register ( register )
-  "set the default register"
-  (interactive "cregister? ")
-  (set default-register register)
-  )
-
-(defun tune-programming ( lang )
-  "Enable my programming customizations for the buffer"
-  (interactive "Mlanguage? ")
-
-  (turn-on-font-lock)                     ;; enable syntax highlighting
-
-  ;; (turn-on-filladapt-mode)             ;; smart comment line wrapping
-
-  (bind-my-tab-keys lang)                 ;; use my keybindings
-
-  ;; better return key for programming
-  (local-set-key (kbd "<return>") 'newline-and-indent)
-
-  (set (make-local-variable 'source-language) lang)
-
-  ;; create a default register that shortens repeated
-  ;; register commands
-  (set (make-local-variable 'default-register) 'a)
-
-  ;; use Ctrl-l as the prefix for e commands. It's short
-  ;; and the usual unix meaning of centering a screen is
-  ;; a small loss.
-  (local-unset-key (kbd "C-l"))
-
-  (local-set-key (kbd "M-f") 'forward-sexp)
-  (local-set-key (kbd "M-b") 'backward-sexp)
-
-  (local-set-key (kbd "C-l s") 'set-default-register)
-  (local-set-key (kbd "C-l r") 'list-registers)
-
-  (local-set-key (kbd "C-l w")
-    (lambda ()
-      (interactive)
-      (set-register default-register
-        (filter-buffer-substring (region-beginning) (region-end)))
-      ))
-
-  (local-set-key (kbd "C-l i")
-    (lambda ()
-      (interactive)
-      (insert-register default-register)))
-
-  (else-xml-init)
-)
-
-;;----------------------------------------------------------------------
-;; elisp
-;;----------------------------------------------------------------------
-(setq lisp-indent-offset 2)
-
-(load-style "paren.el" "parentheses highlighting will not be available")
-
-(add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    (tune-programming "elisp")
-
-    (bind-my-paren-keys)
-
-    ;; this binding is very important. normal evaluation of defuns such as defvar
-    ;; and defcustom do not change the default value because the form only sets
-    ;; the value if nil.
-
-    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
-    ;; this function/keybinding should be used exclusively to avoid frustrating
-    ;; errors.
-    (local-set-key (kbd "C-x e") 'eval-defun)
-
-    ;; replace dired at point, far less useful to me than instrumenting a function.
-    (local-set-key (kbd "C-x d") 'edebug-defun)
-
-    ;; elisp doesn't need tags, find-function works just fine.
-    (local-set-key (kbd "M-.") 'find-function)
-    ))
-
-;;----------------------------------------------------------------------
-;; perl5
-;;----------------------------------------------------------------------
-(require 'cperl-mode)
-(defalias 'perl-mode 'cperl-mode)
-
-(setq
-  auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
-                             ("\\.pm$"      . cperl-mode)
-                             ) auto-mode-alist )
-
-  else-mode-xml-alist (cons '("perl5" . ("perl5.xml"
-                                          "loop.xml"))
-                        else-mode-xml-alist)
-
-  cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
-  cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
-
-  cperl-indent-parens-as-block t   ;; This was a critical fix , no more
-                                   ;; data structure indenting to the opening brace
-
-  cperl-indent-level 2             ;; indentation adjustments
-  cperl-continued-statement-offset 2
-  )
-
-(add-hook 'cperl-mode-hook
-  (lambda ()
-    (tune-programming "perl5")
-
-    (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
-    ))
-
-;;----------------------------------------------------------------------
-;; C/C++ common
-;;----------------------------------------------------------------------
-
-(require 'cc-mode)                        ;; cc-mode foundation for
-					  ;; code editing
-(setq auto-mode-alist (append '(
-				 ("\\.c$"       . c-mode)
-				 ("\\.cc$"      . c++-mode)
-				 ("\\.cpp$"     . c++-mode)
-				 ("\\.h$"       . c++-mode)
-				 ) auto-mode-alist ))
-
-(add-hook 'c-mode-common-hook
-  (lambda ()
-    (c-setup-filladapt)            ;; adaptive fill for maintaining
-				   ;; indenting inside comments
-
-    (c-set-style "linux")          ;; base off of linux style
-
-    (setq c-basic-offset 2)               ;; tabs are 2 spaces
-    (c-set-offset 'substatement-open '0)  ;; hanging braces
-
-    (c-toggle-auto-hungry-state 1) ;; auto-hungry newline and
-				   ;; whitespace delete
-    ))
