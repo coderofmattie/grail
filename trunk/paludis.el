@@ -86,20 +86,20 @@
   )
 
 ;; why can't I name an or ? this is a weakness in define that needs to be addressed.
-(parser-compile paludis-query
-  (define
-    (token whitespace        "[[:blank:]]+" null)
-    (token pkg-name          "[^[:blank:]]+" parser-token-string)
-    (token repo-name         "\\([^[:blank:]]+\\):" 1)
+(define-parser 'paludis-query
+  (parser-compile
+    (define
+      (/token whitespace        "[[:blank:]]+" null)
+      (/token pkg-name          "[^[:blank:]]+" parser-token-string)
+      (/token repo-name         "\\([^[:blank:]]+\\):" 1)
 
-    (name pkg-version        (or
-                               (token pkg-ver-masked "\\\(\\([^[:blank:]]+\\)\\\)[^[:blank:]]+" 1)
-                               (token pkg-ver-stable "[^[:blank:]{][^[:blank:]]+" parser-token-string)))
-    )
+      (/term  pkg-version        (/or
+                                   (/token pkg-ver-masked "\\\(\\([^[:blank:]]+\\)\\\)[^[:blank:]]+" 1)
+                                   (/token pkg-ver-stable "[^[:blank:]{][^[:blank:]]+" parser-token-string)))
+      )
 
-  (and package (token package-record "\\\*") whitespace pkg-name)
-  (and repository whitespace repo-name whitespace (+ pkg-version whitespace))
-  )
+    (/and package (token package-record "\\\*") whitespace pkg-name)
+    (/and repository whitespace repo-name whitespace (+ pkg-version whitespace)) ))
 
 (parser-trace-list paludis-trace
   (package t)

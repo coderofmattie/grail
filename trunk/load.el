@@ -44,10 +44,37 @@
 ;; * only system/emacs/{local,elisp} are placed in the load-path. the files in system/emacs
 ;;   are assumed to chain manually.
 
-(setq my-emacs-dir (concat (getenv "HOME") "/system/emacs/"))
+(defvar user-elisp-root
+  (concat (getenv "HOME") "/system/emacs/")
+  "The root of the user's elisp tree")
 
-(setq my-localized-dir (concat my-emacs-dir "local/"))
-(setq my-extras-dir    (concat my-emacs-dir "elisp/"))
+(defvar user-local-dir
+  (concat my-emacs-dir "local/")
+  "The directory containing the user's local modifications to emacs
+   and elisp.
+
+   user-local-emacs and user-local-elisp are the preferred
+   variables for accessing user specific elisp paths.")
+
+(defvar user-local-emacs
+  (concat user-local-dir "emacs/")
+  "The directory containing Emacs packages that over-ride the packages
+   distributed with Emacs.")
+
+(defvar user-local-elisp
+  (concat user-local-dir "elisp/")
+  "The directory containing Emacs libraries created and maintained by the
+   user.")
+
+(defvar user-dist-dir
+  (concat my-emacs-dir "dist/"))
+
+(defvar user-dist-elisp
+  (concat user-dist-dir "elisp/")
+  "The directory containing third-party elisp extensions of Emacs.")
+
+;; here we need to load user-paths.el or some such thing so the user
+;; can tune the paths.
 
 ;; first load a small file containing only the functions that are essential
 ;; to constructing the load path. Once the load-path, system adaptation,
@@ -55,7 +82,7 @@
 
 (defun load-config ( path )
   "load a path relative to the configuration directory"
-  (load-file (concat my-emacs-dir path)))
+  (load-file (concat user-elisp-root path)))
 
 (load-config "load-library.el")
 
@@ -64,13 +91,15 @@
     ;; overide distributed elisp with local modifications by
     ;; inserting a "local" directory at the beginning of the
     ;; load list
-    (cons my-localized-dir load-path)
+    (cons user-local-emacs load-path)
 
-    ;; add the extras and it's sub-directories to the end of the list.
-    (cons my-extras-dir
-      (filter-ls my-extras-dir t
+    (filter-ls user-local-elisp t
         (type ?d)
-        (!name "^\\."))) ))
+        (!name "^\\."))
+
+    (filter-ls user-dist-elisp t
+      (type ?d)
+      (!name "^\\.")) ))
 
 ;;----------------------------------------------------------------------
 ;; Host specific adaptation
@@ -88,5 +117,7 @@
   ((string-equal "darwin" system-type) (load-config "darwin.el"))
   )
 
-;; load my advanced configuration
-(load-config "mattie.el")
+(unless noninteractive
+  ;; only loaded when there is an active terminal.
+  (load-config "mattie.el"))
+

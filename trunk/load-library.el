@@ -40,7 +40,7 @@
   "Load a style which is a combination of techniques that depend on features
    which are not distributed by Emacs."
   `(condition-case nil
-     (load (concat my-emacs-dir "styles/" ,file))
+     (load (concat user-elisp-root "styles/" ,file))
      (error (progn
               ;; duplicate the message to both *Messages* as a log
               ;; and to the *scratch* buffer where it is highly visible.
