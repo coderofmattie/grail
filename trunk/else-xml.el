@@ -3,8 +3,8 @@
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 
-;; This depends on two functions from mattie.el
-;; map-filter-nil,
+(require 'else-mode)
+(require 'cm-list)
 
 ;;----------------------------------------------------------------------
 ;; these parts are ugly. Not integrated correctly with exisitng code.
@@ -332,3 +332,5 @@
         (open-line 2)
         (insert-buffer-substring merge-from)
         ))))
+
+(provide 'else-xml)
