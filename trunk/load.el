@@ -152,5 +152,8 @@
   (load-user-elisp "commands.el")
   (load-user-elisp "interface.el")
 
-  (load-user-elisp "user.el"))
+  (load-user-elisp "user.el")
+
+  (if (window-system)
+    (load-user-elisp "gui.el")) )
 
