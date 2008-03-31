@@ -12,6 +12,14 @@
 ;;----------------------------------------------------------------------
 (require 'cl) ;; need the common-lisp macros such as lexical-let
 
+(defun list-filter-nil ( list )
+  "Filter nil symbols from a list"
+  (remq 'nil list))
+
+(defun seq-filter-nil ( &rest list-seq )
+  "Filter nil symbols from a sequence."
+  (list-filter-nil list-seq))
+
 (defun map-filter-nil ( func &rest seq )
   "map-filter-nil FUNC LIST
 
