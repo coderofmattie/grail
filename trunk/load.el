@@ -144,6 +144,8 @@
     ((string-equal "gnu/linux" system-type)  "linux.el")
     ((string-equal "darwin"    system-type)  "darwin.el")))
 
+(load-user-elisp "elisp.el")
+
 (unless noninteractive
   ;; only loaded when there is an active terminal.
   (load-user-elisp "keys.el")
