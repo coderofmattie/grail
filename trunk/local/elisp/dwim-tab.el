@@ -48,9 +48,6 @@
   ;; key-bindings are unset or replaced with contextualized variations
   ;; of my global defaults.
 
-  (local-unset-key (kbd "<M-tab>"))
-  (local-unset-key (kbd "<S-tab>"))
-
   (local-set-key (kbd "<tab>") (dwim-tab-generator completion-context)) )
 
 (provide 'dwim-tab)
