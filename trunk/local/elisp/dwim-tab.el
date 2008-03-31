@@ -11,6 +11,9 @@
   "a list of functions for contextualized-tab to try. These functions need to return t only
    if they are certain their dwim is the right dwim.")
 
+(defun dwim-tab-add-context ( context-fn )
+  (push context-fn dwim-tab-context))
+
 (defvar dwim-tab-fallback
   (lambda () (dabbrev-expand nil))
   "fallback completion function")
