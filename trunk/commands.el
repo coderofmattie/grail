@@ -276,14 +276,21 @@
     ))
 
 ;;----------------------------------------------------------------------
-;; list utilities.
+;; default register
 ;;----------------------------------------------------------------------
 
-(defun strip-list-last ( list )
-  "strip the last element from a list"
-  (if (consp (cdr list))
-    (cons
-      (car list)
-      (strip-list-last (cdr list)))
-    nil))
+(defun assign-default-register ( register )
+  "assign the default register"
+  (interactive "cregister? ")
+  (set default-register register))
+
+(defun set-default-register ()
+  (interactive)
+
+  (set-register default-register
+    (filter-buffer-substring (region-beginning) (region-end))))
+
+(defun insert-default-register ()
+  (interactive)
+  (insert-register default-register))
 

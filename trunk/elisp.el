@@ -33,6 +33,15 @@
                 (lambda ( overlay )
                   (if (overlay-get overlay mode-symbol) t)) overlay-list)))) ))
 
+(defun strip-list-last ( list )
+  "strip the last element from a list"
+  (if (consp (cdr list))
+    (cons
+      (car list)
+      (strip-list-last (cdr list)))
+    nil))
+
+
 (require 'cm-util)
 (require 'cm-compat)
 (require 'cm-list)
