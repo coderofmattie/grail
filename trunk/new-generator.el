@@ -1210,22 +1210,19 @@ based upon the structure required.
 
     ;; FIXME: this optimization is still hosed.
 
-    (when (null pf-relation)
-      ;; set the default relation, optimize when there is only one term.
+    (cond
+      ((= 1 (length pf-terms))
+        ;; simple optimization, when a sequence has only a single call
+        ;; make it the predicate.
+        (progn
+          (setq pf-relation (car pf-terms))
+          (setq pf-terms nil)))
 
-      (cond
-        ((= 1 (length pf-terms))
-          ;; simple optimization, when a sequence has only a single call
-          ;; make it the predicate.
-          (progn
-            (setq pf-relation (car pf-terms))
-            (setq pf-terms nil)))
-
-        ((> (length pf-terms) 1)
-          ;; the default relational operator is and. to get a
-          ;; specific relational operator make sure it's the
-          ;; first instruction after the call phase.
-          (setq pf-relation 'parser-relation-and)) ))
+      ((and (> (length pf-terms) 1) (null pf-relation))
+        ;; the default relational operator is and. to get a
+        ;; specific relational operator make sure it's the
+        ;; first instruction after the call phase.
+        (setq pf-relation 'parser-relation-and)) )
 
     ;; any time we have a closure, or sequence, we will always need to
     ;; setup an AST recursion environment, even if there are no AST
