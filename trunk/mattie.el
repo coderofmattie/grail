@@ -22,25 +22,20 @@
 (setq custom-file "/dev/null")
 
 ;;----------------------------------------------------------------------
-;; basic startup tuning.
+;; window system
 ;;----------------------------------------------------------------------
 
 (setq use-dialog-box nil)                     ;; kill the dialogs before they strike.
-(setq initial-scratch-message nil)            ;; nix the scratch message, and the splash screen.
-(setq inhibit-splash-screen t)
 
-(transient-mark-mode -1)                      ;; not a big fan of transient mark mode.
+;;----------------------------------------------------------------------
+;;                    General Modifications
+;;----------------------------------------------------------------------
 
-(setq-default set-mark-command-repeat-pop t)  ;; C-u C-<spc> pops the mark, with this on
-                                              ;; simply repeating C-<spc> continues backwards through
-                                              ;; the ring. makes it easier to rewind back through a
-                                              ;; series of marks.
+(setq make-backup-files nil)            ;; backups, currently off until fixed.
+
 (setq
   case-fold-search t
   current-language-environment "ASCII")
-
-(toggle-uniquify-buffer-names)                ;; more intelligent unique buffer names, will automatically
-                                              ;; simplify buffer names when collisions are reduced.
 
 (setq require-final-newline t)                ;; some programs fail without a newline terminator
 
@@ -48,47 +43,18 @@
 ;;         Phase 2: Visual Asthethics & Global Key Bindings
 ;;======================================================================
 
-;; disable things I don't use from eating screen-space
-
-(tool-bar-mode -1)                            ;; cannot be set with setq
-(scroll-bar-mode -1)                          ;; disable the scrollbar
-(menu-bar-mode -1)                            ;; disable the menu bar as well
-
-(message "%s" "init Phase: 1 complete")
-
-;; mode-line customization
-(display-time)                            ;; display the time on the modeline
-
-(column-number-mode 1)		          ;; handy guides when following
-(line-number-mode 1)			  ;; errors
-
-(load-config "visual.el")     ;; visual theme.
-(load-config "keybinding.el") ;; load idiosyncratic key-bindings.
+(load-user-elisp "visual.el")                 ;; visual theme.
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
 ;;----------------------------------------------------------------------
 
 (setq auto-mode-alist (append '(("\\.txt$"     . text-mode)
-				 ) auto-mode-alist ))
-
-;;======================================================================
-;;         Phase 3: Turn on more complex functionality.
-;;======================================================================
-(message "%s" "init Phase: 2 complete")
+                                 ) auto-mode-alist ))
 
 ;;----------------------------------------------------------------------
-;;                     Personal ELisp Library.
+;; Emacs Server
 ;;----------------------------------------------------------------------
-
-;; this file is for stable versions of the functions only.
-(load-config "stable.el")
-
-;;----------------------------------------------------------------------
-;;                    General Modifications
-;;----------------------------------------------------------------------
-
-(setq make-backup-files nil)            ;; backups, currently off until fixed.
 
 (require 'server)
 
@@ -98,9 +64,6 @@
                                         ;; to connect to a session running as
                                         ;; an unprivelaged user.
 (server-start)
-
-(setq                   ;; customize ffap to open urls in a buffer
-  ffap-url-fetcher 'visit-url)
 
 ;;----------------------------------------------------------------------
 ;;                 IPC shell:  comint/term mode
@@ -152,6 +115,12 @@
     (local-set-key (kbd "C-x k") 'rid-window) ))
 
 ;;----------------------------------------------------------------------
+;; network protocols
+;;----------------------------------------------------------------------
+(setq                   ;; customize ffap to open urls in a buffer
+  ffap-url-fetcher 'visit-url)
+
+;;----------------------------------------------------------------------
 ;;                    Tramp remote access
 ;;----------------------------------------------------------------------
 
@@ -172,23 +141,6 @@
       erc-default-server "irc.freenode.net"
       erc-default-port "6667"
       erc-nick "codermattie") ))
-
-;;----------------------------------------------------------------------
-;; sawfish.
-;;----------------------------------------------------------------------
-(eval-after-load "sawfish"
-  (add-hook 'sawfish-mode-hook
-    (lambda ()
-    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
-    ;; this function/keybinding should be used exclusively to avoid frustrating
-    ;; errors.
-      (local-set-key (kbd "C-x e") 'sawfish-eval-defun)
-
-      (dwim-tab-localize 'sawfish-complete-symbol)
-
-      ;; bind-my-paren-keys is not required, because sawfish runs the elisp hooks
-      ;; evidently. just need to re-setup my tab key.
-      )))
 
 ;;----------------------------------------------------------------------
 ;;                           Diff
@@ -233,7 +185,7 @@
 
 ;; load in-development features. if it is partial or completely broken
 ;; use broken.el
-(load-config "alpha.el")
+(load-user-elisp "alpha.el")
 
 ;;----------------------------------------------------------------------
 ;; undistributed features.
