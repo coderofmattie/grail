@@ -126,7 +126,7 @@
 ;; load the rest of the loader, and any customizations.
 ;;----------------------------------------------------------------------
 
-(load-user-elisp "loader-fn.el")         ;; library used by the loader.
+(load-user-elisp "grail-fn.el")         ;; library used by the loader.
 (load-user-elisp "grail-cfg.el")        ;; file for user to change paths
 
 (setq load-filter-dot-dirs "^\\.")
