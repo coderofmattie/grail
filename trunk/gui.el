@@ -6,6 +6,8 @@
 ;; colors for the cursor and the background. Kept in visual.el since
 ;; the colors need to be harmonious.
 
+(setq use-dialog-box nil)                     ;; kill the dialogs before they strike.
+
 (blink-cursor-mode -1)
 (set-cursor-color "yellow")
 (setq-default cursor-type 'hollow)
