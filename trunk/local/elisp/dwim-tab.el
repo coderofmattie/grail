@@ -24,7 +24,7 @@
     (or-fn-list dwim-tab-context)
     nil))
 
-(defun dwim-tab-generator ( complete-fn )
+(defun dwim-tab-generator ( &optional complete-fn )
   ;; generate a contextualized flavor of the tab key behavior.
 
   (lexical-let
