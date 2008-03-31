@@ -4,48 +4,28 @@
 ;; Copyright:
 ;; License: LGPL-v3
 ;;----------------------------------------------------------------------
+(require 'dwim-tab-fn)
 
-(require 'mattie-elisp)
-
-(defun try-list (list)
-  "iterate through the list of functions. If a function returns t for
-   success terminate the iteration. It's a fancy or that assumes a list
-   of functions."
-  (catch 'terminate
-    (dolist (func list)
-      (if (funcall func)
-        (throw 'terminate t)))
-    nil
-    ))
-
-(defvar tab-context
+(defvar dwim-tab-context
   nil
   "a list of functions for contextualized-tab to try. These functions need to return t only
    if they are certain their dwim is the right dwim.")
 
-(defun eval-tab-context ()
+(defvar dwim-tab-fallback
+  (lambda () (dabbrev-expand nil))
+  "fallback completion function")
+
+(defun try-context-dwim ()
   "evaluate the tab context via the tab-context list of functions"
-  (if tab-context
-    (try-list tab-context)
+  (if dwim-tab-context
+    (or-fn-list dwim-tab-context)
     nil))
 
-(defun dwim-tab-generator (completion-context)
+(defun dwim-tab-generator ( complete-fn )
   ;; generate a contextualized flavor of the tab key behavior.
 
   (lexical-let
-    ((completion-function
-       ;; TODO, handle a lambda coming in.
-       ;; just a string selecting what is hardwired in here.
-
-       (cond
-         ((functionp completion-context) completion-context)
-         ((symbolp completion-context) completion-context)
-         ;; use lisp-complete-symbol for elisp
-         ((string-equal completion-context "elisp") 'lisp-complete-symbol)
-
-         ;; fall back on dabbrev
-         ((lambda () (dabbrev-expand nil)))
-         )))
+    ((completion-function (or complete-fn dwim-tab-fallback)))
 
     ;; If I create a un-interned symbol I think my problems will go away.
     (bind-eval-lambda "dwim-tab"
@@ -56,13 +36,11 @@
         ;; first try the tab context which should override the
         ;; general tab behavior only when the text or properties
         ;; essentially guarantee to DTRT
-        (unless (eval-tab-context)
+        (unless (try-context-dwim)
           (if (looking-at "\\>")
             ;; fall back on completion or indentation
             (funcall completion-function)
-            (indent-for-tab-command)))
-        ))
-    ))
+            (indent-for-tab-command))) )) ))
 
 (defun dwim-tab-localize ( completion-context )
   ;; when setting up major/minor modes adapt my global key-bindings to
