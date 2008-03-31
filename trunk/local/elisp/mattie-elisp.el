@@ -5,12 +5,6 @@
 ;; Description: basic elisp programming tools.
 ;;----------------------------------------------------------------------
 
-;; required for my patched em-unix, note: merged upstream, may collide
-;; on a update.
-(defun nil-blank-string ( string )
-  "if a string is all blanks return nil, if there are non-blank characters return the string"
-  (if (string-match "[^[:blank:]]" string ) string))
-
 ;; much like easy-mmode-define-keymap macro but with a little more
 ;; juice doing the defvar part as well.
 
@@ -39,6 +33,7 @@
                 (lambda ( overlay )
                   (if (overlay-get overlay mode-symbol) t)) overlay-list)))) ))
 
+(require 'cm-util)
 (require 'cm-compat)
 (require 'cm-list)
 (require 'cm-lisp)
