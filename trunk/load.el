@@ -49,7 +49,7 @@
   "The root of the user's elisp tree")
 
 (defvar user-local-dir
-  (concat my-emacs-dir "local/")
+  (concat user-elisp-root "local/")
   "The directory containing the user's local modifications to emacs
    and elisp.
 
@@ -67,7 +67,7 @@
    user.")
 
 (defvar user-dist-dir
-  (concat my-emacs-dir "dist/"))
+  (concat user-elisp-root "dist/"))
 
 (defvar user-dist-elisp
   (concat user-dist-dir "elisp/")
@@ -93,13 +93,15 @@
     ;; load list
     (cons user-local-emacs load-path)
 
-    (filter-ls user-local-elisp t
+    (cons user-local-elisp
+      (filter-ls user-local-elisp t
         (type ?d)
-        (!name "^\\."))
+        (!name "^\\.")))
 
-    (filter-ls user-dist-elisp t
-      (type ?d)
-      (!name "^\\.")) ))
+    (cons user-dist-elisp
+      (filter-ls user-dist-elisp t
+        (type ?d)
+        (!name "^\\."))) ))
 
 ;;----------------------------------------------------------------------
 ;; Host specific adaptation
