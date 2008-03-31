@@ -75,6 +75,9 @@
   (concat user-dist-dir "elisp/")
   "The directory containing third-party elisp extensions of Emacs.")
 
+;; FIXME: need setter functions when paths need to be re-computed as
+;;        side-effects.
+
 ;;----------------------------------------------------------------------
 ;; define a robust loading command.
 ;;----------------------------------------------------------------------
@@ -113,7 +116,7 @@
 
 (load-user-elisp "loader-fn.el")        ;; library used by the loader.
 (load-user-elisp "loader-cfg.el")       ;; file for user to change paths
-                                        ;; and select styles to load.
+
 (setq load-filter-dot-dirs "^\\.")
 
 (let
