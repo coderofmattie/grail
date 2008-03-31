@@ -14,6 +14,9 @@
 ;; grail-elisp-root.
 ;;----------------------------------------------------------------------
 
+(defconst grail-release-version "0.0.1"
+  "the release number of grail.el")
+
 (defvar grail-elisp-root
   (or (getenv "USER_ELISP") (concat (getenv "HOME") "/system/emacs/"))
   "The root of the user's elisp tree")
