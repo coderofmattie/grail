@@ -27,9 +27,6 @@
   (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil))) )
 
 (add-hook 'emacs-lisp-mode-hook
-  'swap-paren-keys)
-
-(add-hook 'emacs-lisp-mode-hook
   (lambda ()
     (swap-paren-keys)
     (show-paren-mode t)
