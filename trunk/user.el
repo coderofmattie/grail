@@ -24,6 +24,13 @@
 ;;                    General Modifications
 ;;----------------------------------------------------------------------
 
+;; make sure that the pretty printer doesn't abbreviate which frustrates my
+;; development.
+
+(setq
+ print-length nil
+ print-level nil)
+
 ;; disable customization, automatic persistence of configuration changes.
 ;; I personally don't like customize as I prefer emacs to start with
 ;; a state I have personally defined and reviewed.
