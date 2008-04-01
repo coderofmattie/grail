@@ -8,5 +8,6 @@ parser.el
 grail.el
 
 0.0.1:  grail=1081 grail-fn=1082
+0.0.2:  grail=1091 grail-fn=1098
 
 
