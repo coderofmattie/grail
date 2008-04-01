@@ -53,7 +53,7 @@
     (if style-file
       (robust-load-elisp style-file)
       (progn
-        (message "load-style (loader-fn.el): could not load style %s from: %s\n"
+        (message "load-style (grail-fn.el): could not load style %s from: %s\n"
           style-name
           load-name)
         nil)) ))
