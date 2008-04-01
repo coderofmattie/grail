@@ -123,6 +123,7 @@
          (file-accessible-directory-p grail-dist-elpa)
          (load-elisp-if-exists (concat grail-dist-elpa "package.el")))
     (setq-default package-user-dir grail-dist-elpa)
+    (push grail-dist-elpa package-directory-list)
     (package-initialize)))
 
 (defun grail-install-elpa ()
