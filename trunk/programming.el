@@ -177,7 +177,7 @@
       (c-setup-filladapt)            ;; adaptive fill for maintaining
                                      ;; indenting inside comments
 
-      (c-set-style "linux")          ;; base off of linux style
+;;      (c-set-style "linux")          ;; base off of linux style
 
       (setq c-basic-offset 2)               ;; tabs are 2 spaces
       (c-set-offset 'substatement-open '0)  ;; hanging braces

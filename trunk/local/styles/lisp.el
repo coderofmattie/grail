@@ -11,7 +11,7 @@
   lisp-indent-offset 2
   paren-showing t
   show-paren-style 'parenthesis
-  show-paren-delay 2
+  show-paren-delay nil
   paren-sexp-mode 'match )
 
 (defun swap-paren-keys ()
