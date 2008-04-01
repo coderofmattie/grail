@@ -8,6 +8,7 @@
 ;; fancy paren/delimited highlighting.
 
 (setq
+  lisp-indent-offset 2
   paren-showing t
   show-paren-style 'parenthesis
   show-paren-delay 2
