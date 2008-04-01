@@ -55,11 +55,5 @@
 ;;----------------------------------------------------------------------
 
 (eval-after-load "erc"
-  (progn
-    (setq
-      erc-default-server "irc.freenode.net"
-      erc-default-port "6667"
-      erc-nick "codermattie")
-
-    (add-hook 'erc-mode-hook 'swap-paren-keys) ))
+  (add-hook 'erc-mode-hook 'swap-paren-keys))
 
