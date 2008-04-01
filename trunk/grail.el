@@ -16,7 +16,7 @@
 ;; should link .emacs to this file at the root of the directory
 ;; grail-elisp-root.
 
-(defconst grail-release-version "0.0.1"
+(defconst grail-release-version "0.0.2"
   "the release number of grail.el")
 
 (defvar grail-elisp-root
