@@ -1,7 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; dwim-tab.el
 ;; Primary Author: Mike Mattie
-;; Copyright:
+;; Copyright (C) 2008 Mike Mattie
 ;; License: LGPL-v3
 ;;----------------------------------------------------------------------
 (require 'dwim-tab-fn)
@@ -24,7 +24,7 @@
     (or-fn-list dwim-tab-context)
     nil))
 
-(defun dwim-tab-generator ( &optional complete-fn )
+(defun dwim-tab-generator ( complete-fn )
   ;; generate a contextualized flavor of the tab key behavior.
 
   (lexical-let
@@ -51,6 +51,6 @@
   ;; key-bindings are unset or replaced with contextualized variations
   ;; of my global defaults.
 
-  (local-set-key (kbd "<tab>") (dwim-tab-generator completion-context)) )
+  (local-set-key (kbd "<tab>") (dwim-tab-generator (or completion-context dwim-tab-fallback))) )
 
 (provide 'dwim-tab)
