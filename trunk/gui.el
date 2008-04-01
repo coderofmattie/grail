@@ -59,7 +59,7 @@
                     :underline nil
                     :slant normal
                     :weight normal
-                    :height 110
+                    :height 130
                     :width normal
                     :family "DejaVuLisp"))
 

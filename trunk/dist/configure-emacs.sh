@@ -3,6 +3,7 @@
 cd emacs
 
 exec ./configure --with-x --prefix=$HOME/system/local/ \
+--with-xft \
 --without-gpm \
 --without-carbon \
 --without-xaw3d \

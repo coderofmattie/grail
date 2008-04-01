@@ -3,7 +3,7 @@
 ;; Primary Author: Mike Mattie
 ;; Copyright:
 ;;----------------------------------------------------------------------
-(require 'mic-paren)
+(require 'paren)
 
 ;; fancy paren/delimited highlighting.
 
@@ -13,8 +13,6 @@
   show-paren-style 'parenthesis
   show-paren-delay 2
   paren-sexp-mode 'match )
-
-(paren-activate)
 
 (defun swap-paren-keys ()
   "bind the parentheses to the brace keys, while the shifted
@@ -33,6 +31,9 @@
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
+    (swap-paren-keys)
+    (show-paren-mode t)
+
     ;; this binding is very important. normal evaluation of defuns such as defvar
     ;; and defcustom do not change the default value because the form only sets
     ;; the value if nil.

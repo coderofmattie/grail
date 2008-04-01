@@ -38,6 +38,12 @@
 ;; this line is a nasty way of disabling customize, simply specify the
 ;; customize file as /dev/null.
 
+(let
+ ((info-archive (concat grail-local-dir "info")))
+
+  (when (file-accessible-directory-p info-archive)
+    (push info-archive Info-additional-directory-list)) )
+
 (setq custom-file "/dev/null")
 
 (setq make-backup-files nil)            ;; backups, currently off until fixed.
