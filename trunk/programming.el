@@ -174,8 +174,8 @@
     (lambda ()
       (configure-for-programming)
 
-      (c-setup-filladapt)            ;; adaptive fill for maintaining
-                                     ;; indenting inside comments
+;;      (c-setup-filladapt)            ;; adaptive fill for maintaining
+                                       ;; indenting inside comments
 
 ;;      (c-set-style "linux")          ;; base off of linux style
 
