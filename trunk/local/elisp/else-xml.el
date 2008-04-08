@@ -334,6 +334,7 @@
         ))))
 
 (defun else-xml ()
+  "try to setup else-xml, return t on success nil on failure."
   (catch 'dont-install
 
     (unless (and (boundp 'source-language) (stringp source-language))
@@ -347,6 +348,8 @@
 
     (else-mode)
 
-    (else-xml-load-language-alist source-language) ))
+    (else-xml-load-language-alist source-language)
+
+    t))
 
 (provide 'else-xml)

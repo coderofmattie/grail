@@ -2,7 +2,7 @@
 ;; programming.el
 ;;----------------------------------------------------------------------
 
-(use-styles "template" "lisp")
+(use-styles "template" "lisp" "code-formatting")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
@@ -112,15 +112,14 @@
   (local-set-key (kbd "C-l w") 'set-default-register)
   (local-set-key (kbd "C-l i") 'insert-default-register)
 
-  ;; here is where C-xe will expand templates
-  (local-set-key (kbd "C-l e") 'else-expand-placeholder)
-  (local-set-key (kbd "C-l n") 'else-next-placeholder)
+  (when (else-xml)
+    ;; here is where C-xe will expand templates
+    (local-set-key (kbd "C-l e") 'else-expand-placeholder)
+    (local-set-key (kbd "C-l n") 'else-next-placeholder)
 
-  (local-set-key (kbd "C-l k") 'else-kill-placeholder)
+    (local-set-key (kbd "C-l k") 'else-kill-placeholder)
 
-  (local-set-key (kbd "C-l l") 'else-show-token-names)
-
-  (else-xml))
+    (local-set-key (kbd "C-l l") 'else-show-token-names) ))
 
 ;;----------------------------------------------------------------------
 ;; elisp
@@ -173,9 +172,6 @@
   (add-hook 'c-mode-common-hook
     (lambda ()
       (configure-for-programming)
-
-;;      (c-setup-filladapt)            ;; adaptive fill for maintaining
-                                       ;; indenting inside comments
 
 ;;      (c-set-style "linux")          ;; base off of linux style
 
