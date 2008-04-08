@@ -55,10 +55,11 @@
 ;; linux.el                   | only loaded on gnu/linux.
 ;; darwin.el                  | only loaded on darwin.
 ;;
-;; local/(*)                  | elisp maintained by the user.
+;; local/
+;;      elisp/(*)             | elisp maintained by the user that complements the mainline.
+;;
 ;;      emacs/                | local elisp that modifies or replaces packages/files distributed
 ;;                              with the mainline.
-;;      elisp/                | elisp maintained by the user that complements the mainline.
 ;;
 ;;      patches/              | patches against distributed emacs files required
 ;;                              by my config.
@@ -66,13 +67,18 @@
 ;;                              with configuration that blends those packages into a
 ;;                              harmonious "style" of using Emacs.
 
-;; dist/(*)
-;;     elisp/                 | elisp maintained and distributed by a Third Party.
+;; dist/
+;;     elisp/(*)              | elisp maintained and distributed by a Third Party.
 ;;                              Usually this is for projects you contribute to where
 ;;                              you want to keep a VCS checkout.
 ;;     elpa/                  | elisp maintained by ELPA.
 
-;; The files user-elisp-root are not in the load-path and must be loaded with explicit paths.
+
+;; * The directory, and all of it's immediate sub-directories are added to
+;;   load-path.
+
+;; The files in the user-elisp-root directory are not added to the load-path and
+;; should be loaded with the function (load-user-elisp FileName).
 
 (defvar grail-local-dir
   (concat grail-elisp-root "local/")
