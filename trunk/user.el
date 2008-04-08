@@ -24,7 +24,7 @@
 ;;                    General Modifications
 ;;----------------------------------------------------------------------
 
-;; make sure that the pretty printer doesn't abbreviate which frustrates my
+;; make sure that the pretty printer doesn't truncate which frustrates my
 ;; development.
 
 (setq
@@ -183,12 +183,15 @@
 ;; it.
 
 ;;----------------------------------------------------------------------
+;;                       Programming
+;;----------------------------------------------------------------------
+(load-user-elisp "programming.el")
+
+;;----------------------------------------------------------------------
 ;; alpha features.
 ;;----------------------------------------------------------------------
 
 ;; load in-development features. if it is partial or completely broken
 ;; use broken.el
 (load-user-elisp "experiments/alpha.el")
-
-(load-user-elisp "programming.el")
 
