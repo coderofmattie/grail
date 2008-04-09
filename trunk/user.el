@@ -24,6 +24,9 @@
 ;;                    General Modifications
 ;;----------------------------------------------------------------------
 
+;; increase the max eval depth to 4k. Hope this doesn't croak Emacs.
+(setq max-lisp-eval-depth 4096)
+
 ;; make sure that the pretty printer doesn't truncate which frustrates my
 ;; development.
 
