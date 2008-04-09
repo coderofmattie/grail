@@ -12,6 +12,17 @@
 ;; - "This experiment calls forth the four horsemen of the Lisp
 ;;    Apocalypse: eval,apply,lambda,macro."
 
+;; -> Status
+
+;; greed,not operators support PEG grammars with right recursion only. Next
+;; step is left-recursion via packrat-optimization.
+
+;; If you do not know what PEG grammars are check out this brief introduction:
+;; http://en.wikipedia.org/wiki/Parsing_expression_grammar
+
+;; I will support the CFG grammar class with a lazy operator but that is
+;; a lower priority than left recursion.
+
 ;; -> Hypothesis
 
 ;; Exposing the internal semantics of the generated parser as a well
