@@ -5,6 +5,11 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
+(defun scribble ()
+  "pop up the scratch buffer in the other window."
+  (interactive)
+  (pop-to-buffer (get-buffer "*scratch*") t))
+
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"
   (message "the hex is %x" number))
