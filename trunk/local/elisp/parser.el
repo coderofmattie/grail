@@ -1504,12 +1504,46 @@ based upon the structure required.
 ;; flexibility or construction options for tokens. The second argument
 ;; is examined by type.
 
-(defun parser-token-bounds ( type capture )
-  "Return the bounds of the capture from match-{beg,end} with the
-   upper bound adjusted by decrement to inclusive. The type
-   returned is chosen with a quoted type constructor symbol like
-   cons or list."
-  (funcall type (match-beginning capture) (match-end capture)) )
+(defun parser-token-capture ( captures )
+  "parser-token-capture CAPTURES
+   Stub.
+  "
+  (if (and (listp captures) (> (length captures) 1))
+    (lexical-let
+      ((cap-list nil))
+      (mapc
+        (lambda ( cap )
+          (push (cons (match-beginning cap) (match-end cap)) cap-list))
+        captures)
+      (reverse cap-list))
+    (cons (match-beginning captures) (match-end captures))) )
+
+(defun parser-token-api ( selection action )
+  (lexical-let*
+    ((disable-action nil)
+     (gen-select
+       (cond
+         ((eq nil    selection) (progn
+                                  (setq disable-action t)
+                                  `(parser-token-capture 0)))
+         ((listp     selection) `(parser-token-capture ',selection))
+         ((numberp   selection) `(parser-token-capture ,selection))
+         ((functionp selection) (progn
+                                  (setq disable-action t)
+                                  `(funcall ',selection (parser-token-capture 0))))
+         ((symbolp constructor) (progn
+                                  (setq disable-action t)
+                                  `(quote ',constructor)))
+
+         ;; all other constructor types are un-handled.
+         ((signal 'parser-syntactic-error
+            (parser-diagnostic selection
+              "parser-token-api"
+              "lambda|function|number|symbol"))) )))
+
+    (if (and (not disable-action) action)
+      `(funcall ',@action ,gen-select)
+      gen-select)))
 
 (defun parser-token-function ( id &rest syntax )
   "Generate a token Match Function lambda."
@@ -1519,25 +1553,13 @@ based upon the structure required.
           (when (looking-at ,(car syntax))
             (parser-result-token
               ,(let
-                 ((constructor (if (listp syntax) (cadr syntax) syntax)))
+                 ((selection (if (listp syntax) (cadr syntax) syntax)))
 
-                 (if (and (symbolp constructor) (eq 'null constructor))
+                 (if (and (symbolp selection) (eq 'null selection))
                    'nil
                    `(cons
                       ',id
-                      ,(cond
-                         ((eq nil constructor)    `(parser-token-bounds 'cons 0))
-                         ((listp constructor)     `(apply ',(bind-eval-lambda "parser-user-handler")
-                                                     (parser-token-bounds 'list 0)))
-                         ((numberp constructor)   `(parser-token-bounds 'cons ,constructor))
-                         ((functionp constructor) `(apply ',constructor (parser-token-bounds 'list 0)))
-                         ((symbolp constructor)   `(quote ',constructor))
-
-                         ;; all other constructor types are un-handled.
-                         ((signal 'parser-syntactic-error
-                            (parser-diagnostic constructor
-                              "parser-token-constructor"
-                              "lambda|function|number|symbol"))) ))) )) ))))
+                      ,(parser-token-api selection (when (listp syntax) (cddr syntax)))) )) )))))
     (parser-compile-trace
       "parser-token-function: emit token."
       (pp-to-string)
@@ -1939,9 +1961,14 @@ based upon the structure required.
       (fset parser-binding (eval parser))
       parser-binding)))
 
-(defun parser-token-string ( start end )
+(defun parser-extract-string ( region )
+  (filter-buffer-substring (car region) (cdr region) nil t))
+
+(defun parser-token-string ( selection )
   "Return a string of the input bounded by the token match."
-  (filter-buffer-substring start end nil t))
+  (if (precise-list-p selection)
+    (mapcar 'parser-extract-string selection)
+    (parser-extract-string selection)))
 
 (defun parser-compile-dump ( grammar )
   "Dump the code generation of the parser compiler given a quoted form."
