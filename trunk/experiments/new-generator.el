@@ -306,7 +306,7 @@
   "return true if the logic is a match result"
   (and (consp result) (parser-result-logic result)))
 
-(defun parser-result-negate ( result )
+(defun parser-negate-match ( result )
   "negate the Match Result RESULT toggling the logical sense of the Match Result while
    preserving the AST value."
   (cons
@@ -1101,7 +1101,7 @@ supplied as the single argument NODE."
 
 (defun parser-prune-result-operator ( generated )
   (if pf-rvalue-logic
-    `(,pf-rvalue-logic generated)
+    `(,pf-rvalue-logic ,generated)
     generated))
 
 (defun parser-eval-did-split-result-p ()
@@ -1603,6 +1603,12 @@ based upon the structure required.
     (puthash "greedy"
       (parser-strong-primitive 'closure 'parser-closure-greedy) syntax)
 
+    (puthash "not"
+      (list
+        (parser-strong-primitive 'ast-discard)
+        (parser-strong-primitive 'input-discard)
+        (parser-strong-primitive 'return-operator 'parser-negate-match)) syntax)
+
     ;; eval phase
 
     (puthash "negate-eval"
@@ -1704,7 +1710,8 @@ based upon the structure required.
     (unless expand
       (signal 'parser-syntactic-error (parser-diagnostic primitive
                                         "syntax"
-                                        (format "a primitive / escaped symbol - one of: %s" (parser-pp-defined-syntax)))))
+                                        (format "a primitive / escaped symbol - one of: %s"
+                                          (parser-pp-defined-syntax)))))
     (if (functionp expand)
       (lexical-let
         ((arity (cdr (function-arity expand))))
