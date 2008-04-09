@@ -29,6 +29,7 @@
 
 (setq
  print-length nil
+ eval-expression-print-level nil
  print-level nil)
 
 ;; disable customization, automatic persistence of configuration changes.
