@@ -1299,6 +1299,11 @@ based upon the structure required.
 
     (intern identity parser-pf-table)))
 
+(defun parser-unique-mf-symbol ( basename )
+  (setq basename (concat basename (number-to-string parser-unique-id)))
+  (incf parser-unique-id)
+  (make-symbol basename))
+
 (defun parser-compile-terminate ( pf-closure )
   (lexical-let
     ((entry-point (parser-pf-single-call-p pf-closure)))
@@ -1334,7 +1339,7 @@ based upon the structure required.
                   closure
                   (if (symbolp data)
                     (parser-pf-link data)
-                    (parser-pf-link (make-symbol "anonymous-term")  data)))
+                    (parser-pf-link (parser-unique-mf-symbol "anonymous-term")  data)))
             (parser-retry-after 'compile)))
 
         ((parser-retry-after 'unknown)) ))))
@@ -1614,10 +1619,20 @@ based upon the structure required.
     (puthash "greedy"
       (parser-strong-primitive 'closure 'parser-closure-greedy) syntax)
 
+    ;; The not operator is how PEG grammars bound greed as they do not
+    ;; do look-ahead.
+
     (puthash "not"
       (list
         (parser-strong-primitive 'ast-discard)
         (parser-strong-primitive 'input-discard)
+        (parser-strong-primitive 'return-operator 'parser-negate-match)) syntax)
+
+    ;; Like a regular PEG not operator except the input position is skipped
+    ;; over the match.
+    (puthash "not-skip"
+      (list
+        (parser-strong-primitive 'ast-discard)
         (parser-strong-primitive 'return-operator 'parser-negate-match)) syntax)
 
     ;; eval phase
@@ -2269,8 +2284,9 @@ STrace List? ")
     stub.
   "
   (let
-    ((parser-syntax   (parser-create-syntax-table))
-     (parser-pf-table (parser-make-pf-table)))
+    ((parser-syntax    (parser-create-syntax-table))
+     (parser-pf-table  (parser-make-pf-table))
+     (parser-unique-id 0))
 
     (if (eq 'dump (car grammar))
       (parser-compile-dump (cdr grammar))
