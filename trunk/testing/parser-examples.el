@@ -76,6 +76,10 @@ start stop go less more
 
 ;; attempt to parse a few lines from the paludis package manager reports.
 
+(parser-trace-list paludis-trace
+  (package t)
+  (repository t))
+
 (parser-define 'paludis-query
   (parser-compile
 ;;    dump

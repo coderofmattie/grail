@@ -29,7 +29,7 @@
         (parser-strong-primitive 'return 'entry-point)))
 
 ;;----------------------------------------------------------------------
-;; parser function generation testing.
+;; works to here.
 ;;----------------------------------------------------------------------
 
 (parser-define 'test-parser
