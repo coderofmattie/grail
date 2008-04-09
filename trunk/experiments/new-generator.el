@@ -1,13 +1,19 @@
-;;----------------------------------------------------------------------
-;; parser.el
-;; Primary Author: Mike Mattie (codermattie@gmail.com)
-;; Copyright (C) 2008 Mike Mattie
-;; License: LGPL
-;; Description: Recursive Descent parser compiler with a lisp macro
-;;              interface.
-;;----------------------------------------------------------------------
+;;; parser.el --- Elisp Macro DSL Parser Compiler
 
-;; parser.el is a experimental parser-compiler DSL.
+;; Copyright (C) 2008 Mike Mattie
+
+;; Author: Mike Mattie <codermattie@gmail.com>
+;; Maintainer: Mike Mattie <codermattie@gmail.com>
+;; Created: 2008-01-04
+;; Version: 0.0.5
+;; Keywords: parser
+;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
+
+;;; Commentary:
+
+;; An experimental parser-compiler DSL that emphasizes concise and
+;; flexible expression with a lispy interface to render gnarly
+;; scripting tasks trivial as parsing in Emacs should be.
 
 ;; - "This experiment calls forth the four horsemen of the Lisp
 ;;    Apocalypse: eval,apply,lambda,macro."
@@ -115,6 +121,8 @@
 ;; Alfred V.Aho, Ravi Sethi, Jeffrey D.Ullman
 ;; 1986, Addison Wesley
 
+;;; Code:
+
 (require 'cl)
 (require 'parser-fn)
 (require 'closure)
@@ -125,7 +133,7 @@
 ;; is this even useful anymore ?
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
-(defconst parser-release-version "0.0.4"
+(defconst parser-release-version "0.0.5"
   "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
@@ -1300,9 +1308,10 @@ based upon the structure required.
     (intern identity parser-pf-table)))
 
 (defun parser-unique-mf-symbol ( basename )
-  (setq basename (concat basename (number-to-string parser-unique-id)))
-  (incf parser-unique-id)
-  (make-symbol basename))
+  (lexical-let
+    ((unique-mf (make-symbol (concat basename (number-to-string parser-unique-id)))))
+    (incf parser-unique-id)
+    unique-mf))
 
 (defun parser-compile-terminate ( pf-closure )
   (lexical-let
@@ -1735,7 +1744,7 @@ based upon the structure required.
 
     (unless expand
       (signal 'parser-syntactic-error (parser-diagnostic primitive
-                                        "syntax"
+                                        "parser-apply-primitive-syntax"
                                         (format "a primitive / escaped symbol - one of: %s"
                                           (parser-pp-defined-syntax)))))
     (if (functionp expand)
@@ -2114,6 +2123,9 @@ STrace List? ")
   N for a function where N is zero or more as specified by the
   argument list of the function.
 
+  All of the built-in primitives can be found in the
+  function: parser-create-syntax-table.
+
   -> Parser Functions
 
   Parser Functions are the core abstraction of the generated
@@ -2137,6 +2149,12 @@ STrace List? ")
   connected to the caller's tree so that the isolated tree can
   easily be transformed and conditionally attached to the
   caller's tree.
+
+  <Note>
+    Since each recursion operates on it's own tree it might be
+    possible to parallelize the non-deterministic matching. Only
+    the token memoization would be shared.
+  </Note>
 
   When there are many terms in a call phase a Term relation
   function is given the ordered list of terms by delayed
@@ -2293,3 +2311,4 @@ STrace List? ")
       (parser-compile-start grammar)) ))
 
 (provide 'parser)
+;;; parser.el ends here
