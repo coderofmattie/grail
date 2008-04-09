@@ -81,31 +81,60 @@
 
 parser foo bar baz||
 
-(parser-compile
-  dump
-  (/token repo-name         "\\([^[:blank:]]+\\):" 1))
+(parser-define 'test-parser
+  (parser-compile
+    dump
+    (define
+      (/token whitespace "[[:blank:]]+" null)
+      (/token word "[[:alpha:]]+")
+      (/token terminate "stop"))
 
-(parser-compile
-  dump
-  (/production foo (/token whitespace "[[:blank:]]+" null)))
+    /greedy
+    ;; /and <- BUG!! without and it hangs which is totally wrong.
+    ;; terminate /not
+
+    word whitespace))
+
+;; not operator test.
+
+(parser-define 'test-parser
+  (parser-compile
+    dump
+    (define
+      (/token whitespace "[[:blank:]]+" null)
+      (/token word "[[:alpha:]]+")
+      (/token terminate "stop"))
+
+    /greedy
+    /and
+    terminate /not
+
+    word whitespace))
+
+start stop go less more
 
 (parser-define 'paludis-query
   (parser-compile
     dump
     (define
-      (/token recod-delim       "\n+[[:blank:]]*" null)
+      (/token record-delim       "
++" null)
       (/token whitespace        "[[:blank:]]+"  null)
       (/token pkg-name          "[^[:blank:]]+" parser-token-string)
       (/token repo-name         "\\([^[:blank:]]+\\):" 1)
 
-      (/term pkg-version /or
+      (/term pkg-version
+        /or
         (/token pkg-ver-masked "\\\(\\([^[:blank:]]+\\)\\\)[^[:blank:]]+" 1)
         (/token pkg-ver-stable "[^[:blank:]]+" parser-token-string)
         (/token pkg-slot       "{:[[:digit:]]+}" null))
       )
 
     (/production package (/token package-record "\\\*" null) whitespace pkg-name)
-    (/production repository whitespace repo-name whitespace (/lazy (/greedy pkg-version whitespace) record-delim) ))
+    (/production repository whitespace repo-name whitespace
+      (/greedy record-delim /not-skip pkg-version whitespace)) ))
+
+;;    (/production repository whitespace repo-name whitespace (/terminated (pkg-version whitespace) record-delim) ))
 
 (parser-trace-list paludis-trace
   (package t)
