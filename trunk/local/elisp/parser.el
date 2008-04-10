@@ -2078,7 +2078,7 @@ STrace List? ")
 
   -> Use
 
-  (entry-point START) -> nil | (final position . AST)
+  (compiled-parser START) -> nil | (final position . AST)
 
   The compiled Parser Function is called with the starting
   position in the current buffer as a required argument.
