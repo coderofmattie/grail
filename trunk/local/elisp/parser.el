@@ -18,7 +18,7 @@
 ;; - "This experiment calls forth the four horsemen of the Lisp
 ;;    Apocalypse: eval,apply,lambda,macro."
 
-;; The key detailed documentation is in the docstrings for "parser-compile"
+;; The detailed documentation is in the docstrings for "parser-compile"
 ;; and "parser-token-api". A lengthier tutorial and paper are in progress.
 
 ;; -> Status
