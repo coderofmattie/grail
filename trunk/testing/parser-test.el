@@ -140,8 +140,6 @@
 
 ;; eval this, then eval various tests.
 
-(parser-production-function
-
 (parser-compile test-parser
   (token whitespace "[[:blank:]]+")
   (token word "[[:alpha:]]+"))
