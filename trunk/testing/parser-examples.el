@@ -82,20 +82,21 @@ start stop go less more
 
 (parser-define 'paludis-query
   (parser-compile
-;;    dump
+    dump
     (define
       (/token record-delim       "$" null)
       (/token whitespace        "[[:blank:]]+"  null)
       (/token pkg-name          "\\([^[:blank:]]+\\)$" parser-token-string)
-      (/token repo-name         "\\([^[:blank:]]+\\):" 1)
+      (/token repo-name         "\\([^[:blank:]]+\\):" 1 parser-token-string)
 
       (/term pkg-version
         /or
-        (/token pkg-slot       "{:\\([[:digit:]]+\\)}" 1)
-        (/token pkg-ver-masked "(\\([^[:blank:]]+\\))[^[:blank:]]+" 1)
+        (/token pkg-slot       "{:\\([[:digit:]]+\\)}" 1 parser-token-string)
+        (/token pkg-ver-masked "(\\([^[:blank:]]+\\))[^[:blank:]]+" 1 parser-token-string)
         (/token pkg-ver-stable "[^[:blank:]]+" parser-token-string) ))
 
     (/production package (/token package-record "\\\*" null) whitespace pkg-name)
     (/production repository whitespace repo-name whitespace
       (/greedy record-delim /not-skip pkg-version whitespace)) ))
+
 
