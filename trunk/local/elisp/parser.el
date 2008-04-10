@@ -5,7 +5,7 @@
 ;; Author: Mike Mattie <codermattie@gmail.com>
 ;; Maintainer: Mike Mattie <codermattie@gmail.com>
 ;; Created: 2008-01-04
-;; Version: 0.0.6
+;; Version: 0.0.7
 ;; Keywords: parser
 ;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
 
@@ -132,7 +132,7 @@
 ;; is this even useful anymore ?
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
-(defconst parser-release-version "0.0.6"
+(defconst parser-release-version "0.0.7-pre"
   "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
@@ -1508,13 +1508,10 @@ based upon the structure required.
    Stub.
   "
   (if (and (listp captures) (> (length captures) 1))
-    (lexical-let
-      ((cap-list nil))
-      (mapc
-        (lambda ( cap )
-          (push (cons (match-beginning cap) (match-end cap)) cap-list))
-        captures)
-      (reverse cap-list))
+    (mapcar
+      (lambda ( cap )
+        (cons (match-beginning cap) (match-end cap)))
+      captures)
     (cons (match-beginning captures) (match-end captures))) )
 
 (defun parser-token-api ( selection action )
