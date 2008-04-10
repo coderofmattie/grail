@@ -8,21 +8,21 @@ cd emacs
 
 exec env CFLAGS="-I/usr/X11R6/include/" \
 ./configure \
-
+\
 --with-x \
 --with-x-toolkit=lucid \
 --x-includes="/opt/local/include" \
 --with-xft \
 --with-freetype \
-
+\
 --without-gpm \
 --without-carbon \
 --without-xaw3d \
 --without-toolkit-scrollbars \
-
+\
 --without-gif \
 --without-png \
 --without-jpeg \
 --without-tiff \
-
+\
 --prefix="$HOME/system/local/"
