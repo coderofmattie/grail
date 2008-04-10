@@ -132,7 +132,7 @@
 ;; is this even useful anymore ?
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
-(defconst parser-release-version "0.0.6-pre"
+(defconst parser-release-version "0.0.6"
   "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
