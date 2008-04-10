@@ -2156,8 +2156,11 @@ STrace List? ")
 
   Each form contains lists, Primitives, or Terms. Lists are
   translated into terms depth first. Terms are calls to Parser
-  Functions defined elsewhere. Primitives are instructions to the
-  Semantic Interpreter escaped from terms by a \"/\" character.
+  Functions defined elsewhere.
+
+  Primitives are instructions to the Semantic Interpreter escaped
+  from terms by a \"/\" character. Primitives can take parameters
+  from the form that are not escaped.
 
   PRIMITIVE: /and
   TERM:      foo
@@ -2194,8 +2197,7 @@ STrace List? ")
   well.
 
   Term relations must be the last form primitive, or left of the
-  first term. Otherwise the default parser-relation-and will be
-  generated.
+  first term. Otherwise the default /and will be generated.
 
   A sequence of primitives can be arbitrarily long. The Compiler
   Core will generated nested functions as needed to preserve the
