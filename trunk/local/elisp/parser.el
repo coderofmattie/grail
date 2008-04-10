@@ -5,7 +5,7 @@
 ;; Author: Mike Mattie <codermattie@gmail.com>
 ;; Maintainer: Mike Mattie <codermattie@gmail.com>
 ;; Created: 2008-01-04
-;; Version: 0.0.5
+;; Version: 0.0.6
 ;; Keywords: parser
 ;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
 
@@ -17,6 +17,9 @@
 
 ;; - "This experiment calls forth the four horsemen of the Lisp
 ;;    Apocalypse: eval,apply,lambda,macro."
+
+;; The key detailed documentation is in the docstrings for "parser-compile"
+;; and "parser-token-api". A lengthier tutorial and paper are in progress.
 
 ;; -> Status
 
@@ -87,14 +90,10 @@
 
 ;;    UPDATE: testing new co-routine design generator.
 
-;;    fix the token syntax and call-out API, make regex captures slick.
-
-;; 1. All of the PEG predicates (missing not)
-
-;; 3. Canonical tree walk implemented as parser-ast-node. a real pre-requisite to
+;; 1. Canonical tree walk implemented as parser-ast-node. a real pre-requisite to
 ;;    sane user implementation of transforms.
 
-;; 4. implement a error recovery routine. This involves marking tokens as being
+;; 2. implement a error recovery routine. This involves marking tokens as being
 ;;    sync tokens, and generating a recovery function that scans for those tokens.
 
 ;;    -> Phase 2: optimization
@@ -133,7 +132,7 @@
 ;; is this even useful anymore ?
 (define-error parser-semantic-error  "semantic error" parser-compile-error)
 
-(defconst parser-release-version "0.0.5"
+(defconst parser-release-version "0.0.6-pre"
   "the release number of parser.el")
 
 ;;----------------------------------------------------------------------
@@ -1519,6 +1518,38 @@ based upon the structure required.
     (cons (match-beginning captures) (match-end captures))) )
 
 (defun parser-token-api ( selection action )
+  "parser-token-api SELECTION ACTION
+
+   A token in the grammar has the form: /token id regex SELECTION ACTION.
+
+   this function receives SELECTION ACTION only either of which may be
+   nil. With these two forms the token API is compiled.
+
+   SELECTION is examined first as ACTION is only valid in conjunction
+   with a subset of the valid values for SELECTION.
+
+   term: Capture.
+
+   A capture is a cons cell of (beginning . end) that defines the bounds
+   of the match.
+
+   term: Capture List.
+
+   A Capture List is a list of capture cons cells.
+
+   SELECTION:
+
+   nil           : disable ACTION ; \"0\" or entire match Capture returned.
+   number        : capture number transformed into a Capture cons cell.
+   list          : list of REGEX capture numbers transformed into a Capture List.
+   function      : disable ACTION: \"0\" or entire capture is passed to function as an argument.
+   symbol        : disable ACTION: return the symbol quoted.
+
+   ACTION: optional!
+
+   must be a symbol with a function bound. The arguments are formed according to
+   SELECTION and the return value becomes the AST of the token.
+  "
   (lexical-let*
     ((disable-action nil)
      (gen-select
@@ -1964,11 +1995,15 @@ based upon the structure required.
 (defun parser-extract-string ( region )
   (filter-buffer-substring (car region) (cdr region) nil t))
 
-(defun parser-token-string ( selection )
-  "Return a string of the input bounded by the token match."
-  (if (precise-list-p selection)
-    (mapcar 'parser-extract-string selection)
-    (parser-extract-string selection)))
+(defun parser-token-string ( capture )
+  "parser-token-string CAPTURE
+
+   Return a string of the input bounded by CAPTURE - a cons
+   cell or list.
+  "
+  (if (precise-list-p capture)
+    (mapcar 'parser-extract-string capture)
+    (parser-extract-string capture)))
 
 (defun parser-compile-dump ( grammar )
   "Dump the code generation of the parser compiler given a quoted form."
@@ -2036,23 +2071,74 @@ STrace List? ")
   "parser-compile &rest GRAMMAR
 
   parser-compile translates GRAMMAR into a Recursive Descent
-  parser returning a lambda entry-point for the Start Symbol.
+  parser returning a lambda entry-point parsing the Start Symbol.
 
-  GRAMMAR lists and symbols are a parser definition described in
-  [Syntax].
+  GRAMMAR is a form interpreted as a DSL that defines the parser
+  explained in [Syntax].
 
   -> Use
 
-  (entry-point START)
+  (entry-point START) -> nil | (final position . AST)
 
   The compiled Parser Function is called with the starting
-  position in the current buffer as a required argument. The
-  return value is a production of the start symbol as a cons cell
-  of the parser's final position and the AST generated, or nil if
-  no match is found.
+  position in the current buffer as a required argument.
+
+  The return value is a production of the start symbol as a cons
+  cell of the parser's final position and the AST generated, or
+  nil if no match is found.
 
   The AST structure produced by the parser is documented under
   [AST Effects].
+
+  -> Getting Started
+
+  The easiest way to experiment with the Parser Compiler is to
+  bind the parser to a symbol and use the provided function:
+
+  parser-interactive
+
+  to call the parser interactively.
+
+  (parser-define 'test-parser
+    (parser-compile
+      (/token word \"[[:alpha:]]+\")
+      (/token whitespace \"[[:blank:]]+\")))
+
+  M-x parser-interactive
+
+  <prompts for symbol: type test-parser>
+
+  You then see the AST, or a message indicating that the match
+  failed.
+
+  Once you understand the AST structure, and have written your
+  parser you need to embed it in your code.
+
+  Since the parser-compile macro returns a function you can in-line
+  it directly as the example below shows:
+
+  (let
+    ((parsed  (funcall (parser-compile ....) (point))))
+
+    (if parsed
+        ....
+      ))
+
+  Or you can define it externally which is better when it is
+  used in more than one place:
+
+  (define-parser 'parser-foo (parser-compile ....))
+
+  (let
+    ((parsed  (parser-foo (point))))
+
+    (if parsed
+        ....
+      ))
+
+  The parser function returns a *single* production of the start
+  symbol per call. If you need to parse a file call the parser
+  in a loop.
 
   -> Compiler tools
 
