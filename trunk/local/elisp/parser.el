@@ -1226,8 +1226,6 @@ based upon the structure required.
       (pf-fail-effects   nil)
       (pf-fail-rvalue    nil))
 
-    ;; FIXME: this optimization is still hosed.
-
     (cond
       ((= 1 (length pf-terms))
         ;; simple optimization, when a sequence has only a single call
@@ -1499,10 +1497,6 @@ based upon the structure required.
 ;; Tokens
 ;;----------------------------------------------------------------------
 
-;; The token part of the grammar definition contains a great deal of
-;; flexibility or construction options for tokens. The second argument
-;; is examined by type.
-
 (defun parser-token-capture ( captures )
   "parser-token-capture CAPTURES
    Stub.
@@ -1539,8 +1533,8 @@ based upon the structure required.
    nil           : disable ACTION ; \"0\" or entire match Capture returned.
    number        : capture number transformed into a Capture cons cell.
    list          : list of REGEX capture numbers transformed into a Capture List.
-   function      : disable ACTION: \"0\" or entire capture is passed to function as an argument.
-   symbol        : disable ACTION: return the symbol quoted.
+   function      : disable ACTION ; \"0\" or entire capture is passed to function as an argument.
+   symbol        : disable ACTION ; return the symbol quoted.
 
    ACTION: optional!
 
@@ -1949,6 +1943,7 @@ based upon the structure required.
              ((parser-position (cons start-pos nil))) ;; initialize the backtrack stack
              (goto-char start-pos)
 
+             ;; enter the compiled parser function.
              (funcall ',(parser-pf-link 'start)) ))))
 
       (parser-syntactic-error
@@ -2032,19 +2027,32 @@ based upon the structure required.
     compiled))
 
 (defun parser-interactive ( parser )
-  "run test-parser interactively for testing and debugging."
+  "parser-interactive PARSER
+
+   An interactive command to run a compiled parser to see it's
+   results.  If a match is made the final position of the parser
+   and AST are printed to message.
+
+   The variable parser-interactive-last is also set to the AST
+   on a successful match so that the result can be manipulated
+   or otherwise examined.
+  "
   (interactive "SParser? ")
   (lexical-let
     ((parse-result (funcall parser (point))))
 
     (message "PROD match? %s"
       (if parse-result
-        (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))
-        "No"))) ))
+        (progn
+          (setq parser-interactive-last (cdr parse-result))
+          (format "Yes matched to: %s, AST: %s" (car parse-result) (pp (cdr parse-result))) )
+        "No")) ))
 
-(defmacro parser-trace-list ( list &rest productions )
-  "create a parser trace list"
-  `(setq ,list
+(defmacro parser-trace-list ( name &rest productions )
+  "parser-trace-list NAME PRODUCTIONS
+
+   create a parser trace list."
+  `(setq ,name
     '(
        ,@(mapcar
            (lambda (trace)
