@@ -121,7 +121,7 @@
     ;; add a list of commands that will pop a term buffer for out-of-eshell
     ;; handling. Note: the variable eshell-visual-commands is buffer-local.
     (setq eshell-visual-commands
-      (append eshell-visual-commands (list "ssh" "su" "telnet")))
+      (append eshell-visual-commands (list "ssh" "su" "telnet" "ftp" "lftp" "links")))
 
     ;; I rarely want to quit eshell. when I do I can use quit. map
     ;; the usual kill-buffer keybinding to rid-window.
