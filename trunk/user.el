@@ -2,11 +2,6 @@
 ;; user.el
 ;; written by: Mike Mattie
 ;;
-;; My configuration for versions 22.1 and 23.x
-;;
-;; this file is designed to be robust unlike load.el which should
-;; fail if basic assumptions such as load-path cannot be established.
-;;
 ;; the code in this file should depend only on reliable features
 ;; distributed with emacs. Any third party or risky features should
 ;; be loaded via load-style.
