@@ -71,7 +71,12 @@
                                         ;; is created - root can use emacsclient
                                         ;; to connect to a session running as
                                         ;; an unprivelaged user.
-(server-start)
+(condition-case nil
+  (server-start)
+  
+  (error
+    (message "cannot start Emacs Server")
+    nil))
 
 ;;----------------------------------------------------------------------
 ;;                 IPC shell:  comint/term mode
