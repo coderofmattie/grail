@@ -20,8 +20,8 @@ exec env CFLAGS="-I/usr/X11R6/include/" \
 --without-xaw3d \
 --without-toolkit-scrollbars \
 \
+--with-png \
 --without-gif \
---without-png \
 --without-jpeg \
 --without-tiff \
 \
