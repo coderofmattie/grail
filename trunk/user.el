@@ -60,6 +60,8 @@
 (setq auto-mode-alist (append '(("\\.txt$"     . text-mode)
                                  ) auto-mode-alist ))
 
+(fset 'yes-or-no-p 'y-or-n-p)                ;; y/n instead of yes/no
+
 ;;----------------------------------------------------------------------
 ;; Emacs Server
 ;;----------------------------------------------------------------------
@@ -71,9 +73,10 @@
                                         ;; is created - root can use emacsclient
                                         ;; to connect to a session running as
                                         ;; an unprivelaged user.
-(condition-case nil
+
+(condition-case nil                    ;; start the server, trapping errors.
   (server-start)
-  
+
   (error
     (message "cannot start Emacs Server")
     nil))
