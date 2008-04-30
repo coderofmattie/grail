@@ -53,6 +53,8 @@
 
 (setq require-final-newline t)                ;; some programs fail without a newline terminator
 
+(setq default-buffer-file-coding-system 'undecided-unix)  ;; default to UNIX line terminators
+
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
 ;;----------------------------------------------------------------------
