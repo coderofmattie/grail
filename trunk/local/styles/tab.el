@@ -7,6 +7,10 @@
   (lambda ()
     (dwim-tab-localize 'lisp-complete-symbol)))
 
+(add-hook 'nxml-mode-hook
+  (lambda ()
+    (dwim-tab-localize 'nxml-complete)))
+
 (add-hook 'eshell-mode-hook
   (lambda ()
     ;; ensure that none of my custom keybindings are affected.
