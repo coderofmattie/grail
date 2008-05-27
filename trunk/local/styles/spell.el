@@ -12,8 +12,11 @@
 (add-hook 'text-mode-hook       'flyspell-mode)          ;; turn on regular flyspell mode text
                                                          ;; mode buffers.
 
-(add-hook 'cperl-mode-hook      'flyspell-prog-mode)     ;; works quite nicely with cperl.
-(add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)     ;; works nicely as well with elisp
+;; programming modes.
+
+(add-hook 'cperl-mode-hook      'flyspell-prog-mode)
+(add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)
+(add-hook 'c-mode-common-hook   'flyspell-prog-mode)
 
 (defun correct-over-flyspell ()
   "auto-correct the word if over a flyspell region, return t only
