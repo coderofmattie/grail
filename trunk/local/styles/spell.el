@@ -11,7 +11,6 @@
 
 (add-hook 'text-mode-hook       'flyspell-mode)          ;; turn on regular flyspell mode text
                                                          ;; mode buffers.
-
 ;; programming modes.
 
 (add-hook 'cperl-mode-hook      'flyspell-prog-mode)
