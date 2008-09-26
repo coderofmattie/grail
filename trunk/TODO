@@ -29,6 +29,9 @@
 
 ---> TODO <---
 
+* delete-trailing-whitespace hooked into vc for specific languages such
+  as lisp ?
+
 * darwin: a function should be created that adjusts both the PATH environment
   variable and exec-path
 
