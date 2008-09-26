@@ -10,14 +10,36 @@ Installation
   1. unpack the tarball or checkout from the repository containing the
      configuration.
 
-  2. at the toplevel of the configuration tree modify load.el by
-     changing the my-emacs-dir path to the absolute path of the
-     configuration tree (where this document resides).
+  2. at the toplevel of the configuration tree modify grail.el by
+     changing the grail-elisp-root path to the path of where you
+     want your emacs configuration tree relative to your home
+     directory.
 
-  3. create a link $HOME/.emacs pointing to load.el at the root of the
+     Win32 WARNING: This assumes that HOME is set.
+
+  3. create a link $HOME/.emacs pointing to grail.el at the root of the
      configuration tree.
 
-  My configuration will then be the default for your user.
+     Example: ln -s ~/system/emacs/grail.el ~/.emacs.el
+
+  My Configuration will at this point load. I highly recommend
+  that you rename/move many of the files such as:
+
+  user.el
+  commands.el
+  keys.el
+  interface.el
+  gui.el
+
+  linux.el
+  darwin.el
+
+  so that you do not end up with a broken or idiosyncratic
+  configuration right out of the gates.
+
+  You can then sort your configuration file into these
+  file names, and graft the ideas/configurations you
+  like from my configuration.
 
 Major differences:
 
@@ -50,9 +72,21 @@ configuration, incorperating useful bits from others over time.
 This configuration allows a user to benefit from the features of
 an advanced configuration that is also modular.
 
-It is straightfoward to disable the entirety of my configuration by
-changing load-config in load.el to "[name].el" and incorperating the
-useful parts bit by bit while benefitting from some basic features
-such as extending load-path and normalizing platforms such as
-darwin.el.
+Modular Configuration:
 
+Many of the interesting features are enabled in "styles" which
+combine a range of packages/settings into a single heading
+
+examples: complete - completion features
+          lisp.el  - lisp/elisp tuning
+
+these are located in local/styles/*.el
+
+enabling these styles is a simple function that can be placed anywhere
+*after* grail itelf loads, such as user.el
+
+example:
+
+(use-styles "xml" "spell" "tab")
+
+this loads the styles for xml,spelling,and tab completion.
