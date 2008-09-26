@@ -112,25 +112,26 @@
 ;;                    EShell
 ;;----------------------------------------------------------------------
 
-(require 'eshell)
+(robust-load-elisp "eshell"
+  (require 'eshell)
 
-(setq
-  eshell-windowed t                ;; enable windowing
-  eshell-save-history-on-exit nil) ;; kill the prompt to save history
+  (setq
+    eshell-windowed t                ;; enable windowing
+    eshell-save-history-on-exit nil) ;; kill the prompt to save history
 
-(add-hook 'eshell-mode-hook
-  (lambda ()
-    ;; disable trailing whitespace
-    (setq show-trailing-whitespace nil)
+  (add-hook 'eshell-mode-hook
+    (lambda ()
+      ;; disable trailing whitespace
+      (setq show-trailing-whitespace nil)
 
-    ;; add a list of commands that will pop a term buffer for out-of-eshell
-    ;; handling. Note: the variable eshell-visual-commands is buffer-local.
-    (setq eshell-visual-commands
-      (append eshell-visual-commands (list "ssh" "su" "telnet" "ftp" "lftp" "links")))
+      ;; add a list of commands that will pop a term buffer for out-of-eshell
+      ;; handling. Note: the variable eshell-visual-commands is buffer-local.
+      (setq eshell-visual-commands
+	(append eshell-visual-commands (list "ssh" "su" "telnet" "ftp" "lftp" "links")))
 
-    ;; I rarely want to quit eshell. when I do I can use quit. map
-    ;; the usual kill-buffer keybinding to rid-window.
-    (local-set-key (kbd "C-x k") 'rid-window) ))
+      ;; I rarely want to quit eshell. when I do I can use quit. map
+      ;; the usual kill-buffer keybinding to rid-window.
+      (local-set-key (kbd "C-x k") 'rid-window) )))
 
 ;;----------------------------------------------------------------------
 ;; network protocols
