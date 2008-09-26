@@ -122,7 +122,7 @@
 ;; define a robust loading command.
 ;;----------------------------------------------------------------------
 
-(defun robust-load-elisp ( path )
+(defun robust-load-file ( path )
   (condition-case nil
     (load path)
     (error (progn
@@ -134,6 +134,20 @@
                (insert (format "; grail.el: errors loading %s\n" path)))
              nil)) ))
 
+(defmacro robust-load-elisp ( name &rest config-expr )
+  `(condition-case nil
+     ,config-expr
+     (error (progn
+	      ;; duplicate the message to both *Messages* as a log
+	      ;; and to the *scratch* buffer where it is highly visible.
+	      (message "grail.el: errors loading %s\n" ,name)
+	      (with-current-buffer "*scratch*"
+		(goto-char (point-max))
+		(insert (format 
+			  "; grail.el: errors loading configuration for %s\n" 
+			  ,name)))
+	      nil)) ))
+
 (defun file-if-readable ( file )
   "if file is a readable path return file or nil"
   (if (file-readable-p file)
@@ -144,7 +158,7 @@
     ((accessible-path  (file-if-readable path)))
 
     (when accessible-path
-      (robust-load-elisp accessible-path)) ))
+      (robust-load-file accessible-path)) ))
 
 (defun load-user-elisp ( path )
   (when path
@@ -158,6 +172,15 @@
 (load-user-elisp "grail-cfg.el")        ;; file for user to change paths
 
 (setq load-filter-dot-dirs "^\\.")
+
+;; build extended-load-path in override order highest -> lowest with:
+;; 
+;; 1. grail-local-emacs   ; over-rides to emacs dist
+;; 2. load-path           ; from emacs itself
+;; 3. grail-local-elisp   ; user written elisp
+;; 4. grail-dist-elisp    ; elisp from third party packages.
+
+;; non-existent directories are filtered out.
 
 (let
   ((extended-load-path
@@ -185,6 +208,9 @@
                  (!name load-filter-dot-dirs))))))
 
        (error nil)) ))
+
+;; minimally check that the extended-load-path, if it's ok AFAICT
+;; then update load-path
 
   (if (and extended-load-path (listp extended-load-path))
     (setq load-path extended-load-path)
