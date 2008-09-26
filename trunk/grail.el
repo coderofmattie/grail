@@ -174,7 +174,7 @@
 (setq load-filter-dot-dirs "^\\.")
 
 ;; build extended-load-path in override order highest -> lowest with:
-;; 
+;;
 ;; 1. grail-local-emacs   ; over-rides to emacs dist
 ;; 2. load-path           ; from emacs itself
 ;; 3. grail-local-elisp   ; user written elisp
