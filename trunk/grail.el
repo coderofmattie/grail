@@ -143,8 +143,8 @@
 	      (message "grail.el: errors loading %s\n" ,name)
 	      (with-current-buffer "*scratch*"
 		(goto-char (point-max))
-		(insert (format 
-			  "; grail.el: errors loading configuration for %s\n" 
+		(insert (format
+			  "; grail.el: errors loading configuration for %s\n"
 			  ,name)))
 	      nil)) ))
 
