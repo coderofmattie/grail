@@ -46,17 +46,7 @@
 ;;----------------------------------------------------------------------
 
 (defun load-style ( style-name )
-  (lexical-let*
-    ((load-name  (concat grail-local-styles style-name ".el"))
-     (style-file (file-if-readable load-name)))
-
-    (if style-file
-      (robust-load-elisp style-file)
-      (progn
-        (message "load-style (grail-fn.el): could not load style %s from: %s\n"
-          style-name
-          load-name)
-        nil)) ))
+  (load-elisp-if-exists (concat grail-local-styles style-name ".el")))
 
 (defvar requested-styles-list
   nil
