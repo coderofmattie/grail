@@ -136,7 +136,7 @@
 
 (defmacro robust-load-elisp ( name &rest config-expr )
   `(condition-case nil
-     ,config-expr
+     (progn ,@config-expr)
      (error (progn
 	      ;; duplicate the message to both *Messages* as a log
 	      ;; and to the *scratch* buffer where it is highly visible.
