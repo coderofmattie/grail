@@ -4,6 +4,11 @@
 ;; Copyright (C) 2008 Mike Mattie
 ;; License: LGPL-v3
 ;;----------------------------------------------------------------------
+
+;; dwim-tab
+;;
+;; A highly overloaded "Tab" key hook.
+
 (require 'dwim-tab-fn)
 
 (defvar dwim-tab-context
@@ -12,20 +17,38 @@
    if they are certain their dwim is the right dwim.")
 
 (defun dwim-tab-add-context ( context-fn )
+  "dwim-tab-add-context function
+
+   Add a context function to the Tab hook. If the function detects that
+   the point is within it's context, or turf then it should DTRT and
+   return non-nil.
+  "
   (push context-fn dwim-tab-context))
 
 (defvar dwim-tab-fallback
   (lambda () (dabbrev-expand nil))
-  "fallback completion function")
+  "a fallback completion function")
 
 (defun try-context-dwim ()
-  "evaluate the tab context via the tab-context list of functions"
+  "try-context-dwim
+
+   Evaluate the tab context via the tab-context list of functions"
   (if dwim-tab-context
     (or-fn-list dwim-tab-context)
     nil))
 
 (defun dwim-tab-generator ( complete-fn )
-  ;; generate a contextualized flavor of the tab key behavior.
+  "dwim-tab-generator
+
+   creates a function for the tab key hook that will:
+
+   1. try various context functions at the point.
+   2. attempt completion when after non-whitespace.
+   3. indent.
+
+   The context functions are shared globally, while the
+   completion function is bound to the function generated.
+  "
 
   (lexical-let
     ((completion-function (or complete-fn dwim-tab-fallback)))
