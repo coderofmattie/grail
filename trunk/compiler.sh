@@ -4,7 +4,15 @@
 # byte compile the elisp files for faster loading.
 #----------------------------------------------------------------------
 
+# This script generates a Makefile to compile the elisp files added by
+# the user (source_dirs).
+
 GENERATED="Makefile.bytecode"
+source_dirs="dist/elisp local/elisp local/styles"
+
+
+# skip re-generating if the makefile is newer than the directories in
+# the source_dir list and it is newer than this script itself.
 
 if test -f $GENERATED ; then
   if cat <(find compiler.sh -newermm $GENERATED -print) <(find dist/elisp local/elisp local/styles -type d -newermm $GENERATED -print) | xargs test -z ; then
@@ -18,15 +26,19 @@ echo "Regenerating the Makefile"
 
 EMACS=${1:-emacs}
 
-source_dirs="dist/elisp local/elisp local/styles"
+
+# find all of the elisp files to be compiled. the base directory of the config
+# is handled as a special case to limit the recursion to source_dirs
 
 recursive=$(find $source_dirs -iname '*.el' -print | tr -s $'\n' ' ')
 config=$(ls *.el | tr -s $'\n' ' ')
 
 files="$recursive $config"
 
-# the rule attempts to byte-compile the file, or failing that it deletes the attempt
-# to compile, which will slow loading, but not terminate the compile completely
+# Create the rule to byte-compile an elisp file. If the byte compile
+# failes ensure that it is deleted so that the source will be loaded.
+
+# ignore compile failures.
 
 cat >$GENERATED <<RULES
 .PHONY: compile clean
@@ -35,6 +47,8 @@ cat >$GENERATED <<RULES
 	-\$(EMACS) -batch -f batch-byte-compile $< || rm \$@
 
 RULES
+
+# write the dependencies
 
 for dep in $files ; do
   base=${dep%.el}
@@ -45,9 +59,10 @@ for dep in $files ; do
   echo "${target}: ${source}" >>$GENERATED
 done
 
-# make sure there is trailing space so that the sed expr matches on the last line.
 target_list=$(echo "$files" | sed -e 's,\.el,\.elc,g')
 
+
+# create the top-level targets
 
 cat >>$GENERATED <<COMMANDS
 compile: $target_list
