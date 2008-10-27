@@ -1,21 +1,43 @@
-;;----------------------------------------------------------------------
-;; closure.el
-;; Primary Author: Mike Mattie
-;; copyright: Mike Mattie 2008
-;; License: LGPL-V3
-;;----------------------------------------------------------------------
+;;; closure.el --- pseudo closures to save and re-enter an execution environment.
 
-(defconst closure-release-version "0.0.1"
+;; Copyright (C) 2008 Mike Mattie
+
+;; Author: Mike Mattie <codermattie@gmail.com>
+;; Maintainer: Mike Mattie <codermattie@gmail.com>
+;; Created: 2008-01-04
+;; Version: 0.0.2
+;; Keywords: closure
+;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
+
+(defconst closure-release-version "0.0.2"
   "the release number of closure.el")
 
-;; these are experimental prototypes. The final versions need to be
-;; implemented at the C level.
+;; These functions are experimental prototypes of elisp language features.
+;; A robust implementation would be at the C level.
+
+;; These functions such as save-lexical-closure and use-dynamic-closure
+;; allow the execution environment of a function to be saved, and used
+;; by another function.
+
+;; The scope then becomes data shared between a related set of functions.
 
 ;;----------------------------------------------------------------------
 ;; definition and creation
 ;;----------------------------------------------------------------------
 
 (defmacro closure-define ( symbol &rest definitions )
+  "closure-define SYMBOL &DEF
+
+   This macro form binds the definition list DEF to SYMBOL. The definition
+   is used to later instantiate a closure with closure-create.
+
+   the symbol itself returned.
+
+   (closure-define foo
+      (example   nil)
+      (value     "foo"))
+  "
+
   (set symbol
     (mapcar
       (lambda ( def )
@@ -39,7 +61,13 @@
     copy))
 
 (defun closure-create ( definition )
-  "create a symbol table initializing SYMBOL with eval'd VALUE"
+  "closure-create DEF
+
+   Create a closure which is an objarray initialized by the definition DEF
+   from closure-define.
+
+   (closure-create (closure-define ....))
+  "
   (lexical-let
     ((table (make-vector closure-objarray-bucket-tuning 0)))
 
@@ -52,8 +80,18 @@
 ;;----------------------------------------------------------------------
 
 (defun closure-bind-scope ( closure body )
-  "traverse the tree depth first pre-binding any symbol found in closure."
-  ;; might be better to just use a cl low level library function.
+  "closure-bind-scope CLOSURE BODY
+
+   Traverse the sexp tree depth first pre-binding any symbol found in closure.
+  "
+
+  ;; Note: might be better to just use a cl low level library function.
+
+  ;; It is a standard recursive descent transform of the body.  If the
+  ;; current symbol "atom" in the descent is intern'd or found in the
+  ;; closure objarray the intern is injected. Otherwise the symbol is
+  ;; preserved as is.
+
   (if (consp body)
     (lexical-let
       ((atom (car body)))
@@ -81,15 +119,39 @@
    Currently this is a experimental hack so it incurs the cost
    of a recursive pre-bind in addition to eval each time evaluated."
   (declare (debug (symbolp body)))
+
+  ;; This is mildly evil. The body is quoted into the result of the
+  ;; macro.  This defers closure-bind-scope until eval *after* the
+  ;; macro expansion.
+
+  ;; This has to be done so that the binding happens at evaluation
+  ;; time when the closure exists instead of compile time.
+
   `(eval (closure-bind-scope ,closure ',(if (eq 'lambda (car body))
                                           body
                                           (cons 'progn body)))))
 
 (defun closure-let-binding ( s closure )
+  "closure-let-binding s closure
+
+   create a let pair (sym value). a un-intern'd symbol must
+   be created. I do so with the read function. the value is
+   retrieved from the closure.
+
+   This binding of the closure is read-only.
+  "
   `(,(read (symbol-name s)) ,(closure-symbol s closure)))
 
 (defmacro use-dynamic-closure ( with-def &rest body )
-  "use a saved closure as a dynamic scope with private copy."
+  "use-dynamic-closure (DEF CLOSURE) BODY
+
+   create a dynamic scope from the closure specified as
+   DEF the closure definition, and the instance CLOSURE.
+
+   The values from the closure can be used and modified
+   however they are copies so the closure itself is not
+   modified.
+   "
   (declare (debug (form body)))
   (lexical-let
     ((definition    (eval (car with-def)))
@@ -106,7 +168,18 @@
        ,@body)))
 
 (defmacro use-dynamic-closure-with ( with-def let-spec &rest body )
-  "FIXME"
+  "use-dynamic-closure-with (DEF CLOSURE) (LET) BODY
+
+   This form is the same as use-dynamic-closure adding let pairs
+   exclusive to the body.
+
+   (use-dynamic-closure-with
+     (closure-def my-closure)
+     ((foo value)
+      (bar value))
+
+       body...)
+  "
   (declare (debug (form form body)))
 
   (lexical-let
@@ -178,3 +251,4 @@
 
 (provide 'closure)
 
+;;; closure.el ends here
