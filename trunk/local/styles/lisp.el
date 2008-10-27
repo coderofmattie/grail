@@ -4,11 +4,9 @@
 ;; Copyright:
 ;;----------------------------------------------------------------------
 
-;; mic-paren is not part of the mainline. need an installer here.
+;; fancy paren/delimited highlighting.
 
 (require 'mic-paren)
-
-;; fancy paren/delimited highlighting.
 
 (setq
   lisp-indent-offset 2
