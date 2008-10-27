@@ -35,13 +35,12 @@
       jit-lock-stealth-time 10)          ;; refontify 10 seconds after no input
 
 
+;; 2008-10-25 : ? Deprecated I think. a relic of the CVS 23.x days
 (auto-composition-mode 0) ;; 23.x this is buggy, definitely for 23.0.60
 
 ;;----------------------------------------------------------------------
 ;;                          GUD
 ;;----------------------------------------------------------------------
-
-;; (require 'speedbar)                       ;; the speedbar is handy for GUD
 
 (setq                     ;; cmd window + src
   gdb-show-main t)
@@ -67,12 +66,17 @@
   )
 
 ;;----------------------------------------------------------------------
-;; very custom
+;; enhanced merging
 ;;----------------------------------------------------------------------
-
-;; enhanced merging setup.
 (require 'merc)
+
+;;----------------------------------------------------------------------
+;; template expansion
+;;----------------------------------------------------------------------
 (require 'else-xml)
+
+(require 'yasnippet)
+
 
 ;; this is insanely great. It displays the function you are "in" in terms
 ;; of the point. Really nice for reading long functions.
@@ -182,3 +186,20 @@
                                      ;; whitespace delete
       )) )
 
+;;----------------------------------------------------------------------
+;; Java
+;;----------------------------------------------------------------------
+(eval-after-load "java-mode"
+  (require 'flymake) )
+
+;;----------------------------------------------------------------------
+;; Lua
+;;----------------------------------------------------------------------
+
+(setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist ))
+
+(eval-after-load "lua-mode"
+  (add-hook 'lua-mode-hook
+    (lambda ()
+      (configure-for-programming)
+      )) )
