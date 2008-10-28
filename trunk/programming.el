@@ -1,6 +1,14 @@
 ;;----------------------------------------------------------------------
 ;; programming.el
+;;
+;; programming configuration including templates,merging, highlighting,
+;; completion etc.
 ;;----------------------------------------------------------------------
+
+;;----------------------------------------------------------------------
+;; template expansion
+;;----------------------------------------------------------------------
+(require 'xml-code)
 
 (use-styles "template" "lisp" "code-formatting")
 
@@ -70,14 +78,6 @@
 ;;----------------------------------------------------------------------
 (require 'merc)
 
-;;----------------------------------------------------------------------
-;; template expansion
-;;----------------------------------------------------------------------
-(require 'else-xml)
-
-(require 'yasnippet)
-
-
 ;; this is insanely great. It displays the function you are "in" in terms
 ;; of the point. Really nice for reading long functions.
 
@@ -116,14 +116,11 @@
   (local-set-key (kbd "C-l w") 'set-default-register)
   (local-set-key (kbd "C-l i") 'insert-default-register)
 
-  (when (else-xml)
-    ;; here is where C-xe will expand templates
-    (local-set-key (kbd "C-l e") 'else-expand-placeholder)
-    (local-set-key (kbd "C-l n") 'else-next-placeholder)
+  (when (xml-code-templates-p)
+;;    (local-set-key (kbd "C-l n") 'else-next-placeholder)
+;:    (local-set-key (kbd "C-l k") 'else-kill-placeholder)
 
-    (local-set-key (kbd "C-l k") 'else-kill-placeholder)
-
-    (local-set-key (kbd "C-l l") 'else-show-token-names) ))
+    (local-set-key (kbd "C-l l") 'xml-code-kill-template) ))
 
 ;;----------------------------------------------------------------------
 ;; elisp
@@ -143,10 +140,6 @@
 (eval-after-load "cperl-mode"
   (progn
     (setq
-      else-mode-xml-alist (cons '("perl5" . ("perl5.xml"
-                                             "loop.xml"))
-                            else-mode-xml-alist)
-
       cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
       cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
 
@@ -158,7 +151,7 @@
 
     (add-hook 'cperl-mode-hook
       (lambda ()
-        (set (make-local-variable 'source-language) "perl5")
+        (xml-code-for-language "perl5")
         (configure-for-programming)
         (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))) ))
 
@@ -172,19 +165,29 @@
 				("\\.h$"       . c++-mode)
                                  ) auto-mode-alist ))
 
+;; what is the cc-mode hook order, are the language or the common hooks run first ?
 (eval-after-load "cc-mode"
-  (add-hook 'c-mode-common-hook
-    (lambda ()
-      (configure-for-programming)
-
+  (progn
+    (add-hook 'c-mode-common-hook
+      (lambda ()
 ;;      (c-set-style "linux")          ;; base off of linux style
 
-      (setq c-basic-offset 2)               ;; tabs are 2 spaces
-      (c-set-offset 'substatement-open '0)  ;; hanging braces
+        (setq c-basic-offset 2)               ;; tabs are 2 spaces
+        (c-set-offset 'substatement-open '0)  ;; hanging braces
 
-      (c-toggle-auto-hungry-state 1) ;; auto-hungry newline and
-                                     ;; whitespace delete
-      )) )
+        ;; auto-hungry newline and whitespace delete
+        (c-toggle-auto-hungry-state 1) ))
+
+    (add-hook 'c-mode-hook
+      (lambda ()
+        (xml-code-for-language "c")
+        (configure-for-programming)))
+
+
+    (add-hook 'c++-mode-hook
+      (lambda ()
+        (xml-code-for-language "c++")
+        (configure-for-programming))) ))
 
 ;;----------------------------------------------------------------------
 ;; Java

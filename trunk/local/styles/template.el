@@ -1,15 +1,12 @@
 ;;----------------------------------------------------------------------
-;;         else = (E)macs (L)anguage (S)ensitive (E)diting.
+;; templates
 ;;----------------------------------------------------------------------
 
-;; dummy init defun in case it does not load.
-(defun else-xml-init () nil)
+;; the template facility is xml-code which is a layer on top of one
+;; of the third party programming oriented template systems.
 
-(require 'else-mode)
-(require 'else-xml)
+(require 'xml-code)
 
-(setq
-  else-kill-proceed-to-next-placeholder t)
 
 
 
