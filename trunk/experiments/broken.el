@@ -255,6 +255,33 @@
                                           'open-network-stream)))
             (erc :server ,server :port ,port :nick ,nick :password ,pass))))))
 
+(defun combine-library ( source-file )
+  "combine-library"
+  (interactive
+    (list
+      (completing-read (format "Library name (default %s): " (file-name-nondirectory buffer-file-name))
+        'locate-file-completion load-path nil nil nil buffer-file-name)))
+
+  (lexical-let*
+    ((input-buffer    (generate-new-buffer "*combine*"))
+     (export-buffer   (generate-new-buffer (format " Export %s" source-file)))
+     (appender        (file-appender export-buffer)))
+
+    (with-current-buffer input-buffer
+      (insert-file-contents-literally (locate-library source-file)))
+
+      (mapc-read-buffer
+        (lambda (x)
+          (when (eq 'require (car x))
+            (lexical-let
+              ((library-name (symbol-name (cadr (cadr x)))))
+
+              (message "combine-library: adding library %s\n" library-name)
+              (funcall appender library-name))) )
+        input-buffer)
+
+    (kill-buffer input-buffer)
+    (pop-to-buffer export-buffer) ))
 
 ;; multi-file search and replace
 
