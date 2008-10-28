@@ -240,6 +240,28 @@
         (compile))) ))
 
 
+;; a nifty macro from Andreas Fuchs scavenged from EmacsWiki
 
+(defmacro asf-erc-bouncer-connect (command server port nick ssl pass)
+   "Create interactive command `command', for connecting to an IRC server. The
+   command uses interactive mode if passed an argument."
+   (fset command
+     `(lambda (arg)
+        (interactive "p")
+        (if (not (= 1 arg))
+          (call-interactively 'erc)
+          (let ((erc-connect-function ',(if ssl
+                                          'erc-open-ssl-stream
+                                          'open-network-stream)))
+            (erc :server ,server :port ,port :nick ,nick :password ,pass))))))
+
+
+;; multi-file search and replace
+
+;; -> find-dired , use the find-dired with gnu find arguments to mark all the files to search
+
+;; -> filter out the source file(s) that already have the changes
+
+;; -> dired-do-query-replace-regexp start the regex
 
 
