@@ -30,7 +30,7 @@
 ;; create a tab context where tab will invoke flyspell-auto-correct-word
 ;; at the point.
 
-(dwim-tab-add-context 'correct-over-flyspell)
+(dwim-tab-globalize-context 'correct-over-flyspell)
 
 
 

@@ -71,6 +71,30 @@
         (throw 'terminate t)))
     nil))
 
+(defun join-as-list ( head tail )
+  "join-as-list HEAD TAIL
+
+   join HEAD and TAIL into a list. Both HEAD and TAIL can be a list or value.
+   TAIL can be nil. HEAD must be non-nil.
+  "
+  (eval (list
+          ;; The tail construction below ensures that the
+          ;; tail is a list. complete-functions is a list
+          ;; or a symbol, select the join function appropriately.
+          (if (listp head)
+            'append
+            'cons)
+
+          (quote head)
+
+          ;; make a list either way out of the fallback.
+          ;; either works for cons or append.
+          (if (listp tail)
+            (quote tail)
+            (if tail
+              (quote (cons tail nil))
+              nil)) )))
+
 ;;----------------------------------------------------------------------
 ;; tail iterator
 ;;----------------------------------------------------------------------
