@@ -35,13 +35,19 @@
 ;; -> Hypothesis
 
 ;; Exposing the internal semantics of the generated parser as a well
-;; defined programming interface allows a parser writer to freely mix
-;; the semantics of a grammar classes such as CFG and PEG with
-;; tailored parsing behavior.
+;; defined programming interface allows user to freely mix the
+;; semantics of a grammar classes such as CFG and PEG with the user's
+;; grammar definitions.
 
 ;; The programming interface is powerful enough that user defined
 ;; functions can be reduced to a few typed hooks without losing the
 ;; ability to define useful or unusual parsers.
+
+;;-> Lexing
+
+;; The optimization use of lexing, to minimize the penalty of allowing
+;; the parser to back-track, will be subsumed by transparent token
+;; memoization.
 
 ;; -> Benefits
 
@@ -93,8 +99,8 @@
 ;; 1. Canonical tree walk implemented as parser-ast-node. a real pre-requisite to
 ;;    sane user implementation of transforms.
 
-;; 2. implement a error recovery routine. This involves marking tokens as being
-;;    sync tokens, and generating a recovery function that scans for those tokens.
+;; 2. implement a error recovery routine. This involves marking sync tokens,
+;;    and generating a recovery function that scans for those tokens.
 
 ;;    -> Phase 2: optimization
 
@@ -148,8 +154,11 @@
 ;; the top of the stack.
 
 (defun parser-pos ()
-  "Return the current position of the parser in the buffer"
-  (car parser-position))
+  "The current parser position from the Parser Backtrack Stack."
+
+  ;; take the head of the list, and then the left side of the cons
+  ;; cell which holds the current parser position.
+  (car (car parser-backtrack-stack)))
 
 (defun parser-push ()
   "Copy the parser position to a new stack level so the parser can backtrack when necessary."
@@ -2076,7 +2085,8 @@ STrace List? ")
   "parser-compile &rest GRAMMAR
 
   parser-compile translates GRAMMAR into a Recursive Descent
-  parser returning a lambda entry-point parsing the Start Symbol.
+  parser returning a lambda function - the entry-point of the
+  parser, or the Start Symbol.
 
   GRAMMAR is a form interpreted as a DSL that defines the parser
   explained in [Syntax].
