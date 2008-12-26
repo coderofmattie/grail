@@ -35,7 +35,7 @@
 
    (closure-define foo
       (example   nil)
-      (value     "foo"))
+      (value     \"foo\"))
   "
 
   (set symbol
