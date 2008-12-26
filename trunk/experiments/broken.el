@@ -259,7 +259,8 @@
   "combine-library"
   (interactive
     (list
-      (completing-read (format "Library name (default %s): " (file-name-nondirectory buffer-file-name))
+      (completing-read (format "Library name (default %s): "
+                         (file-name-nondirectory buffer-file-name))
         'locate-file-completion load-path nil nil nil buffer-file-name)))
 
   (lexical-let*
