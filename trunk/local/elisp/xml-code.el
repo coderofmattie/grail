@@ -109,6 +109,31 @@
   nil)
 
 ;;----------------------------------------------------------------------
+;; The really edgy feature I am looking for is the ability to generate
+;; templates from a template.
+;;
+;; The canonical example is the for loop. I would ideally want to be
+;; able to do something like: for (i = 0 ; i < n ; i++ )
+;;
+;; then in the body, I would want to be able to expand i to [i]. In fact
+;; I would want to make the template for referencing i within that scope.
+;;
+;; the direction I am going in now involves leveraging something like
+;; hippie-expand, where the lisp evaluation feature in yasnippet is used
+;; to update the hippie expansion table.
+;;
+;; even better would be if the fields remained "linked" or mirrored.
+;;
+;; even the basic abbrev will take some work. it needs to be something
+;; you can use on the fly. Add a region to a list sorted by alpha and length.
+;; Hitting tab should keep expanding to the next size up, one by one.
+;; naming them should be easy too.
+;;
+;; saving should be possible within comments.
+;;
+;;----------------------------------------------------------------------
+
+;;----------------------------------------------------------------------
 ;; these parts are ugly. Not integrated correctly with exisitng code.
 ;;----------------------------------------------------------------------
 
