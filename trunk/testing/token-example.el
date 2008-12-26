@@ -12,13 +12,13 @@
 
 (require 'parser)
 
-;; simple key value example to demonstrate tokens and basic
-;; organization.
+;; A simple key value example to demonstrate tokens and basic grammar
+;; organization. It is heavily commented to serve as a tutorial.
 
-;; evaluate the form below to try out the parser. There is a small
+;; Evaluate the form below to try out the parser. There is a small
 ;; sample input at the bottom. Use the parser-interactive command to
-;; run the parser interactively giving it: simple-kv when prompted for
-;; a parser.
+;; run the parser interactively by giving: "simple-kv" at the parser
+;; prompt.
 
 (parser-define 'simple-kv
   ;; ^^ bind the compiled function to a symbol
