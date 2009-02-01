@@ -61,7 +61,7 @@
                     :weight normal
                     :height 125
                     :width normal
-                    :family "DejaVuLisp"))
+                    :family "DejaVuLisp2"))
 
   ;; comments are set off-tempature to distingiush them better.
   ;; orange was chosen as a red that wasn't harsh.
