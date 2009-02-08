@@ -46,7 +46,9 @@
 ;;----------------------------------------------------------------------
 
 (defun load-style ( style-name )
-  (load-elisp-if-exists (concat grail-local-styles style-name ".el")))
+  (unless (load-elisp-if-exists (concat grail-local-styles style-name ".el"))
+    (grail-dup-error-to-scratch 
+      (format "grail: style %s aborted loading from errors" style-name)) ))
 
 (defvar requested-styles-list
   nil
