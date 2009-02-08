@@ -10,7 +10,7 @@
 ;; bugs/complexity early in the boot process could be minimized.
 
 ;;----------------------------------------------------------------------
-;; utilities.
+;; basic utilities.
 ;;----------------------------------------------------------------------
 
 (defun list-filter-nil ( list )
@@ -47,7 +47,7 @@
 
 (defun load-style ( style-name )
   (unless (load-elisp-if-exists (concat grail-local-styles style-name ".el"))
-    (grail-dup-error-to-scratch 
+    (grail-dup-error-to-scratch
       (format "grail: style %s aborted loading from errors" style-name)) ))
 
 (defvar requested-styles-list
