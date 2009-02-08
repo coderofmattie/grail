@@ -6,16 +6,20 @@
 
 ;; fancy paren/delimited highlighting.
 
-(require 'mic-paren)
+(unless
+  (robust-load-elisp
+    (require 'mic-paren)
 
-(setq
-  lisp-indent-offset 2
-  paren-showing t
-  show-paren-style 'parenthesis
-  show-paren-delay 1
-  paren-sexp-mode 'match )
+    (setq
+      lisp-indent-offset 2
+      paren-showing t
+      show-paren-style 'parenthesis
+      show-paren-delay 1
+      paren-sexp-mode 'match )
 
-(paren-activate)
+    (paren-activate))
+  ;; do the repair thingy
+  (grail-dup-error-to-scratch "the lisp style is hobbled by the unloadable mic-paren dependency"))
 
 (defun swap-paren-keys ()
   "bind the parentheses to the brace keys, while the shifted
