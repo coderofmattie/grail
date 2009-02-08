@@ -97,12 +97,13 @@
    --- override ---
 
    1. grail-local-emacs   - local, for preferring local modifications of mainline packages.
-   2. load-path           - the emacs boot load path
+   2. emacs-load-path     - the emacs boot load path
 
    --- extend ---
 
    3. grail-local-elisp   - user written elisp
-   4. grail-dist-elisp    - elisp from third party packages.
+   4. elpa-load-path      - elpa managed third party packages
+   5. grail-dist-elisp    - grail managed third party packages
 
    non-existent directories are filtered out.
   "
@@ -124,6 +125,8 @@
                  (filter-ls grail-local-elisp t
                    (type ?d)
                    (!name filter-dot-dirs))))
+
+             grail-elpa-load-path
 
              (if (file-accessible-directory-p grail-dist-elisp)
                (cons grail-dist-elisp
@@ -243,6 +246,8 @@
       (concat grail-dist-dir "elpa/")
       "ELPA managed third party elisp.")
 
+    (defvar grail-elpa-load-path nil
+      "The load-path extensions made by ELPA package activation")
 
     (defvar grail-boot-load-path load-path
       "The load-path as constructed by emacs before grail initialization")
