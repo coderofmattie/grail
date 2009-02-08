@@ -149,8 +149,9 @@
 (condition-case error-trap
   (progn
     (defvar grail-elisp-root
-      (or (dir-path-if-accessible (getenv "USER_ELISP"))
-        (dir-path-if-accessible (concat (getenv "HOME") "/system/emacs/")))
+      (concat (or (dir-path-if-accessible (getenv "USER_ELISP"))
+                  (dir-path-if-accessible (concat (getenv "HOME") "/system/emacs")))
+        "/")
       "The root of the user's elisp tree")
 
     (unless grail-elisp-root
