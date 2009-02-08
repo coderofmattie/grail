@@ -104,7 +104,46 @@
        (directory-files-and-attributes ,path ,path-type)) ))
 
 ;;----------------------------------------------------------------------
-;; elpa
+;; diagnostic support routines.
+;;----------------------------------------------------------------------
+
+(defmacro diagnostic-load-elisp ( &rest load-expr )
+  "robust-load-elisp LOAD-EXPR
+
+   evaluate LOAD-EXPR trapping any errors that occur. the value
+   of LOAD-EXPR is discarded, and nil for a succesful load, or
+   the trapped error is returned.
+   "
+  `(condition-case error-trap
+     (progn
+       ,@load-expr
+       nil)
+     (error error-trap)) )
+
+(defun format-signal-trap (signal-trap)
+  "format-signal-trap list:SIGNAL-TRAP
+
+   format SIGNAL-TRAP for use in error messages.
+  "
+  (format "(%s , \"%s\")" (symbol-name (car signal-trap)) (cadr signal-trap)) )
+
+(defun grail-in-load-path-p (package)
+  "grail-in-load-path-p elisp-name
+
+   Return either the absolute path to the elisp-file if it is found
+   in load-path, or nil otherwise.
+  "
+  (condition-case nil
+    (find-library-name package)
+    (error nil)) )
+
+;;----------------------------------------------------------------------
+;; ELPA
+;;
+;; The preferred way to install software is with ELPA which is a
+;; sophisticated package management system.
+;;
+;; the grail install functions are overly simplistic in comparison.
 ;;----------------------------------------------------------------------
 
 (defconst elpa-url
