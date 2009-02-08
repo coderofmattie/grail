@@ -138,6 +138,44 @@
     (error nil)) )
 
 ;;----------------------------------------------------------------------
+;; installation routines.
+;;----------------------------------------------------------------------
+
+(defun grail-dist-install-directory ( &optional package )
+  "grail-dist-install-directory &optional string:PACKAGE
+
+   Ensure that the installation directory exists. The default is grail-dist-elisp,
+   however for multi-file packages an optional package name can be supplied.
+
+   The path of the installation directory is returned for the installer's use.
+  "
+  (let
+    ((install-directory (if package (concat grail-dist-elisp package) grail-dist-elisp)))
+
+    (unless (dir-path-if-accessible install-directory)
+      (make-directory install-directory t))
+    install-directory))
+
+(defun grail-dist-install-file ( name url )
+  "grail-dist-install-file NAME URL
+
+   download an elisp file named NAME.el from URL and install it in the user's dist directory.
+
+   The error message is returned if there is an error, nil for sucess.
+  "
+  (grail-dist-install-directory)
+
+  (condition-case error-trap
+    (with-temp-buffer
+      (url-insert-file-contents url)
+      (write-file (concat grail-dist-elisp name ".el")))
+
+    nil
+    (error
+      (format "grail-dist-install-file for %s failed with: %s"
+        name (format-signal-trap error-trap))) ))
+
+;;----------------------------------------------------------------------
 ;; ELPA
 ;;
 ;; The preferred way to install software is with ELPA which is a
