@@ -67,7 +67,7 @@
    "
   `(condition-case nil
      (progn
-       ,@config-expr
+       ,@load-expr
        t)
      (error nil)) )
 
