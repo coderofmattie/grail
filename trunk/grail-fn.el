@@ -216,6 +216,19 @@
       (message "installation repair of dependency %s completed :)" package-name)
       t)))
 
+(defun grail-repair-by-debugging ( package )
+  "grail-repair-by-debugging symbol:PACKAGE
+
+   Repair package loading by debugging.
+  "
+  (when (yes-or-no-p "repair: load the library source and enter the debugger on error ? ")
+    (message
+      "debug-on-error will be set. You may want to clear it after debugging with toggle-debug-on-error")
+
+    (find-file-read-only-other-window (find-library-name (symbol-name package)))
+    (setq debug-on-error t)
+    (funcall 'require package) ))
+
 ;;----------------------------------------------------------------------
 ;; ELPA
 ;;
