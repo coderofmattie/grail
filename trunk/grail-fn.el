@@ -107,6 +107,9 @@
 ;; diagnostic support routines.
 ;;----------------------------------------------------------------------
 
+;; find-library-name is not an auto-load so we need to force a load.
+(require 'find-func)
+
 (defmacro diagnostic-load-elisp ( &rest load-expr )
   "robust-load-elisp LOAD-EXPR
 
