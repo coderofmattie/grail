@@ -176,6 +176,44 @@
         name (format-signal-trap error-trap))) ))
 
 ;;----------------------------------------------------------------------
+;; grail repair routines.
+;;----------------------------------------------------------------------
+
+(defun grail-repair-by-installing ( package installer )
+  "grail-repair-by-installing symbol:PACKAGE string|function:INSTALLER
+
+   Attempt to install PACKAGE and load the missing dependency. INSTALLER
+   is either a URL string, or a custom installer function.
+
+   t is returned on success and nil for failure.
+  "
+  (let
+    ((package-name    (symbol-name package)))
+
+    (catch 'installer-abort
+      (condition-case install-trap
+
+        (cond
+          ((functionp installer) (funcall installer))
+          ((stringp   installer) (grail-dist-install-file package-name installer)))
+
+        (error
+          (message "grail repair of package %s failed with %s" package-name (format-signal-trap install-trap))
+          (throw 'installer-abort nil)) )
+
+      (grail-extend-load-path)
+
+      (condition-case load-trap
+        (require package)
+        (error
+          (message "repair of package %s : installed ok, but loading failed anyways - %s."
+            package-name (format-signal-trap load-trap))
+          (throw 'installer-abort nil)) )
+
+      (message "installation repair of dependency %s completed :)" package-name)
+      t)))
+
+;;----------------------------------------------------------------------
 ;; ELPA
 ;;
 ;; The preferred way to install software is with ELPA which is a
