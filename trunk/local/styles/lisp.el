@@ -11,7 +11,6 @@
     (require 'mic-paren)
 
     (setq
-      lisp-indent-offset 2
       paren-showing t
       show-paren-style 'parenthesis
       show-paren-delay 1
@@ -20,6 +19,10 @@
     (paren-activate))
   ;; do the repair thingy
   (grail-dup-error-to-scratch "the lisp style is hobbled by the unloadable mic-paren dependency"))
+
+;; basic settings
+(setq
+  lisp-indent-offset 2)
 
 (defun swap-paren-keys ()
   "bind the parentheses to the brace keys, while the shifted
