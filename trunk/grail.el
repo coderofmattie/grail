@@ -38,7 +38,7 @@
   (message error-message)
   (with-current-buffer "*scratch*"
     (goto-char (point-max))
-    (insert (format "; grail error! %s" error-message))) )
+    (insert (format "; grail error! %s\n" error-message))) )
 
 ;;----------------------------------------------------------------------
 ;; define a robust methods of loading and evaluating elisp that trap
