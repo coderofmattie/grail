@@ -33,8 +33,11 @@
     file))
 
 (defun grail-dup-error-to-scratch (error-message)
-  ;; duplicate the message to both *Messages* as a log
-  ;; and to the *scratch* buffer where it is highly visible.
+  "grail-dup-error-to-scratch ERROR-MESSAGE
+
+  duplicate the ERROR-MESSAGE to both *Messages* as a log and to the
+  *scratch* buffer as a comment where it is highly visible.
+  "
   (message error-message)
   (with-current-buffer "*scratch*"
     (goto-char (point-max))
