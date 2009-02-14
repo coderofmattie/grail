@@ -50,7 +50,7 @@
   "
   (with-current-buffer "*scratch*"
     (goto-char (point-max))
-    (insert (format "\n; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
+    (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
 
 ;;----------------------------------------------------------------------
 ;; styles
