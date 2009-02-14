@@ -41,6 +41,17 @@
             (push transform rvalue)))))
     (reverse rvalue)))
 
+(defun grail-print-fn-to-scratch ( fn-name description )
+  "grail-print-fn-to-scratch FN-NAME DESCRIPTION
+
+   Print FN-NAME as a function call with DESCRIPTION instructions
+   in the scratch buffer. The user can evaluate the description
+   and easily un-comment the function and execute it.
+  "
+  (with-current-buffer "*scratch*"
+    (goto-char (point-max))
+    (insert (format "\n; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
+
 ;;----------------------------------------------------------------------
 ;; styles
 ;;----------------------------------------------------------------------
