@@ -291,6 +291,39 @@
 
     (fset (intern repair-fn-name) (cdr repair-procedure)) ))
 
+(defmacro grail-activate-with-recovery ( style package installer &rest init-code )
+  "grail-load-dep-with-recovery string:STYLE symbol:PACKAGE INSTALLER code:INIT-CODE
+
+   Attempt to load PACKAGE via require with error trapping, diagnosis, and repair.
+
+   t is returned on failure, nil on success.
+  "
+  (let
+    ((pkg-name     (symbol-name package))
+     (diagnostic   nil))
+
+    (catch 'abort ;; non-local exit for early termination from errors.
+
+      ;; try loading the package catching any diagnostic errors from signals
+      (when (setq diagnostic (diagnostic-load-elisp (require ',package)))
+        (grail-dup-error-to-scratch (format
+                                      "grail: style %s is degraded from %s loading failure %s"
+                                      style
+                                      pkg-name
+                                      (format-signal-trap diagnostic)))
+        (grail-repair-dependency-fn package installer)
+        (throw 'abort t))
+
+      ;; try the initialization trapping any errors.
+      (when (setq  diagnostic (diagnostic-load-elisp ,init-code))
+        (grail-dup-error-to-scratch (format
+                                      "grail: style %s is degraded from initialization error %s"
+                                      style
+                                      (format-signal-trap diagnostic)))
+        (throw 'abort t))
+
+        nil)))
+
 ;;----------------------------------------------------------------------
 ;; ELPA
 ;;
