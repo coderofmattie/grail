@@ -240,6 +240,56 @@
     (setq debug-on-error t)
     (funcall 'require package) ))
 
+(defun grail-repair-dependency-fn ( package installer )
+  "grail-repair-dependency-fn PACKAGE INSTALLER
+
+   Repair dependency loading problems by installation or by a
+   entry point into a debugging work-flow.
+
+   In essence this function selects between repairing by
+   installation or debugging and generates the interactive
+   function binding important variables such as the package.
+
+   Based upon a search of load-path the error will be diagnosed
+   either as a evaluation failure (if the library is found in
+   load-path) or a missing installation.
+
+   For a evaluation failure a debugging entry point is
+   constructed. For a missing entry point an installer is
+   generated.
+  "
+  (let*
+    ((pkg-name (symbol-name package))
+    ;; repair procedure is set to a diagnostic/function pair
+    ;; format (string lambda) by cons.
+
+     (repair-procedure
+       (lexical-let
+         ;; the package symbol needs to be lexically bound to the generated lambda's
+         ((pkg-symbol package))
+
+         (if (grail-in-load-path-p pkg-name)
+           ;; if it is installed in load-path the library is aborting in
+           ;; evaluation.
+
+           (cons "%s is aborting during load on evaluation."
+             (lambda ()
+               (interactive)
+               (grail-repair-by-debugging pkg-symbol)))
+
+           (cons "%s cannot be found in the load-path"
+             (lambda ()
+               (interactive)
+               (grail-repair-by-installing pkg-symbol installer))) )))
+
+      (repair-fn-name (concat "repair-dependency-" pkg-name)) )
+
+    ;; print the diagnostic to the scratch buffer
+    (grail-dup-error-to-scratch (format (car repair-procedure) pkg-name))
+    (grail-print-fn-to-scratch repair-fn-name (concat "install or initiate debugging of " pkg-name))
+
+    (fset (intern repair-fn-name) (cdr repair-procedure)) ))
+
 ;;----------------------------------------------------------------------
 ;; ELPA
 ;;
