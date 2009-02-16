@@ -266,7 +266,8 @@
      (repair-procedure
        (lexical-let
          ;; the package symbol needs to be lexically bound to the generated lambda's
-         ((pkg-symbol package))
+         ((pkg-symbol package)
+          (pkg-installer installer))
 
          (if (grail-in-load-path-p pkg-name)
            ;; if it is installed in load-path the library is aborting in
@@ -280,7 +281,7 @@
            (cons "%s cannot be found in the load-path"
              (lambda ()
                (interactive)
-               (grail-repair-by-installing pkg-symbol installer))) )))
+               (grail-repair-by-installing pkg-symbol pkg-installer))) )))
 
       (repair-fn-name (concat "repair-dependency-" pkg-name)) )
 
