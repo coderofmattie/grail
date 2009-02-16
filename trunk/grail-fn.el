@@ -302,7 +302,7 @@
     ((pkg-name     (symbol-name package))
      (diagnostic   nil))
 
-    (catch 'abort ;; non-local exit for early termination from errors.
+    (if (catch 'abort ;; non-local exit for early termination from errors.
 
       ;; try loading the package catching any diagnostic errors from signals
       (when (setq diagnostic (diagnostic-load-elisp (require ',package)))
@@ -321,8 +321,19 @@
                                       style
                                       (format-signal-trap diagnostic)))
         (throw 'abort t))
+        nil)
 
-        nil)))
+      (let
+        ((init-fn-name (concat "initialize-" pkg-name)))
+
+        (fset (intern init-fn-name)
+          `(lambda ()
+             (interactive)
+             ,@init-code))
+
+        (grail-print-fn-to-scratch init-fn-name (format "re-initialize %s after repair" pkg-name))
+        t)
+      nil)))
 
 ;;----------------------------------------------------------------------
 ;; ELPA
