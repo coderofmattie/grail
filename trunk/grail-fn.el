@@ -176,7 +176,7 @@
    The path of the installation directory is returned for the installer's use.
   "
   (let
-    ((install-directory (if package (concat grail-dist-elisp package) grail-dist-elisp)))
+    ((install-directory (if package (concat grail-dist-elisp package "/") grail-dist-elisp)))
 
     (unless (dir-path-if-accessible install-directory)
       (make-directory install-directory t))
