@@ -55,20 +55,12 @@
 ;; errors.
 ;;----------------------------------------------------------------------
 
-(defun robust-load-elisp-file ( path )
-  "robust-load-elisp-file PATH
+(defun sanitize-load-path ( path )
+  "sanitize-load-path PATH
 
-   load a elisp file trapping any errors that occur. t is
-   returned for a successful load, nil if there are errors. The
-   caller can choose to process or ignore the errors.
+   sanitize a load-path reducing redundant file separators to single
+   separators. This situation has bombed (load file) for me.
   "
-  (condition-case nil
-    (progn
-      (load path)
-      t)
-    (error nil)))
-
-(defun grail-sanitize-path ( path )
   (replace-regexp-in-string "/+" "/" path))
 
 (defun diagnostic-load-elisp-file ( path )
@@ -80,10 +72,20 @@
   "
   (condition-case error-trap
     (progn
-      (load (grail-sanitize-path path))
+      (load (sanitize-load-path path))
       nil)
-    (error 
-     error-trap)))
+    (error error-trap)))
+
+(defun robust-load-elisp-file ( path )
+  "robust-load-elisp-file PATH
+
+   load a elisp file trapping any errors that occur. t is
+   returned for a successful load, nil if there are errors. The
+   caller can choose to process or ignore the errors.
+  "
+  (if (diagnostic-load-elisp-file path)
+    nil
+    t))
 
 (defmacro robust-load-elisp ( &rest load-expr )
   "robust-load-elisp LOAD-EXPR
