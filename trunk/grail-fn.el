@@ -163,7 +163,7 @@
    INSTALL-DIR is a directory name when a sub-directory container for the
    installed files is desired.
   "
-  (setq def-symbol installer)
+  (set def-symbol installer)
   (when install-dir
     (put def-symbol 'pkg-dir install-dir) ))
 
@@ -243,7 +243,7 @@
 
         (cond
           ((functionp installer) (funcall installer))
-          ((listp   installer) (grail-install-package package installer)))
+          ((or (listp installer) (symbolp installer)) (grail-install-package package installer)))
 
         (error
           (message "grail repair of package %s failed with %s" package-name (format-signal-trap install-trap))
