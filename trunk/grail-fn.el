@@ -170,24 +170,46 @@
       (make-directory install-directory t))
     install-directory))
 
-(defun grail-dist-install-file ( name url )
-  "grail-dist-install-file NAME URL
+(defun grail-install-url ( path name url )
+  "grail-install-url PATH NAME URL
 
-   download an elisp file named NAME.el from URL and install it in the user's dist directory.
-
-   The error message is returned if there is an error, nil for sucess.
+   install from URL into PATH with name NAME.  nil is returned
+   when successful, otherwise an error is thrown.
   "
-  (grail-dist-install-directory)
-
   (condition-case error-trap
+
     (with-temp-buffer
       (url-insert-file-contents url)
-      (write-file (concat grail-dist-elisp name ".el")))
+      (write-file (concat path name ".el")))
 
+    (message "grail-install-url: would write to %s %s from %s" path name url)
     nil
     (error
-      (format "grail-dist-install-file for %s failed with: %s"
+      (format "grail-install-url for %s failed with: %s"
         name (format-signal-trap error-trap))) ))
+
+(defun grail-install-package ( name installer )
+  "grail-dist-install-file NAME URL
+
+   download an elisp package named NAME from URL and install it in the user's dist directory.
+
+   the install directory is returned on success or an error is thrown.
+  "
+  (let
+    ((install-to-dir (grail-dist-install-directory (when (and (symbolp installer) (get installer 'pkg-dir))
+                                                     (get installer 'pkg-dir))) )
+     (install-data   (if (symbolp installer) (eval installer) installer)) )
+
+    (cond
+      ((listp install-data)
+        (mapc
+          (lambda ( ts-pair )
+            ;; ts-pair is target source pair
+            (grail-install-url install-to-dir (car ts-pair) (cdr ts-pair)) )
+          install-data) )
+
+      ((error "grail-install-package: un-handled type %s" (type-of install-data))) )
+    install-to-dir))
 
 ;;----------------------------------------------------------------------
 ;; grail repair routines.
@@ -209,7 +231,7 @@
 
         (cond
           ((functionp installer) (funcall installer))
-          ((stringp   installer) (grail-dist-install-file package-name installer)))
+          ((listp   installer) (grail-install-package package installer)))
 
         (error
           (message "grail repair of package %s failed with %s" package-name (format-signal-trap install-trap))
@@ -311,7 +333,7 @@
                                       style
                                       pkg-name
                                       (format-signal-trap diagnostic)))
-        (grail-repair-dependency-fn package installer)
+        (grail-repair-dependency-fn package (eval `'( ,@installer)))
         (throw 'abort t))
 
       ;; try the initialization trapping any errors.
