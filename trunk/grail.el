@@ -43,6 +43,13 @@
     (goto-char (point-max))
     (insert (format "; grail error! %s\n" error-message))) )
 
+(defun format-signal-trap (signal-trap)
+  "format-signal-trap list:SIGNAL-TRAP
+
+   format SIGNAL-TRAP for use in error messages.
+  "
+  (format "(%s , \"%s\")" (symbol-name (car signal-trap)) (cadr signal-trap)) )
+
 ;;----------------------------------------------------------------------
 ;; define a robust methods of loading and evaluating elisp that trap
 ;; errors.
@@ -60,6 +67,23 @@
       (load path)
       t)
     (error nil)))
+
+(defun grail-sanitize-path ( path )
+  (replace-regexp-in-string "/+" "/" path))
+
+(defun diagnostic-load-elisp-file ( path )
+  "diagnostic-load-elisp-file PATH
+
+   load a elisp file trapping any errors that occur. nil
+   is returned for a successful load. If there are
+   errors the signal is returned.
+  "
+  (condition-case error-trap
+    (progn
+      (load (grail-sanitize-path path))
+      nil)
+    (error 
+     error-trap)))
 
 (defmacro robust-load-elisp ( &rest load-expr )
   "robust-load-elisp LOAD-EXPR
@@ -159,6 +183,8 @@
 
     (unless grail-elisp-root
       (error "%s" "cannot access USER_ELISP directory !!"))
+
+    (message "grail is loading USER_ELISP %s" grail-elisp-root)
 
     ;; This code will assume a FS structure like this:
     ;;
@@ -263,9 +289,12 @@
     ;;----------------------------------------------------------------------
 
     ;; the rest of the functions required.
-    (unless (robust-load-elisp-file (concat grail-elisp-root "grail-fn.el"))
-      (error "%s"
-        "could not load grail-fn.el , the second stage of grail. USER_ELISP does not point to a working GRAIL install"))
+    (let*
+      ((stage-2-path (concat grail-elisp-root "grail-fn.el"))
+       (stage-2-errors (diagnostic-load-elisp-file stage-2-path)))
+
+      (when stage-2-errors
+	(error "could not load %s , the second stage of grail. with %s errors. USER_ELISP does not point to a working GRAIL install" stage-2-path (format-signal-trap stage-2-errors))) )
 
     (load-user-elisp "grail-cfg.el")        ;; file for user to change paths
 

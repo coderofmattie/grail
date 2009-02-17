@@ -134,13 +134,6 @@
        nil)
      (error error-trap)) )
 
-(defun format-signal-trap (signal-trap)
-  "format-signal-trap list:SIGNAL-TRAP
-
-   format SIGNAL-TRAP for use in error messages.
-  "
-  (format "(%s , \"%s\")" (symbol-name (car signal-trap)) (cadr signal-trap)) )
-
 (defun grail-in-load-path-p (package)
   "grail-in-load-path-p elisp-name
 
