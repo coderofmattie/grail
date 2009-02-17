@@ -155,6 +155,18 @@
 ;; installation routines.
 ;;----------------------------------------------------------------------
 
+(defun grail-define-installer ( def-symbol installer &optional install-dir )
+  "grail-define-installer DEF-SYMBOL INSTALLER &optional INSTALL-DIR
+
+   Define DEF-SYMBOL to INSTALLER, with the optional INSTALL-DIR property.
+
+   INSTALL-DIR is a directory name when a sub-directory container for the
+   installed files is desired.
+  "
+  (setq def-symbol installer)
+  (when install-dir
+    (put def-symbol 'pkg-dir install-dir) ))
+
 (defun grail-dist-install-directory ( &optional package )
   "grail-dist-install-directory &optional string:PACKAGE
 
