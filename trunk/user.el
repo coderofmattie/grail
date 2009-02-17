@@ -188,6 +188,14 @@
     (allout-mode)
     ))
 
+;;----------------------------------------------------------------------
+;; crypto support via gnupg
+;;----------------------------------------------------------------------
+(require 'epa)
+(epa-file-enable)
+
+(setq epa-file-cache-passphrase-for-symmetric-encryption t)
+
 ;; (allout-init 'report)
 ;; not sure I like this. I can always use allout-minor-mode when I need
 ;; it.
