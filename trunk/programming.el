@@ -128,6 +128,18 @@
 (add-hook 'emacs-lisp-mode-hook 'configure-for-programming)
 
 ;;----------------------------------------------------------------------
+;; scheme
+;;----------------------------------------------------------------------
+(grail-activate-with-recovery "programming.el" quack
+  (("quack" . "http://www.neilvandyke.org/quack/quack.el"))
+
+  (setq
+    auto-mode-alist (append '(("\\.scheme$"    . quack-mode)
+                              ("\\.scm$"       . quack-mode)
+                               ) auto-mode-alist ))
+  )
+
+;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
 (defalias 'perl-mode 'cperl-mode)
