@@ -59,7 +59,9 @@
   "sanitize-load-path PATH
 
    sanitize a load-path reducing redundant file separators to single
-   separators. This situation has bombed (load file) for me.
+   separators. The sanitized PATH is returned.
+
+   This situation: foo/bar/baz//  has bombed (load file) for me.
   "
   (replace-regexp-in-string "/+" "/" path))
 
