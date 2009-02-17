@@ -318,16 +318,22 @@
 
    Attempt to load PACKAGE via require with error trapping, diagnosis, and repair.
 
-   t is returned on failure, nil on success.
+   t is returned on success, nil on failure.
   "
   (let
     ((pkg-name     (symbol-name package))
-     (diagnostic   nil))
+     (diagnostic   nil)
+     (load-fn `(lambda ()
+                 (require ',package)))
+
+     (init-fn `(lambda ()
+                 (interactive)
+                 ,@init-code)) )
 
     (if (catch 'abort ;; non-local exit for early termination from errors.
 
       ;; try loading the package catching any diagnostic errors from signals
-      (when (setq diagnostic (diagnostic-load-elisp (require ',package)))
+      (when (setq diagnostic (diagnostic-load-elisp (funcall load-fn)))
         (grail-dup-error-to-scratch (format
                                       "grail: style %s is degraded from %s loading failure %s"
                                       style
@@ -337,7 +343,7 @@
         (throw 'abort t))
 
       ;; try the initialization trapping any errors.
-      (when (setq  diagnostic (diagnostic-load-elisp ,init-code))
+      (when (setq diagnostic (diagnostic-load-elisp (funcall init-fn) ))
         (grail-dup-error-to-scratch (format
                                       "grail: style %s is degraded from initialization error %s"
                                       style
@@ -348,14 +354,12 @@
       (let
         ((init-fn-name (concat "initialize-" pkg-name)))
 
-        (fset (intern init-fn-name)
-          `(lambda ()
-             (interactive)
-             ,@init-code))
+        (fset (intern init-fn-name) init-fn)
 
         (grail-print-fn-to-scratch init-fn-name (format "re-initialize %s after repair" pkg-name))
-        t)
-      nil)))
+        nil)
+
+      t) ))
 
 ;;----------------------------------------------------------------------
 ;; ELPA
