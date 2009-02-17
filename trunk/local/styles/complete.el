@@ -26,7 +26,7 @@
     ("hexrgb"       . "http://www.emacswiki.org/cgi-bin/wiki/icomplete+.el/download/hexrgb.el"))
   "icicles")
 
-(grail-activate-with-recovery complete icicles
+(grail-activate-with-recovery "complete" icicles
   cfg-mod-icicle-install
 
   (setq

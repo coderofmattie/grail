@@ -10,7 +10,7 @@
 ;; the built-in paren mode is a fallback until mic-paren can be
 ;; activated.
 
-(unless (grail-activate-with-recovery lisp mic-paren
+(unless (grail-activate-with-recovery "lisp" mic-paren
           (("mic-paren" . "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el"))
           (setq
             paren-showing t
