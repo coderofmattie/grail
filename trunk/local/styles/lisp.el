@@ -4,12 +4,14 @@
 ;; Copyright: Mike Mattie 2009
 ;;----------------------------------------------------------------------
 
-;; mic-paren fancy paren/delimited highlighting. It is particularly valuable for reverse highlighting
-;;           regions.
+;; mic-paren fancy paren/delimited highlighting. It is particularly
+;;           valuable for reverse highlighting regions.
 
-;; the built-in paren mode is a fallback until mic-paren can be activated.
+;; the built-in paren mode is a fallback until mic-paren can be
+;; activated.
 
-(unless (grail-activate-with-recovery lisp mic-paren "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el"
+(unless (grail-activate-with-recovery lisp mic-paren
+          (("mic-paren" . "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el"))
           (setq
             paren-showing t
             show-paren-style 'parenthesis
@@ -68,9 +70,15 @@
     (local-set-key (kbd "M-.")   'find-function) ))
 
 ;;----------------------------------------------------------------------
-;;
+;; add lisp setup to other dialects of lisp and modes where lisp is
+;; heavily used.
 ;;----------------------------------------------------------------------
 
+;; IRC which I use almost exclusively for #emacs
 (eval-after-load "erc"
   (add-hook 'erc-mode-hook 'swap-paren-keys))
+
+;; for the quack mz-scheme mode.
+(eval-after-load "quack"
+  (add-hook 'quack-mode-hook 'swap-paren-keys))
 
