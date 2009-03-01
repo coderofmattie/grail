@@ -120,6 +120,29 @@
   (when path
     (load-elisp-if-exists (concat grail-elisp-root path))))
 
+(defun load-user-elisp-file-with-error-reporting ( path )
+  "load-elisp-file-with-error-reporting PATH
+
+   load PATH relative to grail-elisp-root reporting any errors that occur.
+
+   nil is returned on success, t on failure.
+  "
+  (let
+    ((elisp-path  (file-path-if-readable (concat grail-elisp-root path))))
+
+    (if elisp-path
+      (let
+        ((diagnostics (diagnostic-load-elisp-file elisp-path)))
+
+        (if diagnostics
+          (progn
+            (grail-dup-error-to-scratch (format "grail: %s errors prevented %s from loading correctly"
+                                          (format-signal-trap diagnostics)
+                                          path))
+            nil)
+          t))
+      nil) ))
+
 (defun grail-extend-load-path ()
   "grail-extend-load-path
 
@@ -230,7 +253,7 @@
     ;;
     ;;      patches/              | patches against distributed emacs files required
     ;;                              by my config.
-    ;;      styles/               | modules that combine loading/deploying required packages
+    ;;      modules/              | modules that combine loading/deploying required packages
     ;;                              with configuration that blends those packages into a
     ;;                              harmonious "style" of using Emacs.
 
@@ -265,8 +288,8 @@
       "The directory containing Emacs libraries created and maintained by the
        user.")
 
-    (defvar grail-local-styles
-      (concat grail-local-dir "styles/")
+    (defvar grail-local-modules
+      (concat grail-local-dir "modules/")
       "The directory containing Emacs style modules.")
 
     (defvar grail-dist-dir
@@ -327,16 +350,16 @@
 
     (unless noninteractive
       ;; only loaded when there is an active terminal.
-      (load-user-elisp "keys.el")
-      (load-user-elisp "commands.el")
-      (load-user-elisp "interface.el")
+      (load-user-elisp-file-with-error-reporting "keys.el")
+      (load-user-elisp-file-with-error-reporting "commands.el")
+      (load-user-elisp-file-with-error-reporting "interface.el")
 
-      (load-user-elisp "user.el")
+      (load-user-elisp-file-with-error-reporting "user.el")
 
       (if (window-system)
-        (load-user-elisp "gui.el"))
+        (load-user-elisp-file-with-error-reporting "gui.el"))
 
-      (load-requested-styles))
+      (grail-load-requested-modules))
     )
   (error
     (grail-dup-error-to-scratch

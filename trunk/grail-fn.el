@@ -53,26 +53,26 @@
     (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
 
 ;;----------------------------------------------------------------------
-;; styles
+;; modules
 ;;----------------------------------------------------------------------
 
-(defun load-style ( style-name )
-  (unless (load-elisp-if-exists (concat grail-local-styles style-name ".el"))
+(defun grail-load-module ( module-name )
+  (unless (load-elisp-if-exists (concat grail-local-modules module-name ".el"))
     (grail-dup-error-to-scratch
-      (format "grail: style %s aborted loading from errors" style-name)) ))
+      (format "grail: module %s aborted loading from errors" module-name)) ))
 
-(defvar requested-styles-list
+(defvar requested-modules-list
   nil
   "List of styles requested by the user.")
 
-(defun load-requested-styles ()
-  (mapc 'load-style
-    requested-styles-list))
+(defun grail-load-requested-modules ()
+  (mapc 'grail-load-module
+    requested-modules-list))
 
-(defun use-styles ( &rest request-list )
+(defun use-grail-modules ( &rest request-list )
   (mapc
     (lambda ( name )
-      (push name requested-styles-list))
+      (push name requested-modules-list))
     request-list))
 
 ;;----------------------------------------------------------------------

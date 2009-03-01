@@ -17,4 +17,6 @@ compile: $(BYTECODE)
 clean: $(BYTECODE)
 	${MAKE} -f Makefile.bytecode clean
 
-all: compile
+all: fonts
+
+

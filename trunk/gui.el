@@ -3,7 +3,7 @@
 ;; Primary Author: Mike Mattie
 ;;----------------------------------------------------------------------
 
-(use-styles "complete")
+(use-grail-modules "complete")
 
 ;; colors for the cursor and the background. Kept in visual.el since
 ;; the colors need to be harmonious.

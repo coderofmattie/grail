@@ -11,7 +11,7 @@
 ;; undistributed features.
 ;;----------------------------------------------------------------------
 
-(use-styles "xml" "spell" "tab")
+(use-grail-modules "xml" "spell" "tab")
 
 ;; (load-style "torus.el" "M-Torus will not be available - cycling extremely degraded.")
 
