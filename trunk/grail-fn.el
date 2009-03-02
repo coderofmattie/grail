@@ -53,27 +53,30 @@
     (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
 
 ;;----------------------------------------------------------------------
-;; modules
+;; groups
 ;;----------------------------------------------------------------------
 
-(defun grail-load-module ( module-name )
-  (unless (load-elisp-if-exists (concat grail-local-modules module-name ".el"))
+(defun grail-load-group ( group-name )
+  (unless (load-elisp-if-exists (concat grail-local-groups group-name ".el"))
     (grail-dup-error-to-scratch
-      (format "grail: module %s aborted loading from errors" module-name)) ))
+      (format "grail: group module %s aborted loading from errors" group-name)) ))
 
-(defvar requested-modules-list
+(defvar grail-requested-groups
   nil
-  "List of styles requested by the user.")
+  "List of group modules requested by the user.")
 
-(defun grail-load-requested-modules ()
-  (mapc 'grail-load-module
-    requested-modules-list))
+(defun grail-load-requested-groups ()
+  (mapc 'grail-load-group
+    grail-requested-groups))
 
-(defun use-grail-modules ( &rest request-list )
-  (mapc
-    (lambda ( name )
-      (push name requested-modules-list))
-    request-list))
+(defun use-grail-groups ( &rest request-list )
+  "use-grail-groups: LIST
+
+   request a list of string quoted groups to be loaded after the configuration
+   files have been loaded.
+  "
+  (setq grail-requested-groups
+    (append request-list grail-requested-groups)))
 
 ;;----------------------------------------------------------------------
 ;; filter-ls: a general purpose tools for filtering directory listings.
@@ -318,8 +321,8 @@
 
     (fset (intern repair-fn-name) (cdr repair-procedure)) ))
 
-(defmacro grail-activate-with-recovery ( style package installer &rest init-code )
-  "grail-load-dep-with-recovery string:STYLE symbol:PACKAGE INSTALLER code:INIT-CODE
+(defmacro grail-activate-with-recovery ( group package installer &rest init-code )
+  "grail-load-dep-with-recovery string:GROUP symbol:PACKAGE INSTALLER code:INIT-CODE
 
    Attempt to load PACKAGE via require with error trapping, diagnosis, and repair.
 
@@ -340,8 +343,8 @@
       ;; try loading the package catching any diagnostic errors from signals
       (when (setq diagnostic (diagnostic-load-elisp (funcall load-fn)))
         (grail-dup-error-to-scratch (format
-                                      "grail: style %s is degraded from %s loading failure %s"
-                                      style
+                                      "grail: group module %s is degraded from %s loading failure %s"
+                                      group
                                       pkg-name
                                       (format-signal-trap diagnostic)))
         (grail-repair-dependency-fn package (eval `'( ,@installer)))
@@ -350,8 +353,8 @@
       ;; try the initialization trapping any errors.
       (when (setq diagnostic (diagnostic-load-elisp (funcall init-fn) ))
         (grail-dup-error-to-scratch (format
-                                      "grail: style %s is degraded from initialization error %s"
-                                      style
+                                      "grail: group module %s is degraded from initialization error %s"
+                                      group
                                       (format-signal-trap diagnostic)))
         (throw 'abort t))
         nil)

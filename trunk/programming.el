@@ -10,7 +10,7 @@
 ;;----------------------------------------------------------------------
 (require 'xml-code)
 
-(use-grail-modules "template" "lisp" "code-formatting")
+(use-grail-groups "template" "lisp" "code-formatting")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.

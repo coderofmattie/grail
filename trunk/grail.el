@@ -253,10 +253,10 @@
     ;;
     ;;      patches/              | patches against distributed emacs files required
     ;;                              by my config.
-    ;;      modules/              | modules that combine loading/deploying required packages
-    ;;                              with configuration that blends those packages into a
-    ;;                              harmonious "style" of using Emacs.
-
+    ;;      groups/               | groups combine loading,deploying,and configuring one
+    ;;                              or more packages into a cohesive configuration for
+    ;;                              a set of related features.
+    ;;
     ;; dist/
     ;;     elisp/(*)              | elisp maintained and distributed by a Third Party.
     ;;                              Usually this is for projects you contribute to where
@@ -288,9 +288,9 @@
       "The directory containing Emacs libraries created and maintained by the
        user.")
 
-    (defvar grail-local-modules
-      (concat grail-local-dir "modules/")
-      "The directory containing Emacs style modules.")
+    (defvar grail-local-groups
+      (concat grail-local-dir "groups/")
+      "The directory containing Emacs group modules.")
 
     (defvar grail-dist-dir
       (concat grail-elisp-root "dist/"))
@@ -359,7 +359,7 @@
       (if (window-system)
         (load-user-elisp-file-with-error-reporting "gui.el"))
 
-      (grail-load-requested-modules))
+      (grail-load-requested-groups))
     )
   (error
     (grail-dup-error-to-scratch
