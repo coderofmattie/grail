@@ -39,12 +39,7 @@
 (grail-activate-with-recovery "lisp" quack
   (("quack" . "http://www.neilvandyke.org/quack/quack.el"))
   (setq-default
-    quack-dir
-    (let
-      ((quack-path (concat grail-state-path "quack/")))
-      (or (dir-path-if-accessible quack-path)
-          (make-directory quack-path t)) )
-
+    quack-dir (grail-garuntee-dir-path (concat grail-state-path "quack/"))
     quack-default-program "mzscheme"
     ))
 
