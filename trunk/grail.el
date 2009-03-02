@@ -32,6 +32,17 @@
   (if (file-readable-p file)
     file))
 
+(defun grail-garuntee-dir-path ( path )
+  "grail-garuntee-dir-path PATH
+
+   If the directory PATH does not already exist then create it.
+   return the path of the directory or nil.
+  "
+  (or (dir-path-if-accessible path)
+    (progn
+      (make-directory path t)
+      path)) )
+
 (defun grail-dup-error-to-scratch (error-message)
   "grail-dup-error-to-scratch ERROR-MESSAGE
 
@@ -346,8 +357,7 @@
     (load-user-elisp "elisp.el")
 
     ;; make sure there is a directory for session state and persistent data
-    (unless (dir-path-if-accessible grail-state-path)
-      (make-directory grail-state-path t))
+    (grail-garuntee-dir-path grail-state-path)
 
     ;; Annoying Emacs.app 0.9-rc2 compat.
     (unless (functionp 'window-system)
