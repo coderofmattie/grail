@@ -45,6 +45,7 @@
       (or (dir-path-if-accessible quack-path)
           (make-directory quack-path t)) )
 
+    quack-default-program "mzscheme"
     ))
 
 ;; basic settings
