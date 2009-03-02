@@ -406,5 +406,3 @@
 
   (unless (dir-path-if-accessible grail-dist-elpa)
     (make-directory grail-dist-elpa t)) )
-
-
