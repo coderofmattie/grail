@@ -32,6 +32,21 @@
       (lambda ()
         (show-paren-mode))) ))
 
+;;----------------------------------------------------------------------
+;; quack for scheme
+;;----------------------------------------------------------------------
+
+(grail-activate-with-recovery "lisp" quack
+  (("quack" . "http://www.neilvandyke.org/quack/quack.el"))
+  (setq-default
+    quack-dir
+    (let
+      ((quack-path (concat grail-state-path "quack/")))
+      (or (dir-path-if-accessible quack-path)
+          (make-directory quack-path t)) )
+
+    ))
+
 ;; basic settings
 (setq
   lisp-indent-offset 2)
