@@ -1,4 +1,4 @@
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------------
 ;; grail-fn.el
 ;; Primary Author: Mike Mattie
 ;; Copyright (C) 2008 Mike Mattie
@@ -171,12 +171,7 @@
 
    The path of the installation directory is returned for the installer's use.
   "
-  (let
-    ((install-directory (if package (concat grail-dist-elisp package "/") grail-dist-elisp)))
-
-    (unless (dir-path-if-accessible install-directory)
-      (make-directory install-directory t))
-    install-directory))
+  (grail-garuntee-dir-path (if package (concat grail-dist-elisp package "/") grail-dist-elisp)))
 
 (defun grail-install-url ( path name url )
   "grail-install-url PATH NAME URL
@@ -411,4 +406,5 @@
 
   (unless (dir-path-if-accessible grail-dist-elpa)
     (make-directory grail-dist-elpa t)) )
+
 
