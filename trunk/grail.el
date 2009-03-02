@@ -1,4 +1,4 @@
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------------
 ;; grail.el
 ;; Primary Author: Mike Mattie
 ;; Copyright (C) 2008 Mike Mattie
@@ -18,7 +18,7 @@
 ;; 2. grail-fn.el  - a larger library of functions used by the loader.
 ;; 3. grail-cfg.el - the first customization file loaded, for the opportunity to modify paths.
 
-(defconst grail-release-version "0.0.3"
+(defconst grail-release-version "0.0.4"
   "the release number of grail.el")
 
 (defun dir-path-if-accessible ( path )
@@ -309,6 +309,9 @@
     (defvar grail-boot-load-path load-path
       "The load-path as constructed by emacs before grail initialization")
 
+    (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
+      "The grail session state & persistent data directory which defaults to .emacs.d")
+
     (require 'cl)
 
     ;;----------------------------------------------------------------------
@@ -341,6 +344,10 @@
 
     ;; elisp loads the user's general elisp library.
     (load-user-elisp "elisp.el")
+
+    ;; make sure there is a directory for session state and persistent data
+    (unless (dir-path-if-accessible grail-state-path)
+      (make-directory grail-state-path t))
 
     ;; Annoying Emacs.app 0.9-rc2 compat.
     (unless (functionp 'window-system)
