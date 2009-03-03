@@ -110,12 +110,6 @@
   (local-set-key (kbd "M-f") 'forward-sexp)
   (local-set-key (kbd "M-b") 'backward-sexp)
 
-  (local-set-key (kbd "C-l s") 'assign-default-register)
-  (local-set-key (kbd "C-l r") 'list-registers)
-
-  (local-set-key (kbd "C-l w") 'set-default-register)
-  (local-set-key (kbd "C-l i") 'insert-default-register)
-
   (when (xml-code-templates-p)
 ;;    (local-set-key (kbd "C-l n") 'else-next-placeholder)
 ;:    (local-set-key (kbd "C-l k") 'else-kill-placeholder)
