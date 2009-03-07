@@ -8,7 +8,7 @@
 (defun mail ()
   "start mutt mail client"
   (interactive)
-  (ansi-term "/usr/bin/mutt"))
+  (ansi-term "mutt"))
 
 (defun scribble ()
   "pop up the scratch buffer in the other window."
