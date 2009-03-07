@@ -98,6 +98,10 @@
 (setq
   comint-prompt-read-only t)              ;; make everything before the prompt RO
 
+;; the convention of adding lambda's to hooks is discouraged as
+;; re-eval'ing the buffer or byte compiling duplicates the lambda in
+;; the hook list.
+
 (add-hook 'comint-mode-hook
   (lambda ()
     (setq show-trailing-whitespace nil)   ;; disable trailing whitespace highlighting
