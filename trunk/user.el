@@ -35,15 +35,11 @@
 ;; this line is a nasty way of disabling customize, simply specify the
 ;; customize file as /dev/null.
 
-(let
- ((info-archive (concat grail-local-dir "info")))
-
-  (when (file-accessible-directory-p info-archive)
-    (push info-archive Info-additional-directory-list)) )
-
 (setq custom-file "/dev/null")
 
-(setq make-backup-files nil)            ;; backups, currently off until fixed.
+;; basic settings
+
+(setq make-backup-files nil)            ;; backups are a poor substitute for revision control
 
 (setq
   case-fold-search t
@@ -52,6 +48,16 @@
 (setq require-final-newline t)                ;; some programs fail without a newline terminator
 
 (setq default-buffer-file-coding-system 'undecided-unix)  ;; default to UNIX line terminators
+
+;; documentation tools
+
+(let
+ ((info-archive (concat grail-local-dir "info")))
+
+  (when (file-accessible-directory-p info-archive)
+    (push info-archive Info-additional-directory-list)) )
+
+(setq-default woman-use-own-frame nil)
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.

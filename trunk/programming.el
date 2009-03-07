@@ -98,10 +98,6 @@
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
-  ;; create a default register that shortens repeated
-  ;; register commands
-  (set (make-local-variable 'default-register) 'a)
-
   ;; use Ctrl-l as the prefix for e commands. It's short
   ;; and the usual unix meaning of centering a screen is
   ;; a small loss.
@@ -110,11 +106,12 @@
   (local-set-key (kbd "M-f") 'forward-sexp)
   (local-set-key (kbd "M-b") 'backward-sexp)
 
-  (when (xml-code-templates-p)
+;;  (when (xml-code-templates-p)
 ;;    (local-set-key (kbd "C-l n") 'else-next-placeholder)
 ;:    (local-set-key (kbd "C-l k") 'else-kill-placeholder)
 
-    (local-set-key (kbd "C-l l") 'xml-code-kill-template) ))
+;;    (local-set-key (kbd "C-l l") 'xml-code-kill-template))
+  )
 
 ;;----------------------------------------------------------------------
 ;; elisp

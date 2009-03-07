@@ -1,3 +1,7 @@
+Updating the Font cache:
+
+fc-cache -rv
+
 DejaVuLisp:
 
 an based on an unkown version of DejaVuSansMono, the lbearing,rbearing changes are unkown.
