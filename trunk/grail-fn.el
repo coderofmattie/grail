@@ -53,6 +53,51 @@
     (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
 
 ;;----------------------------------------------------------------------
+;; faces
+;;----------------------------------------------------------------------
+
+;; I previously used custom-theme-set-faces for setting faces,
+;; however it broke with emacs --daemon, so I have created
+;; a macro to go directly to set-face-attribute.
+
+(defun grail-set-face ( face attribute value )
+  (set-face-attribute face nil
+    (read (concat ":" attribute)) value))
+
+(defun pointer-to-face-p ( symbol )
+  "pointer-to-face-p SYMBOL
+
+   determine if SYMBOL is a variable that points to
+   a face (t), or a face symbol (nil).
+  "
+  (condition-case nil
+    (progn
+      (eval symbol)
+      t)
+    (error
+      nil)))
+
+(defmacro grail-set-faces ( &rest list )
+  (let
+    ((set-face-calls nil))
+
+    (mapc
+      (lambda ( face )
+        (mapc
+          (lambda (attr-pair)
+            (setq set-face-calls
+              (cons
+                `(grail-set-face
+                   ,(if (pointer-to-face-p (car face))
+                      (car face)
+                      `',(car face))
+                   ,(symbol-name (car attr-pair)) ,(cadr attr-pair))
+                set-face-calls)))
+          (cdr face)))
+      list)
+    (cons 'progn set-face-calls)))
+
+;;----------------------------------------------------------------------
 ;; groups
 ;;----------------------------------------------------------------------
 
@@ -136,6 +181,19 @@
        ,@load-expr
        nil)
      (error error-trap)) )
+
+(defmacro robust-load-elisp ( &rest load-expr )
+  "robust-load-elisp LOAD-EXPR
+
+   evaluate LOAD-EXPR trapping any errors that occur. the value
+   of LOAD-EXPR is discarded, and t for successful, nil for
+   errors is returned.
+   "
+  `(condition-case nil
+     (progn
+       ,@load-expr
+       t)
+     (error nil)) )
 
 (defun grail-in-load-path-p (package)
   "grail-in-load-path-p elisp-name

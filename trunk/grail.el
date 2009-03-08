@@ -89,70 +89,49 @@
       nil)
     (error error-trap)))
 
-(defun robust-load-elisp-file ( path )
-  "robust-load-elisp-file PATH
-
-   load a elisp file trapping any errors that occur. t is
-   returned for a successful load, nil if there are errors. The
-   caller can choose to process or ignore the errors.
-  "
-  (if (diagnostic-load-elisp-file path)
-    nil
-    t))
-
-(defmacro robust-load-elisp ( &rest load-expr )
-  "robust-load-elisp LOAD-EXPR
-
-   evaluate LOAD-EXPR trapping any errors that occur. the value
-   of LOAD-EXPR is discarded, and t for successful, nil for
-   errors is returned.
-   "
-  `(condition-case nil
-     (progn
-       ,@load-expr
-       t)
-     (error nil)) )
-
-(defun load-elisp-if-exists ( path )
-  "load-elisp-if-exists"
-  (lexical-let
-    ((accessible-path  (file-path-if-readable path)))
-
-    (when accessible-path
-      (robust-load-elisp-file accessible-path)) ))
-
-(defun load-user-elisp ( path )
-  "load-user-elisp PATH
-
-   A fully guarded load that checks for a non-nil path, appends
-   it to grail-elisp-root, and hands the resulting absolute path
-   to load-elisp-if-exists.
-  "
-  (when path
-    (load-elisp-if-exists (concat grail-elisp-root path))))
-
-(defun load-user-elisp-file-with-error-reporting ( path )
-  "load-elisp-file-with-error-reporting PATH
+(defun load-elisp-file-reporting-errors ( path )
+  "load-elisp-file-reporting-errors PATH
 
    load PATH relative to grail-elisp-root reporting any errors that occur.
 
    nil is returned on success, t on failure.
   "
   (let
-    ((elisp-path  (file-path-if-readable (concat grail-elisp-root path))))
+    ((diagnostics (diagnostic-load-elisp-file path)))
+      (if diagnostics
+        (progn
+          (grail-dup-error-to-scratch 
+             (format "grail: errors %s prevented %s from loading correctly"
+             (format-signal-trap diagnostics)
+              path))
+	  nil)
+        t)) )
 
-    (if elisp-path
-      (let
-        ((diagnostics (diagnostic-load-elisp-file elisp-path)))
+(defun load-elisp-if-exists ( path )
+  "load-elisp-if-exists PATH
 
-        (if diagnostics
-          (progn
-            (grail-dup-error-to-scratch (format "grail: %s errors prevented %s from loading correctly"
-                                          (format-signal-trap diagnostics)
-                                          path))
-            nil)
-          t))
-      nil) ))
+   Try to load the elisp file PATH only if it exists and is
+   readable.
+  "
+  (lexical-let
+    ((accessible-path  (file-path-if-readable path)))
+
+    (when accessible-path
+      (load-elisp-file-reporting-errors accessible-path)) ))
+
+(defun load-user-elisp ( file )
+  "load-user-elisp FILE
+
+   A fully guarded load that checks for a non-nil FILE name
+   and attempts to load it relative to grail-elisp-root.
+  "
+  (when file
+    (load-elisp-if-exists (concat grail-elisp-root file))))
+
+(defun grail-load-gui-configuration-once ( &optional frame )
+  (unless grail-gui-configured
+    (load-user-elisp "gui.el")
+    (setq grail-gui-configured t)))
 
 (defun grail-extend-load-path ()
   "grail-extend-load-path
@@ -322,6 +301,8 @@
 
     (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
       "The grail session state & persistent data directory which defaults to .emacs.d")
+    (defvar grail-gui-configured nil
+      "Boolean for if grail has configured the gui.")
 
     (require 'cl)
 
@@ -365,18 +346,24 @@
 	"grail.el replacement for window system function."
 	window-system))
 
-    (unless noninteractive
+    (unless (functionp 'daemonp)
+      (defun daemonp ()
+	"grail.el replacement for daemonp function."
+	nil))
+
+    (when (or (not noninteractive) (daemonp))
       ;; only loaded when there is an active terminal.
-      (load-user-elisp-file-with-error-reporting "keys.el")
-      (load-user-elisp-file-with-error-reporting "commands.el")
-      (load-user-elisp-file-with-error-reporting "interface.el")
+      (load-user-elisp "keys.el")
+      (load-user-elisp "commands.el")
+      (load-user-elisp "interface.el")
 
-      (load-user-elisp-file-with-error-reporting "user.el")
+      (load-user-elisp "user.el")
 
-      (if (window-system)
-        (load-user-elisp-file-with-error-reporting "gui.el"))
+      (cond
+        ((daemonp) (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t))
+        ((window-system) (grail-load-gui-configuration-once))) )
 
-      (grail-load-requested-groups))
+      (grail-load-requested-groups)
     )
   (error
     (grail-dup-error-to-scratch

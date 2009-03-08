@@ -18,7 +18,10 @@
             show-paren-delay 1
             paren-sexp-mode 'match )
 
-          (paren-activate))
+          (paren-activate)
+
+          (grail-set-faces
+            (paren-face-match (background "grey20"))) )
 
   ;; do the repair thingy
   (grail-dup-error-to-scratch "the lisp style is hobbled by the broken mic-paren loading")

@@ -152,6 +152,12 @@
       cperl-indent-level 2             ;; indentation adjustments
       cperl-continued-statement-offset 2)
 
+    ;; (grail-set-faces
+    ;;   (cperl-array-face (slant 'italic))
+    ;;   (cperl-hash-face  (slant 'italic))
+    ;;   (cperl-nonoverridable-face (foreground "DeepSkyBlue4"))
+    ;;   )
+
     (add-hook 'cperl-mode-hook
       (lambda ()
         (xml-code-for-language "perl5")

@@ -13,9 +13,12 @@
                                                          ;; mode buffers.
 ;; programming modes.
 
-(add-hook 'cperl-mode-hook      'flyspell-prog-mode)
-(add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)
-(add-hook 'c-mode-common-hook   'flyspell-prog-mode)
+;;(add-hook 'cperl-mode-hook      'flyspell-prog-mode)
+;;(add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)
+;;(add-hook 'c-mode-common-hook   'flyspell-prog-mode)
+
+(grail-set-faces
+  (flyspell-incorrect (underline t)))
 
 (defun correct-over-flyspell ()
   "auto-correct the word if over a flyspell region, return t only
