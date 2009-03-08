@@ -100,7 +100,7 @@
     ((diagnostics (diagnostic-load-elisp-file path)))
       (if diagnostics
         (progn
-          (grail-dup-error-to-scratch 
+          (grail-dup-error-to-scratch
              (format "grail: errors %s prevented %s from loading correctly"
              (format-signal-trap diagnostics)
               path))
@@ -131,7 +131,14 @@
 (defun grail-load-gui-configuration-once ( &optional frame )
   (unless grail-gui-configured
     (load-user-elisp "gui.el")
+    (grail-load-requested-groups)
     (setq grail-gui-configured t)))
+
+(defun grail-load-frame-configuration-once ( &optional frame )
+  (unless grail-frame-configured
+    (load-user-elisp "frame.el")
+    (grail-load-requested-groups)
+    (setq grail-frame-configured t)))
 
 (defun grail-extend-load-path ()
   "grail-extend-load-path
@@ -301,6 +308,9 @@
 
     (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
       "The grail session state & persistent data directory which defaults to .emacs.d")
+    (defvar grail-frame-configured nil
+      "Boolean for if grail has configured the frame.")
+
     (defvar grail-gui-configured nil
       "Boolean for if grail has configured the gui.")
 
@@ -343,13 +353,13 @@
     ;; Annoying Emacs.app 0.9-rc2 compat.
     (unless (functionp 'window-system)
       (defun window-system ()
-	"grail.el replacement for window system function."
-	window-system))
+        "grail.el replacement for window system function."
+        window-system))
 
     (unless (functionp 'daemonp)
       (defun daemonp ()
-	"grail.el replacement for daemonp function."
-	nil))
+        "grail.el replacement for daemonp function."
+        nil))
 
     (when (or (not noninteractive) (daemonp))
       ;; only loaded when there is an active terminal.
@@ -360,11 +370,17 @@
       (load-user-elisp "user.el")
 
       (cond
-        ((daemonp) (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t))
-        ((window-system) (grail-load-gui-configuration-once))) )
+        ((daemonp) (progn
+                     (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t)
+                     (add-hook 'before-make-frame-hook 'grail-load-frame-configuration-once)
+                     ))
+        ((window-system) (progn
+                           (load-user-elisp "frame.el")
+                           (load-user-elisp "gui.el")
+                           )))
+      )
 
-      (grail-load-requested-groups)
-    )
+    (grail-load-requested-groups))
   (error
     (grail-dup-error-to-scratch
       (apply 'format "grail aborted ! %s" (cdr error-trap)))) )

@@ -10,11 +10,7 @@
 
 (setq use-dialog-box nil)                     ;; kill the dialogs before they strike.
 
-(blink-cursor-mode -1)
-(set-cursor-color "yellow")
-(setq-default cursor-type 'hollow)
-
-(set-mouse-color "red")
+;; (add-to-list 'default-frame-alist '(cursor-color  . "yellow"))
 
 ;; DejaVuLisp was modified from DejaVuMono from this link.
 ;; http://dejavu.sourceforge.net/wiki/index.php/Main_Page
@@ -56,3 +52,5 @@
   (font-lock-variable-name-face (foreground "aquamarine3"))
   )
 
+(blink-cursor-mode -1)
+(set-mouse-color "red")

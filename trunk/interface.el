@@ -1,5 +1,5 @@
 ;;----------------------------------------------------------------------
-;;
+;; interface.el
 ;;----------------------------------------------------------------------
 
 ;; disable things I don't use from eating screen-space
@@ -8,9 +8,8 @@
 (scroll-bar-mode -1)                          ;; disable the scrollbar
 (menu-bar-mode -1)                            ;; disable the menu bar as well
 
-(message "%s" "init Phase: 1 complete")
-
 ;; mode-line customization
+
 (display-time)                            ;; display the time on the modeline
 
 (column-number-mode 1)		          ;; handy guides when following
@@ -28,4 +27,3 @@
                                               ;; simply repeating C-<spc> continues backwards through
                                               ;; the ring. makes it easier to rewind back through a
                                               ;; series of marks.
-

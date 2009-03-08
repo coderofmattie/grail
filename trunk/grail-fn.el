@@ -111,8 +111,14 @@
   "List of group modules requested by the user.")
 
 (defun grail-load-requested-groups ()
+  "grail-load-requested-groups
+
+   load the groups in the request list grail-requested-groups
+   and then set the list to null, so that it can be re-run later.
+  "
   (mapc 'grail-load-group
-    grail-requested-groups))
+    grail-requested-groups)
+  (setq grail-requested-groups nil))
 
 (defun use-grail-groups ( &rest request-list )
   "use-grail-groups: LIST
