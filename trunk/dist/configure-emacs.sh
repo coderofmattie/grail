@@ -1,28 +1,42 @@
 #! /bin/sh
 
+# Darwin uses the old style /usr/X11R6
+
+emacs_cflags=""
+if test -d /usr/X11R6/include ; then
+  emacs_cflags="-I/usr/X11R6/include/"
+fi
+
+# configure with X, no fancy toolkit crap, straight X.  It is more
+# portable.
+
+conf="./configure --with-x --with-x-toolkit=lucid --without-xaw3d --without-toolkit-scrollbars"
+
+# get rid of more weird crap
+conf="$conf --without-pop --without-sound --without-dbus"
+
+# font rendering is critical
+conf="$conf --with-xft --with-freetype"
+
+# no funky mouse daemon
+conf="$conf --without-gpm"
+
+# graphics formats
+conf="$conf --with-png --without-gif --without-jpeg --without-tiff"
+
+# Darwin X11R6 does not have enough headers for a decent compile. The
+# only way I get it to work is to try and install GTK from macports
+# which pulls all the X headers. Then use the macports includes.
+
+if test -d /opt/local/include ; then
+  conf="$conf --x-includes=\"/opt/local/include\""
+fi
+
+conf="$conf --prefix=\"$HOME/system/installed/\""
 cd emacs
 
 # putting the system X11R6 include path in the CFLAGS variable, and
 # putting the macports include as the x includes path allows macports
 # x11 packages to supersede the system packages.
 
-exec env CFLAGS="-I/usr/X11R6/include/" \
-./configure \
-\
---with-x \
---with-x-toolkit=lucid \
---x-includes="/opt/local/include" \
---with-xft \
---with-freetype \
-\
---without-gpm \
---without-carbon \
---without-xaw3d \
---without-toolkit-scrollbars \
-\
---with-png \
---without-gif \
---without-jpeg \
---without-tiff \
-\
---prefix="$HOME/system/local/"
+eval exec env CFLAGS="$emacs_cflags" $conf
