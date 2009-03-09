@@ -69,12 +69,14 @@
     ((frame (or frame-arg (selected-frame)))
      (frame-type (framep frame)))
 
+;;    (message "frame type is %s" (princ frame-type))
+
     (when (and frame-type
             (or
               (equal 'x frame-type)
               (equal 'w32 frame-type)
-              (equal 'ns frame-type))
-            t)) ))
+              (equal 'ns frame-type)))
+      t) ))
 
 (defun grail-print-fn-to-scratch ( fn-name description )
   "grail-print-fn-to-scratch FN-NAME DESCRIPTION

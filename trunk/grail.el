@@ -190,7 +190,7 @@
    before a frame is created ala grail-load-gui-configuration-once.
   "
   (unless grail-display-configured
-    (load-user-elisp "frame.el")
+    (load-user-elisp "display.el")
     (setq grail-display-configured t)))
 
 (defun grail-extend-load-path ()
@@ -400,7 +400,7 @@
                      (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t)
                      (add-hook 'before-make-frame-hook 'grail-load-display-configuration-once) ))
         ((window-system) (progn
-                           (load-user-elisp "frame.el")
+                           (load-user-elisp "display.el")
                            (load-user-elisp "gui.el") ))) )
 
     ;; load all the group files requested.
