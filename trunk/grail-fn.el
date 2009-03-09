@@ -266,6 +266,24 @@
 ;; installation routines.
 ;;----------------------------------------------------------------------
 
+(defun grail-recursive-delete-directory ( path )
+  "grail-recursive-delete-directory PATH
+
+   recursively delete the directory PATH. t on success, nil on error.
+  "
+  (condition-case trapped-error
+    (if (dir-path-if-accessible path)
+      (if (equal 0 (call-process-shell-command "rm" nil nil nil "-r" path))
+        ;; zero is a successful exit status
+        t
+        nil)
+      (progn
+        (message "grail-recursive-delete-directory path %s is not a directory or the user does not have permissions" path)
+        nil))
+    (error
+      (message "grail-recursive-delete-directory failed %s" (format-signal-trap trapped-error))
+      nil)) )
+
 (defun grail-define-installer ( def-symbol installer &optional install-dir )
   "grail-define-installer DEF-SYMBOL INSTALLER &optional INSTALL-DIR
 
