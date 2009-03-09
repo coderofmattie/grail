@@ -41,6 +41,41 @@
             (push transform rvalue)))))
     (reverse rvalue)))
 
+(defun memqcar ( object list &optional item-fn )
+  "memqcar OBJECT LIST &optional ITEM-FN
+
+   search through each element of LIST comparing OBJECT with
+   the element from LIST. t is returned when an equality is
+   found, nil otherwise.
+
+   A function taking a single parameter, an item from the list
+   can be used to transform the item before the equality test.
+  "
+  (catch 'found
+    (mapc
+      (lambda ( item )
+        (when (equal object (or (and item-fn (funcall item-fn item)) item))
+          (throw 'found t)))
+      list)
+    nil))
+
+(defun is-current-frame-gui ( &optional frame-arg )
+  "is-current-frame-x FRAME
+
+   Return t if FRAME or (selected-frame) is a GUI frame, nil
+   otherwise.
+  "
+  (let*
+    ((frame (or frame-arg (selected-frame)))
+     (frame-type (framep frame)))
+
+    (when (and frame-type
+            (or
+              (equal 'x frame-type)
+              (equal 'w32 frame-type)
+              (equal 'ns frame-type))
+            t)) ))
+
 (defun grail-print-fn-to-scratch ( fn-name description )
   "grail-print-fn-to-scratch FN-NAME DESCRIPTION
 

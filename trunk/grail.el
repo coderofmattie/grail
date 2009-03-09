@@ -168,7 +168,7 @@
   (when file
     (load-elisp-if-exists (concat grail-elisp-root file))))
 
-(defun grail-load-gui-configuration-once ( &optional frame )
+(defun grail-load-gui-configuration-once ( frame )
   "grail-load-gui-configuration-once
 
    Load the GUI configuration file gui.el setting a flag to
@@ -178,20 +178,18 @@
    It ignores an optional parameter so that it can be placed on
    after-make-frame-functions.
   "
-  (when (and (not grail-gui-configured)) ;; (window-system))
-    (message "value of window-system %s" (princ (window-system)))
+  (when (and (not grail-gui-configured) (is-current-frame-gui frame))
     (load-user-elisp "gui.el")
     (grail-load-requested-groups)
     (setq grail-gui-configured t)))
 
-(defun grail-load-frame-configuration-once ( &optional frame )
+(defun grail-load-frame-configuration-once ()
   "grail-load-frame-configuration-once
 
    Load the frame configuration file frame.el only once ala
    grail-load-gui-configuration-once.
   "
-  (when (and (not grail-frame-configured)) ;; (window-system))
-    (message "value of window-system %s" (princ (window-system)))
+  (when (and (not grail-frame-configured)) ;; (is-current-frame-x))
     (load-user-elisp "frame.el")
     (setq grail-frame-configured t)))
 
