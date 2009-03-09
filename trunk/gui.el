@@ -53,4 +53,4 @@
   )
 
 (blink-cursor-mode -1)
-(set-mouse-color "red")
+
