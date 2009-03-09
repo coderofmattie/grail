@@ -41,10 +41,15 @@
 
 (grail-activate-with-recovery "lisp" quack
   (("quack" . "http://www.neilvandyke.org/quack/quack.el"))
+
   (setq-default
     quack-dir (grail-garuntee-dir-path (concat grail-state-path "quack/"))
-    quack-default-program "mzscheme"
-    ))
+    quack-default-program "mzscheme")
+
+  (setq
+    auto-mode-alist (append '(("\\.scheme$"    . quack-mode)
+                              ("\\.scm$"       . quack-mode)
+                               ) auto-mode-alist )) )
 
 ;; basic settings
 (setq

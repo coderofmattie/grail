@@ -91,20 +91,21 @@
 
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
-  ;; (turn-on-filladapt-mode)             ;; smart comment line wrapping
+  (turn-on-filladapt-mode)             ;; smart comment line wrapping
 
   (mattie-tab-switching)                  ;; my personal tab key setup.
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
-  ;; use Ctrl-l as the prefix for e commands. It's short
-  ;; and the usual unix meaning of centering a screen is
-  ;; a small loss.
-  (local-unset-key (kbd "C-l"))
-
   (local-set-key (kbd "M-f") 'forward-sexp)
   (local-set-key (kbd "M-b") 'backward-sexp)
+
+  ;; ;; use Ctrl-l as the prefix for e commands. It's short
+  ;; ;; and the usual unix meaning of centering a screen is
+  ;; ;; a small loss.
+  ;; (local-unset-key (kbd "C-l"))
+
 
 ;;  (when (xml-code-templates-p)
 ;;    (local-set-key (kbd "C-l n") 'else-next-placeholder)
@@ -117,18 +118,6 @@
 ;; elisp
 ;;----------------------------------------------------------------------
 (add-hook 'emacs-lisp-mode-hook 'configure-for-programming)
-
-;;----------------------------------------------------------------------
-;; scheme
-;;----------------------------------------------------------------------
-(grail-activate-with-recovery "programming.el" quack
-  (("quack" . "http://www.neilvandyke.org/quack/quack.el"))
-
-  (setq
-    auto-mode-alist (append '(("\\.scheme$"    . quack-mode)
-                              ("\\.scm$"       . quack-mode)
-                               ) auto-mode-alist ))
-  )
 
 ;;----------------------------------------------------------------------
 ;; perl5
@@ -162,7 +151,9 @@
       (lambda ()
         (xml-code-for-language "perl5")
         (configure-for-programming)
-        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))) ))
+        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)))
+
+    ))
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
@@ -179,7 +170,7 @@
   (progn
     (add-hook 'c-mode-common-hook
       (lambda ()
-;;      (c-set-style "linux")          ;; base off of linux style
+        (c-set-style "linux")          ;; base off of linux style
 
         (setq c-basic-offset 2)               ;; tabs are 2 spaces
         (c-set-offset 'substatement-open '0)  ;; hanging braces
@@ -190,13 +181,13 @@
     (add-hook 'c-mode-hook
       (lambda ()
         (xml-code-for-language "c")
-        (configure-for-programming)))
+        (configure-for-programming) ))
 
 
     (add-hook 'c++-mode-hook
       (lambda ()
         (xml-code-for-language "c++")
-        (configure-for-programming))) ))
+        (configure-for-programming) )) ))
 
 ;;----------------------------------------------------------------------
 ;; Java
