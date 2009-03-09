@@ -96,14 +96,20 @@ interface.el               | configure the Emacs interface. Only the configurati
 
 ---> GUI <---
 
-frame.el                   | Only loaded when Emacs is used in a GUI. This file is
-                           | called before the frame is created to set frame parameters
-                           | like default-frame-alist.
+display.el                 | This is called when emacs creates a TTY or GUI display.
+
+                           | By comparison interface.el always runs when emacs is
+                           | interactive wether there is a display or not (in daemon
+                           | mode). display.el is loaded only when Emacs creates a
+                           | frame.
+
+                           | If you want to be _really_ tidy this is a good place
+                           | to put colors (faces) and other display only bits.
 
 gui.el                     | Only loaded when Emacs is used in a GUI. This file is
-                           | loaded after the frame is created to set faces and other
-                           | configuration bits that rely on the basic Emacs GUI
-                           | definitions and initialization.
+                           | loaded after the frame is created to set configuration
+                           | bits that rely on the basic Emacs GUI definitions and
+                           | initialization.
 
 ---> load-path <---
 

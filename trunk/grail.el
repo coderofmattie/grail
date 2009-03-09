@@ -183,15 +183,15 @@
     (grail-load-requested-groups)
     (setq grail-gui-configured t)))
 
-(defun grail-load-frame-configuration-once ()
-  "grail-load-frame-configuration-once
+(defun grail-load-display-configuration-once ()
+  "grail-load-display-configuration-once
 
-   Load the frame configuration file frame.el only once ala
-   grail-load-gui-configuration-once.
+   Load the display configuration file display.el only once,
+   before a frame is created ala grail-load-gui-configuration-once.
   "
-  (when (and (not grail-frame-configured)) ;; (is-current-frame-x))
+  (unless grail-display-configured
     (load-user-elisp "frame.el")
-    (setq grail-frame-configured t)))
+    (setq grail-display-configured t)))
 
 (defun grail-extend-load-path ()
   "grail-extend-load-path
@@ -309,7 +309,7 @@
 
     (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
       "The grail session state & persistent data directory which defaults to .emacs.d")
-    (defvar grail-frame-configured nil
+    (defvar grail-display-configured nil
       "Boolean for if grail has configured the frame.")
 
     (defvar grail-gui-configured nil
@@ -398,7 +398,7 @@
       (cond
         ((daemonp) (progn
                      (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t)
-                     (add-hook 'before-make-frame-hook 'grail-load-frame-configuration-once) ))
+                     (add-hook 'before-make-frame-hook 'grail-load-display-configuration-once) ))
         ((window-system) (progn
                            (load-user-elisp "frame.el")
                            (load-user-elisp "gui.el") ))) )
