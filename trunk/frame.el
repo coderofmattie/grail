@@ -7,5 +7,6 @@
 
 (setq default-frame-alist
   (append '((cursor-color . "yellow")
+            (mouse-color  . "red")
             (cursor-type  . "hollow"))
     default-frame-alist))
