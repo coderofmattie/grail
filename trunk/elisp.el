@@ -49,3 +49,9 @@
       (strip-list-last (cdr list)))
     nil))
 
+(defun run-hooks-with-arg ( hook-list &rest args )
+  "run the hook list with arg"
+  (mapc
+    (lambda ( hook )
+      (apply hook args))
+      hook-list))
