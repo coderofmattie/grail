@@ -5,18 +5,58 @@
 ;; License: LGPL-v3
 ;;----------------------------------------------------------------------
 
-;; Grail is an attempt to seek the Holy Grail of Emacs Theory:
-;; unification of all the various essential bits of elisp in a sane
-;; deployment.
-;;
-;; Grail on a more basic level is a load-path hack for the Elisp coder
-;; who can't leave anything alone.
+;; Grail loads an .emacs configuration in a robust, modular, and mode
+;; aware manner.
 
-;; the general design is a loader split into three parts:
+;; The user has the opportunity to split their emacs configuration
+;; into seperate files making it much easier to maintain. If the elisp
+;; is sorted into the files treated as special, where grail loads them
+;; directly by name, then the configuration will work properly when
+;; emacs in started in different modes:
 
-;; 1. grail.el     - the first, and minimal stage of the loader. Small and simple code.
-;; 2. grail-fn.el  - a larger library of functions used by the loader.
-;; 3. grail-cfg.el - the first customization file loaded, for the opportunity to modify paths.
+;; * batch mode    - non-interactive library functions only
+;; * tty           - a console frame
+;; * gui           - a graphical frame
+;; * deamon        - a headless emacs server
+
+;; The error trapping in grail catches errors in both errors in grail
+;; itself, and in the configuration. This allows Emacs to start
+;; containing the errors and reporting them. This is vital to using
+;; Emacs to fix such errors :) and avoiding the dreaded --debug-init.
+
+;; The second level of features involve managing load-path and third
+;; party code not distributed with emacs itself.
+
+;; It is very common for load-path to evolve, or devolve :) in a
+;; hackish way until it is difficult to maintain. The tree structure
+;; for a configuration defined by grail is used to construct a
+;; load-path that scales from a simple configuration, to ambitious
+;; elisp hacking.
+
+;; There wealth of third party emacs packages provide powerful
+;; functionality, but they are a burden to maintain, and especially to
+;; replicate across multiple machines.
+
+;; The primary mechanism for managing third party elisp is installing
+;; and activating ELPA, the package management system hosted at
+;; http://tromey.com/elpa/.  For those packages not hosted by ELPA
+;; grail can install them in a limited way.
+
+;; To collalesce a variety of packages into a feature group Grail
+;; provides the "group" configuration files. In a group file
+;; third party elisp is managed with installation and configuration.
+
+;; In a group when elisp packages are missing an install function and
+;; a initialization function are generated, with calls to those
+;; functions inserted into the scratch buffer. The user can uncomment
+;; the functions and execute them to replace the missing peices and
+;; execute the configuration bits that depend on them.
+
+;; ---> Starting with Grail.
+
+;; The README.grail file provides installation instructions a more
+;; detailed description of the file and directory structure that is
+;; significant to Grail.
 
 (defconst grail-release-version "0.0.4"
   "the release number of grail.el")
@@ -129,15 +169,30 @@
     (load-elisp-if-exists (concat grail-elisp-root file))))
 
 (defun grail-load-gui-configuration-once ( &optional frame )
-  (unless grail-gui-configured
+  "grail-load-gui-configuration-once
+
+   Load the GUI configuration file gui.el setting a flag to
+   ensure that multiple calls only load the file once so that
+   this function can be safely placed on a hook.
+
+   It ignores an optional parameter so that it can be placed on
+   after-make-frame-functions.
+  "
+  (when (and (not grail-gui-configured)) ;; (window-system))
+    (message "value of window-system %s" (princ (window-system)))
     (load-user-elisp "gui.el")
     (grail-load-requested-groups)
     (setq grail-gui-configured t)))
 
 (defun grail-load-frame-configuration-once ( &optional frame )
-  (unless grail-frame-configured
+  "grail-load-frame-configuration-once
+
+   Load the frame configuration file frame.el only once ala
+   grail-load-gui-configuration-once.
+  "
+  (when (and (not grail-frame-configured)) ;; (window-system))
+    (message "value of window-system %s" (princ (window-system)))
     (load-user-elisp "frame.el")
-    (grail-load-requested-groups)
     (setq grail-frame-configured t)))
 
 (defun grail-extend-load-path ()
@@ -199,73 +254,21 @@
 
 (condition-case error-trap
   (progn
+    ;; establish the root of the USER_ELISP configuration tree.
     (defvar grail-elisp-root
       (concat (or (dir-path-if-accessible (getenv "USER_ELISP"))
                   (dir-path-if-accessible (concat (getenv "HOME") "/system/emacs")))
         "/")
       "The root of the user's elisp tree")
 
+    ;; abort the rest of grail if the USER_ELISP tree cannot be found.
     (unless grail-elisp-root
       (error "%s" "cannot access USER_ELISP directory !!"))
 
     (message "grail is loading USER_ELISP %s" grail-elisp-root)
 
-    ;; This code will assume a FS structure like this:
-    ;;
-    ;; $HOME/.emacs.d/            | all of emacs scribbles here by default so I treat
-    ;;                              it like /var
-    ;;
-    ;;  user-elisp-root           | all of my emacs customization and elisp. I keep
-    ;;                              it outside of .emacs.d and under version control
-    ;;                              so that emacs session state does not mix with
-    ;;                              source which is very different in lifetime and
-    ;;                              content management.
-
-    ;; all of the following paths are relative to user-elisp-root. Files that
-    ;; do not exist are silently ignored.
-
-    ;; grail.el                   | entry point for emacs startup and phase #1
-    ;;                              of the configuration.
-    ;;
-    ;; grail-fn.el                | library of functions essential to phase #1
-    ;;
-    ;; elisp.el                   | user elisp functions, should not be (interactive) only:
-    ;;                            | loaded by --script
-
-    ;; user.el                    | user customization of Emacs.
-
-    ;; commands.el                | user commands only loaded in interactive Emacs
-    ;; keys.el                    | user key-binding customization
-    ;; interface.el               | modify the mainline Emacs interface, gui agnostic.
-    ;; gui.el                     | only loaded with a window-system
-
-    ;; linux.el                   | only loaded on gnu/linux.
-    ;; darwin.el                  | only loaded on darwin.
-    ;;
-    ;; local/
-    ;;      elisp/(*)             | elisp maintained by the user that complements the mainline.
-    ;;
-    ;;      emacs/                | local elisp that modifies or replaces packages/files distributed
-    ;;                              with the mainline.
-    ;;
-    ;;      patches/              | patches against distributed emacs files required
-    ;;                              by my config.
-    ;;      groups/               | groups combine loading,deploying,and configuring one
-    ;;                              or more packages into a cohesive configuration for
-    ;;                              a set of related features.
-    ;;
-    ;; dist/
-    ;;     elisp/(*)              | elisp maintained and distributed by a Third Party.
-    ;;                              Usually this is for projects you contribute to where
-    ;;                              you want to keep a VCS checkout.
-    ;;     elpa/                  | elisp maintained by ELPA.
-
-
-    ;; * The directory, and all of it's immediate sub-directories are added to
-    ;;   load-path.
-
-    ;; The files in the user-elisp-root directory are not added to the load-path and
-    ;; should be loaded with the function (load-user-elisp FileName).
+    ;; define the directory structure of the configuration tree
+    ;; relative to USER_ELISP
 
     (defvar grail-local-dir
       (concat grail-elisp-root "local/")
@@ -317,10 +320,9 @@
     (require 'cl)
 
     ;;----------------------------------------------------------------------
-    ;; load the rest of the loader, and any customizations.
+    ;; load the 2cnd stage of grail with the more complex functions.
     ;;----------------------------------------------------------------------
 
-    ;; the rest of the functions required.
     (let*
       ((stage-2-path (concat grail-elisp-root "grail-fn.el"))
        (stage-2-errors (diagnostic-load-elisp-file stage-2-path)))
@@ -328,20 +330,30 @@
       (when stage-2-errors
 	(error "could not load %s , the second stage of grail. with %s errors. USER_ELISP does not point to a working GRAIL install" stage-2-path (format-signal-trap stage-2-errors))) )
 
-    (load-user-elisp "grail-cfg.el")        ;; file for user to change paths
+
+    ;; grail-cfg.el is a file for user to change the tree structure that grail
+    ;; traverses before load-path is formed.
+
+    (load-user-elisp "grail-cfg.el")
 
     (grail-extend-load-path)
+
     ;;----------------------------------------------------------------------
     ;; Host specific adaptation
     ;;
     ;; each host system has a site file that normalizes the platform
-    ;; and extends the library search space for extra libraries it manages.
+    ;; and extends the library search space for extra libraries it
+    ;; manages.
+    ;;
+    ;; these files and platform specific customization are loaded by
+    ;; platform here.
     ;;----------------------------------------------------------------------
     (load-user-elisp
       (cond
         ((string-equal "gnu/linux" system-type)  "linux.el")
         ((string-equal "darwin"    system-type)  "darwin.el")))
 
+    ;; activate ELPA
     (load-elpa-when-installed)
 
     ;; elisp loads the user's general elisp library.
@@ -350,8 +362,13 @@
     ;; make sure there is a directory for session state and persistent data
     (grail-garuntee-dir-path grail-state-path)
 
-    ;; Annoying Emacs.app 0.9-rc2 compat.
+    ;; dummy compatability functions for recent features in emacs, or
+    ;; broken ports.
+
     (unless (functionp 'window-system)
+      ;; Annoying Emacs.app 0.9-rc2 compat.
+
+      (message "window-system not defined. creating a dummy function")
       (defun window-system ()
         "grail.el replacement for window system function."
         window-system))
@@ -361,6 +378,10 @@
         "grail.el replacement for daemonp function."
         nil))
 
+    ;;----------------------------------------------------------------------
+    ;; load the configuration based on mode.
+    ;;----------------------------------------------------------------------
+
     (when (or (not noninteractive) (daemonp))
       ;; only loaded when there is an active terminal.
       (load-user-elisp "keys.el")
@@ -369,17 +390,22 @@
 
       (load-user-elisp "user.el")
 
+      ;; In deamon mode the GUI related values are not defined by
+      ;; Emacs until a GUI frame is created. In this case place the
+      ;; GUI configuration on frame creation hooks.
+
+      ;; when not using emacs --daemon load frame.el and gui.el
+      ;; immediately.
+
       (cond
         ((daemonp) (progn
                      (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t)
-                     (add-hook 'before-make-frame-hook 'grail-load-frame-configuration-once)
-                     ))
+                     (add-hook 'before-make-frame-hook 'grail-load-frame-configuration-once) ))
         ((window-system) (progn
                            (load-user-elisp "frame.el")
-                           (load-user-elisp "gui.el")
-                           )))
-      )
+                           (load-user-elisp "gui.el") ))) )
 
+    ;; load all the group files requested.
     (grail-load-requested-groups))
   (error
     (grail-dup-error-to-scratch

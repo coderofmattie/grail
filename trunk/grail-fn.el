@@ -53,14 +53,59 @@
     (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
 
 ;;----------------------------------------------------------------------
+;; filter-ls: a general purpose tools for filtering directory listings.
+;;----------------------------------------------------------------------
+
+(defun filter-ls-predicate ( attr-name attr-match )
+  "create predicate filters for path/mode values"
+  (cond
+    ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
+    ((string-equal "path" attr-name) `(string-match ,attr-match (car path-pair)))
+    ((string-equal "name" attr-name) `(string-match ,attr-match (file-name-nondirectory (car path-pair)))) ))
+
+(defun filter-ls-attributes ( filter-form )
+  "implement the various attribute filters for the filter-ls form"
+  (lexical-let
+    ((attr-name (symbol-name (car filter-form)))
+      (attr-match (cadr filter-form)))
+
+    (if (char-equal ?! (aref attr-name 0))
+      (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
+      (filter-ls-predicate attr-name attr-match))
+    ))
+
+(defmacro filter-ls (path path-type &rest filters)
+  "filter-ls PATH PATH-TYPE
+  a form for flexibly filtering the result of listing a directory with attributes
+
+   t   absolute paths
+   nil relative paths"
+  `(apply 'map-filter-nil
+     (lambda ( path-pair )
+       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
+         (car path-pair)))
+
+     ;; reduce the attributes to a pair of the path, and the mode string
+     (mapcar (lambda ( attr-list )
+               (cons (car attr-list) (nth 9 attr-list)))
+       ;; get the list of files.
+       (directory-files-and-attributes ,path ,path-type)) ))
+
+;;----------------------------------------------------------------------
 ;; faces
 ;;----------------------------------------------------------------------
 
-;; I previously used custom-theme-set-faces for setting faces,
-;; however it broke with emacs --daemon, so I have created
-;; a macro to go directly to set-face-attribute.
+;; I previously used custom-theme-set-faces for setting faces, however
+;; it broke with emacs --daemon, so I have created a macro to go
+;; to use set-face-attribute.
 
 (defun grail-set-face ( face attribute value )
+  "grail-set-face FACE ATTRIBUTE VALUE
+
+   set FACE attribute ATTRIBUTE to value. Attribute is a plain
+   symbol 'foo' converted to a syntatic attribute ':foo' by this
+   function.
+  "
   (set-face-attribute face nil
     (read (concat ":" attribute)) value))
 
@@ -78,13 +123,21 @@
       nil)))
 
 (defmacro grail-set-faces ( &rest list )
+  "grail-set-faces BODY
+
+   Set one or more faces with a list of attributes.
+  "
   (let
     ((set-face-calls nil))
 
     (mapc
+      ;; traverse the list of faces
       (lambda ( face )
+        ;; traverse the list of attributes for a face.
         (mapc
           (lambda (attr-pair)
+            ;; cons each attribute as a call to grail-set-face
+            ;; onto a list of calls.
             (setq set-face-calls
               (cons
                 `(grail-set-face
@@ -128,45 +181,6 @@
   "
   (setq grail-requested-groups
     (append request-list grail-requested-groups)))
-
-;;----------------------------------------------------------------------
-;; filter-ls: a general purpose tools for filtering directory listings.
-;;----------------------------------------------------------------------
-
-(defun filter-ls-predicate ( attr-name attr-match )
-  "create predicate filters for path/mode values"
-  (cond
-    ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
-    ((string-equal "path" attr-name) `(string-match ,attr-match (car path-pair)))
-    ((string-equal "name" attr-name) `(string-match ,attr-match (file-name-nondirectory (car path-pair)))) ))
-
-(defun filter-ls-attributes ( filter-form )
-  "implement the various attribute filters for the filter-ls form"
-  (lexical-let
-    ((attr-name (symbol-name (car filter-form)))
-      (attr-match (cadr filter-form)))
-
-    (if (char-equal ?! (aref attr-name 0))
-      (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
-      (filter-ls-predicate attr-name attr-match))
-    ))
-
-(defmacro filter-ls (path path-type &rest filters)
-  "filter-ls PATH PATH-TYPE
-  a form for flexibly filtering the result of listing a directory with attributes
-
-   t   absolute paths
-   nil relative paths"
-  `(apply 'map-filter-nil
-     (lambda ( path-pair )
-       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
-         (car path-pair)))
-
-     ;; reduce the attributes to a pair of the path, and the mode string
-     (mapcar (lambda ( attr-list )
-               (cons (car attr-list) (nth 9 attr-list)))
-       ;; get the list of files.
-       (directory-files-and-attributes ,path ,path-type)) ))
 
 ;;----------------------------------------------------------------------
 ;; diagnostic support routines.
