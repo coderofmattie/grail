@@ -11,6 +11,11 @@
 
 (add-hook 'text-mode-hook       'flyspell-mode)          ;; turn on regular flyspell mode text
                                                          ;; mode buffers.
+;; (grail-tarball-installer
+;;   "http://www.dr-qubit.org/download.php?file=predictive/auto-overlays.tar.gz"
+;;   "auto-overlays.tar"
+;;   "gz")
+
 ;; programming modes.
 
 ;;(add-hook 'cperl-mode-hook      'flyspell-prog-mode)
