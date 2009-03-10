@@ -13,6 +13,13 @@
 ;; basic utilities.
 ;;----------------------------------------------------------------------
 
+(defun quote-string-for-shell ( string )
+  "quote-string-for-shell STRING
+
+   quote the string with ' for the shell.
+  "
+  (concat "\'" string "\'"))
+
 (defun list-filter-nil ( list )
   "Filter nil symbols from a list"
   (remq 'nil list))
@@ -274,7 +281,6 @@
   (condition-case trapped-error
     (if (dir-path-if-accessible path)
       (if (equal 0 (call-process-shell-command "rm" nil nil nil "-r" path))
-        ;; zero is a successful exit status
         t
         nil)
       (progn
@@ -283,6 +289,189 @@
     (error
       (message "grail-recursive-delete-directory failed %s" (format-signal-trap trapped-error))
       nil)) )
+
+(defun grail-tmp-dir-and-file-path ( name )
+  (let
+    ((tmp-dir  nil))
+
+    (when (condition-case trapped-error
+          (progn
+            (setq tmp-dir (make-temp-file "grail" t))
+            t)
+          (error
+            (progn
+              (message "grail could not create a temporary directory for temp path %s" name)
+              nil)))
+      (cons tmp-dir (grail-sanitize-path (concat tmp-dir "/" name))) )))
+
+(defun grail-cleanup-download-dir ( tmp-dir-and-file &optional ignore-save )
+  "grail-cleanup-download-dir
+
+   delete the directory and the downloaded files.
+
+   TODO: save downloads option.
+  "
+  (when (and tmp-dir-and-file (not ignore-save))
+    (grail-recursive-delete-directory (car tmp-dir-and-file))) )
+
+(defun grail-process-async-chain ( start-process-fn doesnt-start-fn proc-fail-fn do-after-fn next-fn)
+  (lexical-let
+    ((async-proc (funcall start-process-fn))
+     (no-start   doesnt-start-fn)
+     (fail-fn    proc-fail-fn)
+     (after-fn   do-after-fn)
+     (chain-fn   next-fn))
+
+    (if (or (not (processp async-proc))
+            (not (process-status async-proc)))
+      (funcall doesnt-start-fn)
+      (progn
+        ;; setup a lambda process sentinal that does the chaining.
+        (set-process-sentinel async-proc
+          ;; a sentinal that accepts status-change signals
+          (lambda ( bound-proc status-change )
+            (when (memq (process-status bound-proc) '(signal exit))
+              ;; do something when the process exits
+              (if (equal 0 (process-exit-status bound-proc))
+
+                ;; If bound-proc process exits with success call the
+                ;; do-after-exit function (do-after-fn).
+
+                ;; If (do-after-fn) returns non-nil, and the (next-fn)
+                ;; is non-nil run that function.
+                (and (funcall after-fn) (and chain-fn (funcall chain-fn)))
+
+                ;; if the process exits non-zero call (proc-fail-fn)
+                (funcall fail-fn)) ))) ))))
+
+(defun grail-wget-url-async ( url path output-buffer )
+  "grail-wget-url-async URL PATH OUTPUT-BUFFER
+
+   retrieve the URL to PATH, with OUTPUT-BUFFER as the output
+   buffer. The process object created is returned, or nil if a
+   process could not be created.
+  "
+  (condition-case trapped-error
+    (start-process-shell-command "grail-wget" output-buffer
+      "wget"
+      "--progress=dot:binary"
+      (quote-string-for-shell url) "-O" (quote-string-for-shell path))
+    (error
+      (progn
+        (message "grail-wget-url failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
+(defun grail-untar-async ( path target-dir compression output-buffer )
+  "grail-untar-async PATH DIR COMPRESSION OUTPUT-BUFFER
+
+   untar PATH in DIR with output going to OUTPUT-BUFFER.
+   return the process object or nil if there was an error.
+  "
+  (condition-case trapped-error
+    (start-process-shell-command "grail-untar" output-buffer
+      "tar"
+      (concat
+        "xv"
+        (cond
+          ((equal "gz"  compression) "z")
+          ((equal "bz2" compression) "j")
+          (signal error (format "grail: error! unsupported compression %s" compression)))
+        "f")
+      (quote-string-for-shell path)
+      "-C" (quote-string-for-shell target-dir))
+    (error
+      (progn
+        (message "grail-wget-url failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
+(defun grail-tarball-installer ( url name compression )
+  "grail-tarball-installer
+
+   Download a tarball and install it.
+  "
+  (save-excursion
+    (lexical-let*
+      ((tmp-dir-and-file nil)
+       (old-window       (selected-window))
+
+       ;; open a new window but do not put it in recently selected
+       (grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-install*") nil t))
+       (grail-window  (not (eq old-window (selected-window)))))
+
+      (catch 'abort
+        ;; confirm with the user that they want to install the file.
+        (unless (yes-or-no-p (format "download and install %s? " name))
+          (throw 'abort nil))
+
+        ;; signal the start of the download in the grail buffer.
+        (insert (format "Starting the download of %s\n" url))
+
+        ;; create a temporary directory to download into
+        (unless (setq tmp-dir-and-file (grail-tmp-dir-and-file-path (concat name "." compression)))
+          (throw 'abort "could not create a temporary directory for the download"))
+
+        (lexical-let
+          ((dl-url  url)
+           (compression-type compression))
+
+          (grail-process-async-chain
+            ;; start the download with wget
+            (lambda ()
+              (grail-wget-url-async
+                dl-url
+                (cdr tmp-dir-and-file)
+                grail-buffer))
+
+            ;; the downloader doesn't start cleanup function
+            (lambda ()
+              (insert "could not start the download! Install aborted.\n")
+              (grail-cleanup-download-dir tmp-dir-and-file t))
+
+            ;; the downloader fail cleanup function
+            (lambda ()
+              (grail-cleanup-download-dir tmp-dir-and-file t)
+              (message "download of %s failed! Install aborted, and downloads deleted." (cdr tmp-dir-and-file)))
+
+            ;; the downloader succeeded function
+            (lambda ()
+              (insert "grail: download completed\n")
+              t)
+
+            ;; the chain function
+            (lambda ()
+              (grail-process-async-chain
+                ;; start the untar
+                (lambda ()
+                  (message "starting the untar")
+                  (grail-untar-async (cdr tmp-dir-and-file) grail-dist-elisp compression-type grail-buffer))
+
+                ;; tar doesn't start cleanup function
+                (lambda ()
+                  (insert "could not start tar to extract the downloaded archive. Install aborted, deleting downloads.\n")
+                  (grail-cleanup-download-dir tmp-dir-and-file t))
+
+                ;; the tar fail cleanup function
+                (lambda ()
+                  (insert (format "could not install files in %s from downloaded archive." grail-dist-elisp))
+                  (grail-cleanup-download-dir tmp-dir-and-file t))
+
+                ;; the tar succeeded function
+                (lambda ()
+                  (insert "grail: Installation Completed ! Re-Generating load-path\n")
+                  (grail-extend-load-path)
+
+                  (insert "grail: cleaning up downloads\n")
+                  (grail-cleanup-download-dir tmp-dir-and-file)
+
+                  (delete-windows-on grail-buffer)
+                  (kill-buffer grail-buffer)
+                  t)
+
+                ;; terminate the chain.
+                nil))) )
+        ;; return nil if an abort is not thrown.
+        nil))
+    )) ;; save excursion and the defun.
 
 (defun grail-define-installer ( def-symbol installer &optional install-dir )
   "grail-define-installer DEF-SYMBOL INSTALLER &optional INSTALL-DIR

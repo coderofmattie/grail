@@ -106,8 +106,8 @@
 ;; errors.
 ;;----------------------------------------------------------------------
 
-(defun sanitize-load-path ( path )
-  "sanitize-load-path PATH
+(defun grail-sanitize-path ( path )
+  "grail-sanitize-path PATH
 
    sanitize a load-path reducing redundant file separators to single
    separators. The sanitized PATH is returned.
@@ -125,7 +125,7 @@
   "
   (condition-case error-trap
     (progn
-      (load (sanitize-load-path path))
+      (load (grail-sanitize-path path))
       nil)
     (error error-trap)))
 
