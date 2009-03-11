@@ -48,24 +48,6 @@
             (push transform rvalue)))))
     (reverse rvalue)))
 
-(defun memqcar ( object list &optional item-fn )
-  "memqcar OBJECT LIST &optional ITEM-FN
-
-   search through each element of LIST comparing OBJECT with
-   the element from LIST. t is returned when an equality is
-   found, nil otherwise.
-
-   A function taking a single parameter, an item from the list
-   can be used to transform the item before the equality test.
-  "
-  (catch 'found
-    (mapc
-      (lambda ( item )
-        (when (equal object (or (and item-fn (funcall item-fn item)) item))
-          (throw 'found t)))
-      list)
-    nil))
-
 (defun is-current-frame-gui ( &optional frame-arg )
   "is-current-frame-x FRAME
 
@@ -273,6 +255,9 @@
 ;; installation routines.
 ;;----------------------------------------------------------------------
 
+(defvar grail-save-downloads nil
+  "when t downloaded archive files will be saved to grail-dist-dir")
+
 (defun grail-recursive-delete-directory ( path )
   "grail-recursive-delete-directory PATH
 
@@ -296,7 +281,9 @@
 
     (when (condition-case trapped-error
           (progn
-            (setq tmp-dir (make-temp-file "grail" t))
+            (setq tmp-dir (if grail-save-downloads
+                            grail-dist-dir
+                            (make-temp-file "grail" t)))
             t)
           (error
             (progn
@@ -304,17 +291,45 @@
               nil)))
       (cons tmp-dir (grail-sanitize-path (concat tmp-dir "/" name))) )))
 
-(defun grail-cleanup-download-dir ( tmp-dir-and-file &optional ignore-save )
-  "grail-cleanup-download-dir
+(defun grail-cleanup-download ( tmp-dir-and-file &optional ignore-save )
+  "grail-cleanup-download
 
    delete the directory and the downloaded files.
 
    TODO: save downloads option.
   "
-  (when (and tmp-dir-and-file (not ignore-save))
-    (grail-recursive-delete-directory (car tmp-dir-and-file))) )
+  (when tmp-dir-and-file
+    (if grail-save-downloads
+      ;; when grail-save-downloads is enabled absolutely do not recursive delete !
+      (when (not ignore-save)
+        (delete-file (cdr tmp-dir-and-file)))
+      ;; otherwise it is a temp dir so nuke it
+      (grail-recursive-delete-directory (car tmp-dir-and-file))) ))
 
-(defun grail-process-async-chain ( start-process-fn doesnt-start-fn proc-fail-fn do-after-fn next-fn)
+(defun grail-process-async-chain ( start-process-fn doesnt-start-fn proc-fail-fn
+                                   do-after-fn next-fn)
+  "grail-process-async-chain START-PROCESS-FN DOESNT-START-FN PROC-FAIL-FN
+                             DO-AFTER-FN NEXT-FN
+
+   create asynchronous processes that can be changed. START-PROCESS-FN
+   creates a process object. This function generates a process sentinel
+   and attaches the sentinel to the process.
+
+   a number of lambdas are supplied in the arguments to fill in the body
+   of the process sentinel.
+
+   DOESNT-START-FN: executed if the process does not start.
+
+   PROC-FAIL-FN   : executed if the process returns an error (a non-zero exit code).
+   DO-AFTER-FN    : executed when the process exits with success (0 exit code)
+   NEXT-FN        : when DO-AFTER-FN returns non-nil this function is executed,
+                    typically to chain another async process, but it can do
+                    anything.
+
+   With this function processes can be changed by nesting another
+   grail-process-async-chain as the tail, or NEXT-FN function for
+   a sequence of process execution.
+  "
   (lexical-let
     ((async-proc (funcall start-process-fn))
      (no-start   doesnt-start-fn)
@@ -425,11 +440,11 @@
             ;; the downloader doesn't start cleanup function
             (lambda ()
               (insert "could not start the download! Install aborted.\n")
-              (grail-cleanup-download-dir tmp-dir-and-file t))
+              (grail-cleanup-download tmp-dir-and-file t))
 
             ;; the downloader fail cleanup function
             (lambda ()
-              (grail-cleanup-download-dir tmp-dir-and-file t)
+              (grail-cleanup-download tmp-dir-and-file t)
               (message "download of %s failed! Install aborted, and downloads deleted." (cdr tmp-dir-and-file)))
 
             ;; the downloader succeeded function
@@ -448,12 +463,12 @@
                 ;; tar doesn't start cleanup function
                 (lambda ()
                   (insert "could not start tar to extract the downloaded archive. Install aborted, deleting downloads.\n")
-                  (grail-cleanup-download-dir tmp-dir-and-file t))
+                  (grail-cleanup-download tmp-dir-and-file t))
 
                 ;; the tar fail cleanup function
                 (lambda ()
                   (insert (format "could not install files in %s from downloaded archive." grail-dist-elisp))
-                  (grail-cleanup-download-dir tmp-dir-and-file t))
+                  (grail-cleanup-download tmp-dir-and-file t))
 
                 ;; the tar succeeded function
                 (lambda ()
@@ -461,7 +476,7 @@
                   (grail-extend-load-path)
 
                   (insert "grail: cleaning up downloads\n")
-                  (grail-cleanup-download-dir tmp-dir-and-file)
+                  (grail-cleanup-download tmp-dir-and-file)
 
                   (delete-windows-on grail-buffer)
                   (kill-buffer grail-buffer)
@@ -472,6 +487,28 @@
         ;; return nil if an abort is not thrown.
         nil))
     )) ;; save excursion and the defun.
+
+(defun grail-install-file ( name url &optional path )
+  "grail-install-file NAME URL PATH
+
+   install from URL into PATH with name NAME.  nil is returned
+   when successful, otherwise an error is thrown.
+  "
+  (condition-case error-trap
+    (let
+      ((install-path (grail-sanitize-path (concat
+                                            (or path grail-dist-elisp)
+                                            path "/" name ".el"))))
+
+      (with-temp-buffer
+        (url-insert-file-contents url)
+        (write-file install-path))
+
+      (message "grail-install-file: installed of %s to %s completed" name install-path))
+    nil
+    (error
+      (format "grail-install-file for %s failed with: %s"
+        name (format-signal-trap error-trap))) ))
 
 (defun grail-define-installer ( def-symbol installer &optional install-dir )
   "grail-define-installer DEF-SYMBOL INSTALLER &optional INSTALL-DIR
@@ -495,26 +532,9 @@
   "
   (grail-garuntee-dir-path (if package (concat grail-dist-elisp package "/") grail-dist-elisp)))
 
-(defun grail-install-url ( path name url )
-  "grail-install-url PATH NAME URL
-
-   install from URL into PATH with name NAME.  nil is returned
-   when successful, otherwise an error is thrown.
-  "
-  (condition-case error-trap
-
-    (with-temp-buffer
-      (url-insert-file-contents url)
-      (write-file (concat path name ".el")))
-
-    (message "grail-install-url: would write to %s %s from %s" path name url)
-    nil
-    (error
-      (format "grail-install-url for %s failed with: %s"
-        name (format-signal-trap error-trap))) ))
 
 (defun grail-install-package ( name installer )
-  "grail-dist-install-file NAME URL
+  "grail-dist-install-package NAME URL
 
    download an elisp package named NAME from URL and install it in the user's dist directory.
 
@@ -530,7 +550,7 @@
         (mapc
           (lambda ( ts-pair )
             ;; ts-pair is target source pair
-            (grail-install-url install-to-dir (car ts-pair) (cdr ts-pair)) )
+            (grail-install-file (car ts-pair) (cdr ts-pair) install-to-dir) )
           install-data) )
 
       ((error "grail-install-package: un-handled type %s" (type-of install-data))) )
@@ -721,7 +741,7 @@
   (interactive)
 
   (let
-    ((elpa-install (grail-dist-install-file "package" (concat elpa-url "package.el"))))
+    ((elpa-install (grail-install-file "package" (concat elpa-url "package.el"))))
 
     (when elpa-install
       (message "ELPA installation failed %s" elpa-install)))
