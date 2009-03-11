@@ -73,7 +73,7 @@
 ;;----------------------------------------------------------------------
 
 ;; only need to start it when Emacs is not running in daemon mode
-(unless (daemomp)
+(unless (daemonp)
   (require 'server)
 
   (setq
