@@ -10,8 +10,11 @@
 ;; the built-in paren mode is a fallback until mic-paren can be
 ;; activated.
 
-(unless (grail-activate-with-recovery "lisp" mic-paren
-          (("mic-paren" . "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el"))
+(defvar grail-groups-micparen-installer
+  (grail-define-installer "mic-paren" "file" "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el")
+  "the mic-paren installer")
+
+(unless (grail-activate-with-recovery "lisp" mic-paren grail-groups-micparen-installer
           (setq
             paren-showing t
             show-paren-style 'parenthesis
@@ -39,9 +42,11 @@
 ;; quack for scheme
 ;;----------------------------------------------------------------------
 
-(grail-activate-with-recovery "lisp" quack
-  (("quack" . "http://www.neilvandyke.org/quack/quack.el"))
+(defvar grail-groups-quack-installer
+  (grail-define-installer "quack" "file" "http://www.neilvandyke.org/quack/quack.el")
+  "the quack installer")
 
+(grail-activate-with-recovery "lisp" quack grail-groups-quack-installer
   (setq-default
     quack-dir (grail-garuntee-dir-path (concat grail-state-path "quack/"))
     quack-default-program "mzscheme")

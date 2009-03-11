@@ -4,8 +4,11 @@
 
 ;; adaptive fill for maintaining indentation inside comments
 
-(grail-activate-with-recovery "code-formatting" filladapt
-  (("filladapt" . "http://www.wonderworks.com/download/filladapt.el"))
+(defvar grail-group-filladapt-installer
+  (grail-define-installer "filladapt" "file" "http://www.wonderworks.com/download/filladapt.el")
+  "the installer for filladapt")
+
+(grail-activate-with-recovery "code-formatting" filladapt grail-group-filladapt-installer
 
   (add-hook 'c-mode-common-hook 'c-setup-filladapt))
 
