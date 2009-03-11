@@ -1,3 +1,4 @@
+
 #----------------------------------------------------------------------
 # Makfile: for the emacs configuration
 #----------------------------------------------------------------------
@@ -7,6 +8,9 @@ EMACS=$(HOME)/system/bin/emacs
 BYTECODE="Makefile.bytecode"
 
 .PHONY: all $(BYTECODE) compile clean
+
+lisp-fonts:
+	test -f $HOME/.fonts.conf && fc-cache -f
 
 $(BYTECODE):
 	-./compiler.sh
