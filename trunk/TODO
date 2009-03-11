@@ -22,8 +22,6 @@
   is the flyspell underline. because it is merging instead of replacing it
   is displaying in the orange specified by flyspell.
 
-* tool-bar-mode nil has no effect on Emacs.app (might be fixed now with a negative argument)
-
 * flypsell in comments only seems to analyze the text after I pass over the
   word with the cursor. This is probably a configuration issue.
 
@@ -31,9 +29,6 @@
 
 * delete-trailing-whitespace hooked into vc for specific languages such
   as lisp ?
-
-* darwin: a function should be created that adjusts both the PATH environment
-  variable and exec-path
 
 * custom font: add a lamba char that does not suck.
 
