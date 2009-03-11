@@ -72,20 +72,23 @@
 ;; Emacs Server
 ;;----------------------------------------------------------------------
 
-(require 'server)
+;; only need to start it when Emacs is not running in daemon mode
+(unless (daemomp)
+  (require 'server)
 
-(setq
-  server-use-tcp t)                     ;; when tcp is turned on a auth file
-                                        ;; is created - root can use emacsclient
-                                        ;; to connect to a session running as
-                                        ;; an unprivelaged user.
+  (setq
+    server-use-tcp t)                     ;; when tcp is turned on a auth file
+                                          ;; is created - root can use
+                                          ;; emacsclient to connect to
+                                          ;; a session running as
+                                          ;; an unprivelaged user.
 
-(condition-case nil                    ;; start the server, trapping errors.
-  (server-start)
+  (condition-case nil                    ;; start the server, trapping errors.
+    (server-start)
 
-  (error
-    (message "cannot start Emacs Server")
-    nil))
+    (error
+      (message "cannot start Emacs Server")
+      nil)) )
 
 ;;----------------------------------------------------------------------
 ;;                 IPC shell:  comint/term mode
