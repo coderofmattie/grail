@@ -1,3 +1,9 @@
+PLAN B for the template system.
+
+instead of using xml, use latex. it is straight-forward to convert it
+to info, and it has all the type-setting capabilities that I need.
+
+
 * use clarify to clean up some of the key macros in mattie-elisp.el
 
 ---> Grok List <---
