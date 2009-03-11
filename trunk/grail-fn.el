@@ -275,36 +275,36 @@
       (message "grail-recursive-delete-directory failed %s" (format-signal-trap trapped-error))
       nil)) )
 
-(defun grail-tmp-dir-and-file-path ( name )
+(defun grail-download-dir-and-file-path ( name )
   (let
-    ((tmp-dir  nil))
+    ((dl-dir  nil))
 
     (when (condition-case trapped-error
           (progn
-            (setq tmp-dir (if grail-save-downloads
+            (setq dl-dir (if grail-save-downloads
                             grail-dist-dir
                             (make-temp-file "grail" t)))
             t)
           (error
             (progn
-              (message "grail could not create a temporary directory for temp path %s" name)
+              (message "grail: grail-download-dir-and-file-path could not create a download path for %s" name)
               nil)))
-      (cons tmp-dir (grail-sanitize-path (concat tmp-dir "/" name))) )))
+      (cons dl-dir (grail-sanitize-path (concat dl-dir "/" name))) )))
 
-(defun grail-cleanup-download ( tmp-dir-and-file &optional ignore-save )
+(defun grail-cleanup-download ( dl-dir-and-file &optional ignore-save )
   "grail-cleanup-download
 
    delete the directory and the downloaded files.
 
    TODO: save downloads option.
   "
-  (when tmp-dir-and-file
+  (when dl-dir-and-file
     (if grail-save-downloads
       ;; when grail-save-downloads is enabled absolutely do not recursive delete !
       (when (not ignore-save)
-        (delete-file (cdr tmp-dir-and-file)))
+        (delete-file (cdr dl-dir-and-file)))
       ;; otherwise it is a temp dir so nuke it
-      (grail-recursive-delete-directory (car tmp-dir-and-file))) ))
+      (grail-recursive-delete-directory (car dl-dir-and-file))) ))
 
 (defun grail-process-async-chain ( start-process-fn doesnt-start-fn proc-fail-fn
                                    do-after-fn next-fn)
@@ -406,7 +406,7 @@
   "
   (save-excursion
     (lexical-let*
-      ((tmp-dir-and-file nil)
+      ((dl-dir-and-file nil)
        (old-window       (selected-window))
 
        ;; open a new window but do not put it in recently selected
@@ -422,7 +422,7 @@
         (insert (format "Starting the download of %s\n" url))
 
         ;; create a temporary directory to download into
-        (unless (setq tmp-dir-and-file (grail-tmp-dir-and-file-path (concat name "." compression)))
+        (unless (setq dl-dir-and-file (grail-download-dir-and-file-path (concat name "." compression)))
           (throw 'abort "could not create a temporary directory for the download"))
 
         (lexical-let
@@ -434,18 +434,18 @@
             (lambda ()
               (grail-wget-url-async
                 dl-url
-                (cdr tmp-dir-and-file)
+                (cdr dl-dir-and-file)
                 grail-buffer))
 
             ;; the downloader doesn't start cleanup function
             (lambda ()
               (insert "could not start the download! Install aborted.\n")
-              (grail-cleanup-download tmp-dir-and-file t))
+              (grail-cleanup-download dl-dir-and-file t))
 
             ;; the downloader fail cleanup function
             (lambda ()
-              (grail-cleanup-download tmp-dir-and-file t)
-              (message "download of %s failed! Install aborted, and downloads deleted." (cdr tmp-dir-and-file)))
+              (grail-cleanup-download dl-dir-and-file t)
+              (message "download of %s failed! Install aborted, and downloads deleted." (cdr dl-dir-and-file)))
 
             ;; the downloader succeeded function
             (lambda ()
@@ -458,17 +458,17 @@
                 ;; start the untar
                 (lambda ()
                   (message "starting the untar")
-                  (grail-untar-async (cdr tmp-dir-and-file) grail-dist-elisp compression-type grail-buffer))
+                  (grail-untar-async (cdr dl-dir-and-file) grail-dist-elisp compression-type grail-buffer))
 
                 ;; tar doesn't start cleanup function
                 (lambda ()
                   (insert "could not start tar to extract the downloaded archive. Install aborted, deleting downloads.\n")
-                  (grail-cleanup-download tmp-dir-and-file t))
+                  (grail-cleanup-download dl-dir-and-file t))
 
                 ;; the tar fail cleanup function
                 (lambda ()
                   (insert (format "could not install files in %s from downloaded archive." grail-dist-elisp))
-                  (grail-cleanup-download tmp-dir-and-file t))
+                  (grail-cleanup-download dl-dir-and-file t))
 
                 ;; the tar succeeded function
                 (lambda ()
@@ -476,7 +476,7 @@
                   (grail-extend-load-path)
 
                   (insert "grail: cleaning up downloads\n")
-                  (grail-cleanup-download tmp-dir-and-file)
+                  (grail-cleanup-download dl-dir-and-file)
 
                   (delete-windows-on grail-buffer)
                   (kill-buffer grail-buffer)
