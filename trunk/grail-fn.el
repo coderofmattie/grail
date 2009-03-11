@@ -275,6 +275,18 @@
       (message "grail-recursive-delete-directory failed %s" (format-signal-trap trapped-error))
       nil)) )
 
+(defun grail-dist-install-directory ( &optional package )
+  "grail-dist-install-directory &optional string:PACKAGE
+
+   Ensure that the installation directory exists. The default is grail-dist-elisp,
+   however for multi-file packages an optional package name can be supplied.
+
+   The path of the installation directory is returned for the installer's use.
+  "
+  (grail-garuntee-dir-path (if package
+                             (grail-sanitize-path (concat grail-dist-elisp package "/"))
+                             grail-dist-elisp)))
+
 (defun grail-download-dir-and-file-path ( name )
   (let
     ((dl-dir  nil))
@@ -399,8 +411,8 @@
         (message "grail-wget-url failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defun grail-tarball-installer ( url name compression )
-  "grail-tarball-installer
+(defun grail-tarball-installer ( name url compression )
+  "grail-tarball-installer NAME URL COMPRESSION
 
    Download a tarball and install it.
   "
@@ -489,7 +501,7 @@
     )) ;; save excursion and the defun.
 
 (defun grail-file-installer ( name url &optional path )
-  "grail-file-installer NAME URL PATH
+  "grail-file-installer NAME URL &optional PATH
 
    install from URL into PATH with name NAME.  nil is returned
    when successful, otherwise an error is thrown.
@@ -521,16 +533,6 @@
   (set def-symbol installer)
   (when install-dir
     (put def-symbol 'pkg-dir install-dir) ))
-
-(defun grail-dist-install-directory ( &optional package )
-  "grail-dist-install-directory &optional string:PACKAGE
-
-   Ensure that the installation directory exists. The default is grail-dist-elisp,
-   however for multi-file packages an optional package name can be supplied.
-
-   The path of the installation directory is returned for the installer's use.
-  "
-  (grail-garuntee-dir-path (if package (concat grail-dist-elisp package "/") grail-dist-elisp)))
 
 
 (defun grail-install-package ( name installer )
