@@ -61,6 +61,9 @@
 (defconst grail-release-version "0.0.4"
   "the release number of grail.el")
 
+(defconst grail-project-url "http://www.emacswiki.org/emacs/Grail"
+  "the project page for Grail")
+
 (defun dir-path-if-accessible ( path )
   "return the path if the directory is readable, otherwise nil"
   (if (and path (file-accessible-directory-p path))
@@ -99,7 +102,12 @@
 
    format SIGNAL-TRAP for use in error messages.
   "
-  (format "(%s , \"%s\")" (symbol-name (car signal-trap)) (cadr signal-trap)) )
+  (format "(%s , \"%s\")"
+    (symbol-name (car signal-trap))
+
+    (if (listp (cdr signal-trap))
+      (cadr signal-trap)
+      (cdr signal-trap)) ))
 
 ;;----------------------------------------------------------------------
 ;; define a robust methods of loading and evaluating elisp that trap
@@ -134,7 +142,7 @@
 
    load PATH relative to grail-elisp-root reporting any errors that occur.
 
-   nil is returned on success, t on failure.
+   t is returned on success, nil on failure.
   "
   (let
     ((diagnostics (diagnostic-load-elisp-file path)))
@@ -144,7 +152,7 @@
              (format "grail: errors %s prevented %s from loading correctly"
              (format-signal-trap diagnostics)
               path))
-	  nil)
+          nil)
         t)) )
 
 (defun load-elisp-if-exists ( path )
@@ -152,8 +160,11 @@
 
    Try to load the elisp file PATH only if it exists and is
    readable.
+
+   t is returned if the file was found and loaded without
+   errors, nil otherwise.
   "
-  (lexical-let
+  (let
     ((accessible-path  (file-path-if-readable path)))
 
     (when accessible-path
@@ -164,9 +175,16 @@
 
    A fully guarded load that checks for a non-nil FILE name
    and attempts to load it relative to grail-elisp-root.
+
+   t is returned if the file was found and loaded without
+   errors, nil otherwise.
   "
   (when file
     (load-elisp-if-exists (concat grail-elisp-root file))))
+
+(defun grail-load-requested-groups ()
+  ;; a dummy function replaced when grail loads the grail-groups package
+  nil)
 
 (defun grail-load-gui-configuration-once ( frame )
   "grail-load-gui-configuration-once
@@ -179,8 +197,7 @@
    after-make-frame-functions.
   "
   (when (and (not grail-gui-configured) (is-current-frame-gui frame))
-    (load-user-elisp "gui.el")
-    (grail-load-requested-groups)
+    (and (load-user-elisp "gui.el") (grail-load-requested-groups))
     (setq grail-gui-configured t)))
 
 (defun grail-load-display-configuration-once ()
@@ -286,10 +303,6 @@
       "The directory containing Emacs libraries created and maintained by the
        user.")
 
-    (defvar grail-local-groups
-      (concat grail-local-dir "groups/")
-      "The directory containing Emacs group modules.")
-
     (defvar grail-dist-dir
       (concat grail-elisp-root "dist/"))
 
@@ -326,7 +339,7 @@
        (stage-2-errors (diagnostic-load-elisp-file stage-2-path)))
 
       (when stage-2-errors
-	(error "could not load %s , the second stage of grail. with %s errors. USER_ELISP does not point to a working GRAIL install" stage-2-path (format-signal-trap stage-2-errors))) )
+        (error "could not load %s , the second stage of grail. with %s errors. USER_ELISP does not point to a working GRAIL install" stage-2-path (format-signal-trap stage-2-errors))) )
 
 
     ;; grail-cfg.el is a file for user to change the tree structure that grail
@@ -335,6 +348,14 @@
     (load-user-elisp "grail-cfg.el")
 
     (grail-extend-load-path)
+
+    ;;----------------------------------------------------------------------
+    ;; support for groups.
+    ;;----------------------------------------------------------------------
+
+    (defvar grail-local-groups
+      (when (load-user-elisp "grail-groups.el") (concat grail-local-dir "groups/"))
+      "The directory containing Emacs group modules.")
 
     ;;----------------------------------------------------------------------
     ;; Host specific adaptation
