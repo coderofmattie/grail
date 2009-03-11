@@ -488,8 +488,8 @@
         nil))
     )) ;; save excursion and the defun.
 
-(defun grail-install-file ( name url &optional path )
-  "grail-install-file NAME URL PATH
+(defun grail-file-installer ( name url &optional path )
+  "grail-file-installer NAME URL PATH
 
    install from URL into PATH with name NAME.  nil is returned
    when successful, otherwise an error is thrown.
@@ -504,10 +504,10 @@
         (url-insert-file-contents url)
         (write-file install-path))
 
-      (message "grail-install-file: installed of %s to %s completed" name install-path))
+      (message "grail-file-installer: installed of %s to %s completed" name install-path))
     nil
     (error
-      (format "grail-install-file for %s failed with: %s"
+      (format "grail-file-installer for %s failed with: %s"
         name (format-signal-trap error-trap))) ))
 
 (defun grail-define-installer ( def-symbol installer &optional install-dir )
@@ -550,7 +550,7 @@
         (mapc
           (lambda ( ts-pair )
             ;; ts-pair is target source pair
-            (grail-install-file (car ts-pair) (cdr ts-pair) install-to-dir) )
+            (grail-file-installer (car ts-pair) (cdr ts-pair) install-to-dir) )
           install-data) )
 
       ((error "grail-install-package: un-handled type %s" (type-of install-data))) )
@@ -741,7 +741,7 @@
   (interactive)
 
   (let
-    ((elpa-install (grail-install-file "package" (concat elpa-url "package.el"))))
+    ((elpa-install (grail-file-installer "package" (concat elpa-url "package.el"))))
 
     (when elpa-install
       (message "ELPA installation failed %s" elpa-install)))
