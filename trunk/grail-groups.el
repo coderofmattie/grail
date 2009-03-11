@@ -497,7 +497,7 @@
                                       group
                                       pkg-name
                                       (format-signal-trap diagnostic)))
-        (grail-repair-dependency-fn package (eval `'( ,@installer)))
+        (grail-repair-dependency-fn package (eval installer))
         (throw 'abort t))
 
       ;; try the initialization trapping any errors.
