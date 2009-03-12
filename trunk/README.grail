@@ -9,7 +9,7 @@ recognized by grail at your own speed to your taste.
 1. Choose a directory where your Emacs configuration will live. From
    here on this directory will be referred to as USER_ELISP.
 
-2. copy grail.el, and grail-fn.el into USER_ELISP
+2. copy grail.el, grail-fn.el, and grail-groups.el into USER_ELISP
 
 3. Copy your Emacs configuration to a safe place.
 
