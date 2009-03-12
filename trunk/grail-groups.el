@@ -66,9 +66,12 @@
 
    The path of the installation directory is returned for the installer's use.
   "
-  (grail-garuntee-dir-path (if package
-                             (grail-sanitize-path (concat grail-dist-elisp package "/"))
-                             grail-dist-elisp)))
+  (grail-garuntee-dir-path (grail-sanitize-path
+                             (concat
+                             (if package
+                               (concat grail-dist-elisp "/" package)
+                               grail-dist-elisp)
+                               "/"))))
 
 (defun grail-download-dir-and-file-path ( name )
   (let
@@ -291,9 +294,7 @@
   "
   (condition-case error-trap
     (let
-      ((install-path (grail-sanitize-path (concat
-                                            (grail-garuntee-dir-path (or path grail-dist-elisp))
-                                            path "/" name ".el"))))
+      ((install-path (concat (grail-dist-install-directory path) name)))
 
       (with-temp-buffer
         (url-insert-file-contents url)
