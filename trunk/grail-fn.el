@@ -271,4 +271,6 @@
         (message "ELPA installation failed %s" elpa-install)))
 
     (unless (dir-path-if-accessible grail-dist-elpa)
-      (make-directory grail-dist-elpa t)) ))
+      (make-directory grail-dist-elpa t))
+
+    (load-elpa-when-installed) ))
