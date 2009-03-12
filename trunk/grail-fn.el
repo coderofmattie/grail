@@ -259,7 +259,7 @@
   (interactive)
 
   (catch 'abort
-    (unless grail-groups-loaded-p
+    (unless (grail-groups-loaded-p)
       (message "installing ELPA requires loading grail-groups.el for installation routines. Please consult README.grail and place grail-groups.el in USER_ELISP")
       (throw 'abort))
 
