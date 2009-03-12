@@ -256,7 +256,7 @@
                 ;; start the untar
                 (lambda ()
                   (message "starting the untar")
-                  (grail-untar-async (cdr dl-dir-and-file) grail-dist-elisp compression-type grail-buffer))
+                  (grail-untar-async (cdr dl-dir-and-file) (grail-dist-install-directory) compression-type grail-buffer))
 
                 ;; tar doesn't start cleanup function
                 (lambda ()
