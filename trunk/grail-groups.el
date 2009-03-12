@@ -292,7 +292,7 @@
   (condition-case error-trap
     (let
       ((install-path (grail-sanitize-path (concat
-                                            (or path grail-dist-elisp)
+                                            (grail-garuntee-dir-path (or path grail-dist-elisp))
                                             path "/" name ".el"))))
 
       (with-temp-buffer
@@ -403,10 +403,11 @@
 ;;----------------------------------------------------------------------
 
 (defun grail-repair-by-installing ( package installer )
-  "grail-repair-by-installing symbol:PACKAGE string|function:INSTALLER
+  "grail-repair-by-installing symbol:PACKAGE list|function:INSTALLER
 
-   Attempt to install PACKAGE and load the missing dependency. INSTALLER
-   is either a URL string, or a custom installer function.
+   Attempt to install PACKAGE and load the missing
+   dependency. INSTALLER is either defined by
+   grail-define-installer or a custom installer function.
 
    t is returned on success and nil for failure.
   "
@@ -419,7 +420,7 @@
         ;; run the installer
         (cond
           ((functionp installer) (funcall installer))
-          ((listp installer) (grail-install-package package installer))
+          ((listp installer) (grail-run-installer installer))
           (signal error (fomat "unhandled installer type: not a function or a list %s" (princ (type-of installer)))))
 
         (error
