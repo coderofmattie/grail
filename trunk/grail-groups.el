@@ -416,16 +416,20 @@
     (catch 'installer-abort
       (condition-case install-trap
 
+        ;; run the installer
         (cond
           ((functionp installer) (funcall installer))
-          ((or (listp installer) (symbolp installer)) (grail-install-package package installer)))
+          ((listp installer) (grail-install-package package installer))
+          (signal error (fomat "unhandled installer type: not a function or a list %s" (princ (type-of installer)))))
 
         (error
           (message "grail repair of package %s failed with %s" package-name (format-signal-trap install-trap))
-          (throw 'installer-abort nil)) )
+          (throw 'installer-abort nil)))
 
+      ;; if there wasn't a error update the load path.
       (grail-extend-load-path)
 
+      ;; try to load it again.
       (condition-case load-trap
         (require package)
         (error
