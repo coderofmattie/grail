@@ -44,6 +44,12 @@ recognized by grail at your own speed to your taste.
 
 Grail is now installed!
 
+---> Portability <---
+
+I use this package on Gentoo, Debian, and Darwin (OSX 10.5 currently, 10.4 previously).
+It is possible to port it to Win32, but there are functions that will only execute
+properly on Linux/Darwin, or are idiosyncratic to them.
+
          ---> The USER_ELISP directory structure. <----
 
 Inside USER_ELISP Grail looks for directories and files that are treated specially.
@@ -152,7 +158,8 @@ dist/                             | not added to load path, but downloaded packa
   |                               | recommended way to install Emacs packages.
   |
   --> elpa/                       | elisp maintained by ELPA. This is not added to the load-path
-                                  | directly, ELPA stores files here, and manages load-path too.
+                                  | directly, ELPA stores files here, and manages load-path for
+                                  | it's packages.
 
 ---> Configuring the GUI <---
 
@@ -204,3 +211,5 @@ Here is a peice of my configuration as an example:
   (font-lock-type-face (foreground "green4"))
   (font-lock-function-name-face (foreground "aquamarine4"))
   (font-lock-variable-name-face (foreground "aquamarine3")) )
+
+
