@@ -346,28 +346,57 @@
 
     (reverse install-spec)))
 
-(defun grail-install-package ( name installer )
-  "grail-dist-install-package NAME URL
+(defun grail-run-installer ( installer )
+  "grail-run-installer installer
 
-   download an elisp package named NAME from URL and install it in the user's dist directory.
-
-   the install directory is returned on success or an error is thrown.
+   run an installer created by grail-define-installer.
   "
-  (let
-    ((install-to-dir (grail-dist-install-directory (when (and (symbolp installer) (get installer 'pkg-dir))
-                                                     (get installer 'pkg-dir))) )
-     (install-data   (if (symbolp installer) (eval installer) installer)) )
+  (let*
+    ((name             (car  installer))
 
-    (cond
-      ((listp install-data)
-        (mapc
-          (lambda ( ts-pair )
-            ;; ts-pair is target source pair
-            (grail-file-installer (car ts-pair) (cdr ts-pair) install-to-dir) )
-          install-data) )
+     (install-type-arg (cadr installer))
+     ;; anything not file is thrown at the archive installer to decode.
+     (install-method   (or (when (and (stringp install-type-arg) (equal "file" install-type-arg)) 'grail-file-installer)
+                           'grail-archive-installer))
 
-      ((error "grail-install-package: un-handled type %s" (type-of install-data))) )
-    install-to-dir))
+     (url-list       (cddr installer))
+     (install-many   (> (length url-list) 1))
+
+     (call-the-installer nil))
+
+    (unless install-method
+      (signal 'error (format "grail-run-installer: I don't have an installer for %s" (princ install-type-arg))))
+
+    ;; generate a lambda instead of riddling a static sexp with if's
+    (setq call-the-installer (eval
+      ;; a function that sets up the arguments for the type specific installer
+      `(lambda ( url-pair )
+         ,(cond
+            ;; -> file installer call.
+            ;;
+            ;; When there are more than one url assume that the url list is a list of cons cells,
+            ;; and supply the name as directory argument.
+            ;; For a single file to install use the name as the file to write to, and do not supply
+            ;; a directory argument.
+            ((equal 'grail-file-installer install-method)
+              `(,install-method
+                 ,(if install-many
+                    `(car url-pair)
+                    `(concat (car url-pair) ".el"))
+                 (cdr url-pair)
+                 ,(when install-many name)) )
+
+            ;; -> archive installer call
+            ;;
+            ;; for a single archive to download use name to name the downloaded tarball. for many
+            ;; assume cons pairs as above with the file installer.
+            ((equal 'grail-archive-installer install-method)
+              `(,install-method
+                 ,(if install-many `(car url-pair) 'name)
+                 (cdr url-pair)
+                 ,install-type-arg)) ))))
+
+    (mapc call-the-installer url-list) ))
 
 ;;----------------------------------------------------------------------
 ;; grail repair routines.
