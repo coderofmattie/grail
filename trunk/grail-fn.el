@@ -78,6 +78,11 @@
     (goto-char (point-max))
     (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
 
+(defun grail-groups-loaded-p ()
+  "return t if grail-groups.el has been loaded"
+  (when grail-local-groups
+    t))
+
 ;;----------------------------------------------------------------------
 ;; filter-ls: a general purpose tools for filtering directory listings.
 ;;----------------------------------------------------------------------
@@ -253,11 +258,17 @@
   "install the ELPA package management system"
   (interactive)
 
-  (let
-    ((elpa-install (grail-file-installer "package" (concat elpa-url "package.el"))))
+  (catch 'abort
+    (unless grail-groups-loaded-p
+      (message "installing ELPA requires loading grail-groups.el for installation routines. Please consult README.grail and place grail-groups.el in USER_ELISP")
+      (throw 'abort))
 
-    (when elpa-install
-      (message "ELPA installation failed %s" elpa-install)))
+    (let
+      ((elpa-install (grail-repair-by-installing 'package
+                       (grail-define-installer "package" "file" (concat elpa-url "package.el")))))
 
-  (unless (dir-path-if-accessible grail-dist-elpa)
-    (make-directory grail-dist-elpa t)) )
+      (unless elpa-install
+        (message "ELPA installation failed %s" elpa-install)))
+
+    (unless (dir-path-if-accessible grail-dist-elpa)
+      (make-directory grail-dist-elpa t)) ))
