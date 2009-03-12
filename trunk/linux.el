@@ -5,7 +5,7 @@
 ;; Gentoo has a file that tunes emacs and loads the third party
 ;; components managed by the package manager.
 
-(load-elisp-if-exists "/usr/share/emacs/site-lisp/site-gentoo.el")
+;; (load-elisp-if-exists "/usr/share/emacs/site-lisp/site-gentoo.el")
 
 ;;----------------------------------------------------------------------
 ;; sawfish.
