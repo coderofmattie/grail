@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.0.4"
+(defconst grail-release-version "0.0.5"
   "the release number of grail.el")
 
 (defconst grail-project-url "http://www.emacswiki.org/emacs/Grail"
