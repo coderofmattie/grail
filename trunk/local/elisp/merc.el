@@ -32,11 +32,6 @@
     ((buffer-file-name file)) ;; set-auto-mode uses filename. shadow it.
     (set-auto-mode t)))
 
-(defun merc-insert-checkout ( buffer file )
-  (let
-    ((default-directory (file-name-directory file)))
-    (= 0 (call-process "svn" nil t t "cat" (file-name-nondirectory file)))))
-
 (defun load-or-copy-ancestor ( file extension type &optional fetch-copy )
   "load or copy the ancestor of FILE.
 
