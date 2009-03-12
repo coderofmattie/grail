@@ -212,4 +212,8 @@ Here is a peice of my configuration as an example:
   (font-lock-function-name-face (foreground "aquamarine4"))
   (font-lock-variable-name-face (foreground "aquamarine3")) )
 
+---> Grail Groups <---
 
+The groups feature is not documented yet. It is available, but not
+intended for general use until the integration with ELPA has been
+completed.
