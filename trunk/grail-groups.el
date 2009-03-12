@@ -1,8 +1,8 @@
 ;;;----------------------------------------------------------------------
 ;; grail-groups.el
-;; written by: Mike Mattie
-;;
-;; Grail support for the groups feature.
+;; Primary Author: Mike Mattie
+;; Copyright (C) 2009 Mike Mattie
+;; License: LGPL-v3
 ;;----------------------------------------------------------------------
 
 (defun grail-load-group ( group-name )

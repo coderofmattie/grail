@@ -1,7 +1,7 @@
 ;;;----------------------------------------------------------------------
 ;; grail-fn.el
 ;; Primary Author: Mike Mattie
-;; Copyright (C) 2008 Mike Mattie
+;; Copyright (C) 2008,2009 Mike Mattie
 ;; License: LPGL-v3
 ;;----------------------------------------------------------------------
 
