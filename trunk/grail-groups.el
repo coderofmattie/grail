@@ -500,6 +500,10 @@
 
     (fset (intern repair-fn-name) (cdr repair-procedure)) ))
 
+;;----------------------------------------------------------------------
+;; grail forms
+;;----------------------------------------------------------------------
+
 (defmacro grail-activate-with-recovery ( group package installer &rest init-code )
   "grail-load-dep-with-recovery string:GROUP symbol:PACKAGE INSTALLER code:INIT-CODE
 
