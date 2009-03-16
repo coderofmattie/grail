@@ -107,6 +107,8 @@
 
 (add-hook 'comint-mode-hook
   (lambda ()
+    (ansi-color-for-comint-mode-on)
+
     (setq show-trailing-whitespace nil)   ;; disable trailing whitespace highlighting
 
     ;; make up-down go through the history list.
