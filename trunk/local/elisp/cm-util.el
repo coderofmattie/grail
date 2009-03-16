@@ -15,8 +15,8 @@
 ;; neccesitates this silly wrapper. Consider sending this upstream as
 ;; a patch or add-on to file-readable-p"
 
-(defun file-if-readable ( file )
-  "if file is a readable path return file or nil"
+(defun file-path-if-readable ( file )
+  "return the path if the file is readable, otherwise nil"
   (if (file-readable-p file)
     file))
 
