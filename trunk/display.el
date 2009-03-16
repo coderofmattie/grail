@@ -50,4 +50,12 @@
   (font-lock-type-face (foreground "green4"))
   (font-lock-function-name-face (foreground "aquamarine4"))
   (font-lock-variable-name-face (foreground "aquamarine3"))
+
+  (ediff-current-diff-face-A (foreground "dark khaki"))
+  (ediff-current-diff-face-B (foreground "dark khaki"))
+  (ediff-current-diff-face-C (foreground "dark khaki"))
+
+  (ediff-fine-diff-face-A  (foreground "sea green"))
+  (ediff-fine-diff-face-B  (foreground "sea green"))
+  (ediff-fine-diff-face-C  (foreground "sea green"))
   )
