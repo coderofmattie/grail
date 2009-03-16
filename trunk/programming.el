@@ -102,9 +102,9 @@
   )
 
 ;;----------------------------------------------------------------------
-;; enhanced merging
+;; working-copy
 ;;----------------------------------------------------------------------
-(require 'merc)
+(require 'working-copy)
 
 ;; this is insanely great. It displays the function you are "in" in terms
 ;; of the point. Really nice for reading long functions.
