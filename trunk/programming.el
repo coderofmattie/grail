@@ -57,8 +57,29 @@
 ;;                           VC
 ;;----------------------------------------------------------------------
 
+(require 'vc)
+
 ;; VC - I wish Version Control did foo ... oh wait, it's already bound
 ;; VC.
+
+;; I use SubVersion as a master repository, and bzr as my sandbox
+;; to create clean bisect atmoic changesets. Change the order
+;; of the VC backends so bzr, svn are the first canidates for
+;; registering files.
+
+;; make sure the creatures from the black lagoon, CVS/RCS are dead last.
+
+(setq
+  vc-handled-backends `(Bzr SVN Git Hg Arch SCCS Mtn CVS RCS)
+  vc-delete-logbuf-window t)
+
+(require 'vc-bzr)
+
+;; enable verbose output for bzr
+(push "-v" vc-bzr-log-switches)
+
+;; support for drafting changelogs in a commit-changelog.txt file.
+(require 'commit-file)
 
 ;;----------------------------------------------------------------------
 ;;                          Ediff
