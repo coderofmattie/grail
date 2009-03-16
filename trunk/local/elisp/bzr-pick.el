@@ -432,7 +432,7 @@
           (bzr-pick-merge-sync-commit))
         ((equal 3 bzr-status)
           (progn
-            (mesage "Merge Error!")
+            (message "Merge Error!")
             (pop-to-buffer merge-output)
             'error))
         (t (progn
