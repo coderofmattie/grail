@@ -51,6 +51,12 @@
   (end-of-buffer)
   (re-search-backward "</" nil t))
 
+(defun export-buffer-to-clipboard ()
+  "copy the entire buffer to the clipboard"
+  (interactive)
+  (mark-whole-buffer)
+  (copy-region-to-clipboard))
+
 ;;----------------------------------------------------------------------
 ;; repl
 ;;
