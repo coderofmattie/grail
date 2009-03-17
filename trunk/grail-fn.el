@@ -241,18 +241,28 @@
 
    If the ELPA package management system http://tromey.com/elpa/ is installed,
    configure it for use, assuming a proper install by grail-install-elpa.
+
+   t is returned if succesful, otherwise nil is returned.
   "
   (interactive)
-  (when (and
-         (file-accessible-directory-p grail-dist-elpa)
-         (load-elisp-if-exists (concat grail-dist-elisp "package.el")))
+  (if (load-elisp-if-exists (concat grail-dist-elisp "package.el"))
+    (progn
+      (unless (dir-path-if-accessible grail-dist-elpa)
+        (make-directory grail-dist-elpa t))
 
-    ;; FIXME: I need to defadvise package-do-activate to capture the load-path changes made
-    ;; by elpa
+      (setq-default package-user-dir (grail-sanitize-path grail-dist-elpa))
+      (push grail-dist-elpa package-directory-list)
 
-    (setq-default package-user-dir grail-dist-elpa)
-    (push grail-dist-elpa package-directory-list)
-    (package-initialize)))
+      (let
+        ((elpa-errors (diagnostic-load-elisp (package-initialize))))
+
+        (if elpa-errors
+          (progn
+            (grail-dup-error-to-scratch
+              (format "ELPA failed to initialize with error %s" (format-signal-trap elpa-errors)))
+            nil)
+          t) ))
+    nil))
 
 (defun grail-install-elpa ()
   "install the ELPA package management system"
@@ -269,8 +279,5 @@
 
       (unless elpa-install
         (message "ELPA installation failed %s" elpa-install)))
-
-    (unless (dir-path-if-accessible grail-dist-elpa)
-      (make-directory grail-dist-elpa t))
 
     (load-elpa-when-installed) ))

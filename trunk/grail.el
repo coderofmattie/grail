@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.0.5"
+(defconst grail-release-version "0.1.0"
   "the release number of grail.el")
 
 (defconst grail-project-url "http://www.emacswiki.org/emacs/Grail"
@@ -271,9 +271,10 @@
   (progn
     ;; establish the root of the USER_ELISP configuration tree.
     (defvar grail-elisp-root
-      (concat (or (dir-path-if-accessible (getenv "USER_ELISP"))
+      (grail-sanitize-path
+        (concat (or (dir-path-if-accessible (getenv "USER_ELISP"))
                   (dir-path-if-accessible (concat (getenv "HOME") "/system/emacs")))
-        "/")
+          "/"))
       "The root of the user's elisp tree")
 
     ;; abort the rest of grail if the USER_ELISP tree cannot be found.
