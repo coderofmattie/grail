@@ -1,0 +1,38 @@
+;;; Grail Changelog
+
+0.1.0 Stable Release
+
+[file scope] grail.el
+
+bump the version to 0.1.0 creating a stable branch so that I can backport fixes
+from the development trunk.
+
+fixes
+
+Fix important bugs in grail generally and ELPA.
+
+grail.el
+
+[file scope]
+  * run grail-elisp-root through grail-sanitize-path eliminating the load time-bombs.
+
+grail-fn.el
+
+Currently the setup function for ELPA assumes that (grail-install-elpa)
+has initialized ELPA.
+
+This makes the ELPA integration very fragile. There is more than one
+way to install package.el, and in layering (load-elpa-when-installed)
+would assume only that package.el has been downloaded to the
+right place.
+
+[load-elpa-when-installed]
+   * move the creation of the ELPA installation directory to load-elpa-when-installed.
+   * return t when ELPA is activated, nil otherwise.
+   * trap errors from ELPA which can abort, especially from the annoying double separator
+     issue.
+   * sanitize the path for ELPA or it aborts from the load sensitivity to double
+     separators.
+
+[grail-install-elpa]
+   * move the creation of the ELPA installation directory to load-elpa-when-installed.
