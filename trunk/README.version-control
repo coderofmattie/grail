@@ -1,5 +1,9 @@
 Version Control Notes:
 
+Required Software: Subversion 1.5+ , bzr 1.9+
+
+          ---> Architecture <----
+
 The Master Repository is a subversion repository.  It is used for
 storing all of the releases, large and small.
 
@@ -25,7 +29,7 @@ wrappers to contort bzr into a workflow I want.
 bzr is also portable to the systems I use: linux,darwin, and possibly
 windows down the road.
 
-My Workflow:
+    ----> Master Repo Layout <-----
 
 The Master repository contains a trunk, the development version ideally
 kept in a working state, and releases.
@@ -36,85 +40,177 @@ project/0.1.3
 When a release is ready it is branched, and the merge info is recorded
 so subversion doesn't get jammed up with lacking merge info.
 
+    ---> Development Repo Layout <----
+
 In a development repository the goal is to produce atomic changesets.
 There for it would look like this:
 
-Master Trunk   -> /mattie
-               -> /feature.x
-               -> /feature.y
-               -> /bugfix.a
-               -> /bugfix.b
+   -> trunk       (upstream)
+   -> /mattie     (user)
+   -> /feature.x  (feature)
+   -> /feature.y
+   -> /bugfix.a
+   -> /bugfix.b
 
+The branches *must* be made in the shared repository so they can be
+distributed and collaberated on when appropriate.
 
-This sort of layout allows more than one user to hack away,
-and to pool efforts in creating the atomic changesets.
+Committing back to the Master Repository involves
 
-Committing back to the main repository involves a hyrbid checkout
-and merging the individual branches.
+1. merge to the trunk
+2. push to the shared repository.
+3. In the shared repository update, and then commit into svn.
 
-At each proper release from the master the old bazaar can be
-dumped, with any leftovers going into some master repository
-branch like "attic".
-
-A shared repository is neccessary because a synchronizing checkout
-must be made, and testing needs to go on in a seperate directory
-mixing and matching the various atomic changesets.
+At each proper release from the master the old bazaar can be dumped,
+with any leftovers going into some master repository branch like
+"attic".
 
 It would also be desireable to be able to quickly make a backport
 checkout as well to merge fixes applicable to previous releases.
 
+---> Patch Flow <----
 
-Procedure:
+The direction or flow of patches can be loosely divided into
+trickle-up or trickle-down.
 
-1. create a bzr shared repository:
+In trickle up the commits are made to task-branches _first_, and the
+results are then merged back into the trunk. This is the classic "work
+on a branch" approach.
 
-bzr init-repo [foo]
+The trickle down approach involves working on a trunk, and then
+picking changes into task branches.
 
-giving [foo] as an arg seems to be the magic dust to get a shared repo
+The approach I use is trickle-down towards feature branches, followed
+by merging into the trunk.
 
-populate the shared repository with:
-cd [foo]
-bzr init --create-prefixes emacs/trunk
+The difference between fixes, and feature development is that the
+fixes will be applied, or backported to release branches, where as the
+features will be branched from the trunk, and then merged back to the
+trunk.
 
-bridge it to svn:
-svn co $TOOLKIT/system/emacs/trunk emacs/trunk
+SUBVERSION
 
-it is now bridged, or the state is shared between both bzr
-and subversion.
+SubVersion essentially forces trickle down as well. A branch can be
+merged back to the trunk _once_ (--reintegrate) while merging from
+trunk to branch is unrestricted with merge tracking.
 
-1. create a sandbox.
+In the subversion model the branches are dead-ends, and should receive
+only maintenance work from the trunk.
 
-create a sandbox with bzr init
+BZR
 
-inside the sandox do a bzr checkout ~/local/vc/bzr/emacs/trunk trunk
+Bzr forces trickle down in it's own manner. The cherry picking option
+is not tracked e.g: the history is lost and it becomes a plain
+commit.
+
+This is why you need to commit after cherry picking. The consequence
+of losing this tracking information is not entirely clear at this
+point however it is likely that it can be mitigated by using the
+weave algorithm for merging when it cherry-picking back-fires.
 
 
-1. create a user branch
+
+ ----> Development Guidelines <-----
+
+ 1. Make the feature branches early !! don't let it pile up.
+
+ 2. Each feature should have a uniquely named commit log that is
+    incrementally developed.
+
+    It is not a substitute for changelog entries elsewhere, rather it
+    concatenates and distills those initial changelog entries in
+    preperation for merging to trunk, and merging to the Master
+    Repository.
+
+ 3. Don't multi-commit onto a task branch with merge --force. It
+    is rebasing without the intelligent features of real rebase
+    support.
+
+    In fact rebase is a nightmare, and since a master repository
+    is used it is totally uneccessary.
+
+4.  Build the changelog incrementally.
+
+    There are two problems with writing changelogs after the fact.
+    Technically the current interface is a primitive: there aren't
+    any keybings for viewing the diff, and even when you review
+    a diff it is hit or miss if it actually shows you the functions
+    that were changed.
+
+    The more intractable hurdle, and largest negative of after the
+    fact commits is that good communication evolves in a series of
+    drafts, a revision and accumulation of thoughts rather than a
+    blaze of keystrokes submitted as complete.
+
+    ---> more than one iron in the fire <---
+
+    It often happens that the development of one change sparks
+    the parallel development of other changes, as the review
+    uncovers issues not seen previously.
+
+    In fact this is the driving motivation between task branches
+    beyond backporting.
+
+5. Plan in the changelog
+
+   The best way to plan a changeset is to start a changelog entry for
+   it. By laying out a series of steps the plan/changelog can be inserted
+   into the commit log, and then chopped down to the part of the plan
+   the commit applies to.
+
+ ====> Implementation <====
+
+---> Create the development repository as a shared repository. <----
+
+1. bzr init-repo [foo]
+
+--no-trees ????
+
+2. cd [foo]
+   bzr init --create-prefixes emacs/trunk  ;; worst case, easy case is one directory deep.
+
+   --1.9-rich-root ;; the latest file format.
+
+---> bridge it to svn & populate <---
+
+1. svn co $TOOLKIT/system/emacs/trunk emacs/trunk
+2. bzr add ....
+3. bzr commit -m "import"
+
+It is now bridged, or the state is shared between both bzr and
+subversion.
+
+---> create the developer's sandbox <----
+
+1. create a sandbox with bzr init
+2. inside the sandox do a bzr checkout/branch ~/local/vc/bzr/emacs/trunk trunk
+
+With bzr checkout and branch are slightly different. With a checkout commits
+are implicitly committed remotely as well as locally.
+
+With a branch the commits must then be pushed to the remote branch.
+
+bind/unbind are used to convert between the two.
+
+---> creating user and task branches <----
 
 now *in the shared repository* create the user branch.
 
-bzr branch ~/local/vc/bzr/emacs/{trunk,mattie}
+1. bzr branch ~/local/vc/bzr/emacs/{trunk,mattie}
 
-then check it out
+2. then check it out
+   bzr checkout ~/local/vc/bzr/emacs/mattie mattie
 
-bzr checkout ~/local/vc/bzr/emacs/mattie mattie
+----> upstream merging <----
 
-the trunk becomes the merge queue. To make it work this way unbind
-it.
+the trunk is now a merge-queue for pushing work upstream
 
-cd trunk && bzr unbind
+1. The trunk can also be unbound so that all commits
+   become local:
 
-now all the commits are local until it is rebound. This is much safer
-as far as the merge queue goes.
+   cd trunk && bzr unbind
 
-* user devel branch
-
-create the branch *in the shared repo*
-
-bzr branch REPO/{trunk,mattie}
-
-Then check it out
-bzr checkout REPO/mattie
+---> Merging task branches <----
 
 everything in the sandbox is rooted to the trunk, the changesets, and
 "mattie" as the development head.
