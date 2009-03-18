@@ -8,16 +8,15 @@
 (require 'vc-logedit-hook)
 (require 'rc-navigate)
 
-(defvar commit-file-name "commit-changelog.txt"
+(defcustom commit-file-name "commit-changelog.txt"
   "the filename of the commit changelog draft")
 
-(defun commit-file-for ( file )
-  "commit-file-for FILE
+(defun commit-draft-dir ( file )
+  "commit-draft-dir FILE
 
-  return the commit-changelog path for FILE, which is the directory
-  of FILE, plus the value of commit-file-name.
+  return the commit-changelog directory for FILE.
   "
-  (concat (file-name-directory file) commit-file-name))
+  (vc-bzr-root file))
 
 (defun edit-commit-draft ()
   "edit-commit-draft
@@ -25,6 +24,10 @@
    Prompt for a branch. Hitting enter selects the branch that the
    current buffer is visiting. After a branch is selected the
    commit-file for that branch is opened.
+
+   This scopes the commit-draft to the branch, however by supplying
+   a sub-directory as the \"branch\" the user can make commit drafts
+   in sub-directories.
   "
   (interactive)
   (let*
@@ -59,14 +62,10 @@
 
     (delete-file path)))
 
-(defun logedit-ping ()
-  (message "vc-log-fileset is %s" (princ vc-log-fileset)))
+;; (defun logedit-ping ()
+;;  (message "vc-log-fileset is %s" (princ vc-log-fileset)))
 
-(defvar commit-files-done nil
-  "a list of the directories where commit-file has already searched
-   for a commit-changelog file to prevent duplication with filesets")
-
-(defun logedit-insert-commit-changelog-files ()
+(defun logedit-insert-changelog-draft ()
   (message "vc-log-fileset is %s" (princ vc-log-fileset))
 
   ;; clear the done list
@@ -76,25 +75,30 @@
 
   (mapc
     (lambda ( path )
-      (let
-        ((dir (file-name-directory path)))
+      (let*
+        ((draft-dir   (commit-draft-dir path))
+         (commit-file (concat draft-dir commit-file-name)))
 
-        (unless (member dir commit-files-done)
-          (let
-            ((commit-file (concat dir commit-file-name)))
+        ;; when the file is found insert the contents with a banner
+        ;; showing the directory in which it was found.
+        (when (and
+                (not (member draft-dir commit-file-changelogs-used))
+                (file-readable-p commit-file))
 
-            ;; when the file is found insert the contents with a banner
-            ;; showing the directory in which it was found.
-            (when (and (file-readable-p commit-file) (not (member commit-file-changelogs-used)))
-              (insert (format "Changelog for %s\n" dir))
-              (insert-file commit-file)
-              (push commit-file-changelogs-used commit-file))
+          ;; insert the contents of the commit draft with a header
+          ;; showing which directory it came from.
+          (insert (format "Changelog for %s\n" draft-dir))
+          (insert-file commit-file)
 
-            ;; add this directory to the list so we don't process it again.
-            (push commit-files-done dir))) ))
+          ;; add this directory to the list so we don't process it again.
+          (push draft-dir commit-file-changelogs-used)) ))
+
     vc-log-fileset))
 
-(add-hook 'vc-new-logedit-hook 'logedit-insert-commit-changelog-files)
+(defun activate-commit-file ()
+  "activate commit-file by hooking vc-new-logedit-hook"
+  (interactive)
+  (add-hook 'vc-new-logedit-hook 'logedit-insert-changelog-draft))
 
 (provide 'commit-file)
 
