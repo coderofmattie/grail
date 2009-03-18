@@ -16,15 +16,16 @@
 
    given path as a starting point find the top of the repository.
   "
-  (let
-    ((root-dir  nil)
-     (next-dir (vc-bzr-root (file-name-directory path))))
+  (when path
+    (let
+      ((root-dir  nil)
+        (next-dir (vc-bzr-root (file-name-directory path))))
 
-    (while next-dir
-      (setq root-dir next-dir)
-      (setq next-dir (vc-bzr-root (file-name-directory (delete-trailing-path-separators root-dir)))) )
+      (while next-dir
+        (setq root-dir next-dir)
+        (setq next-dir (vc-bzr-root (file-name-directory (delete-trailing-path-separators root-dir)))) )
 
-    root-dir))
+      root-dir)))
 
 (defun make-branch-path-repository-relative ( branch-or-file )
   (let
