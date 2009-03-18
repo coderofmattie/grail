@@ -1,0 +1,57 @@
+;;; Grail Changelog
+
+0.1.1 Stable Release
+-------------------
+
+modified: grail.el
+
+update:
+
+* bump the version to 0.1.1, an update to the stable branch.
+* add support for a windows.el platform file.
+* save the load-path in grail-platform-load-path after the platform
+  files are loaded to record any changes by the user in the platform
+  files.
+
+[grail-extend-load-path]
+
+prefer the new variable grail-platform-load-path when re-generating
+load-path
+
+0.1.0 Stable Release
+--------------------
+
+[file scope] grail.el
+
+bump the version to 0.1.0 creating a stable branch so that I can backport fixes
+from the development trunk.
+
+fixes
+
+Fix important bugs in grail generally and ELPA.
+
+grail.el
+
+[file scope]
+  * run grail-elisp-root through grail-sanitize-path eliminating the load time-bombs.
+
+grail-fn.el
+
+Currently the setup function for ELPA assumes that (grail-install-elpa)
+has initialized ELPA.
+
+This makes the ELPA integration very fragile. There is more than one
+way to install package.el, and in layering (load-elpa-when-installed)
+would assume only that package.el has been downloaded to the
+right place.
+
+[load-elpa-when-installed]
+   * move the creation of the ELPA installation directory to load-elpa-when-installed.
+   * return t when ELPA is activated, nil otherwise.
+   * trap errors from ELPA which can abort, especially from the annoying double separator
+     issue.
+   * sanitize the path for ELPA or it aborts from the load sensitivity to double
+     separators.
+
+[grail-install-elpa]
+   * move the creation of the ELPA installation directory to load-elpa-when-installed.

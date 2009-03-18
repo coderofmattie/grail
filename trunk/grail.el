@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.1.0"
+(defconst grail-release-version "0.1.1"
   "the release number of grail.el")
 
 (defconst grail-project-url "http://www.emacswiki.org/emacs/Grail"
@@ -239,7 +239,9 @@
              (if (file-accessible-directory-p grail-local-emacs)
                (list grail-local-emacs))
 
-             grail-boot-load-path
+             ;; prefer the load-path as it existed after loading
+             ;; the platform files over the Emacs boot load-path.
+             (or grail-platform-load-path grail-boot-load-path)
 
              (if (file-accessible-directory-p grail-local-elisp)
                (cons grail-local-elisp
@@ -321,6 +323,9 @@
     (defvar grail-boot-load-path load-path
       "The load-path as constructed by emacs before grail initialization")
 
+    (defvar grail-platform-load-path nil
+      "The load-path after the platform files have been loaded.")
+
     (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
       "The grail session state & persistent data directory which defaults to .emacs.d")
     (defvar grail-display-configured nil
@@ -342,12 +347,31 @@
       (when stage-2-errors
         (error "could not load %s , the second stage of grail. with %s errors. USER_ELISP does not point to a working GRAIL install" stage-2-path (format-signal-trap stage-2-errors))) )
 
-
     ;; grail-cfg.el is a file for user to change the tree structure that grail
     ;; traverses before load-path is formed.
-
     (load-user-elisp "grail-cfg.el")
 
+    ;;----------------------------------------------------------------------
+    ;; Host specific adaptation
+    ;;
+    ;; Each host system has a file that normalizes the platform
+    ;; and extends the library search space for extra libraries the system
+    ;; manages.
+    ;;
+    ;; these files and platform specific customization are loaded by
+    ;; platform here.
+    ;;----------------------------------------------------------------------
+    (load-user-elisp
+      (cond
+        ((string-equal "gnu/linux" system-type)  "linux.el")
+        ((string-equal "darwin"    system-type)  "darwin.el")
+        ((string-equal "windows"   system-type)  "windows.el")))
+
+    ;; save the state of load-path after the platform file if any has
+    ;; been loaded.
+    (setq grail-platform-load-path load-path)
+
+    ;; integrate the user's Elisp tree into the load-path for the first time.
     (grail-extend-load-path)
 
     ;;----------------------------------------------------------------------
@@ -357,21 +381,6 @@
     (defvar grail-local-groups
       (when (load-user-elisp "grail-groups.el") (concat grail-local-dir "groups/"))
       "The directory containing Emacs group modules.")
-
-    ;;----------------------------------------------------------------------
-    ;; Host specific adaptation
-    ;;
-    ;; each host system has a site file that normalizes the platform
-    ;; and extends the library search space for extra libraries it
-    ;; manages.
-    ;;
-    ;; these files and platform specific customization are loaded by
-    ;; platform here.
-    ;;----------------------------------------------------------------------
-    (load-user-elisp
-      (cond
-        ((string-equal "gnu/linux" system-type)  "linux.el")
-        ((string-equal "darwin"    system-type)  "darwin.el")))
 
     ;; activate ELPA
     (load-elpa-when-installed)
