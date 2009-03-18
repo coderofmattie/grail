@@ -6,8 +6,8 @@
 
 (defconst bzr-pick-version "0.1.0")
 
-(require 'cm-string)
-(require 'cm-util)
+(require 'cm-path)
+(require 'rc-nagivate)
 
 (def-sparse-map bzr-pick-overlay-map
   "bzr pick merge overlay map"
@@ -44,84 +44,8 @@
   "Hooks run in the merge buffer after it has been setup but before the interface is presented.")
 
 ;;----------------------------------------------------------------------
-;; utilities.
+;; commit ADT
 ;;----------------------------------------------------------------------
-
-(defun bzr-find-repository-top ( path )
-  (let
-    ((root-dir  nil)
-     (next-dir (vc-bzr-root (file-name-directory path))))
-
-    (while next-dir
-      (setq root-dir next-dir)
-      (setq next-dir (vc-bzr-root (file-name-directory (delete-trailing-path-separators root-dir)))) )
-
-    root-dir))
-
-;; (bzr-find-repository-top "/usr/home/mattie/system/emacs/mattie/")
-
-;;----------------------------------------------------------------------
-;; User input of branch ID's
-;;----------------------------------------------------------------------
-
-;; currently this is grossly simplistic assuming that branches are
-;; directories, but it limps across the line as proof of concept.
-
-(defun bzr-pick-brances-list ( path )
-  (let
-    ((root (bzr-find-repository-top path)))
-
-    (when root
-      (filter-ls root t
-        (type ?d)
-        (!name "^\\."))) ))
-
-;; (bzr-pick-brances-list "/usr/home/mattie/system/emacs/mattie/")
-
-(defun bzr-branch-p ( path )
-  "bzr-branch-p PATH
-
-   Return the path if it is a bzr branch, nil otherwise.
-  "
-  (when (and (file-accessible-directory-p path)
-             (vc-bzr-root path))
-    path))
-
-(defun bzr-prompt-for-branch-dir ( prompt path &optional default)
-  "bzr-prompt-for-branch-dir PROMPT PATH &optional DEFAULT
-
-   PROMPT for a branch path in PATH. The path
-   is returned.
-  "
-    (read-file-name prompt
-      path    ;; complete in directory
-      path    ;; default if user presses enter
-      nil     ;; don't force it to match
-
-      default ;; initial input
-      'bzr-branch-p) )
-
-(defun bzr-prompt-for-branch ( prompt &optional path )
-  "bzr-prompt-for-branch PROMPT &optional PATH
-
-   Search for the repository root from PATH.  Prompt the user for
-   a branch path starting from the root of the repository.
-  "
-  (let
-    ;; by default the prompting will start with either the given path,
-    ;; the buffer path, or HOME.
-    ((start-path (or path buffer-file-name (getenv "HOME"))))
-
-    ;; If a branch can be found then use that as a starting point.
-    ;; root, and start from there by default.
-    (let
-      ((branch-root (vc-bzr-root start-path)))
-      (when branch-root
-        (setq start-path branch-root)) )
-
-    ;; prompt the user with reasonably sane defaults.
-    (expand-file-name
-      (bzr-prompt-for-branch-dir prompt start-path)) ))
 
 (defun bzr-pick-commit-struct ( rev-id start end )
   (cons (cons rev-id nil) (cons start end)))

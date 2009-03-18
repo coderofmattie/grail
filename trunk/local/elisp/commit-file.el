@@ -6,6 +6,7 @@
 ;;;----------------------------------------------------------------------
 
 (require 'vc-logedit-hook)
+(require 'rc-navigate)
 
 (defvar commit-file-name "commit-changelog.txt"
   "the filename of the commit changelog draft")
@@ -21,28 +22,42 @@
 (defun edit-commit-draft ()
   "edit-commit-draft
 
-   in the directory of the currently selected buffer edit the draft of the
-   commit changelog.
+   Prompt for a branch. Hitting enter selects the branch that the
+   current buffer is visiting. After a branch is selected the
+   commit-file for that branch is opened.
   "
   (interactive)
-  (find-file (commit-file-for buffer-file-name)) )
+  (let*
+    ((branch  (bzr-prompt-for-branch "draft commit for branch"))
+     (path    (concat branch commit-file-name)))
+
+    (let
+      ((draft-buffer (find-buffer-visiting path)))
+
+      (if (bufferp draft-buffer)
+        (switch-to-buffer draft-buffer)
+        (progn
+          (find-file path)
+          (rename-buffer (concat (make-branch-path-repository-relative path)  ":changelog")) )) )))
 
 (defun delete-commit-draft ()
   "delete-commit-changelog
 
-   in the directory of the currently selected buffer edit the changelog entry
-   in progress file:commit
+   delete the commit changelog draft for the branch entered by
+   the user. If there is a buffer it is killed and the file is
+   deleted from disk.
   "
   (interactive)
   (let*
-    ((commit-file (commit-file-for (buffer-file-name)))
-     (buffer (find-buffer-visiting commit-file)))
+    ((branch  (bzr-prompt-for-branch "draft commit for branch"))
+     (path    (concat branch commit-file-name))
+     (buffer (find-buffer-visiting path)))
 
     (when buffer
       (with-current-buffer buffer (set-buffer-modified-p nil))
       (kill-buffer buffer))
 
-    (delete-file commit-file)))
+    (delete-file path)))
 
 (defun logedit-ping ()
   (message "vc-log-fileset is %s" (princ vc-log-fileset)))
@@ -70,7 +85,7 @@
 
             ;; when the file is found insert the contents with a banner
             ;; showing the directory in which it was found.
-            (when (file-readable-p commit-file)
+            (when (and (file-readable-p commit-file) (not (member commit-file-changelogs-used)))
               (insert (format "Changelog for %s\n" dir))
               (insert-file commit-file)
               (push commit-file-changelogs-used commit-file))
