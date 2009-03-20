@@ -16,5 +16,5 @@
     ;; ensure that none of my custom keybindings are affected.
     (dwim-tab-localize 'pcomplete-expand-and-complete) ))
 
-(eval-after-load "cperl-mode"
-  (add-hook 'cperl-mode-hook 'dwim-tab-localize))
+(eval-after-load 'cperl-mode
+  '(add-hook 'cperl-mode-hook 'dwim-tab-localize))

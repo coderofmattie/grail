@@ -71,7 +71,9 @@
 
 (setq
   vc-handled-backends `(Bzr SVN Git Hg Arch SCCS Mtn CVS RCS)
-  vc-delete-logbuf-window t)
+  vc-delete-logbuf-window t
+  ;; just to be sure, this default may change in the future.
+  vc-make-backup-files nil)
 
 (require 'vc-bzr)
 
@@ -128,20 +130,7 @@
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (local-set-key (kbd "M-f") 'forward-sexp)
-  (local-set-key (kbd "M-b") 'backward-sexp)
-
-  ;; ;; use Ctrl-l as the prefix for e commands. It's short
-  ;; ;; and the usual unix meaning of centering a screen is
-  ;; ;; a small loss.
-  ;; (local-unset-key (kbd "C-l"))
-
-
-;;  (when (xml-code-templates-p)
-;;    (local-set-key (kbd "C-l n") 'else-next-placeholder)
-;:    (local-set-key (kbd "C-l k") 'else-kill-placeholder)
-
-;;    (local-set-key (kbd "C-l l") 'xml-code-kill-template))
-  )
+  (local-set-key (kbd "M-b") 'backward-sexp))
 
 ;;----------------------------------------------------------------------
 ;; elisp
@@ -151,15 +140,13 @@
 ;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
-(defalias 'perl-mode 'cperl-mode)
-
 (setq
   auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
                             ("\\.pm$"      . cperl-mode)
                              ) auto-mode-alist ))
 
-(eval-after-load "cperl-mode"
-  (progn
+(eval-after-load 'cperl-mode
+  '(progn
     (setq
       cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
       cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
@@ -170,19 +157,11 @@
       cperl-indent-level 2             ;; indentation adjustments
       cperl-continued-statement-offset 2)
 
-    ;; (grail-set-faces
-    ;;   (cperl-array-face (slant 'italic))
-    ;;   (cperl-hash-face  (slant 'italic))
-    ;;   (cperl-nonoverridable-face (foreground "DeepSkyBlue4"))
-    ;;   )
-
     (add-hook 'cperl-mode-hook
       (lambda ()
         (xml-code-for-language "perl5")
         (configure-for-programming)
-        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)))
-
-    ))
+        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))) ))
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
@@ -195,34 +174,34 @@
                                  ) auto-mode-alist ))
 
 ;; what is the cc-mode hook order, are the language or the common hooks run first ?
-(eval-after-load "cc-mode"
-  (progn
-    (add-hook 'c-mode-common-hook
-      (lambda ()
-        (c-set-style "linux")          ;; base off of linux style
+(eval-after-load 'cc-mode
+  '(progn
+     (add-hook 'c-mode-common-hook
+       (lambda ()
+         (c-set-style "linux")          ;; base off of linux style
 
-        (setq c-basic-offset 2)               ;; tabs are 2 spaces
-        (c-set-offset 'substatement-open '0)  ;; hanging braces
+         (setq c-basic-offset 2)               ;; tabs are 2 spaces
+         (c-set-offset 'substatement-open '0)  ;; hanging braces
 
-        ;; auto-hungry newline and whitespace delete
-        (c-toggle-auto-hungry-state 1) ))
+         ;; auto-hungry newline and whitespace delete
+         (c-toggle-auto-hungry-state 1) ))
 
-    (add-hook 'c-mode-hook
-      (lambda ()
-        (xml-code-for-language "c")
-        (configure-for-programming) ))
+     (add-hook 'c-mode-hook
+       (lambda ()
+         (xml-code-for-language "c")
+         (configure-for-programming) ))
 
 
-    (add-hook 'c++-mode-hook
-      (lambda ()
-        (xml-code-for-language "c++")
-        (configure-for-programming) )) ))
+     (add-hook 'c++-mode-hook
+       (lambda ()
+         (xml-code-for-language "c++")
+         (configure-for-programming) )) ))
 
 ;;----------------------------------------------------------------------
 ;; Java
 ;;----------------------------------------------------------------------
-(eval-after-load "java-mode"
-  (require 'flymake) )
+(eval-after-load 'java-mode
+  '(require 'flymake))
 
 ;;----------------------------------------------------------------------
 ;; Lua
@@ -230,8 +209,8 @@
 
 (setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist ))
 
-(eval-after-load "lua-mode"
-  (add-hook 'lua-mode-hook
-    (lambda ()
-      (configure-for-programming)
-      )) )
+(eval-after-load 'lua-mode
+  '(add-hook 'lua-mode-hook
+     (lambda ()
+       (configure-for-programming)
+       )) )

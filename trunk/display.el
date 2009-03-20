@@ -59,3 +59,12 @@
   (ediff-fine-diff-face-B  (foreground "sea green"))
   (ediff-fine-diff-face-C  (foreground "sea green"))
   )
+
+(eval-after-load 'cperl-mode
+  '(progn
+     (grail-set-faces
+       (cperl-array-face (foreground "aquamarine3") (slant 'italic))
+       (cperl-hash-face  (foreground "aquamarine3") (slant 'italic))
+       (cperl-nonoverridable-face (foreground "DeepSkyBlue4")) )))
+
+

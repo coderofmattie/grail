@@ -17,17 +17,6 @@
 ;;                    General Modifications
 ;;----------------------------------------------------------------------
 
-;; increase the max eval depth to 4k. Hope this doesn't croak Emacs.
-(setq max-lisp-eval-depth 4096)
-
-;; make sure that the pretty printer doesn't truncate which frustrates my
-;; development.
-
-(setq
- print-length nil
- eval-expression-print-level nil
- print-level nil)
-
 ;; disable customization, automatic persistence of configuration changes.
 ;; I personally don't like customize as I prefer emacs to start with
 ;; a state I have personally defined and reviewed.
@@ -66,8 +55,6 @@
 (setq auto-mode-alist (append '(("\\.txt$"     . text-mode)
                                  ) auto-mode-alist ))
 
-(fset 'yes-or-no-p 'y-or-n-p)                ;; y/n instead of yes/no
-
 ;;----------------------------------------------------------------------
 ;; Emacs Server
 ;;----------------------------------------------------------------------
@@ -85,7 +72,6 @@
 
   (condition-case nil                    ;; start the server, trapping errors.
     (server-start)
-
     (error
       (message "cannot start Emacs Server")
       nil)) )
@@ -179,10 +165,10 @@
 ;;----------------------------------------------------------------------
 ;;                    Tramp remote access
 ;;----------------------------------------------------------------------
-(require 'tramp)
-
-(setq tramp-default-method "scp2")
-(setq tramp-terminal-type "eterm-color")
+(eval-after-load 'tramp
+  '(progn
+     (setq tramp-default-method "scp2")
+     (setq tramp-terminal-type "eterm-color")))
 
 ;;----------------------------------------------------------------------
 ;;                    ERC
@@ -190,12 +176,16 @@
 
 ;; emacs IRC client is handy when on #emacs ...
 
-(eval-after-load "erc"
-  (progn
-    (setq
-      erc-default-server "irc.freenode.net"
-      erc-default-port "6667"
-      erc-nick "codermattie") ))
+(eval-after-load 'erc
+  '(progn
+     (setq
+       erc-default-server "irc.freenode.net"
+       erc-default-port "6667"
+       erc-nick "codermattie")
+
+    ;; turn on truncate mode before erc eats all available RAM.
+     (require 'erc-truncate)
+     (erc-truncate-mode 1)))
 
 ;;----------------------------------------------------------------------
 ;;                           Diff

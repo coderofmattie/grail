@@ -99,10 +99,11 @@
 ;;----------------------------------------------------------------------
 
 ;; IRC which I use almost exclusively for #emacs
-(eval-after-load "erc"
-  (add-hook 'erc-mode-hook 'swap-paren-keys))
+(eval-after-load 'erc
+  '(progn
+     (add-hook 'erc-mode-hook 'swap-paren-keys)))
 
 ;; for the quack mz-scheme mode.
-(eval-after-load "quack"
-  (add-hook 'quack-mode-hook 'swap-paren-keys))
+(eval-after-load 'quack
+  '(add-hook 'quack-mode-hook 'swap-paren-keys))
 
