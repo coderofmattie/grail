@@ -31,5 +31,6 @@
                                               ;; the ring. makes it easier to rewind back through a
                                               ;; series of marks.
 
-(fset 'yes-or-no-p 'y-or-n-p)                ;; y/n instead of yes/no
+(fset 'yes-or-no-p 'y-or-n-p)                 ;; y/n instead of yes/no
 
+(put 'erase-buffer 'disabled nil)             ;; enable erase-buffer, no hand-holding.

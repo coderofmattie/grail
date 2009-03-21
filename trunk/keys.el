@@ -19,6 +19,14 @@
 
 (global-set-key (kbd "C-x C-c") 'delete-frame)
 
+;; this is close to open read only C-x-r, but instead this reloads the
+;; buffer from disk, avoiding the nasty "buffer changed" dialog.
+
+;; it still prompts for confirmation though. I might disable the
+;; confirm if I discover that the undo information for the buffer is
+;; preserved.
+(global-set-key (kbd "C-x C-r") 'revert-buffer)
+
 ;; this used to be minimize window, now it exits recursive editing
 ;; which is handy and safer.
 (global-set-key (kbd "C-z")     'top-level)
@@ -28,20 +36,13 @@
 (global-set-key (kbd "C-s")     'isearch-forward-regexp)
 (global-set-key (kbd "C-r")     'isearch-backward-regexp)
 
-(global-set-key (kbd "M-C-s")   'isearch-forward)
-(global-set-key (kbd "M-C-r")   'isearch-backward)
+(global-set-key (kbd "M-r")     'query-replace-regexp)
 
 ;; escape = (execute-extended-command)
 
 ;; standard emacs prompt for a interactive command
 
 (global-set-key (kbd "<escape>") 'execute-extended-command)
-
-;; C-xe   = (eval-expression)
-
-;; evaluate the elisp expression given by the user
-
-(global-set-key (kbd "C-x e")    'eval-expression)
 
 ;; M-TAB  = switch to the last buffer in the current window. cycles when
 ;;          repeated.

@@ -57,6 +57,16 @@
   (mark-whole-buffer)
   (copy-region-to-clipboard))
 
+(defun show-call ( fn )
+  "show-call
+
+   Call a function printing the return value of the function as a message.
+   This is really handy for seeing what a function does in the current
+   buffer.
+  "
+  (interactive "afunction? ")
+  (message "returned: %s" (princ (funcall fn))) )
+
 ;;----------------------------------------------------------------------
 ;; repl
 ;;

@@ -20,7 +20,7 @@
 
   (default
     (background "grey5")
-    (foreground "grey70")
+    (foreground "grey65")
     (inverse-video nil)
     (box nil)
     (strike-through nil)
