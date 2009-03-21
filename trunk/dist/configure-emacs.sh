@@ -30,6 +30,9 @@ conf="$conf --with-png --without-gif --without-jpeg --without-tiff"
 
 if test -d /opt/local/include ; then
   conf="$conf --x-includes=\"/opt/local/include\""
+
+  # not a good idea really. don't assume pkg-config is broken.
+#  export PKG_CONFIG_PATH="/opt/local/lib/pkgconfig/"
 fi
 
 conf="$conf --prefix=\"$HOME/system/installed/\""
@@ -39,4 +42,4 @@ cd emacs
 # putting the macports include as the x includes path allows macports
 # x11 packages to supersede the system packages.
 
-eval exec env CFLAGS="$emacs_cflags" $conf
+eval exec env CFLAGS="$emacs_cflags"  $conf
