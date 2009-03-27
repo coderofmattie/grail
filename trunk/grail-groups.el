@@ -35,7 +35,7 @@
     (append request-list grail-requested-groups)))
 
 ;;----------------------------------------------------------------------
-;; installation routines.
+;; installation library
 ;;----------------------------------------------------------------------
 
 (defvar grail-save-downloads nil
@@ -157,6 +157,33 @@
                 ;; if the process exits non-zero call (proc-fail-fn)
                 (funcall fail-fn)) ))) ))))
 
+;;----------------------------------------------------------------------
+;; installation functions
+;;----------------------------------------------------------------------
+
+;; These are low level components of an installer with idiosyncratic
+;; function signatures.
+
+(defun grail-file-url ( name url &optional path )
+  "grail-file-url NAME URL &optional PATH
+
+   install from URL into PATH with name NAME.  nil is returned
+   when successful, otherwise an error is thrown.
+  "
+  (condition-case error-trap
+    (let
+      ((install-path (concat (grail-dist-install-directory path) name)))
+
+      (with-temp-buffer
+        (url-insert-file-contents url)
+        (write-file install-path))
+
+      (message "grail-file-installer: installed of %s to %s completed" name install-path))
+    nil
+    (error
+      (format "grail-file-installer for %s failed with: %s"
+        name (format-signal-trap error-trap))) ))
+
 (defun grail-wget-url-async ( url path output-buffer )
   "grail-wget-url-async URL PATH OUTPUT-BUFFER
 
@@ -174,11 +201,35 @@
         (message "grail-wget-url failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
+(defun grail-cvs-async ( url module output-buffer )
+  "grail-wget-url-async URL PATH OUTPUT-BUFFER
+
+   retrieve the URL to PATH, with OUTPUT-BUFFER as the output
+   buffer. The process object created is returned, or nil if a
+   process could not be created.
+  "
+  (condition-case trapped-error
+    (let
+      ((default-directory (grail-garuntee-dir-path grail-dist-cvs)))
+
+      (start-process-shell-command "grail-cvs" output-buffer
+        "cvs"
+        "-d"
+        (quote-string-for-shell url)
+        "co"
+        (quote-string-for-shell module)))
+    (error
+      (progn
+        (message "grail-cvs-async failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
 (defun grail-untar-async ( path target-dir compression output-buffer )
   "grail-untar-async PATH DIR COMPRESSION OUTPUT-BUFFER
 
    untar PATH in DIR with output going to OUTPUT-BUFFER.
    return the process object or nil if there was an error.
+
+   Only files with the \".el\" extension will be extracted.
   "
   (condition-case trapped-error
     (start-process-shell-command "grail-untar" output-buffer
@@ -191,16 +242,65 @@
           (signal error (format "grail: error! unsupported compression %s" compression)))
         "f")
       (quote-string-for-shell path)
-      "-C" (quote-string-for-shell target-dir))
+      "-C" (quote-string-for-shell target-dir)
+      "--wildcards" (quote-string-for-shell "*.el"))
     (error
       (progn
-        (message "grail-wget-url failed %s" (format-signal-trap trapped-error))
+        (message "grail-untar-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defun grail-archive-installer ( name url compression )
-  "grail-archive-installer NAME URL COMPRESSION
+;;----------------------------------------------------------------------
+;; installation front-ends.
+;;----------------------------------------------------------------------
 
-   Download a tarball and install it.
+(defun grail-elpa-install ( package )
+  "grail-elpa-installer PACKAGE
+
+   install PACKAGE using ELPA.
+  "
+  (condition-case error-trap
+    (let
+      ((package-symbol (eval `',(read package))))
+
+      (package-install package-symbol))
+    (error
+      (format "grail-elpa-installer for %s failed with: %s"
+        package (format-signal-trap error-trap))) ))
+
+(defun grail-untar-local-archive ( path compression )
+  "grail-untar-local-archive PATH COMPRESSION
+
+   extract the local archive PATH in directory name with COMPRESSION.
+  "
+  (lexical-let
+    ((archive-path   path)
+     (grail-buffer (pop-to-buffer (generate-new-buffer "*grail-install*") nil t)))
+
+    (grail-process-async-chain
+      ;; start the untar
+      (lambda ()
+        (grail-untar-async archive-path grail-dist-elisp compression grail-buffer))
+
+      ;; if it doesn't start
+      (lambda ()
+        (message "archive program did not start for %s!" archive-path))
+
+      ;; FIXME: how do we clean up the target directory ?
+      (lambda ()
+        (message "extracting %s failed!" archive-path))
+
+      ;; what to do when it finishes.
+      (lambda ()
+        (message "installation completed. You can now run the initialization function"))
+
+      ;; no chaining
+      nil)))
+
+(defun grail-untar-remote-archive ( name url compression )
+  "grail-untar-remote-archive NAME URL COMPRESSION
+
+   Download a tarball from a remote url and install it. It is currently
+   hard-coded for tar, but that could be changed fairly easily.
   "
   (save-excursion
     (lexical-let*
@@ -220,7 +320,7 @@
         (insert (format "Starting the download of %s\n" url))
 
         ;; create a temporary directory to download into
-        (unless (setq dl-dir-and-file (grail-download-dir-and-file-path (concat name "." compression)))
+        (unless (setq dl-dir-and-file (grail-download-dir-and-file-path (concat name ".tar." compression)))
           (throw 'abort "could not create a temporary directory for the download"))
 
         (lexical-let
@@ -286,118 +386,163 @@
         nil))
     )) ;; save excursion and the defun.
 
-(defun grail-file-installer ( name url &optional path )
-  "grail-file-installer NAME URL &optional PATH
+(defun grail-cvs-installer ( module url )
+  (let
+    ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-cvs*") nil t)))
+    (grail-cvs-async url module grail-buffer) ))
 
-   install from URL into PATH with name NAME.  nil is returned
-   when successful, otherwise an error is thrown.
-  "
-  (condition-case error-trap
-    (let
-      ((install-path (concat (grail-dist-install-directory path) name)))
+;;----------------------------------------------------------------------
+;; grail-define-installer
+;;----------------------------------------------------------------------
 
-      (with-temp-buffer
-        (url-insert-file-contents url)
-        (write-file install-path))
+;; The arg helpers adapt the installer definition process to specific
+;; installers.
 
-      (message "grail-file-installer: installed of %s to %s completed" name install-path))
-    nil
-    (error
-      (format "grail-file-installer for %s failed with: %s"
-        name (format-signal-trap error-trap))) ))
+(defun grail-target ( url-pair )
+  (car url-pair))
+
+(defun grail-url ( url-pair )
+  (cdr url-pair))
+
+(defun grail-make-pair ( target url )
+  (cons target url))
+
+;; From a uniform single URL argument parameter and the dynamic scoped
+;; bindings of grail-define-installer they generate the installer
+;; function calls with the parameters required by the installer
+;; function signatures which vary based upon their specific needs.
+
+(defun grail-file-args ( install-pair )
+  (cons 'grail-file-url
+    (if install-many
+      ;; When there are multiple install pairs pass the package name
+      ;; as a sub-directory to install the files in.
+
+      ;; When there is a single install pair the target part needs to
+      ;; have the .el extension added.
+      `(,(grail-target install-pair) ,(grail-url install-pair) ,name)
+      `(,(concat (grail-target install-pair) ".el") ,(grail-url install-pair)))))
+
+(defun grail-tar-args ( install-pair )
+  ;; When installing a local archive only the path and the compression
+  ;; need be known, as the target directory and the like cannot be
+  ;; ascertained without inspecting the archive.
+
+  ;; for a remote archive pass the name, the url, and the
+  ;; compression. The name is used for naming the download. This is
+  ;; especially useful when the downloads are saved.
+  (if (string-match "archived:\\(.*\\)" (grail-url install-pair))
+    `(grail-untar-local-archive ,(concat grail-dist-archive (match-string 1 (grail-url install-pair))) ,compression)
+    `(grail-untar-remote-archive ,(grail-target install-pair) ,(grail-url install-pair) ,compression)))
+
+(defun grail-cvs-args ( install-pair )
+  `(grail-cvs-installer ,(grail-target install-pair) ,(grail-url install-pair)))
 
 (defun grail-decompose-installer-type ( type-spec )
-  (if (string-equal "file" type-spec)
-    type-spec
-    (let
-      ((split-index (string-match ":" type-spec)))
-      (when split-index
-        (cons (substring type-spec 0 split-index) (substring type-spec (match-end 0)))) )))
+  "grail-decompose-installer-type SPEC
 
-(defun grail-define-installer ( name type &rest urls )
-  "grail-define-installer NAME TYPE &rest URLS
-
+   Spec is either a single value such as file|cvs, or a pair such
+   as tar:bz2. When a pair is detected return it as a cons cell,
+   or simply return the spec as given.
   "
   (let
-    ((install-spec (if (and (stringp name) (> (length name) 0))
-                     (list name)
-                     (signal 'error "installer was given something other than a string or a zero length string") )))
+    ((split-index (string-match ":" type-spec)))
 
-    (let
-      ((install-type (grail-decompose-installer-type type)))
+    (if split-index
+      (cons (substring type-spec 0 split-index) (substring type-spec (match-end 0)))
+      type-spec)))
 
-      (unless install-type
-        (signal 'error (format "grail-define-installer: installer type %s not recognized" type)))
+(defun grail-define-installer ( name type &rest url-list )
+  "grail-define-installer NAME TYPE &rest URLS
 
-      (setq install-spec (cons type install-spec)) )
+   define a installer for a package NAME.
 
-    (unless urls
+   The type of the installer indicates the format of the URL.
+
+   TYPE is the format of the URL for handling things like
+   compression,archives, and RCS systems.
+
+   recognized TYPE's : file, tar:bz2, tar:gz, cvs
+
+   download a plain elisp file: (grail-define-installer \"bob\" \"file\" \"URL\")
+   download an tar.bz2 archive: (grail-define-installer \"bob\" \"tar:bz2\" \"URL\")
+   cvs checkout:              : (grail-define-installer \"bob\" \"cvs\" \"peserver\")
+
+   Most of the time a single URL suffices. Many packages are a
+   single elisp file, or a single tarball.
+
+   Other packages such as icicles are several elisp files, or
+   possibly several archives.
+
+   In this case a list of cons pairs can be given as the
+   URL. When this happens NAME becomes a sub-directory they are
+   installed to, and the files a list of (name . url) pairs.
+
+   (grail-define-installer PACKAGE \"file\"
+    '(\"foo.el\" . \"URL\")
+    '(\"bar.el\" . \"URL\")
+
+    this would install as:
+    PACKAGE/foo.el
+    PACKAGE/bar.el
+  "
+  (let
+    ((install-many  (> (length url-list) 1))
+     (install-type  (grail-decompose-installer-type type))
+     (compression   nil))
+
+    (when (consp install-type)
+      (setq compression  (cdr install-type))
+      (setq install-type (car install-type)))
+
+    ;; do a bit more input checking than usual as the definitions are user inputs.
+
+    (unless (and (stringp name) (> (length name) 0))
+      (signal 'error
+        (format "installer expected package name string but got %s instead" (princ name))))
+
+    (unless url-list
       (signal 'error (format "grail-define-installer: installer definition for %s must be given urls" name)))
 
-    (if (> (length urls) 1)
-      (mapc
-        (lambda ( url-pair )
-          (unless (consp url-pair)
-            (signal 'error (format "grail-define-installer: installer definition for %s requires (name . url) pairs\
- for installing more than one package, not: %s"  name (princ url-pair))))
+    (let
+      ((installer-calls
+        (mapcar
+           (lambda ( url )
+             (let
+               ;; simpler definitions don't require a target,url pair.
+               ;; make one up to prevent the test for and handling of
+               ;; this case from propagating down the fan-out from
+               ;; grail-define-installer.
+               ((install-pair (if (consp url) url (cons name url))))
 
-            (setq install-spec (cons url-pair install-spec)))
-        urls)
-      (setq install-spec (cons (cons name (car urls)) install-spec)) )
+               (cond
+                 ((string-equal "file"  install-type) (grail-file-args install-pair))
+                 ((string-equal "cvs"   install-type) (grail-cvs-args  install-pair))
+                 ((string-match "tar"   install-type) (grail-tar-args  install-pair))
 
-    (reverse install-spec)))
+                 (t (signal
+                      'error
+                      (format "grail-define-installer: I don't have an installer for %s" install-type)))) ))
+          url-list)))
+
+      ;; if there are several call-outs sequence them with and so that
+      ;; a failure terminates the install process. for a single
+      ;; call-out extract the call from the map list and return it.
+      (if install-many
+        (cons 'and installer-calls)
+        (car installer-calls))) ))
 
 (defun grail-run-installer ( installer )
   "grail-run-installer installer
 
    run an installer created by grail-define-installer.
   "
-  (let*
-    ((name             (car  installer))
-
-     (install-type-arg (cadr installer))
-     ;; anything not file is thrown at the archive installer to decode.
-     (install-method   (or (when (and (stringp install-type-arg) (equal "file" install-type-arg)) 'grail-file-installer)
-                           'grail-archive-installer))
-
-     (url-list       (cddr installer))
-     (install-many   (> (length url-list) 1))
-
-     (call-the-installer nil))
-
-    (unless install-method
-      (signal 'error (format "grail-run-installer: I don't have an installer for %s" (princ install-type-arg))))
-
-    ;; generate a lambda instead of riddling a static sexp with if's
-    (setq call-the-installer (eval
-      ;; a function that sets up the arguments for the type specific installer
-      `(lambda ( url-pair )
-         ,(cond
-            ;; -> file installer call.
-            ;;
-            ;; When there are more than one url assume that the url list is a list of cons cells,
-            ;; and supply the name as directory argument.
-            ;; For a single file to install use the name as the file to write to, and do not supply
-            ;; a directory argument.
-            ((equal 'grail-file-installer install-method)
-              `(,install-method
-                 ,(if install-many
-                    `(car url-pair)
-                    `(concat (car url-pair) ".el"))
-                 (cdr url-pair)
-                 ,(when install-many name)) )
-
-            ;; -> archive installer call
-            ;;
-            ;; for a single archive to download use name to name the downloaded tarball. for many
-            ;; assume cons pairs as above with the file installer.
-            ((equal 'grail-archive-installer install-method)
-              `(,install-method
-                 ,(if install-many `(car url-pair) 'name)
-                 (cdr url-pair)
-                 ,install-type-arg)) ))))
-
-    (mapc call-the-installer url-list) ))
+  (condition-case trap
+    (eval installer)
+    (error
+      (grail-dup-error-to-scratch (format "installer internal error. please report \"%s\" to %s"
+                                    (format-signal-trap trap)
+                                    grail-maintainer-email)) )))
 
 ;;----------------------------------------------------------------------
 ;; grail repair routines.

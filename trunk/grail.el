@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.1.2"
+(defconst grail-release-version "0.2.0"
   "the release number of grail.el")
 
 (defconst grail-maintainer-email "codermattie@gmail.com"
@@ -258,7 +258,13 @@
                (cons grail-dist-elisp
                  (filter-ls grail-dist-elisp t
                    (type ?d)
-                   (!name filter-dot-dirs))))))
+                   (!name filter-dot-dirs))))
+
+             (if (file-accessible-directory-p grail-dist-cvs)
+               (cons grail-dist-cvs
+                 (filter-ls grail-dist-cvs t
+                   (type ?d)
+                   (!name filter-dot-dirs)))) ))
 
          ;; if there is an error, trap and re-throw the error
          (error
@@ -313,7 +319,12 @@
        user.")
 
     (defvar grail-dist-dir
-      (concat grail-elisp-root "dist/"))
+      (concat grail-elisp-root "dist/")
+      "The directory for managing distributed packages")
+
+    (defvar grail-dist-archive
+      (concat grail-dist-dir "archive/")
+      "The directory for managing distributed packages")
 
     (defvar grail-dist-elisp
       (concat grail-dist-dir "elisp/")
@@ -322,6 +333,10 @@
     (defvar grail-dist-elpa
       (concat grail-dist-dir "elpa/")
       "ELPA managed third party elisp.")
+
+    (defvar grail-dist-cvs
+      (concat grail-dist-dir "cvs/")
+      "cvs managed third party elisp")
 
     (defvar grail-elpa-load-path nil
       "The load-path extensions made by ELPA package activation")
