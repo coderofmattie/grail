@@ -117,12 +117,10 @@
 ;; some mundane asthetics and keybindings plus whatever dwim input
 ;; expansion I can cook up.
 
-(defun configure-for-programming ()
+(defun configure-for-programming ( list-fn-signatures )
   "Enable my programming customizations for the buffer"
 
   (turn-on-font-lock)                     ;; enable syntax highlighting
-
-  (turn-on-filladapt-mode)             ;; smart comment line wrapping
 
   (mattie-tab-switching)                  ;; my personal tab key setup.
 
@@ -130,12 +128,172 @@
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (local-set-key (kbd "M-f") 'forward-sexp)
-  (local-set-key (kbd "M-b") 'backward-sexp))
+  (local-set-key (kbd "M-b") 'backward-sexp)
+
+  ;; it is *really* handy to see just the function signatures of all the
+  ;; functions defined in a buffer. It is so useful that every programming
+  ;; mode needs to define a function so that it is bound to a key.
+  (local-set-key (kbd "C-c c s") list-fn-signatures)
+
+  ;; for starters this will comment the region, but a toggle command needs
+  ;; to be defined.
+  (local-set-key (kbd "C-c ; r") 'comment-region))
+
+(defun configure-for-evaluation ( eval-define eval-expression eval-region eval-buffer )
+  "Enable my programming customizations for the buffer
+
+   eval-def     : this should evaluate definitions, variables,constants, and functions.
+   eval-expr    : evaluate the current or last expression
+   eval-region  : evaluate the region
+
+   C-c e     will be the prefix for evaluation functions:
+
+   C-c e d : evaluate a define
+   C-c e e : evaluate last or current sexp
+   C-c e r : evaluate the region.
+  "
+
+  ;; These bindings use C-c <char> which is reserved for the user so
+  ;; I should be OK here.
+
+  (local-set-key (kbd "C-c e d") eval-define)
+  (local-set-key (kbd "C-c e e") eval-expression)
+  (local-set-key (kbd "C-c e r") eval-region)
+  (local-set-key (kbd "C-c e b") eval-buffer))
+
+
+(defun configure-for-debugging ( eval-debug )
+  (local-set-key (kbd "C-c d d") eval-debug)
+  )
+
+(defun configure-for-macros ( expand-macro )
+  (local-set-key (kbd "C-c m e") expand-macro) )
+
+(defun swap-paren-keys ()
+  "bind the parentheses to the brace keys, while the shifted
+   paren keys become the braces."
+  (interactive)
+
+  ;; make the parentheses a bit easier to type, less shifting.
+  (local-set-key (kbd "[") (lambda () (interactive) (insert-char ?\( 1 nil)))
+  (local-set-key (kbd "]") (lambda () (interactive) (insert-char ?\) 1 nil)))
+
+  (local-set-key (kbd "(") (lambda () (interactive) (insert-char ?\[ 1 nil)))
+  (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil))) )
+
+;; IRC which I use almost exclusively for #emacs
+(eval-after-load 'erc
+  '(progn
+     (add-hook 'erc-mode-hook 'swap-paren-keys)))
 
 ;;----------------------------------------------------------------------
-;; elisp
+;; Emacs Lisp
 ;;----------------------------------------------------------------------
-(add-hook 'emacs-lisp-mode-hook 'configure-for-programming)
+;; basic settings
+(setq
+  lisp-indent-offset 2)
+
+(defun elisp-list-fn-signatures ()
+  (interactive)
+  (occur "(defun"))
+
+(add-hook 'emacs-lisp-mode-hook
+  (lambda ()
+    (swap-paren-keys)
+
+    (configure-for-programming 'elisp-list-fn-signatures)
+
+    ;; this binding is very important. normal evaluation of defuns such as defvar
+    ;; and defcustom do not change the default value because the form only sets
+    ;; the value if nil.
+
+    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
+    ;; this function/keybinding should be used exclusively to avoid frustrating
+    ;; errors.
+
+    (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
+    (configure-for-debugging 'edebug-defun) ))
+
+;;----------------------------------------------------------------------
+;; scheme
+;;----------------------------------------------------------------------
+
+;; the atom definition is tweaked for regex purpose. Without including
+;; the list symbols the regex would run over lists in it's quest for
+;; whitespace.
+
+(defconst scheme-regex-whitespace "[ \n\t]" "whitespace in scheme")
+(defconst scheme-regex-atom "[^ \n\t()]+" "whitespace in scheme")
+
+(defconst scheme-function-regex (concat
+                                  "("
+                                  scheme-regex-whitespace "*"
+                                  "define"
+                                  scheme-regex-whitespace "+"
+                                  "("
+                                  scheme-regex-whitespace "*"
+                                  scheme-regex-atom
+                                  scheme-regex-whitespace "+"))
+
+(defun scheme-list-fn-signatures ()
+  (interactive)
+  (occur scheme-function-regex))
+
+;; the actual scheme-mode comes from scheme. the cmuscheme, and quack are layered on top
+;; of scheme mode. scheme can get loaded from an auto-mode-alist hit, so make sure that
+;; when scheme mode is loaded, that cmuscheme gets layered on too.
+
+(eval-after-load 'scheme
+  '(require 'cmuscheme))
+
+(eval-after-load 'cmuscheme
+  '(progn
+     (defvar scheme-scratch-buffer "*eval-scheme*" "the name of the scheme scratch buffer")
+     (defvar default-scheme-interpreter "mzscheme")
+
+     (defun scheme ()
+       (interactive)
+
+       (split-window-to-buffers
+         (or (get-buffer scheme-scratch-buffer)
+             (let
+               ((scheme-eval-buffer (get-buffer-create scheme-scratch-buffer)))
+
+               (with-current-buffer scheme-eval-buffer
+                 (scheme-mode)
+                 (setq scheme-buffer "*scheme*"))
+               scheme-eval-buffer))
+
+         (or (get-buffer "*scheme*")
+           (save-excursion
+             (condition-case nil
+               ;; try and switch to the scheme buffer moving the point to the end of the buffer.
+               (switch-to-scheme t)
+               (current-buffer)
+               (error
+                 (let
+                   ((pop-up-windows nil))
+                   (run-scheme default-scheme-interpreter)
+                   (current-buffer)))))) ))
+
+     (defun scheme-send-buffer ()
+       (interactive)
+       "send the buffer to the scheme interpreter"
+       (save-excursion
+         (mark-whole-buffer)
+         (scheme-send-region)))
+
+     (add-hook 'inferior-scheme-mode-hook 'swap-paren-keys t)
+
+     ;; since the scheme mode bindings rely on the cmuscheme goodies don't put the hook
+     ;; in until after cmuscheme has loaded.
+     (add-hook 'scheme-mode-hook
+       (lambda ()
+         (swap-paren-keys)
+         (configure-for-programming 'scheme-list-fn-signatures)
+         (configure-for-evaluation 'scheme-send-definition 'scheme-send-last-sexp 'scheme-send-region 'scheme-send-buffer)
+         ;; (configure-for-macros     'scheme-
+         )) ))
 
 ;;----------------------------------------------------------------------
 ;; perl5
@@ -144,6 +302,12 @@
   auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
                             ("\\.pm$"      . cperl-mode)
                              ) auto-mode-alist ))
+
+(defconst perl-function-regex "sub")
+
+(defun perl-list-fn-signatures ()
+  (interactive)
+  (occur perl-function-regex))
 
 (eval-after-load 'cperl-mode
   '(progn
@@ -159,8 +323,7 @@
 
     (add-hook 'cperl-mode-hook
       (lambda ()
-        (xml-code-for-language "perl5")
-        (configure-for-programming)
+        (configure-for-programming 'perl-function-regex)
         (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))) ))
 
 ;;----------------------------------------------------------------------
@@ -173,14 +336,21 @@
 				("\\.h$"       . c++-mode)
                                  ) auto-mode-alist ))
 
-;; what is the cc-mode hook order, are the language or the common hooks run first ?
+(defun c-list-fn-signatures ()
+  (interactive)
+  (message "not implemented yet"))
+
+(defun c++-list-fn-signatures ()
+  (interactive)
+  (message "not implemented yet"))
+
 (eval-after-load 'cc-mode
   '(progn
      (add-hook 'c-mode-common-hook
        (lambda ()
-         (c-set-style "linux")          ;; base off of linux style
-
+         (c-set-style "linux")                 ;; base off of linux style
          (setq c-basic-offset 2)               ;; tabs are 2 spaces
+
          (c-set-offset 'substatement-open '0)  ;; hanging braces
 
          ;; auto-hungry newline and whitespace delete
@@ -188,14 +358,12 @@
 
      (add-hook 'c-mode-hook
        (lambda ()
-         (xml-code-for-language "c")
-         (configure-for-programming) ))
+         (configure-for-programming 'c-list-fn-signatures) ))
 
 
      (add-hook 'c++-mode-hook
        (lambda ()
-         (xml-code-for-language "c++")
-         (configure-for-programming) )) ))
+         (configure-for-programming 'c++-list-fn-signatures) )) ))
 
 ;;----------------------------------------------------------------------
 ;; Java
@@ -209,8 +377,12 @@
 
 (setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist ))
 
+(defun lua-list-fn-signatures ()
+  (interactive)
+  (message "not implemented yet"))
+
 (eval-after-load 'lua-mode
   '(add-hook 'lua-mode-hook
      (lambda ()
-       (configure-for-programming)
+       (configure-for-programming 'lua-list-fn-signatures)
        )) )

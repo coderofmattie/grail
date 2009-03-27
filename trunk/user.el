@@ -11,7 +11,9 @@
 ;; undistributed features.
 ;;----------------------------------------------------------------------
 
-(use-grail-groups "xml" "spell" "tab")
+;; (use-grail-groups "xml" "spell" "tab")
+
+(use-grail-groups "xml" "tab")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications

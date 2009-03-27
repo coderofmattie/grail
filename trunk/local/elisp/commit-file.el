@@ -5,6 +5,7 @@
 ;; license: GPL v3.
 ;;;----------------------------------------------------------------------
 
+(require 'cm-path)
 (require 'vc-logedit-hook)
 (require 'rc-navigate)
 

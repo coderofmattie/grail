@@ -46,19 +46,26 @@
   (font-lock-string-face  (foreground "grey50"))
   (font-lock-constant-face (foreground "grey50"))
 
+  (font-lock-warning-face (underline "red") (foreground "grey70"))
+
   ;; decl is dark green
   (font-lock-type-face (foreground "green4"))
   (font-lock-function-name-face (foreground "aquamarine4"))
   (font-lock-variable-name-face (foreground "aquamarine3"))
 
-  (ediff-current-diff-face-A (foreground "dark khaki"))
-  (ediff-current-diff-face-B (foreground "dark khaki"))
-  (ediff-current-diff-face-C (foreground "dark khaki"))
+  (ediff-current-diff-face-A (background "dark khaki"))
+  (ediff-current-diff-face-B (background "dark khaki"))
+  (ediff-current-diff-face-C (background "dark khaki"))
 
-  (ediff-fine-diff-face-A  (foreground "sea green"))
-  (ediff-fine-diff-face-B  (foreground "sea green"))
-  (ediff-fine-diff-face-C  (foreground "sea green"))
+  (ediff-fine-diff-face-A  (background "sea green"))
+  (ediff-fine-diff-face-B  (background "sea green"))
+  (ediff-fine-diff-face-C  (background "sea green"))
   )
+
+(eval-after-load 'flyspell
+  '(progn
+     (grail-set-faces
+       (flyspell-incorrect (underline "red")))))
 
 (eval-after-load 'cperl-mode
   '(progn

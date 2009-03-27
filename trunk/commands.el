@@ -10,10 +10,12 @@
   (interactive)
   (ansi-term "mutt" "mutt"))
 
-(defun scribble ()
-  "pop up the scratch buffer in the other window."
+(defun elisp ()
+  "elisp
+
+   Pop up the scratch buffer in the other window."
   (interactive)
-  (pop-to-buffer (get-buffer "*scratch*") t))
+  (pop-to-buffer (get-buffer-create "*scratch*")))
 
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"

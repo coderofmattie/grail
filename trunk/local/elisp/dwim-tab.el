@@ -35,7 +35,7 @@
    the point is within it's context, or turf then it should DTRT and
    return non-nil.
   "
-  (push context-fn dwim-tab-global-context))
+  (add-to-list 'dwim-tab-global-context context-fn t))
 
 (defun dwim-tab-new-fallback ( complete-fn )
   (setq dwim-tab-fallback complete-fn))

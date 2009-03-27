@@ -4,11 +4,14 @@
 ;; Copyright: Mike Mattie 2009
 ;;----------------------------------------------------------------------
 
+;; third party extensions lisp support.
+
+;;----------------------------------------------------------------------
+;; parentheses matching
+;;----------------------------------------------------------------------
+
 ;; mic-paren fancy paren/delimited highlighting. It is particularly
 ;;           valuable for reverse highlighting regions.
-
-;; the built-in paren mode is a fallback until mic-paren can be
-;; activated.
 
 (defvar grail-groups-micparen-installer
   (grail-define-installer "mic-paren" "file" "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el")
@@ -29,6 +32,8 @@
   ;; do the repair thingy
   (grail-dup-error-to-scratch "the lisp style is hobbled by the broken mic-paren loading")
 
+  ;; the built-in paren mode is a fallback until mic-paren can be
+  ;; activated.
   (grail-print-fn-to-scratch "activate-paren-mode-fallback" "activate the builtin paren mode a repair fallback")
 
   (defun activate-paren-mode-fallback ()
@@ -39,8 +44,11 @@
         (show-paren-mode))) ))
 
 ;;----------------------------------------------------------------------
-;; quack for scheme
+;; scheme
 ;;----------------------------------------------------------------------
+
+;; use quack mode for scheme which seems to be the most advanced of
+;; the modes.
 
 (defvar grail-groups-quack-installer
   (grail-define-installer "quack" "file" "http://www.neilvandyke.org/quack/quack.el")
@@ -49,61 +57,39 @@
 (grail-activate-with-recovery "lisp" quack grail-groups-quack-installer
   (setq-default
     quack-dir (grail-garuntee-dir-path (concat grail-state-path "quack/"))
-    quack-default-program "mzscheme")
+    quack-default-program default-scheme-interpreter
 
+    ;; don't always prompt for the scheme interpreter. Use the default.
+    quack-run-scheme-always-prompts-p nil
+
+    ;; don't use customize to save settings.
+    quack-options-persist-p nil
+
+    ;; fontify using Emacs faces, don't use a drscheme theme clone.
+    quack-fontify-style 'emacs
+
+    ;; tabs are evil
+    quack-tabs-are-evil-p t)
+
+  ;; quack adds all the typical extensions when loaded, so only add non-standard
+  ;; ones.
   (setq
-    auto-mode-alist (append '(("\\.scheme$"    . quack-mode)
-                              ("\\.scm$"       . quack-mode)
-                               ) auto-mode-alist )) )
-
-;; basic settings
-(setq
-  lisp-indent-offset 2)
-
-;; if there are some long-term problems with mic-paren a backup solution is critical
-
-(defun swap-paren-keys ()
-  "bind the parentheses to the brace keys, while the shifted
-   paren keys become the braces."
-  (interactive)
-
-  ;; make the parentheses a bit easier to type, less shifting.
-  (local-set-key (kbd "[") (lambda () (interactive) (insert-char ?\( 1 nil)))
-  (local-set-key (kbd "]") (lambda () (interactive) (insert-char ?\) 1 nil)))
-
-  (local-set-key (kbd "(") (lambda () (interactive) (insert-char ?\[ 1 nil)))
-  (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil))) )
-
-(add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    (swap-paren-keys)
-
-    ;; this binding is very important. normal evaluation of defuns such as defvar
-    ;; and defcustom do not change the default value because the form only sets
-    ;; the value if nil.
-
-    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
-    ;; this function/keybinding should be used exclusively to avoid frustrating
-    ;; errors.
-    (local-set-key (kbd "C-x e") 'eval-defun)
-
-    ;; replace dired at point, far less useful to me than instrumenting a function.
-    (local-set-key (kbd "C-x d") 'edebug-defun)
-
-    ;; elisp doesn't need tags, find-function works just fine.
-    (local-set-key (kbd "M-.")   'find-function) ))
+    auto-mode-alist (append '(("\\.scheme$"    . scheme-mode)) auto-mode-alist )) )
 
 ;;----------------------------------------------------------------------
-;; add lisp setup to other dialects of lisp and modes where lisp is
-;; heavily used.
+;; common lisp
 ;;----------------------------------------------------------------------
 
-;; IRC which I use almost exclusively for #emacs
-(eval-after-load 'erc
-  '(progn
-     (add-hook 'erc-mode-hook 'swap-paren-keys)))
+(defconst slime-project-page "http://common-lisp.net/project/slime/"
+  "the SLIME project page")
 
-;; for the quack mz-scheme mode.
-(eval-after-load 'quack
-  '(add-hook 'quack-mode-hook 'swap-paren-keys))
+(defvar grail-groups-slime-installer
+  (grail-define-installer "slime" "cvs"
+    ":pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot")
+  "the slime installer")
+
+(grail-activate-with-recovery "lisp" slime grail-groups-slime-installer
+  (setq inferior-lisp-program "sbcl")
+  (slime-setup))
+
 

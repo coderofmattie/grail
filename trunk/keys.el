@@ -19,13 +19,7 @@
 
 (global-set-key (kbd "C-x C-c") 'delete-frame)
 
-;; this is close to open read only C-x-r, but instead this reloads the
-;; buffer from disk, avoiding the nasty "buffer changed" dialog.
-
-;; it still prompts for confirmation though. I might disable the
-;; confirm if I discover that the undo information for the buffer is
-;; preserved.
-(global-set-key (kbd "C-x C-r") 'revert-buffer)
+(global-set-key (kbd "C-x e") 'eval-expression)
 
 ;; this used to be minimize window, now it exits recursive editing
 ;; which is handy and safer.
