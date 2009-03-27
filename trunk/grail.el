@@ -58,8 +58,11 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.1.1"
+(defconst grail-release-version "0.1.2"
   "the release number of grail.el")
+
+(defconst grail-maintainer-email "codermattie@gmail.com"
+  "The maintainer's e-mail address")
 
 (defconst grail-project-url "http://www.emacswiki.org/emacs/Grail"
   "the project page for Grail")
@@ -92,7 +95,7 @@
   duplicate the ERROR-MESSAGE to both *Messages* as a log and to the
   *scratch* buffer as a comment where it is highly visible.
   "
-  (message error-message)
+  (message "%s" error-message)
   (with-current-buffer "*scratch*"
     (goto-char (point-max))
     (insert (format "; grail error! %s\n" error-message))) )
@@ -296,6 +299,9 @@
        grail-local-emacs and grail-local-elisp are the preferred
        variables for accessing user specific elisp paths.")
 
+    (defvar grail-settings-file "customize-settings.el"
+      "The file where Emacs writes settings and customize data")
+
     (defvar grail-local-emacs
       (concat grail-local-dir "emacs/")
       "The directory containing Emacs packages that over-ride the packages
@@ -412,6 +418,24 @@
     ;;----------------------------------------------------------------------
 
     (when (or (not noninteractive) (daemonp))
+      ;; the user-init-file _must_ be changed otherwise emacs will
+      ;; scribble all over grail which is not OK.
+
+      ;; The customize file path also needs to be set so that
+      ;; customize writes settings to a data-file rather than
+      ;; appending them to code.
+
+      (setq user-init-file
+        (setq custom-file
+          (concat grail-elisp-root grail-settings-file)))
+
+      ;; Load the user's settings if any. Do it early so that this
+      ;; stuff can be over-ridden in their config files.  The priority
+      ;; of customize settings is a toss-up, but it only comes into
+      ;; play when the user advances beyond relying on customize, and
+      ;; by then the priority is sensible.
+      (load-user-elisp grail-settings-file)
+
       ;; only loaded when there is an active terminal.
       (load-user-elisp "keys.el")
       (load-user-elisp "commands.el")

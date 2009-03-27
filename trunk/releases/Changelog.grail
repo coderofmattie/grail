@@ -1,5 +1,27 @@
 ;;; Grail Changelog
 
+0.1.2 Stable Release
+-------------------
+modified grail.el
+
+* bump the version to 0.1.2, an update to the stable branch.
+
+* handle customization persistence correctly. When Emacs makes
+  changes to the user's settings it writes these changes to
+  user-init-file and custom-file.
+
+  By default these point to .emacs which means that they are
+  appended to grail.el which is not a good idea. When the
+  user updates grail the changes will be lost.
+
+  Fix this issue by pointing user-init-file and custom-file
+  at grail-settings-file which defaults to customize-settings.el
+  in USER_ELISP.
+
+[grail-dup-error-to-scratch]
+  * pass a format string to message so that format specifiers in
+    error messages don't bomb the function.
+
 0.1.1 Stable Release
 -------------------
 

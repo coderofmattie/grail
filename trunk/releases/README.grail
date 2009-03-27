@@ -11,14 +11,16 @@ recognized by grail at your own speed to your taste.
 
 2. copy grail.el, grail-fn.el, and grail-groups.el into USER_ELISP
 
-3. Copy your Emacs configuration to a safe place.
+3. Copy your Emacs configuration to a safe place. This includes
+   .emacs, and the customization settings if you have changed
+   custom-file to a place of your own.
 
 4. Create a link pointing .emacs in your home directory to grail.el
    in USER_ELISP.
 
-   example: ln -s $HOME/system/emacs/grail.el .emacs
-
    !Make sure you moved your .emacs configuration out of the way!
+
+   example: ln -s $HOME/system/emacs/grail.el .emacs
 
 5. Set the environment variable USER_ELISP to the directory where
    Grail and your configuration now live. It must be a *full path*
@@ -33,6 +35,8 @@ recognized by grail at your own speed to your taste.
 
 6. move your Emacs configuration into USER_ELISP
 
+   A. your .emacs
+
    To get Emacs back up and running with your configuration right
    away you can move your configuration into USER_ELISP/user.el.
 
@@ -41,6 +45,15 @@ recognized by grail at your own speed to your taste.
    This function automatically prefixes USER_ELISP to the path, so
    when your files are in USER_ELISP all you need is the file name.
    (load-user-elisp) traps any errors that occur when loading the file.
+
+   B. your customize settings.
+
+   Emacs writes customization settings by default to .emacs. It is
+   a good idea to find these customize settings and move them to
+   USER_ELISP/customize-settings.el.
+
+   That is where Grail will point customize changes so that they
+   do not corrupt Grail.
 
 Grail is now installed!
 
@@ -91,6 +104,11 @@ NOTE: you can modify load-path in the platform files, a common useage
 ---> Files loaded When Emacs is used interactively <---
 
 with an interface: TTY, or GUI.
+
+customize-settings.el      | Emacs writes options you set with customize
+                           | to the default user initialization file.
+                           | Grail redirects these settings to customize-settings.el
+                           | so that Grail is not corrupted.
 
 user.el                    | User customization of Emacs. Anything can go in here
                            | though placing GUI related configuration is not
