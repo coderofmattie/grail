@@ -1,5 +1,13 @@
 ;;; Grail Changelog
 
+0.1.3 Stable Release
+-------------------
+modified grail.el
+
+* re-order the loading of the user's files so that command.el
+  and keys.el come last. By loading these files last they
+  can take advantage of definitions from the previous files.
+
 0.1.2 Stable Release
 -------------------
 modified grail.el

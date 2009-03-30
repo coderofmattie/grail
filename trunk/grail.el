@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.2.0"
+(defconst grail-release-version "0.1.3"
   "the release number of grail.el")
 
 (defconst grail-maintainer-email "codermattie@gmail.com"
@@ -452,11 +452,14 @@
       (load-user-elisp grail-settings-file)
 
       ;; only loaded when there is an active terminal.
-      (load-user-elisp "keys.el")
-      (load-user-elisp "commands.el")
       (load-user-elisp "interface.el")
 
       (load-user-elisp "user.el")
+
+      ;; load commands and keys last so they can use definitions from user.el
+      ;; and friends.
+      (load-user-elisp "commands.el")
+      (load-user-elisp "keys.el")
 
       ;; In deamon mode the GUI related values are not defined by
       ;; Emacs until a GUI frame is created. In this case place the
