@@ -53,13 +53,17 @@
   (font-lock-function-name-face (foreground "aquamarine4"))
   (font-lock-variable-name-face (foreground "aquamarine3"))
 
-  (ediff-current-diff-face-A (background "dark khaki"))
-  (ediff-current-diff-face-B (background "dark khaki"))
-  (ediff-current-diff-face-C (background "dark khaki"))
+  (ediff-current-diff-face-A (background "grey13") (foreground "dark goldenrod"))
+  (ediff-current-diff-face-B (background "grey13") (foreground "dark khaki"))
+  (ediff-current-diff-face-C (background "grey13") (foreground "olive drab"))
 
-  (ediff-fine-diff-face-A  (background "sea green"))
-  (ediff-fine-diff-face-B  (background "sea green"))
-  (ediff-fine-diff-face-C  (background "sea green"))
+  (ediff-even-diff-face-A (background "grey12") (foreground "light slate grey"))
+  (ediff-even-diff-face-B (background "grey12") (foreground "light slate grey"))
+  (ediff-even-diff-face-C (background "grey12") (foreground "light slate grey"))
+
+  (ediff-fine-diff-face-A  (underline "orange2"))
+  (ediff-fine-diff-face-B  (underline "orange2"))
+  (ediff-fine-diff-face-C  (underline "orange2"))
   )
 
 (eval-after-load 'flyspell

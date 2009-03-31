@@ -33,12 +33,17 @@
 (setq make-backup-files nil)            ;; backups are a poor substitute for revision control
 
 (setq
-  case-fold-search t
-  current-language-environment "ASCII")
+  ;; set ascii.
+  current-language-environment "ASCII"
 
-(setq require-final-newline t)                ;; some programs fail without a newline terminator
+  ;; some programs fail without a newline terminator
+  require-final-newline t
 
-(setq default-buffer-file-coding-system 'undecided-unix)  ;; default to UNIX line terminators
+  ;; when traversing sexp's ignore comments
+  parse-sexp-ignore-comments t
+
+  ;; default to UNIX line terminators
+  default-buffer-file-coding-system 'undecided-unix)
 
 ;; documentation tools
 
