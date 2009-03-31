@@ -90,6 +90,14 @@
         (throw 'terminate t)))
     nil))
 
+(defun join-cons ( a b )
+  "like cons but joins as a list instead of nesting"
+  (let
+    ((new-a (if (cdr a) (cons a nil) a))
+     (new-b (if (cdr b) (cons b nil) b)) )
+    (setcdr new-a new-b)
+    new-a))
+
 (defun join-as-list ( head tail )
   "join-as-list HEAD TAIL
 

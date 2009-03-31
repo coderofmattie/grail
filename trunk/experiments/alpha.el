@@ -5,74 +5,9 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
-;; handy for the Ms. Henning (math 085) homework assignments phrased in the form
-;; of: multiples of x.
-
-(defun multiples-of-n (lower upper x)
-  (if (> lower upper)
-    nil
-    (cons lower (multiples-of-n (+ lower x) upper x))))
-
-(defun multiples-of-f ( lower upper x )
-  "a function generator that produces a multiples of iterator"
-  (if (> lower upper)
-    nil
-
-    (if (not (= 0 (% lower x)))
-      (multiples-of-f (+ lower 1) upper x) )
-
-    (lexical-let
-      ((f-lower lower)
-        (f-upper upper)
-        (fx     x))
-
-      (lambda ( y )
-        (if (= 0 y)
-          f-lower
-          (if (> y f-upper)
-            nil
-            (+ y fx) ))) )))
-
-(defun multiples-of (lower upper x)
-  "multiples-of lower upper x
-
-   return a list of the multiples of x in the
-   range inclusive of lower to upper.
-  "
-  (if (> lower upper)
-    nil
-    (if (= 0 (% lower x))
-      (multiples-of-n lower upper x)
-      (multiples-of (+ lower 1) upper x) )))
-
-(defun multiples-of-system ( x set-fn )
-  "the system version solves for two equations at the same time"
-  (let
-    ((step 0)
-     (answer nil))
-
-    (while (not (null step))
-      (when (= 0 (% x (setq step (funcall set-fn step))))
-        (setq answer nil))) ))
-
-(defun test-mf ()
-  "test the multiples of function generator"
-  (let*
-    ((mf  (multiples-of-f 3 33 3))
-     (x   (funcall mf 0)) )
-
-    (while (not (null x))
-      (progn
-        (print x)
-        (setq x (funcall mf x)) )) ))
-
-(defun solve-system ()
-  "this is where it really gets interesting. a general system solver. neat."
-  )
-
-;;----------------------------------------------------------------------
-;; stable-track  - canidate for inclusion in mattie.el
-;;----------------------------------------------------------------------
+;;
+;; stable-track  - canidate for inclusion in commands.el
+;;
 
 ;; this can go in when it doesn't rely on a auto-overlay function.
 (defun show-overlay-binding ( symbol )
@@ -93,8 +28,7 @@
    loaded"
 
   (interactive "F")
-  (find-file-read-only (locate-library (concat library-name ".el")))
-  )
+  (find-file-read-only (locate-library (concat library-name ".el"))))
 
 ;; This is a handy little function that allows you to localize
 ;; a distributed elisp source file. It assumes that the current
@@ -120,8 +54,7 @@
             (new-name)))))
       (if (yes-or-no-p (concat "localize distributed file " new-name " to " new-path))
         (write-file new-path)
-        (message "aborted localizing distributed file"))
-    )))
+        (message "aborted localizing distributed file")) )))
 
 ;; as soon as it works on darwin it can go to stable.el.
 (defun copy-region-to-clipboard ()
@@ -168,50 +101,6 @@
       t)))
 
 ;;----------------------------------------------------------------------
-;; unterminated lists experiments.
-;;----------------------------------------------------------------------
-
-(defun join-cons ( a b )
-  "like cons but joins as a list instead of nesting"
-  (let
-    ((new-a (if (cdr a) (cons a nil) a))
-     (new-b (if (cdr b) (cons b nil) b)) )
-    (setcdr new-a new-b)
-    new-a))
-
-(defun terminate-sequence ( &rest args )
-  "terminate sequence takes a all types concatenates into a list properly handling unterminated sequences"
-  (lexical-let
-    ((terminated nil))
-
-    (dolist (arg (reverse args))
-      (if (and (consp arg) (not (eq 'quote (car arg))))
-        (lexical-let
-          ((reverse-stack nil)
-            (sequence arg))
-
-          (while (consp sequence)
-            (push (car sequence) reverse-stack)
-            (setq sequence (cdr sequence)))
-
-          (if sequence (push sequence reverse-stack))
-          (setq terminated (append (reverse reverse-stack) terminated)))
-
-        (setq terminated (cons arg terminated)) ))
-    terminated))
-
-(defun terminated-list-p ( list )
-  "return true only if the list is nil terminated"
-  (if (consp list)
-    (lexical-let
-      ((element (cdr list)))
-
-      (while (consp element)
-        (setq element (cdr element)))
-
-      (eq nil element)) ))
-
-;;----------------------------------------------------------------------
 ;; experimental - interesting
 ;;----------------------------------------------------------------------
 
@@ -238,170 +127,9 @@
   (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
     '(2 "_NET_WM_STATE_FULLSCREEN" 0)))
 
-;;----------------------------------------------------------------------
-;; deploy experiments.
-;;----------------------------------------------------------------------
-
-(defun deploy-url-elisp ( url file )
-  "deploy the elisp on the host via url installing in the extras path"
-  (with-temp-buffer
-    ;; download without modifying the buffer-name
-    (and
-      (condition-case nil
-        (url-insert-file-contents url nil)
-        (error (progn
-                 (message "download of %s failed" file)
-                 nil)))
-
-      ;; write out to the appropriate file.
-      (write-file (concat my-extras-dir file ".el")))
-      ))
-
-(defun deploy-query-inquisitio-search ( package )
-  (list "-s" package)
-  )
-
-;; within this window can I make hyperlinks where the hyperlink triggers an install
-;; method ?
-
-;; can I extract available versions ? , installed versions ? , matching packages ?
-(defun deploy-paludis ( package )
-  "search for an Emacs package with Paludis's inquisitio search tool."
-  (interactive "MPackage? ")
-
-  (lexical-let
-    ((search-buffer (generate-new-buffer "deploy-paludis")))
-
-    (with-current-buffer search-buffer
-      (unless (= 0 (apply 'call-process "inquisitio"     ;; search program
-                     nil                                 ;; no stdin
-                     (list (current-buffer) nil)         ;; discard stderr , stdout -> current-buffer
-                     nil                                 ;; don't refresh
-
-                     "--category" "app-emacs"            ;; without this constraint inquisitio
-                                                         ;; is slow to moribund.
-                     (deploy-query-inquisitio-search package) ;; construct search arguments
-                     ))
-        ;; need an error path here.
-        )
-
-      (setq show-trailing-whitespace nil)   ;; disable trailing whitespace
-
-      ;; when we kill the buffer get rid of the window associated so the user
-      ;; doesn't have to tediously clean-up.
-      (add-hook 'kill-buffer-hook 'rid-window t t)
-      )
-
-    (pop-to-buffer search-buffer)
-    ))
-
 (defun elisp-in-path ( path path-type )
   "return a list of elisp files in the path"
 
   (filter-ls path path-type
     (type ?-)
     (path "\\.el$")))
-
-;;----------------------------------------------------------------------
-;; local function library.
-;;----------------------------------------------------------------------
-
-(defun mapc-read-buffer ( fn buffer )
-  "mapc-read-buffer FN BUFFER
-
-   read through BUFFER returning a sequence reads as sexp's passed to FN
-   with the signature of (FN sexp begin end).
-
-   The process continues until the buffer is exhausted or FN returns nil.
-  "
-  (save-excursion
-    (with-current-buffer buffer
-      (goto-char (point-min))
-
-      (condition-case nil
-        (progn
-          (while
-            (lexical-let*
-              ;; this really doesn't work because the reader simply skips over
-              ;; any comments/whitespace and returns the instructions.
-
-              ;; a better way would be to scan for the require lines, and do
-              ;; a replace on them. Use thing-at-point or something like it
-              ;; to find the bounds and replace with a insert.
-              ((begin (point))
-               (sexp  (read (current-buffer)))
-               (end   (point)))
-               (and sexp (funcall fn sexp begin end))))
-          nil)
-        (error nil)) )))
-
-(defun file-appender ( buffer )
-  (lexical-let
-    ((target-buffer buffer))
-
-    (lambda ( source-file )
-      (with-current-buffer target-buffer
-        (goto-char (point-max))
-        (insert-file-contents-literally (locate-library source-file))
-        (goto-char (point-max))
-        (insert (format "\n")) )
-      t) ))
-
-(defun combine-library ( source-file )
-  "combine-library source-file
-
-   An interactive command to merge the dependencies for a module. This assumes that
-   the dependencies have been organized into a file listing all the dependencies.
-
-   For example if there is a module foo that depends on bar and baz the files would
-   look like this:
-
-   foo.el:
-
-   .....
-   (require 'foo-fn)
-   .....
-
-   foo-fn.el:
-
-   .....
-   (require 'bar)
-   (require 'baz)
-
-   (provide 'foo-fn)
-   .....
-  "
-  (interactive
-    ;; prompt for the file name with completion.
-    (list
-      (completing-read
-        (format "Library name (default %s): "
-          ;; BUG: file-names are only present on buffers with a backing,
-          ;; for eshell buffers etc it explodes. Need to simply go to the
-          ;; cwd when all else fails.
-          (file-name-nondirectory buffer-file-name))
-        'locate-file-completion load-path nil nil nil buffer-file-name) ))
-
-  (lexical-let*
-    ((input-buffer    (generate-new-buffer "*combine*"))
-     (export-buffer   (generate-new-buffer (format " Export %s" source-file)))
-     (appender        (file-appender export-buffer)))
-
-    (with-current-buffer input-buffer
-      (insert-file-contents-literally (locate-library source-file)))
-
-      (mapc-read-buffer
-        (lambda (sexp begin end)
-          (if (eq 'require (car sexp))
-            (lexical-let
-              ((library-name (symbol-name (cadr (cadr sexp)))))
-
-              (message "combine-library: adding library %s\n" library-name)
-              (funcall appender library-name))
-            (append-to-buffer export-buffer begin end) ))
-        input-buffer)
-
-    (kill-buffer input-buffer)
-    (pop-to-buffer export-buffer) ))
-
-

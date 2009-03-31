@@ -11,7 +11,6 @@
 ;; error on bogus spec
 (grail-decompose-installer-type "tarbz2")
 
-
 ;; okay too
 (grail-define-installer "bob" "file" "foo.url")
 
@@ -20,6 +19,11 @@
 
 ;; not ok, no url
 (grail-define-installer "bob" "tar:bz2")
+
+(grail-define-installer "slime" "cvs" "pserver")
+
+(grail-define-installer "slime" "cvs" '("slime" . "pserver"))
+
 
 (grail-define-installer "icicles" "file"
   '("icicles.el"      . "http://www.emacswiki.org/cgi-bin/wiki/download/icicles.el")
@@ -42,6 +46,28 @@
   "grail-archive-installer"
   (message "would install %s from %s archive type %s" name url (princ type-and-compression)))
 
+(defun grail-untar-remote-archive ( name url compression )
+  "grail-archive-installer"
+  (message "would install %s from %s archive type %s" name url compression))
+
+(defun grail-untar-local-archive ( url compression )
+  "grail-archive-installer"
+  (message "would install from %s archive type %s" url compression))
+
+(grail-run-installer
+  (grail-define-installer "auto-overlays" "tar:gz"
+    "http://www.dr-qubit.org/download.php?file=predictive/auto-overlays.tar.gz"))
+
+(grail-run-installer
+  (grail-define-installer "w3m" "tar:gz"
+    "archived:emacs-w3m-1.4.4.tar.gz"))
+
+(grail-define-installer "foob" "tar:gz"
+    "archived:foobness")
+
+(grail-run-installer
+  (grail-define-installer "foob" "tar:gz"
+    "archived:foobness"))
 
 (defun grail-file-installer ( name url &optional path )
   (message "would install %s from %s to %s" name url
@@ -52,10 +78,22 @@
 (grail-run-installer
   (grail-define-installer "icicles" "file" "http://www.emacswiki.org/cgi-bin/wiki/download/icicles.el"))
 
+
 (grail-run-installer
   (grail-define-installer "icicles" "file"
     '("icicles.el"      . "http://www.emacswiki.org/cgi-bin/wiki/download/icicles.el")
-    '("icicles-chg.el"  . "http://www.emacswiki.org/cgi-bin/wiki/download/icicles-chg.el")))
+    '("icicles-chg.el"  . "http://www.emacswiki.org/cgi-bin/wiki/download/icicles-chg.el"))
+)
+
+(grail-run-installer
+  (grail-define-installer "slime" "cvs"
+    ":pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot"))
+
+
+
+    '(":pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot" . "slime"))
+  "the slime installer")
+
 
 (grail-run-installer
   (grail-define-installer "icicles" "tar:bz2" "http://www.emacswiki.org/cgi-bin/wiki/download/icicles.tar.bz2"))
@@ -115,4 +153,3 @@
   (format-signal-trap (diagnostic-load-elisp (error "%s" "bad things happened"))))
 
 (grail-repair-dependency-fn 'mic-paren "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el")
-
