@@ -5,6 +5,8 @@
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
 
+(require 'ucase-word)
+
 (defun mail ()
   "start mutt mail client"
   (interactive)

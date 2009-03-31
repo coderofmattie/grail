@@ -54,5 +54,10 @@
   (local-unset-key (kbd "<M-tab>"))
   (local-unset-key (kbd "<S-tab>")))
 
+;; misc keybindings
+
+(global-set-key (kbd "M-C-u") 'toggle-ucase-word)
+
+
 
 
