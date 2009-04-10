@@ -18,6 +18,9 @@
 (toggle-uniquify-buffer-names)                ;; more intelligent unique buffer names, will automatically
                                               ;; simplify buffer names when collisions are reduced.
 
+(require 'mattie-modeline)                 ;; my own modeline setup
+(setup-mattie-modeline)
+
 (setq initial-scratch-message nil)            ;; nix the scratch message, and the splash screen.
 (setq inhibit-splash-screen t)
 

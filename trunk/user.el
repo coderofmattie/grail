@@ -30,11 +30,19 @@
 
 ;; basic settings
 
-(setq make-backup-files nil)            ;; backups are a poor substitute for revision control
-
 (setq
+  ;; backups are a poor substitute for revision control
+  make-backup-files nil
+
+  ;; protect against IO errors by writing to a temp file and then renaming
+  ;; so the original is not trashed by partial writes.
+  file-precious-flag t
+
   ;; set ascii.
   current-language-environment "ASCII"
+
+  ;; keep woman from making a frame.
+  woman-use-own-frame nil
 
   ;; some programs fail without a newline terminator
   require-final-newline t
@@ -43,24 +51,24 @@
   parse-sexp-ignore-comments t
 
   ;; default to UNIX line terminators
-  default-buffer-file-coding-system 'undecided-unix)
+  default-buffer-file-coding-system 'undecided-unix
 
-;; documentation tools
+  ;; files can have elisp statements that are executed when the
+  ;; file is loaded. My paranoia says hell no.
+  enable-local-eval nil
 
-(let
- ((info-archive (concat grail-local-dir "info")))
+  ;; when a buffer is toggled to read only enter view mode
+  view-read-only t)
 
-  (when (file-accessible-directory-p info-archive)
-    (push info-archive Info-additional-directory-list)) )
-
-(setq-default woman-use-own-frame nil)
+;; for increased security create a temporary directory and set
+;; temporary-file-directory to that.
+(setq temporary-file-directory (make-temp-file "emacs" t))
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
 ;;----------------------------------------------------------------------
 
-(setq auto-mode-alist (append '(("\\.txt$"     . text-mode)
-                                 ) auto-mode-alist ))
+(setq auto-mode-alist (append '(("\\.txt$"     . text-mode)) auto-mode-alist ))
 
 ;;----------------------------------------------------------------------
 ;; Emacs Server
@@ -242,10 +250,11 @@
 (load-user-elisp "programming.el")
 
 ;;----------------------------------------------------------------------
-;; alpha features.
+;; Beta features
 ;;----------------------------------------------------------------------
 
-;; load in-development features. if it is partial or completely broken
-;; use broken.el
-(load-user-elisp "experiments/alpha.el")
+;; beta features are commands that are in development, usable, but
+;; require some more work for completion.
+
+(load-user-elisp "beta.el")
 
