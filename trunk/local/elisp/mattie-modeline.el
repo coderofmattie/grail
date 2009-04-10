@@ -86,6 +86,7 @@
     "[" (:eval (mattie-modeline-modified)) vc-mode "]"
     " "
     "(" (:propertize mode-name face (:weight bold)) ":" minor-mode-alist ")"
+    buffer-ring-modeline
     " ->" (which-func-mode ("" which-func-format)) ))
 
 (defun setup-mattie-modeline ()
@@ -98,5 +99,6 @@
 
 ;;  (force-mode-line-update)
 
+vc-mode
 
 

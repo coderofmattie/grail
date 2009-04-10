@@ -41,10 +41,7 @@
 ;; M-TAB  = switch to the last buffer in the current window. cycles when
 ;;          repeated.
 
-(global-set-key (kbd "<M-tab>")
-  (lambda ()
-    (interactive)
-    (switch-to-buffer (other-buffer)) ))
+(global-set-key (kbd "<M-tab>") 'cycle-buffers-with-rings)
 
 ;; S-TAB  = Shift tab cycles between windows.
 

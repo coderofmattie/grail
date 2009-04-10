@@ -6,6 +6,16 @@
 ;;----------------------------------------------------------------------
 
 (require 'ucase-word)
+(require 'buffer-ring)
+
+;; this doesn't work because I don't seem to be able to trap the error ?
+;; (defun backward-and-up-sexp ()
+;;   (interactive)
+
+;;   (condition-case trap
+;;     (backward-sexp)
+;;     (error
+;;       (down-list))))
 
 (defun mail ()
   "start mutt mail client"
