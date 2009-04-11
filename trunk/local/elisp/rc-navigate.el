@@ -80,17 +80,20 @@
   (let
     ;; by default the prompting will start with either the given path,
     ;; the buffer path, or HOME.
-    ((start-path (or path buffer-file-name (getenv "HOME"))))
+    ((start-path (or path buffer-file-name (getenv "HOME")))
+     (default nil)
+     (root nil))
+
+    (and
+      (setq default (vc-bzr-root start-path))
+      (setq root    (bzr-find-repository-top default)))
 
     ;; If a branch can be found then use that as a starting point.
     ;; root, and start from there by default.
-    (let*
-      ((default    (vc-bzr-root start-path))
-       (root       (bzr-find-repository-top default)))
 
-      (unless (and default root)
-        (setq default (file-name-directory start-path))
-        (setq root (getenv "HOME")))
+    (unless (and default root)
+      (setq default (file-name-directory start-path))
+      (setq root (getenv "HOME")))
 
     ;; prompt the user with reasonably sane defaults.
 
@@ -99,6 +102,8 @@
     ;;       currently.
     (expand-file-name
       (grail-sanitize-path (concat
-                             (bzr-prompt-for-branch-dir (concat prompt " w/default:") root nil default) "/"))) )))
+                             (bzr-prompt-for-branch-dir
+                               (concat prompt " w/default(" default "):")
+                               root nil default) "/"))) ))
 
 (provide 'rc-navigate)
