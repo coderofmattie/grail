@@ -13,7 +13,7 @@
 
 ;; (use-grail-groups "xml" "spell" "tab")
 
-(use-grail-groups "xml" "tab")
+(use-grail-groups "xml" "tab" "web")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
