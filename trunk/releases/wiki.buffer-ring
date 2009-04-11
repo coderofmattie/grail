@@ -4,6 +4,32 @@ Buffer Ring creates rings of buffers. Cycling within a buffer-ring switches to t
 buffer in the ring until it wraps around. It does not use the buffer LRU list so the
 buffers within a ring are always the same until you add or delete buffers from them.
 
+This project was inspired by [[MTorus]]. I tried MTorus but it was far too complex
+for my tastes. The generality complicated the interface, and the code was a labyrinth
+of hooks.
+
+In essence I wanted a ring, not a Dyson's Sphere :)
+
+This implementation is simple, a couple of files massing only 500+ lines.
+
+Here are the buffer-ring commands:
+
+add/delete
+* buffer-ring-add    ;;     add the buffer to a ring
+* buffer-ring-delete ;;  delete a buffer from the ring
+
+buffer rotation
+* bfr-prev-buffer  ;; next buffer in the ring
+* bfr-next-buffer  ;;    previous buffer in the ring
+* cycle-buffers-with-rings ;;  next buffer, or other-buffer if not in a ring
+
+ring rotation
+* bfr-prev-ring   ;;    next ring
+* bfr-next-ring   ;;  previous ring
+
+If it is too simple for you I suggest MTorus. I will definitely not add mark rings.
+set-mark-command-repeat-pop works well enough for me.
+
 This is a work in progress, not for the casual Emacs user yet.
 
 Contact me if you are interested in it - [[codermattie]]
@@ -12,4 +38,5 @@ Contact me if you are interested in it - [[codermattie]]
 
 * [[dynamic-ring.el]]
 * [[buffer-ring.el]]
+
 
