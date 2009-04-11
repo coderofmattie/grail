@@ -74,8 +74,8 @@
 (eval-after-load 'cperl-mode
   '(progn
      (grail-set-faces
-       (cperl-array-face (foreground "aquamarine3") (slant 'italic))
-       (cperl-hash-face  (foreground "aquamarine3") (slant 'italic))
+       (cperl-array-face (foreground "aquamarine3") (background "grey5") (weight 'normal))
+       (cperl-hash-face (foreground "aquamarine3") (background "grey5") (weight 'normal))
        (cperl-nonoverridable-face (foreground "DeepSkyBlue4")) )))
 
 
