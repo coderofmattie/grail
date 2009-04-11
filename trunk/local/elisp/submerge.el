@@ -1,7 +1,7 @@
 ;;;----------------------------------------------------------------------
 ;; submerge.el
-;; written by Mike Mattie
-;; copyright: Mike Mattie 2009
+;; Copyright (C) 2009 Mike Mattie
+;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
 
 ;; This is currently a proof of concept.

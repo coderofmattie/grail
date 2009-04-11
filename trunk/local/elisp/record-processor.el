@@ -1,8 +1,11 @@
 ;;;----------------------------------------------------------------------
 ;; record-processor.el
-;; written by Mike Mattie
-;; copright:  2009 Mike Mattie
+;; Primary Author: Mike Mattie
+;; Copyright (C) 2009 Mike Mattie
+;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
+
+(defconst record-processor-version "0.0.1")
 
 ;;
 ;; extractor

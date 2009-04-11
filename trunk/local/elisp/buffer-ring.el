@@ -1,20 +1,21 @@
 ;;;----------------------------------------------------------------------
 ;; buffer-ring.el
-;; written by Mike Mattie
+;; Primary Author: Mike Mattie
+;; Copyright (C) 2009 Mike Mattie
+;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
+
+(defconst buffer-ring-version "0.0.1")
 
 ;; TODO:
 
-;; test the global buffer ring implementation
+;; * test the global buffer ring implementation
+;; * completion of the ring names
 
-;; completion of the ring names
+;; * some sort of global default ring so you can simply hit enter when
+;;   entering a ring name.
 
-;; some sort of global default ring so you can simply hit enter when
-;; entering a ring name.
-
-;; review for bugs and corner cases.
-
-(defconst buffer-ring-version "0.0.1")
+;; * review for bugs and corner cases.
 
 (require 'dynamic-ring)
 
@@ -143,8 +144,6 @@
 ;;
 ;; buffer ring interface
 ;;
-
-;; force-mode-line-update
 
 (defun buffer-ring-add ( name )
   "buffer-ring-add

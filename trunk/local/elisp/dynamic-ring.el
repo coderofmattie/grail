@@ -1,7 +1,11 @@
 ;;;----------------------------------------------------------------------
 ;; dynamic-ring.el
 ;; written by: Mike Mattie
+;; Copyright (C) 2009 Mike Mattie
+;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
+
+(defconst dynamic-ring-version "0.0.1")
 
 ;;
 ;; ring structure
@@ -281,6 +285,3 @@
   (dyn-ring-rotate ring-struct 'cdr))
 
 (provide 'dynamic-ring)
-
-
-
