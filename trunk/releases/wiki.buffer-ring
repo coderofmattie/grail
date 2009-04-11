@@ -1,0 +1,15 @@
+Buffer-Ring
+
+Buffer Ring creates rings of buffers. Cycling within a buffer-ring switches to the next
+buffer in the ring until it wraps around. It does not use the buffer LRU list so the
+buffers within a ring are always the same until you add or delete buffers from them.
+
+This is a work in progress, not for the casual Emacs user yet.
+
+Contact me if you are interested in it - [[codermattie]]
+
+== Download ==
+
+* [[dynamic-ring.el]]
+* [[buffer-ring.el]]
+
