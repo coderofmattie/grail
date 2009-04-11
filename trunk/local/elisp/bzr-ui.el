@@ -1,6 +1,8 @@
 ;;;----------------------------------------------------------------------
-;; rc-navigate.el
-;; written by: Mike Mattie
+;; bzr-ui.el
+;; Primary Author: Mike Mattie
+;; Copyright (C) 2009 Mike Mattie
+;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
 
 ;; utility functions to navigate a working copy. It assumes that all of
@@ -9,7 +11,8 @@
 ;; currently the functions are bzr specific but hopefully that can change
 ;; as vc evolves.
 
-(require 'cm-util)
+(require 'cm-path)
+(require 'vc-bzr)
 
 (defun bzr-find-repository-top ( path )
   "bzr-find-repository-top PATH
@@ -106,4 +109,4 @@
                                (concat prompt " w/default(" default "):")
                                root nil default) "/"))) ))
 
-(provide 'rc-navigate)
+(provide 'bzr-ui)

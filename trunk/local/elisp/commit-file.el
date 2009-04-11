@@ -7,7 +7,7 @@
 
 (require 'cm-path)
 (require 'vc-logedit-hook)
-(require 'rc-navigate)
+(require 'vc-bzr)
 
 (defcustom commit-file-name "commit-changelog.txt"
   "the filename of the commit changelog draft")

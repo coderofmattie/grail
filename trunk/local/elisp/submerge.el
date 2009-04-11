@@ -8,9 +8,8 @@
 
 (defconst submerge-version "0.0.1")
 
-(require 'cm-list)
-(require 'cm-path)
-(require 'rc-navigate)
+(require 'record-processor)
+(require 'bzr-ui)
 
 ;; need an ignore which makes a empty commit that records the change as
 ;; merged.
