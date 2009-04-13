@@ -116,7 +116,8 @@
     ;; make up-down go through the history list.
     (local-set-key (kbd "<up>") 'comint-previous-input)
     (local-set-key (kbd "<down>") 'comint-next-input)
-    ))
+    )
+  t)
 
 ;;----------------------------------------------------------------------
 ;;                    Term
@@ -125,9 +126,10 @@
 (require 'term)
 
 (add-hook 'term-mode-hook
+  ;; disable trailing whitespace for terminal emulation
   (lambda ()
-    (setq show-trailing-whitespace nil)   ;; disable trailing whitespace
-    ))                                    ;; for terminal emulation
+    (setq show-trailing-whitespace nil))
+  t)
 
 ;; setup a hook that runs when the term process exits
 (defvar term-process-exit-hook nil
@@ -143,7 +145,8 @@
 
 ;; get rid of the buffer when the process exits
 (add-hook 'term-process-exit-hook (lambda ( pbuffer )
-                                    (kill-buffer pbuffer)))
+                                    (kill-buffer pbuffer))
+  t)
 
 (ad-activate 'term-sentinel)
 
@@ -166,11 +169,13 @@
       ;; add a list of commands that will pop a term buffer for out-of-eshell
       ;; handling. Note: the variable eshell-visual-commands is buffer-local.
       (setq eshell-visual-commands
-	(append eshell-visual-commands (list "ssh" "su" "telnet" "ftp" "lftp" "links")))
+	(append eshell-visual-commands (list "ssh" "su" "telnet"
+                                             "ftp" "lftp" "links")))
 
       ;; I rarely want to quit eshell. when I do I can use quit. map
       ;; the usual kill-buffer keybinding to rid-window.
-      (local-set-key (kbd "C-x k") 'rid-window) )))
+      (local-set-key (kbd "C-x k") 'rid-window))
+    t))
 
 ;;----------------------------------------------------------------------
 ;; network protocols
@@ -218,18 +223,20 @@
   ;; the buffer did not get rid of the popped window , until now.
 
   (lambda ()
-    (add-hook 'kill-buffer-hook 'rid-window t t)))
+    (add-hook 'kill-buffer-hook 'rid-window t t))
+  t)
 
 ;;----------------------------------------------------------------------
 ;;                 Structured Document Tools
 ;;----------------------------------------------------------------------
-(require 'allout)
 
-(add-hook 'text-mode-hook
-  (lambda ()
-    ;; the allout mode keybindings are found with C-c C-h
-    (allout-mode)
-    ))
+;; (require 'allout)
+
+;; (add-hook 'text-mode-hook
+;;   (lambda ()
+;;     ;; the allout mode keybindings are found with C-c C-h
+;;     (allout-mode)
+;;     ))
 
 ;;----------------------------------------------------------------------
 ;; crypto support via gnupg

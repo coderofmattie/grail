@@ -23,7 +23,7 @@
       (add-hook 'after-change-functions 'ucase-word-hook t t))))
 
 (defun ucase-word-hook ( begin end before-len )
-  (capitalize-region begin end)
+  (upcase-region begin end)
   (if (looking-back "[ \n]" 1)
     (remove-hook 'after-change-functions 'ucase-word-hook t)))
 

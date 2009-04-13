@@ -93,7 +93,7 @@
   (setq default-mode-line-format mattie-mode-line-format)
 
   (display-time)
-  (add-hook 'display-time-hook 'mattie-update-hacking-mode))
+  (add-hook 'display-time-hook 'mattie-update-hacking-mode t))
 
 (provide 'mattie-modeline)
 

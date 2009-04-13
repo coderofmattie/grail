@@ -4,7 +4,6 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
-
 (use-grail-groups 0 "template" "lisp" "code-formatting")
 
 ;;----------------------------------------------------------------------
@@ -12,7 +11,7 @@
 ;;----------------------------------------------------------------------
 
 ;; found this on emacs-wiki , all scripts are automatically made executable.
-(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t)
 
 ;;----------------------------------------------------------------------
 ;;                   whitespace dogma
@@ -158,8 +157,7 @@
 
 
 (defun configure-for-debugging ( eval-debug )
-  (local-set-key (kbd "C-c d d") eval-debug)
-  )
+  (local-set-key (kbd "C-c d d") eval-debug))
 
 (defun configure-for-macros ( expand-macro )
   (local-set-key (kbd "C-c m e") expand-macro) )
@@ -179,7 +177,7 @@
 ;; IRC which I use almost exclusively for #emacs
 (eval-after-load 'erc
   '(progn
-     (add-hook 'erc-mode-hook 'swap-paren-keys)))
+     (add-hook 'erc-mode-hook 'swap-paren-keys t)))
 
 ;;----------------------------------------------------------------------
 ;; Emacs Lisp
@@ -207,7 +205,8 @@
     ;; errors.
 
     (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
-    (configure-for-debugging 'edebug-defun) ))
+    (configure-for-debugging 'edebug-defun) )
+  t)
 
 ;;----------------------------------------------------------------------
 ;; scheme
@@ -286,9 +285,14 @@
        (lambda ()
          (swap-paren-keys)
          (configure-for-programming 'scheme-list-fn-signatures)
-         (configure-for-evaluation 'scheme-send-definition 'scheme-send-last-sexp 'scheme-send-region 'scheme-send-buffer)
+         (configure-for-evaluation
+           'scheme-send-definition
+           'scheme-send-last-sexp
+           'scheme-send-region
+           'scheme-send-buffer)
          ;; (configure-for-macros     'scheme-
-         )) ))
+         )
+       t) ))
 
 ;;----------------------------------------------------------------------
 ;; perl5
@@ -319,7 +323,8 @@
     (add-hook 'cperl-mode-hook
       (lambda ()
         (configure-for-programming 'perl-function-regex)
-        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))) ))
+        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))
+      t) ))
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
@@ -349,16 +354,19 @@
          (c-set-offset 'substatement-open '0)  ;; hanging braces
 
          ;; auto-hungry newline and whitespace delete
-         (c-toggle-auto-hungry-state 1) ))
+         (c-toggle-auto-hungry-state 1) )
+       t)
 
      (add-hook 'c-mode-hook
        (lambda ()
-         (configure-for-programming 'c-list-fn-signatures) ))
+         (configure-for-programming 'c-list-fn-signatures))
+       t)
 
 
      (add-hook 'c++-mode-hook
        (lambda ()
-         (configure-for-programming 'c++-list-fn-signatures) )) ))
+         (configure-for-programming 'c++-list-fn-signatures))
+       t) ))
 
 ;;----------------------------------------------------------------------
 ;; Java
@@ -379,5 +387,5 @@
 (eval-after-load 'lua-mode
   '(add-hook 'lua-mode-hook
      (lambda ()
-       (configure-for-programming 'lua-list-fn-signatures)
-       )) )
+       (configure-for-programming 'lua-list-fn-signatures))
+     t))
