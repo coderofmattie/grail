@@ -4,7 +4,7 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
-(use-grail-groups 0 "template" "lisp" "code-formatting")
+(use-grail-groups 0 "template" "lisp" "code-formatting" "sql")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
