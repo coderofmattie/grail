@@ -1,0 +1,4 @@
+(mapc (lambda ( ${1:param} )
+$>$0
+$>)
+$>$>${2:list})
