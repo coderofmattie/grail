@@ -28,6 +28,17 @@
 (defvar dwim-tab-local-context nil
   "A function, or list of functions ")
 
+(make-variable-buffer-local 'dwim-tab-local-context)
+
+(defun dwim-tab-local-context ( &rest context-functions )
+  "dwim-tab-local-context function-list
+
+   Add a context function to the Tab hook. If the function detects that
+   the point is within it's context, or turf then it should DTRT and
+   return non-nil.
+  "
+  (setq dwim-tab-local-context (append context-functions dwim-tab-local-context)))
+
 (defun dwim-tab-globalize-context ( context-fn )
   "dwim-tab-globalize-context function
 
@@ -60,7 +71,7 @@
   "
   (if complete
     (let
-      (point-before (point))
+      ((point-before (point)))
 
       (catch 'terminate-complete
         (dolist (fn complete)
@@ -109,16 +120,18 @@
             (when (not (try-complete-dwim completion)) (ding))
             (indent-for-tab-command))) )) ))
 
-(defun dwim-tab-localize ( &optional completion-functions )
+(defun dwim-tab-localize ( &rest completion-functions )
   "dwim-tab-localize &COMPLETE
    install a dwim-tab into the local keymap that is a capture of dwim-tab-fallback
    and the COMPLETE functions at the time of installation. Changes in
    dwim-tab-global-context and dwim-tab-local-context will affect all tab bindings.
   "
-  (local-set-key (kbd "<tab>") (dwim-tab-generator
-                                 (if completion-functions
-                                   (join-as-list completion-functions dwim-tab-fallback)
-                                   dwim-tab-fallback))) )
+  (local-set-key (kbd "<tab>") (apply 'dwim-tab-generator
+                                 (seq-filter-nil (append completion-functions
+                                                   (if (listp dwim-tab-fallback)
+                                                     dwim-tab-fallback
+                                                     (list dwim-tab-fallback)) ))
+                                 )))
 
 (provide 'dwim-tab)
 
