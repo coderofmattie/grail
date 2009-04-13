@@ -27,7 +27,8 @@
 
    Pop up the scratch buffer in the other window."
   (interactive)
-  (pop-to-buffer (get-buffer-create "*scratch*")))
+  (pop-to-buffer (get-buffer-create "*scratch*"))
+  (lisp-interaction-mode))
 
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"
