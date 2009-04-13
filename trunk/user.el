@@ -12,8 +12,14 @@
 ;;----------------------------------------------------------------------
 
 ;; (use-grail-groups "xml" "spell" "tab")
+<<<<<<< TREE
 
 (use-grail-groups "xml" "tab" "web")
+=======
+;;
+(use-grail-groups 0 "xml" "web")
+(use-grail-groups 1 "tab")
+>>>>>>> MERGE-SOURCE
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications

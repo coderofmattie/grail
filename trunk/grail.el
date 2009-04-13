@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.1.3"
+(defconst grail-release-version "0.2.0"
   "the release number of grail.el")
 
 (defconst grail-maintainer-email "codermattie@gmail.com"

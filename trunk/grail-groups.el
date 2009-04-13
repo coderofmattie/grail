@@ -20,19 +20,26 @@
    load the groups in the request list grail-requested-groups
    and then set the list to null, so that it can be re-run later.
   "
-    (when grail-requested-groups
-      (mapc 'grail-load-group
-        grail-requested-groups)
-      (setq grail-requested-groups nil)))
+  (when grail-requested-groups
+    (let
+      ((order-sorted (sort grail-requested-groups (lambda ( a b )
+                                                    (when (< (car a) (car b)) t)
+                                                    )) ))
+      (mapc
+        (lambda ( group-order )
+          (message "grail: loading order: %d" (car group-order))
+          (mapc 'grail-load-group (cdr group-order)))
+        grail-requested-groups))
 
-(defun use-grail-groups ( &rest request-list )
-  "use-grail-groups: LIST
+    (setq grail-requested-groups nil)))
+
+(defun use-grail-groups ( order &rest request-list )
+  "use-grail-groups: ORDER LIST
 
    request a list of string quoted groups to be loaded after the configuration
    files have been loaded.
   "
-  (setq grail-requested-groups
-    (append request-list grail-requested-groups)))
+  (push (cons order request-list) grail-requested-groups))
 
 ;;----------------------------------------------------------------------
 ;; installation library

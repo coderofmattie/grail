@@ -5,7 +5,7 @@
 ;; completion etc.
 ;;----------------------------------------------------------------------
 
-(use-grail-groups "template" "lisp" "code-formatting")
+(use-grail-groups 0 "template" "lisp" "code-formatting")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
