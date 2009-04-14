@@ -8,6 +8,7 @@
 (require 'cm-path)
 (require 'vc-logedit-hook)
 (require 'vc-bzr)
+(require 'bzr-ui)
 
 (defcustom commit-file-name "commit-changelog.txt"
   "the filename of the commit changelog draft")
@@ -89,7 +90,7 @@
           ;; insert the contents of the commit draft with a header
           ;; showing which directory it came from.
           (insert (format "Changelog for %s\n" draft-dir))
-          (insert-file commit-file)
+          (insert-file-contents commit-file)
 
           ;; add this directory to the list so we don't process it again.
           (push draft-dir commit-file-changelogs-used)) ))

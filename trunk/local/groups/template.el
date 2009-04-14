@@ -21,7 +21,7 @@
   (setq yas/dont-activate t)
 
   (defvar template-group-yasnippet-tree
-    (grail-sanitize-path (concat grail-elisp-root "templates/yasnippet/"))
+    (expand-file-name (concat grail-elisp-root "templates/yasnippet/"))
     "the yasnippet tree path relative to grail-elisp-root")
 
   ;; these have the generic template reference so I can switch or mix

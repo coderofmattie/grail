@@ -8,6 +8,9 @@
 (require 'ucase-word)
 (require 'buffer-ring)
 
+(eval-when-compile
+  (require 'cl))
+
 ;; this doesn't work because I don't seem to be able to trap the error ?
 ;; (defun backward-and-up-sexp ()
 ;;   (interactive)
@@ -63,7 +66,7 @@
 (defun xml-before-doc-close ()
   "move the point immediately before the closing of the document"
   (interactive)
-  (end-of-buffer)
+  (buffer-end 1)
   (re-search-backward "</" nil t))
 
 (defun export-buffer-to-clipboard ()
@@ -106,8 +109,7 @@
 	(switch-to-buffer (make-comint "perl5 REPL" "/usr/bin/perl" nil "-d" "-e shell")))
       ((string-equal "elisp" lang)
         (ielm))
-      (else
-        (message "I don't support language %s" lang)))
+      (t (message "I don't support language %s" lang)))
 
   (add-hook 'kill-buffer-hook
     (lambda ()
@@ -163,13 +165,13 @@
            ))
        ))
 
-(defun symbol-for-direction ( direction forward backward )
-  "little helper function to choose a symbol based on direction
+(eval-and-compile
+  (defun symbol-for-direction ( direction forward backward )
+    "little helper function to choose a symbol based on direction
    given. I can bury some error handling later"
-  (cond
-    ((string-equal "next" direction) forward)
-    ((string-equal "prev" direction) backward))
-  )
+    (cond
+      ((string-equal "next" direction) forward)
+      ((string-equal "prev" direction) backward))) )
 
 (defmacro skip-over-properties ( iterator &rest predicates )
   "skip-over-properties starts from the point, searching for a position before

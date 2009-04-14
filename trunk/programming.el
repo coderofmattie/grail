@@ -4,6 +4,10 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
+
+(eval-when-compile
+  (require 'grail-groups))
+
 (use-grail-groups 0 "template" "lisp" "code-formatting" "sql")
 
 ;;----------------------------------------------------------------------
@@ -94,9 +98,7 @@
   ediff-split-window-function 'split-window-horizontally
   ediff-merge-split-window-function 'split-window-horizontally
 
-  ediff-use-toolbar-p nil              ;; doesnt work ? disable the toolbar in ediff
-  ediff-window-setup-function 'ediff-setup-windows-plain ;; this should work.
-  )
+  ediff-window-setup-function 'ediff-setup-windows-plain)
 
 ;;----------------------------------------------------------------------
 ;; working-copy

@@ -14,6 +14,9 @@
 
 (require 'dwim-tab-fn)
 
+(eval-when-compile
+  (require 'cl))
+
 (defvar dwim-tab-global-context nil
   "A list of functions for contextualized-tab to try. These functions need to return t only
    if they are certain their dwim is the right dwim.")

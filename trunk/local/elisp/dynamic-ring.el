@@ -7,6 +7,9 @@
 
 (defconst dynamic-ring-version "0.0.1")
 
+(eval-when-compile
+  (require 'cl))
+
 ;;
 ;; ring structure
 ;;
@@ -153,7 +156,7 @@
     (setcar insert-linkage left)
 
     ;; double link the right side
-    (setcar (aref right dyn-ring-linkage) insert)
+    (setcar (aref right dyn-ring-linkage) element)
     (setcdr insert-linkage right)))
 
 (defun dyn-ring-insert ( ring-struct insert )

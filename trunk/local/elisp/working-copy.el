@@ -4,6 +4,9 @@
 ;; copyright: Mike Mattie 2009
 ;;----------------------------------------------------------------------
 
+(eval-when-compile
+  (require 'cl))
+
 ;; When programming it is often handy to merge by hunks to facilitate
 ;; clean commits, and keep the code working.
 
@@ -70,17 +73,6 @@
     wc-trunk
     (signal 'error (format "wc-trunk is not bound for %s" buffer-file-name))))
 
-(defun wc-exists-p ( file )
-  (file-readable-p (merc-wc-path file)))
-
-(defun wc-wc-buffer ( file )
-  (load-or-copy-ancestor
-    file
-    "working-copy"
-    "wc"
-    (lambda ( buffer file )
-      (with-current-buffer (merc-cc file)
-        (copy-to-buffer buffer (point-min) (point-max)))) ))
 
 (defun wc ( file )
   "wc FILE
@@ -99,6 +91,15 @@
     file
     nil
     "checkout"))
+
+(defun wc-wc-buffer ( file )
+  (load-or-copy-ancestor
+    file
+    "working-copy"
+    "wc"
+    (lambda ( buffer file )
+      (with-current-buffer (wc-cc-buffer file)
+        (copy-to-buffer buffer (point-min) (point-max)))) ))
 
 (defun cc ( file )
   "Find the Checkout copy of a source file"

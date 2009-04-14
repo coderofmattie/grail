@@ -1,26 +1,36 @@
-
 #----------------------------------------------------------------------
-# Makfile: for the emacs configuration
+#
 #----------------------------------------------------------------------
+.PHONY: clean library grail config dist dist-clean all
+.DEFAULT: all
 
-EMACS=$(HOME)/system/bin/emacs
+.el.elc:
+	emacs -q -L . -L local/elisp/ --batch -f batch-byte-compile $<
+clean:
+	cd local/elisp && make clean
+	- rm *.elc
 
-BYTECODE="Makefile.bytecode"
+library:
+	cd local/elisp && make all
 
-.PHONY: all $(BYTECODE) compile clean
+grail-fn.elc: grail-fn.el
+grail-groups.elc: grail-groups.el
 
-lisp-fonts:
-	test -f $HOME/.fonts.conf && fc-cache -f
+grail: grail-fn.elc grail-groups.elc
 
-$(BYTECODE):
-	-./compiler.sh
+user.elc: user.el
+programming.elc: programming.el
+elisp.elc: elisp.el
+keys.elc: keys.el
+beta.elc: beta.el
+commands.elc: commands.el
 
-compile: $(BYTECODE)
-	${MAKE} -f Makefile.bytecode compile EMACS=$(EMACS)
+config: user.elc programming.elc elisp.elc keys.elc beta.elc
 
-clean: $(BYTECODE)
-	${MAKE} -f Makefile.bytecode clean
+dist-clean:
+	- find dist/elisp -name '*.elc' | xargs rm
 
-all: fonts
+dist:
+	find dist/elisp -name '*.el' | xargs emacs -q --batch -f batch-byte-compile
 
-
+all: library grail config

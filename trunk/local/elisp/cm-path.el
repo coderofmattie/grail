@@ -12,16 +12,6 @@
 ;; neccesitates this silly wrapper. Consider sending this upstream as
 ;; a patch or add-on to file-readable-p"
 
-(defun grail-sanitize-path ( path )
-  "grail-sanitize-path PATH
-
-   sanitize a load-path reducing redundant file separators to single
-   separators. The sanitized PATH is returned.
-
-   This situation: foo/bar/baz//  has bombed (load file) for me.
-  "
-  (replace-regexp-in-string "/+" "/" path))
-
 (defun file-path-if-readable ( file )
   "return the path if the file is readable, otherwise nil"
   (if (file-readable-p file)

@@ -1,19 +1,30 @@
 ;;----------------------------------------------------------------------
-;; alpha.el
+;; beta.el
 ;; Primary Author: Mike Mattie
 ;; Copyright: Mike Mattie (2007)
 ;; License: GPL v3.
 ;;----------------------------------------------------------------------
+
+(require 'cm-string)
+(require 'cm-list)
+
+(eval-when-compile
+;;  this works when compiled and eliminates a unkown symbol warning, but when source loaded
+;;  it croaks with cannot load file.
+;;  (load "elisp")
+  (require 'cl)
+  (require 'grail-fn))
 
 ;;
 ;; stable-track  - canidate for inclusion in commands.el
 ;;
 
 ;; this can go in when it doesn't rely on a auto-overlay function.
-(defun show-overlay-binding ( symbol )
-  "show the overlay binding value of the symbol at the point"
-  (interactive "Ssymbol? ")
-  (pp (auto-overlay-local-binding symbol)))
+
+;; (defun show-overlay-binding ( symbol )
+;;   "show the overlay binding value of the symbol at the point"
+;;   (interactive "Ssymbol? ")
+;;   (pp (auto-overlay-local-binding symbol)))
 
 ;; a interactive command I still use. Just a quick way to pull up the
 ;; source in a read-only buffer. Once the completion is fixed to search

@@ -7,6 +7,10 @@
 ;; be loaded via load-style.
 ;;----------------------------------------------------------------------
 
+(eval-when-compile
+  (require 'grail-groups)
+  (require 'grail-fn))
+
 ;;----------------------------------------------------------------------
 ;; undistributed features.
 ;;----------------------------------------------------------------------
@@ -255,7 +259,7 @@
 ;;----------------------------------------------------------------------
 ;;                       Programming
 ;;----------------------------------------------------------------------
-(load-user-elisp "programming.el")
+(load-user-elisp "programming")
 
 ;;----------------------------------------------------------------------
 ;; Beta features
@@ -264,5 +268,5 @@
 ;; beta features are commands that are in development, usable, but
 ;; require some more work for completion.
 
-(load-user-elisp "beta.el")
+(load-user-elisp "beta")
 

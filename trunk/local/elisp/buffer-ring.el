@@ -92,15 +92,15 @@
     buffer))
 
 (defun bfr-find-buffer ( buffer-ring buffer-name )
-  "buffer-ring-find-buffer RING BUFFER
+  "bfr-find-buffer RING BUFFER
 
    Search buffer RING for BUFFER. return the buffer ring element
    if found, otherwise nil.
   "
   (let
     ((found (dyn-ring-find buffer-ring
-              (lambda ( buffer )
-                (when (string-equal (dyn-ring-get-value element) buffer-name) t)) )))
+              (lambda ( ring-element )
+                (when (string-equal (dyn-ring-get-value ring-element) buffer-name) t)) )))
     (when found
       (car found)) ))
 
@@ -226,7 +226,7 @@
     (progn
       (funcall direction the-one-ring)
       (let
-        ((buffer-ring (dyn-ring-value ring)))
+        ((buffer-ring (dyn-ring-value the-one-ring)))
 
         (if (< (dyn-ring-size buffer-ring) 1)
           (message "this buffer ring is empty; keeping the current buffer")

@@ -7,6 +7,9 @@
 
 (defconst record-processor-version "0.0.1")
 
+(eval-when-compile
+  (require 'cl))
+
 ;;
 ;; extractor
 ;;

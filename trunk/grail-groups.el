@@ -4,6 +4,9 @@
 ;; Copyright (C) 2009 Mike Mattie
 ;; License: LGPL-v3
 ;;----------------------------------------------------------------------
+(eval-when-compile
+  (require 'cl)
+  (require 'grail-fn))
 
 (defun grail-load-group ( group-name )
   (unless (load-elisp-if-exists (concat grail-local-groups group-name ".el"))
@@ -73,7 +76,7 @@
 
    The path of the installation directory is returned for the installer's use.
   "
-  (grail-garuntee-dir-path (grail-sanitize-path
+  (grail-garuntee-dir-path (expand-file-name
                              (concat
                              (if package
                                (concat grail-dist-elisp "/" package)
@@ -94,7 +97,7 @@
             (progn
               (message "grail: grail-download-dir-and-file-path could not create a download path for %s" name)
               nil)))
-      (cons dl-dir (grail-sanitize-path (concat dl-dir "/" name))) )))
+      (cons dl-dir (expand-file-name (concat dl-dir "/" name))) )))
 
 (defun grail-cleanup-download ( dl-dir-and-file &optional ignore-save )
   "grail-cleanup-download
@@ -246,7 +249,7 @@
         (cond
           ((equal "gz"  compression) "z")
           ((equal "bz2" compression) "j")
-          (signal error (format "grail: error! unsupported compression %s" compression)))
+          (t (signal error (format "grail: error! unsupported compression %s" compression))))
         "f")
       (quote-string-for-shell path)
       "-C" (quote-string-for-shell target-dir)
@@ -554,6 +557,16 @@
 ;;----------------------------------------------------------------------
 ;; grail repair routines.
 ;;----------------------------------------------------------------------
+(defun grail-print-fn-to-scratch ( fn-name description )
+  "grail-print-fn-to-scratch FN-NAME DESCRIPTION
+
+   Print FN-NAME as a function call with DESCRIPTION instructions
+   in the scratch buffer. The user can evaluate the description
+   and easily un-comment the function and execute it.
+  "
+  (with-current-buffer "*scratch*"
+    (goto-char (point-max))
+    (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
 
 (defun grail-repair-by-installing ( package installer )
   "grail-repair-by-installing symbol:PACKAGE list|function:INSTALLER
@@ -574,7 +587,9 @@
         (cond
           ((functionp installer) (funcall installer))
           ((listp installer) (grail-run-installer installer))
-          (signal error (fomat "unhandled installer type: not a function or a list %s" (princ (type-of installer)))))
+          (t (signal error
+               (format "unhandled installer type: not a function or a list %s"
+                 (princ (type-of installer))))))
 
         (error
           (message "grail repair of package %s failed with %s" package-name (format-signal-trap install-trap))
@@ -709,3 +724,6 @@
         nil)
 
       t) ))
+
+(provide 'grail-groups)
+

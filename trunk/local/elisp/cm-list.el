@@ -3,6 +3,9 @@
 ;; written by Mike Mattie
 ;;----------------------------------------------------------------------
 
+(eval-when-compile
+  (require 'cl))
+
 (defun memqcar ( object list &optional item-fn )
   "memqcar OBJECT LIST &optional ITEM-FN
 
@@ -71,8 +74,8 @@
   (if (> n 1)
     (lexical-let
       ((a-list list)
-        (b-list nil)
-        (before-split (apply-n-times 'cdr (- n 1) list)))
+       (b-list nil)
+       (before-split (apply-n-times 'cdr (- n 1) list)))
 
       (setq b-list (cdr before-split))
       (setcdr before-split nil)

@@ -14,6 +14,9 @@
 (require 'cm-path)
 (require 'vc-bzr)
 
+(eval-when-compile
+  (require 'grail-fn))
+
 (defun bzr-find-repository-top ( path )
   "bzr-find-repository-top PATH
 
@@ -68,7 +71,7 @@
   "
     (read-file-name prompt
       in-dir              ;; complete in directory
-      (or default path)   ;; default if user presses enter
+      default             ;; default if user presses enter
       nil                 ;; don't force it to match
 
       initialize ;; initial input
@@ -104,9 +107,8 @@
     ;;       it and re-formats the prompt a bit. This magic is not documented
     ;;       currently.
     (expand-file-name
-      (grail-sanitize-path (concat
-                             (bzr-prompt-for-branch-dir
-                               (concat prompt " w/default(" default "):")
-                               root nil default) "/"))) ))
+      (concat (bzr-prompt-for-branch-dir
+                (concat prompt " w/default(" default "):")
+                root nil default) "/")) ))
 
 (provide 'bzr-ui)
