@@ -21,7 +21,7 @@
   "A list of functions for contextualized-tab to try. These functions need to return t only
    if they are certain their dwim is the right dwim.")
 
-(defvar dwim-tab-fallback 'hippie-expand
+(defvar dwim-tab-fallback nil
   "A fallback completion function which defaults to hippie expand.
    set dwim-tab-fallback to a function, or a list of
    functions. When more than one function is specified the

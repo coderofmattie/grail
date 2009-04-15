@@ -10,9 +10,6 @@
 ;; opportunities for errors to occur in the earliest stage of loading,
 ;; and to facilitate compilation.
 
-(eval-when-compile
-  (require 'cl))
-
 ;;----------------------------------------------------------------------
 ;; general lisp functions
 ;;----------------------------------------------------------------------
@@ -45,12 +42,12 @@
    FUNC is applied to the non-nil elements of SEQ ala mapcar. The
    result is either a list or nil if filtering eliminated all
    output."
-  (lexical-let
+  (let
     ((rvalue nil))
 
     (dolist (element seq)
       (when element
-        (lexical-let
+        (let
           ((transform (funcall func element)))
           (when transform
             (push transform rvalue)))))
