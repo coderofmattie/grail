@@ -5,7 +5,7 @@
 ;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
 
-(defconst dynamic-ring-version "0.0.1")
+(defconst dynamic-ring-version "0.0.2")
 
 (eval-when-compile
   (require 'cl))
@@ -21,8 +21,8 @@
   "
   (cons nil 0))
 
-(defun dyn-ring-emptyp ( ring-struct )
-  "dyn-ring-emptyp RING
+(defun dyn-ring-empty-p ( ring-struct )
+  "dyn-ring-empty-p RING
 
    return t if RING has no elements.
   "
@@ -81,7 +81,7 @@
 
 (defun dyn-ring-traverse ( ring-struct fn )
   (let
-    ((head    (car ring-struct)))
+    ((head (car ring-struct)))
 
     (when head
       (funcall fn head)
@@ -94,6 +94,36 @@
           (funcall fn current)
           (setq current (cdr (aref current dyn-ring-linkage))))
         t))))
+
+(defun dyn-ring-map ( ring-struct map-fn )
+  (lexical-let
+    ((output nil))
+
+    (dyn-ring-traverse ring-struct
+      (lambda ( element )
+        (push (funcall map-fn (dyn-ring-get-value element)) output)))
+
+    output))
+
+(defun dyn-ring-rotate-until ( ring-struct direction fn )
+  (let
+    ((start (car ring-struct)))
+
+    (catch 'stop
+
+      (when start
+        (when (< (dyn-ring-size ring-struct) 2) (throw 'stop nil))
+
+        (funcall direction ring-struct)
+
+        ;; when we have moved off the start loop until we return to it.
+        (while (not (eq (car ring-struct) start))
+          (when (funcall fn (dyn-ring-value ring-struct)) (throw 'stop t))
+          (funcall direction ring-struct))
+
+        ;; if nothing is found reset the head back to the original value
+        (setcar ring-struct start)
+        nil)) ))
 
 (defun dyn-ring-find ( ring-struct predicate )
   (lexical-let

@@ -5,19 +5,29 @@
 ;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
 
-(defconst buffer-ring-version "0.0.1")
+(defconst buffer-ring-version "0.0.2")
+
+(require 'dynamic-ring)
 
 ;; TODO:
-
-;; * test the global buffer ring implementation
-;; * completion of the ring names
 
 ;; * some sort of global default ring so you can simply hit enter when
 ;;   entering a ring name.
 
 ;; * review for bugs and corner cases.
 
-(require 'dynamic-ring)
+(global-set-key (kbd "C-c C-b b") 'buffer-ring-list-buffers)
+(global-set-key (kbd "C-c C-b r") 'buffer-ring-list-rings)
+
+(global-set-key (kbd "C-c C-b a") 'buffer-ring-add)
+(global-set-key (kbd "C-c C-b d") 'buffer-ring-delete)
+
+(global-set-key (kbd "C-c C-b f") 'buffer-ring-next-buffer)
+(global-set-key (kbd "C-c C-b b") 'buffer-ring-prev-buffer)
+(global-set-key (kbd "C-c C-b c") 'buffer-ring-cycle)
+
+(global-set-key (kbd "C-c C-b n") 'buffer-ring-next-ring)
+(global-set-key (kbd "C-c C-b p") 'buffer-ring-prev-ring)
 
 (defvar the-one-ring (make-dyn-ring)
   "a global ring of all the buffer rings")
@@ -67,7 +77,7 @@
     (if buffer-ring
       ;; if it already exists return the ring.
       (progn
-        (message "Adding to existing ring %s" name)
+        (message "Adding to existing ring: %s" name)
         buffer-ring)
 
       ;; otherwise create a new ring buffer, which is a cons of the
@@ -153,11 +163,16 @@
   "
   (interactive "sAdd to ring ? ")
 
-  (set (make-local-variable 'buffer-ring) (bfr-get-buffer-ring name))
-  (set (make-local-variable 'buffer-ring-this-buffer) (bfr-add-buffer buffer-ring (current-buffer)))
-  (set (make-local-variable 'buffer-ring-modeline) (concat " Ring (" name ") "))
+  (if (boundp 'buffer-ring)
+    (message
+      "This buffer is already in ring %s, delete it before adding it to another ring"
+      (bfr-ring-name buffer-ring))
+    (progn
+      (set (make-local-variable 'buffer-ring) (bfr-get-buffer-ring name))
+      (set (make-local-variable 'buffer-ring-this-buffer) (bfr-add-buffer buffer-ring (current-buffer)))
+      (set (make-local-variable 'buffer-ring-modeline) (concat " Ring (" name ") "))
 
-  (add-hook 'kill-buffer-hook 'buffer-ring-delete t t))
+      (add-hook 'kill-buffer-hook 'buffer-ring-delete t t))) )
 
 (defun buffer-ring-delete ()
   "buffer-ring-delete
@@ -177,6 +192,40 @@
       (remove-hook 'kill-buffer-hook 'bfr-del-buffer t))
     (message "This buffer is not in a ring")))
 
+(defun buffer-ring-list-buffers ()
+  (interactive)
+
+  (if (boundp 'buffer-ring)
+    (let
+      ((buffer-list nil))
+
+      (dyn-ring-map
+        (bfr-ring-ring buffer-ring)
+        (lambda ( name )
+          (setq buffer-list
+            (if buffer-list
+              (concat name "," buffer-list)
+              name))))
+
+    (message "buffers in [%s]: %s" (bfr-ring-name buffer-ring) buffer-list))
+    (message "This buffer is not in a ring.")) )
+
+(defun buffer-ring-list-rings ()
+  (interactive)
+
+  (let
+    ((ring-list nil))
+
+    (mapc
+      (lambda ( name )
+        (setq ring-list
+          (if ring-list
+            (concat name "," ring-list)
+            name)))
+      (dyn-ring-map the-one-ring 'car))
+
+    (message "buffer rings: %s" ring-list) ))
+
 (defun bfr-rotate-buffer-ring ( direction )
   (if (bfr-in-ringp)
     (let
@@ -189,23 +238,23 @@
           (switch-to-buffer (dyn-ring-value ring))) ))
     (message "This buffer is not in a ring") ))
 
-(defun bfr-prev-buffer ()
-  "bfr-prev-buffer
+(defun buffer-ring-prev-buffer ()
+  "buffer-ring-prev-buffer
 
    Switch to the previous buffer in the buffer ring.
   "
   (interactive)
   (bfr-rotate-buffer-ring 'dyn-ring-rotate-left))
 
-(defun bfr-next-buffer ()
-  "bfr-next-buffer
+(defun buffer-ring-next-buffer ()
+  "buffer-ring-next-buffer
 
    Switch to the previous buffer in the buffer ring.
   "
   (interactive)
   (bfr-rotate-buffer-ring 'dyn-ring-rotate-right))
 
-(defun cycle-buffers-with-rings ()
+(defun buffer-ring-cycle ()
   "cycle-buffers-with-rings
 
    When the buffer is in a ring cycle to the next buffer in the
@@ -220,35 +269,57 @@
 ;; global ring interface
 ;;
 
+(defun bfr-current-name ()
+  (car (dyn-ring-value the-one-ring)))
+
+(defun bfr-current-ring ()
+  (cdr (dyn-ring-value the-one-ring)))
+
 (defun bfr-rotate-global-ring ( direction )
   (if (< (dyn-ring-size the-one-ring) 2)
     (message "There is only one buffer ring; ignoring the rotate command")
-    (progn
-      (funcall direction the-one-ring)
-      (let
-        ((buffer-ring (dyn-ring-value the-one-ring)))
+    ;; rotate past any empties
+    (if (dyn-ring-rotate-until
+          the-one-ring
+          direction
+          (lambda ( buffer-ring )
+            (not (dyn-ring-empty-p buffer-ring))))
+      (progn
+        (message "switching to ring %s" (bfr-current-name))
+        (switch-to-buffer (dyn-ring-value (bfr-current-ring))))
 
-        (if (< (dyn-ring-size buffer-ring) 1)
-          (message "this buffer ring is empty; keeping the current buffer")
-          (progn
-            (message "switching to ring %s" (bfr-ring-name buffer-ring))
-            (switch-to-buffer (dyn-ring-value (bfr-ring-ring buffer-ring)))
-            (setq buffer-ring-default (bfr-ring-name buffer-ring)) )) )) ))
+      (message "All of the buffer rings are empty. Keeping the current ring position")) ))
 
-(defun bfr-prev-ring ()
-  "bfr-prev-ring
+(defun buffer-ring-next-ring ()
+  "buffer-ring-next-ring
+
+   Switch to the previous buffer in the buffer ring.
+  "
+  (interactive)
+  (bfr-rotate-global-ring 'dyn-ring-rotate-right))
+
+(defun buffer-ring-prev-ring ()
+  "buffer-ring-prev-ring
 
    Switch to the previous buffer in the buffer ring.
   "
   (interactive)
   (bfr-rotate-global-ring 'dyn-ring-rotate-left))
 
-(defun bfr-next-ring ()
-  "bfr-next-ring
-
-   Switch to the previous buffer in the buffer ring.
-  "
+(defun buffer-ring-list-rings ()
   (interactive)
-  (bfr-rotate-global-ring 'dyn-ring-rotate-right))
+
+  (let
+    ((ring-list nil))
+
+    (mapc
+      (lambda ( name )
+        (setq ring-list
+          (if ring-list
+            (concat name "," ring-list)
+            name)))
+      (dyn-ring-map the-one-ring 'car))
+
+    (message "buffer rings: %s" ring-list) ))
 
 (provide 'buffer-ring)
