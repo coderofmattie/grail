@@ -429,4 +429,3 @@
 
 (provide 'dynamic-ring)
 ;;; dynamic-ring.el ends here
-
