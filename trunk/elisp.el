@@ -64,3 +64,17 @@
     (lambda ( hook )
       (apply hook args))
       hook-list))
+
+(defun todays-date ()
+  "return today's date as a string."
+  (let
+    ((now (decode-time))
+     (string nil))
+
+    (mapc (lambda ( x )
+            (setq string
+              (if string
+                (concat (number-to-string x) "-" string)
+                (number-to-string x))))
+      (list (nth 3 (decode-time)) (nth 4 (decode-time)) (nth 5 (decode-time)) ))
+    string))
