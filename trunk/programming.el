@@ -98,7 +98,26 @@
   ediff-split-window-function 'split-window-horizontally
   ediff-merge-split-window-function 'split-window-horizontally
 
-  ediff-window-setup-function 'ediff-setup-windows-plain)
+  ediff-window-setup-function 'ediff-setup-windows-plain
+
+  ediff-auto-refine t)
+
+(defun teardown-ediff-after-merge ()
+  ;; cleanup ediff without asking or keeping the variants.
+  (let
+    ((merge ediff-buffer-C)
+     (panel (current-buffer)))
+
+    (ediff-janitor nil nil)
+
+    (switch-to-buffer merge)
+    (delete-other-windows)
+
+    (kill-buffer panel) ))
+
+(add-hook 'ediff-quit-hook 'teardown-ediff-after-merge)
+
+(require 'submerge)
 
 ;;----------------------------------------------------------------------
 ;; working-copy
