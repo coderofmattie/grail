@@ -1,10 +1,10 @@
 #! /bin/sh
 
-# Darwin uses the old style /usr/X11R6
-
+# include macports headers if they are present
+# TODO ? what about libs ?
 emacs_cflags=""
-if test -d /usr/X11R6/include ; then
-  emacs_cflags="-I/usr/X11R6/include/"
+if test -d /opt/local/include ; then
+  emacs_cflags="-I/opt/local/include/"
 fi
 
 # configure with X, no fancy toolkit crap, straight X.  It is more
@@ -24,15 +24,9 @@ conf="$conf --without-gpm"
 # graphics formats
 conf="$conf --with-png --without-gif --without-jpeg --without-tiff"
 
-# Darwin X11R6 does not have enough headers for a decent compile. The
-# only way I get it to work is to try and install GTK from macports
-# which pulls all the X headers. Then use the macports includes.
-
-if test -d /opt/local/include ; then
-  conf="$conf --x-includes=\"/opt/local/include\""
-
-  # not a good idea really. don't assume pkg-config is broken.
-#  export PKG_CONFIG_PATH="/opt/local/lib/pkgconfig/"
+# under darwin X is found in /usr/
+if test -d /usr/X11/include ; then
+  conf="$conf --x-includes=\"/usr/X11/include/\" --x-libraries=\"/usr/X11/lib/\""
 fi
 
 conf="$conf --prefix=\"$HOME/system/installed/\""
