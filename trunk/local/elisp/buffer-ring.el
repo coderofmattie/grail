@@ -238,7 +238,7 @@
       ((ring (bfr-ring-ring buffer-ring)))
 
       (if (< (dyn-ring-size ring) 2)
-        (message "There is only one ring in the buffer")
+        (message "There is only one buffer in the ring.")
         (progn
           (funcall direction ring)
           (switch-to-buffer (dyn-ring-value ring))) ))
