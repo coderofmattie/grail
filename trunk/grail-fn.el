@@ -10,6 +10,9 @@
 ;; opportunities for errors to occur in the earliest stage of loading,
 ;; and to facilitate compilation.
 
+(eval-when-compile
+  (require 'cl))
+
 ;;----------------------------------------------------------------------
 ;; general lisp functions
 ;;----------------------------------------------------------------------
@@ -69,16 +72,54 @@
       (cadr signal-trap)
       (cdr signal-trap)) ))
 
-(defun grail-dup-error-to-scratch (error-message)
+
+(defun grail-insert-error ( message )
+  (let
+    ((message-start (point)))
+
+    (cond
+      ((stringp message) (insert message))
+      ((functionp message) (insert "(%s)" (princ message)))
+      (t (insert "%s" (princ message))) )
+
+    (fill-region message-start (point))
+
+    (insert "\n\n")))
+
+(defun grail-report-errors (message &rest errors )
   "grail-dup-error-to-scratch ERROR-MESSAGE
 
   duplicate the ERROR-MESSAGE to both *Messages* as a log and to the
   *scratch* buffer as a comment where it is highly visible.
   "
-  (message "%s" error-message)
+
   (with-current-buffer "*scratch*"
-    (goto-char (point-max))
-    (insert (format "; grail error! %s\n" error-message))) )
+    (let
+      ((error-start (progn
+                      (goto-char (point-max))
+                      (insert "\n")
+                      (point)) ))
+
+      (grail-insert-error message)
+
+      (when (not (null errors))
+        (let
+          ((cause-start (point)))
+
+          (mapc
+            (lambda (cause)
+              (grail-insert-error (format "*  %s" cause)))
+            errors)
+
+          (insert "\n")
+          (let
+            ((fill-prefix "  "))
+            (indent-region cause-start (point))) ))
+
+      (let
+        ((comment-start ";"))
+
+        (comment-region error-start (point))) )) )
 
 ;;
 ;; path functions
@@ -133,23 +174,22 @@
 ;; loading functions
 ;;----------------------------------------------------------------------
 
-(defun load-elisp-file-reporting-errors ( path )
-  "load-elisp-file-reporting-errors PATH
+(defun load-elisp-trapping-errors ( path )
+  "load-elisp-file-trapping-errors PATH
 
-   load PATH relative to grail-elisp-root reporting any errors that occur.
+   load PATH throwing grail-trap with diagnostics if an error is
+   reported by diagnostic-load-elisp-file.
 
    t is returned on success, nil on failure.
   "
   (let
     ((diagnostics (diagnostic-load-elisp-file path)))
-      (if diagnostics
-        (progn
-          (grail-dup-error-to-scratch
-             (format "grail: errors %s prevented %s from loading correctly"
-             (format-signal-trap diagnostics)
-              path))
-          nil)
-        t)) )
+
+    (if diagnostics
+      (throw 'grail-trap (list
+                           (format "grail: %s aborted loading" path)
+                           (format-signal-trap diagnostics)))
+      t) ))
 
 (defun load-elisp-if-exists ( path )
   "load-elisp-if-exists PATH
@@ -164,9 +204,15 @@
     ((checked-path (or (file-path-if-readable path)
                        (file-path-if-readable (concat path ".el")))))
 
-    (when checked-path
-      (message "grail loading user file %s" checked-path)
-      (load-elisp-file-reporting-errors path)) ))
+    (if checked-path
+      (let
+        ((trap (catch 'grail-trap (load-elisp-trapping-errors path))))
+
+        (when (consp trap)
+          (throw 'grail-trap (cons "grail: unexepected error loading an existing path; likely a syntax problem, or a missing require"
+                               trap)))
+        t)
+      nil)))
 
 (defun load-user-elisp ( file )
   "load-user-elisp FILE
@@ -201,8 +247,12 @@
    after-make-frame-functions.
   "
   (when (and (not grail-gui-configured) (is-current-frame-gui frame))
-    (and (load-user-elisp "gui") (grail-load-requested-groups))
-    (setq grail-gui-configured t)))
+    (progn
+
+      (grail-trap
+        "loading the gui file"
+        (load-user-elisp "gui"))
+      (setq grail-gui-configured t)) ))
 
 (defun grail-load-display-configuration-once ()
   "grail-load-display-configuration-once
@@ -305,11 +355,12 @@
                    (type ?d)
                    (!name filter-dot-dirs))))
 
-             grail-elpa-load-path
+             ;; load the version-control based code before ELPA
+             ;; to always prefer local changes.
 
-             (if (file-accessible-directory-p grail-dist-elisp)
-               (cons grail-dist-elisp
-                 (filter-ls grail-dist-elisp t
+             (if (file-accessible-directory-p grail-dist-git)
+               (cons grail-dist-git
+                 (filter-ls grail-dist-git t
                    (type ?d)
                    (!name filter-dot-dirs))))
 
@@ -317,7 +368,27 @@
                (cons grail-dist-cvs
                  (filter-ls grail-dist-cvs t
                    (type ?d)
-                   (!name filter-dot-dirs)))) ))
+                   (!name filter-dot-dirs))))
+
+             (if (file-accessible-directory-p grail-dist-svn)
+               (cons grail-dist-svn
+                 (filter-ls grail-dist-svn t
+                   (type ?d)
+                   (!name filter-dot-dirs))))
+
+             ;; ELPA loaded packages.
+
+             grail-elpa-load-path
+
+             ;; give the user a place to drop files and organize
+             ;; as they see fit.
+
+             (if (file-accessible-directory-p grail-dist-elisp)
+               (cons grail-dist-elisp
+                 (filter-ls grail-dist-elisp t
+                   (type ?d)
+                   (!name filter-dot-dirs))))
+              ))
 
          ;; if there is an error, trap and re-throw the error
          (error
@@ -432,63 +503,5 @@
           (cdr face)))
       list)
     (cons 'progn set-face-calls)))
-
-;;----------------------------------------------------------------------
-;; ELPA
-;;
-;; The preferred way to install software is with ELPA which is a
-;; sophisticated package management system.
-;;
-;; the grail install functions are overly simplistic in comparison.
-;;----------------------------------------------------------------------
-
-(defconst elpa-url
-  "http://tromey.com/elpa/")
-
-(defun load-elpa-when-installed ()
-  "load-elpa-when-installed
-
-   If the ELPA package management system http://tromey.com/elpa/ is installed,
-   configure it for use, assuming a proper install by grail-install-elpa.
-
-   t is returned if succesful, otherwise nil is returned.
-  "
-  (interactive)
-  (if (load-elisp-if-exists (concat grail-dist-elisp "package.el"))
-    (progn
-      (unless (dir-path-if-accessible grail-dist-elpa)
-        (make-directory grail-dist-elpa t))
-
-      (setq-default package-user-dir (expand-file-name grail-dist-elpa))
-      (push grail-dist-elpa package-directory-list)
-
-      (let
-        ((elpa-errors (diagnostic-load-elisp (package-initialize))))
-
-        (if elpa-errors
-          (progn
-            (grail-dup-error-to-scratch
-              (format "ELPA failed to initialize with error %s" (format-signal-trap elpa-errors)))
-            nil)
-          t) ))
-    nil))
-
-(defun grail-install-elpa ()
-  "install the ELPA package management system"
-  (interactive)
-
-  (catch 'abort
-    (unless (grail-groups-loaded-p)
-      (message "installing ELPA requires loading grail-groups.el for installation routines. Please consult README.grail and place grail-groups.el in USER_ELISP")
-      (throw 'abort nil))
-
-    (let
-      ((elpa-install (grail-repair-by-installing 'package
-                       (grail-define-installer "package" "file" (concat elpa-url "package.el")))))
-
-      (unless elpa-install
-        (message "ELPA installation failed %s" elpa-install)))
-
-    (load-elpa-when-installed) ))
 
 (provide 'grail-fn)

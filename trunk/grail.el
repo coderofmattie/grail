@@ -30,8 +30,8 @@
 ;; It is very common for load-path to evolve, or devolve :) in a
 ;; hackish way until it is difficult to maintain. The tree structure
 ;; for a configuration defined by grail is used to construct a
-;; load-path that scales from a simple configuration, to ambitious
-;; elisp hacking.
+;; load-path that scales from simple configuration to ambitious elisp
+;; hacking.
 
 ;; There wealth of third party emacs packages provide powerful
 ;; functionality, but they are a burden to maintain, and especially to
@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.2.0"
+(defconst grail-release-version "0.3.0"
   "the release number of grail.el")
 
 (defconst grail-maintainer-email "codermattie@gmail.com"
@@ -84,8 +84,21 @@
       nil)
     (error error-trap)))
 
-(defun grail-load-requested-groups ()
-  ;; a dummy function replaced when grail loads the grail-groups package
+(defmacro grail-trap ( message &rest body )
+  `(let
+     ((trap (catch 'grail-trap ,@body)))
+
+     (if (consp trap)
+       (apply 'grail-report-errors (format "grail error: %s" ,message) trap)
+       trap) ))
+
+
+(defun grail-load-requested-profiles ()
+  ;; a dummy function replaced when grail loads the grail-profile package.
+  nil)
+
+(defun use-grail-profiles ( order &rest request-list )
+  ;; a dummy function replaced when grail loads the grail-profile package.
   nil)
 
 (condition-case error-trap
@@ -109,8 +122,6 @@
     ;;----------------------------------------------------------------------
     ;; load the 2cnd stage of grail with the more complex functions.
     ;;----------------------------------------------------------------------
-    (require 'cl) ;; the cl package is used by grail-fn
-
     (let*
       ((stage-2-path (concat grail-elisp-root "grail-fn"))
        (stage-2-errors (diagnostic-load-elisp-file stage-2-path)))
@@ -160,7 +171,15 @@
 
     (defvar grail-dist-cvs
       (concat grail-dist-dir "cvs/")
-      "cvs managed third party elisp")
+      "version control managed third party elisp")
+
+    (defvar grail-dist-git
+      (concat grail-dist-dir "git/")
+      "version control managed third party elisp")
+
+    (defvar grail-dist-svn
+      (concat grail-dist-dir "svn/")
+      "version control managed third party elisp")
 
     (defvar grail-elpa-load-path nil
       "The load-path extensions made by ELPA package activation")
@@ -174,9 +193,11 @@
     (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
       "The grail session state & persistent data directory which defaults to .emacs.d")
 
-    ;; grail-cfg.el is a file for user to change the tree structure that grail
-    ;; traverses before load-path is formed.
-    (load-user-elisp "grail-cfg")
+    (grail-trap
+      "Loading the grail-cfg file for user path changes."
+      ;; grail-cfg.el is a file for user to change the tree structure that grail
+      ;; traverses before load-path is formed.
+      (load-user-elisp "grail-cfg"))
 
     ;;----------------------------------------------------------------------
     ;; Host specific adaptation
@@ -188,11 +209,15 @@
     ;; these files and platform specific customization are loaded by
     ;; platform here.
     ;;----------------------------------------------------------------------
-    (load-user-elisp
-      (cond
-        ((string-equal "gnu/linux" system-type)  "linux")
-        ((string-equal "darwin"    system-type)  "darwin")
-        ((string-equal "windows"   system-type)  "windows")))
+
+    (grail-trap
+      "Loading the OS specific elisp."
+
+      (load-user-elisp
+        (cond
+          ((string-equal "gnu/linux" system-type)  "linux")
+          ((string-equal "darwin"    system-type)  "darwin")
+          ((string-equal "windows"   system-type)  "windows"))))
 
     ;; save the state of load-path after the platform file if any has
     ;; been loaded.
@@ -202,18 +227,26 @@
     (grail-extend-load-path)
 
     ;;----------------------------------------------------------------------
-    ;; support for groups.
+    ;; support for profiles.
     ;;----------------------------------------------------------------------
 
-    (defvar grail-local-groups
-      (when (load-user-elisp "grail-groups") (concat grail-local-dir "groups/"))
-      "The directory containing Emacs group modules.")
+    (defvar grail-local-profiles
+      (when (grail-trap
+	     "loading grail profiles support"
+	     (load-user-elisp "grail-profile"))
+	(concat grail-local-dir "profiles/"))
+      "The directory containing Grail profiles modules.")
 
-    ;; activate ELPA
-    (load-elpa-when-installed)
+    ;; (grail-trap
+    ;;   "loading ELPA"
 
-    ;; elisp loads the user's general elisp library.
-    (load-user-elisp "elisp")
+    ;;   ;; activate ELPA
+    ;;   (load-elpa-when-installed))
+
+    (grail-trap
+      "loading user ELISP"
+      ;; elisp loads the user's general elisp library.
+      (load-user-elisp "elisp"))
 
     ;; make sure there is a directory for session state and persistent data
     (grail-garuntee-dir-path grail-state-path)
@@ -239,33 +272,38 @@
     ;;----------------------------------------------------------------------
 
     (when (or (not noninteractive) (daemonp))
-      ;; the user-init-file _must_ be changed otherwise emacs will
-      ;; scribble all over grail which is not OK.
 
-      ;; The customize file path also needs to be set so that
-      ;; customize writes settings to a data-file rather than
-      ;; appending them to code.
+      (grail-trap
+        "redirect user-init-file and custom-file variables to grail-settings-file"
+        ;; the user-init-file _must_ be changed otherwise emacs will
+        ;; scribble all over grail which is not OK.
 
-      (setq user-init-file
-        (setq custom-file
-          (concat grail-elisp-root grail-settings-file)))
+        ;; The customize file path also needs to be set so that
+        ;; customize writes settings to a data-file rather than
+        ;; appending them to code.
+        (setq user-init-file
+          (setq custom-file
+            (concat grail-elisp-root grail-settings-file)))
 
       ;; Load the user's settings if any. Do it early so that this
       ;; stuff can be over-ridden in their config files.  The priority
       ;; of customize settings is a toss-up, but it only comes into
       ;; play when the user advances beyond relying on customize, and
       ;; by then the priority is sensible.
-      (load-user-elisp grail-settings-file)
+      (load-user-elisp grail-settings-file))
 
-      ;; only loaded when there is an active terminal.
-      (load-user-elisp "interface")
+      (grail-trap
+        "load interface level elisp files"
 
-      (load-user-elisp "user")
+        ;; only loaded when there is an active terminal.
+        (load-user-elisp "interface")
 
-      ;; load commands and keys last so they can use definitions from user.el
-      ;; and friends.
-      (load-user-elisp "commands")
-      (load-user-elisp "keys")
+        (load-user-elisp "user")
+
+        ;; load commands and keys last so they can use definitions from user.el
+        ;; and friends.
+        (load-user-elisp "commands")
+        (load-user-elisp "keys"))
 
       ;; In deamon mode the GUI related values are not defined by
       ;; Emacs until a GUI frame is created. In this case place the
@@ -274,16 +312,22 @@
       ;; when not using emacs --daemon load frame.el and gui.el
       ;; immediately.
 
-      (cond
-        ((daemonp) (progn
-                     (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t)
-                     (add-hook 'before-make-frame-hook 'grail-load-display-configuration-once) ))
-        ((window-system) (progn
-                           (load-user-elisp "display")
-                           (load-user-elisp "gui") ))) )
+      (grail-trap
+        "load GUI files"
+        (cond
+          ((daemonp) (progn
+                       (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t)
+                       (add-hook 'before-make-frame-hook 'grail-load-display-configuration-once) ))
+          ((window-system) (progn
+                             (load-user-elisp "display")
+                             (load-user-elisp "gui") ))) )
 
-    ;; load all the group files requested.
-    (grail-load-requested-groups))
+    ;; load all the group files requested. defer profile loading
+    ;; when starting as a daemon.
+    (grail-trap
+      "loading profiles from .emacs startup"
+      (grail-load-requested-profiles)) ))
+
   (error
     (message "Grail aborted from an internal error! %s" (princ error-trap))
     (message "Please report this to %s" grail-maintainer-email))

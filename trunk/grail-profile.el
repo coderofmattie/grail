@@ -1,51 +1,77 @@
 ;;;----------------------------------------------------------------------
-;; grail-groups.el
+;; grail-profile.el
 ;; Primary Author: Mike Mattie
-;; Copyright (C) 2009 Mike Mattie
+;; Copyright (C) 2010 Mike Mattie
 ;; License: LGPL-v3
 ;;----------------------------------------------------------------------
 (eval-when-compile
   (require 'cl)
   (require 'grail-fn))
 
-(defun grail-load-group ( group-name )
-  (unless (load-elisp-if-exists (concat grail-local-groups group-name ".el"))
-    (grail-dup-error-to-scratch
-      (format "grail: group module %s aborted loading from errors" group-name)) ))
-
-(defvar grail-requested-groups
+(defvar grail-requested-profiles
   nil
-  "List of group modules requested by the user.")
+  "List of grail profiles requested by the user.")
 
-(defun grail-load-requested-groups ()
-  "grail-load-requested-groups
+(defvar grail-failed-profiles
+  nil
+  "List of grail profiles that failed to load.")
 
-   load the groups in the request list grail-requested-groups
-   and then set the list to null, so that it can be re-run later.
+(defvar grail-loaded-profiles
+  nil
+  "List of grail profiles that have loaded.")
+
+(defun grail-load-requested-profiles ()
+  "grail-load-requested-profiles
+
+   Load the profiles in the request list grail-requested-profiles.
   "
-  (when grail-requested-groups
+  (when grail-requested-profiles
     (let
-      ((order-sorted (sort grail-requested-groups (lambda ( a b )
-                                                    (when (< (car a) (car b)) t)
-                                                    )) ))
+      ((order-sorted (sort grail-requested-profiles (lambda ( a b )
+                                                      (when (< (car a) (car b)) t)
+                                                      )) ))
+      (setq grail-requested-profiles nil)
+
       (mapc
-        (lambda ( group-order )
-          (message "grail: loading order: %d" (car group-order))
-          (mapc 'grail-load-group (cdr group-order)))
-        grail-requested-groups))
+        (lambda ( profile-order )
+          (message "grail: loading order %d -> %s" (car profile-order) (cdr profile-order))
+          (mapc
+            (lambda ( profile )
+              (message "grail: loading profile %s" (concat grail-local-profiles profile))
+              (let
+                ((trapped (catch 'grail-trap
+                            (load-elisp-if-exists (concat grail-local-profiles profile)))))
+                (if (consp trapped)
+                  (progn
+                    (push (cons (car profile-order) profile) grail-failed-profiles)
+                    (message "grail: profile %s failed to load" profile)
+                    (apply 'grail-report-errors (format "grail: profile %s failed to load" profile) trapped))
+                  (push profile grail-loaded-profiles)) ))
+            (cdr profile-order)))
+          order-sorted)
+      t)))
 
-    (setq grail-requested-groups nil)))
+(defun grail-retry-failed-profiles ()
+  "grail-retry-failed-profiles
 
-(defun use-grail-groups ( order &rest request-list )
+   Retry the loading of any profiles that previously failed to load.
+  "
+  (interactive)
+
+  (setq grail-requested-profiles grail-failed-profiles)
+  (setq grail-failed-profiles nil)
+  (grail-load-requested-profiles))
+
+(defun use-grail-profiles ( order &rest request-list )
   "use-grail-groups: ORDER LIST
 
    request a list of string quoted groups to be loaded after the configuration
    files have been loaded.
   "
-  (push (cons order request-list) grail-requested-groups))
+  (push (cons order request-list) grail-requested-profiles))
 
 ;;----------------------------------------------------------------------
-;; installation library
+;; installation support routines.
 ;;----------------------------------------------------------------------
 
 (defvar grail-save-downloads nil
@@ -54,19 +80,18 @@
 (defun grail-recursive-delete-directory ( path )
   "grail-recursive-delete-directory PATH
 
-   recursively delete the directory PATH. t on success, nil on error.
+   recursively delete the directory PATH. t on success.
   "
   (condition-case trapped-error
     (if (dir-path-if-accessible path)
       (if (equal 0 (call-process-shell-command "rm" nil nil nil "-r" path))
         t
-        nil)
-      (progn
-        (message "grail-recursive-delete-directory path %s is not a directory or the user does not have permissions" path)
-        nil))
-    (error
-      (message "grail-recursive-delete-directory failed %s" (format-signal-trap trapped-error))
-      nil)) )
+        (throw 'grail-trap
+          '((message "grail-recursive-delete-directory path %s is not a directory or the user does not have permissions" path))))
+      (throw 'grail-trap
+        '((message "grail-recursive-delete-directory path %s is not a directory or the user does not have permissions" path))))
+    (error (throw 'grail-trap
+             (list (message "grail-recursive-delete-directory failed") (format-signal-trap trapped-error)))) ))
 
 (defun grail-dist-install-directory ( &optional package )
   "grail-dist-install-directory &optional string:PACKAGE
@@ -94,9 +119,8 @@
                             (make-temp-file "grail" t)))
             t)
           (error
-            (progn
-              (message "grail: grail-download-dir-and-file-path could not create a download path for %s" name)
-              nil)))
+              (throw 'grail-trap
+                '((message "grail: grail-download-dir-and-file-path could not create a download path for %s" name))) ))
       (cons dl-dir (expand-file-name (concat dl-dir "/" name))) )))
 
 (defun grail-cleanup-download ( dl-dir-and-file &optional ignore-save )
@@ -113,6 +137,10 @@
         (delete-file (cdr dl-dir-and-file)))
       ;; otherwise it is a temp dir so nuke it
       (grail-recursive-delete-directory (car dl-dir-and-file))) ))
+
+;;----------------------------------------------------------------------
+;; async chain.
+;;----------------------------------------------------------------------
 
 (defun grail-process-async-chain ( start-process-fn doesnt-start-fn proc-fail-fn
                                    do-after-fn next-fn)
@@ -168,11 +196,8 @@
                 (funcall fail-fn)) ))) ))))
 
 ;;----------------------------------------------------------------------
-;; installation functions
+;; installation library
 ;;----------------------------------------------------------------------
-
-;; These are low level components of an installer with idiosyncratic
-;; function signatures.
 
 (defun grail-file-url ( name url &optional path )
   "grail-file-url NAME URL &optional PATH
@@ -211,27 +236,9 @@
         (message "grail-wget-url failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defun grail-cvs-async ( url module output-buffer )
-  "grail-wget-url-async URL PATH OUTPUT-BUFFER
-
-   retrieve the URL to PATH, with OUTPUT-BUFFER as the output
-   buffer. The process object created is returned, or nil if a
-   process could not be created.
-  "
-  (condition-case trapped-error
-    (let
-      ((default-directory (grail-garuntee-dir-path grail-dist-cvs)))
-
-      (start-process-shell-command "grail-cvs" output-buffer
-        "cvs"
-        "-d"
-        (quote-string-for-shell url)
-        "co"
-        (quote-string-for-shell module)))
-    (error
-      (progn
-        (message "grail-cvs-async failed %s" (format-signal-trap trapped-error))
-        nil)) ))
+;;
+;; tar
+;;
 
 (defun grail-untar-async ( path target-dir compression output-buffer )
   "grail-untar-async PATH DIR COMPRESSION OUTPUT-BUFFER
@@ -259,24 +266,6 @@
         (message "grail-untar-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-;;----------------------------------------------------------------------
-;; installation front-ends.
-;;----------------------------------------------------------------------
-
-(defun grail-elpa-install ( package )
-  "grail-elpa-installer PACKAGE
-
-   install PACKAGE using ELPA.
-  "
-  (condition-case error-trap
-    (let
-      ((package-symbol (eval `',(read package))))
-
-      (package-install package-symbol))
-    (error
-      (format "grail-elpa-installer for %s failed with: %s"
-        package (format-signal-trap error-trap))) ))
-
 (defun grail-untar-local-archive ( path compression )
   "grail-untar-local-archive PATH COMPRESSION
 
@@ -301,7 +290,7 @@
 
       ;; what to do when it finishes.
       (lambda ()
-        (message "installation completed. You can now run the initialization function"))
+        (message "extracting %s has completed." archive-path))
 
       ;; no chaining
       nil)))
@@ -396,10 +385,109 @@
         nil))
     )) ;; save excursion and the defun.
 
+;;----------------------------------------------------------------------
+;; version control
+;;
+;; The preferred way to integrate third party packages: a version control
+;; checkout.
+;;----------------------------------------------------------------------
+
+;;
+;; cvs
+;;
+
+(defun grail-cvs-async ( url module output-buffer )
+  "grail-cvs-async URL PATH OUTPUT-BUFFER
+
+  "
+  (condition-case trapped-error
+    (let
+      ((default-directory (grail-garuntee-dir-path grail-dist-cvs)))
+
+      (start-process-shell-command "grail-cvs" output-buffer
+        "cvs"
+        "-d"
+        (quote-string-for-shell url)
+        "co"
+        (quote-string-for-shell module)))
+    (error
+      (progn
+        (message "grail-cvs-async failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
 (defun grail-cvs-installer ( module url )
   (let
     ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-cvs*") nil t)))
     (grail-cvs-async url module grail-buffer) ))
+
+;;
+;; git
+;;
+
+(defun grail-git-async ( url module output-buffer )
+  "grail-git-async URL PATH OUTPUT-BUFFER
+
+   retrieve the URL to PATH, with OUTPUT-BUFFER as the output
+   buffer. The process object created is returned, or nil if a
+   process could not be created.
+  "
+  (condition-case trapped-error
+    (let
+      ((default-directory (grail-garuntee-dir-path grail-dist-git)))
+
+      (start-process-shell-command "grail-git" output-buffer
+        "git"
+        "clone"
+        (quote-string-for-shell url)
+        (quote-string-for-shell module)))
+    (error
+      (progn
+        (message "grail-git-async failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
+(defun grail-git-installer ( module url )
+  (let
+    ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-git*") nil t)))
+    (grail-git-async url module grail-buffer) ))
+
+
+(defun grail-svn-async ( url module output-buffer )
+  "grail-svn-async URL PATH OUTPUT-BUFFER
+
+   retrieve the URL to PATH, with OUTPUT-BUFFER as the output
+   buffer. The process object created is returned, or nil if a
+   process could not be created.
+  "
+  (condition-case trapped-error
+    (let
+      ((default-directory (grail-garuntee-dir-path grail-dist-svn)))
+
+      (start-process-shell-command "grail-svn" output-buffer
+        "svn"
+        "checkout"
+        (quote-string-for-shell url)
+        (quote-string-for-shell module)))
+    (error
+      (progn
+        (message "grail-svn-async failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
+(defun grail-svn-installer ( module url )
+  (let
+    ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-svn*") nil t)))
+    (grail-svn-async url module grail-buffer) ))
+
+;;----------------------------------------------------------------------
+;; installer front ends
+;;----------------------------------------------------------------------
+
+;;
+;; emacswiki
+;;
+
+;;
+;; emacsmirror
+;;
 
 ;;----------------------------------------------------------------------
 ;; grail-define-installer
@@ -448,6 +536,12 @@
 (defun grail-cvs-args ( install-pair )
   `(grail-cvs-installer ,(grail-target install-pair) ,(grail-url install-pair)))
 
+(defun grail-git-args ( install-pair )
+  `(grail-git-installer ,(grail-target install-pair) ,(grail-url install-pair)))
+
+(defun grail-svn-args ( install-pair )
+  `(grail-svn-installer ,(grail-target install-pair) ,(grail-url install-pair)))
+
 (defun grail-decompose-installer-type ( type-spec )
   "grail-decompose-installer-type SPEC
 
@@ -476,7 +570,7 @@
 
    download a plain elisp file: (grail-define-installer \"bob\" \"file\" \"URL\")
    download an tar.bz2 archive: (grail-define-installer \"bob\" \"tar:bz2\" \"URL\")
-   cvs checkout:              : (grail-define-installer \"bob\" \"cvs\" \"peserver\")
+   cvs checkout:              : (grail-define-installer \"bob\" \"cvs\" \"pserver\")
 
    Most of the time a single URL suffices. Many packages are a
    single elisp file, or a single tarball.
@@ -508,11 +602,12 @@
     ;; do a bit more input checking than usual as the definitions are user inputs.
 
     (unless (and (stringp name) (> (length name) 0))
-      (signal 'error
-        (format "installer expected package name string but got %s instead" (princ name))))
+      (throw 'grail-trap
+        '((format "installer expected package name string but got %s instead" (princ name)))))
 
     (unless url-list
-      (signal 'error (format "grail-define-installer: installer definition for %s must be given urls" name)))
+      (throw 'grail-trap
+        '((format "grail-define-installer: installer definition for %s must be given urls" name))))
 
     (let
       ((installer-calls
@@ -528,11 +623,12 @@
                (cond
                  ((string-equal "file"  install-type) (grail-file-args install-pair))
                  ((string-equal "cvs"   install-type) (grail-cvs-args  install-pair))
+                 ((string-equal "git"   install-type) (grail-git-args  install-pair))
+                 ((string-equal "svn"   install-type) (grail-svn-args  install-pair))
                  ((string-match "tar"   install-type) (grail-tar-args  install-pair))
 
-                 (t (signal
-                      'error
-                      (format "grail-define-installer: I don't have an installer for %s" install-type)))) ))
+                 (t (throw 'grail-trap
+                      '((format "grail-define-installer: I don't have an installer for %s" install-type))))) ))
           url-list)))
 
       ;; if there are several call-outs sequence them with and so that
@@ -550,23 +646,9 @@
   (condition-case trap
     (eval installer)
     (error
-      (grail-dup-error-to-scratch (format "installer internal error. please report \"%s\" to %s"
-                                    (format-signal-trap trap)
-                                    grail-maintainer-email)) )))
-
-;;----------------------------------------------------------------------
-;; grail repair routines.
-;;----------------------------------------------------------------------
-(defun grail-print-fn-to-scratch ( fn-name description )
-  "grail-print-fn-to-scratch FN-NAME DESCRIPTION
-
-   Print FN-NAME as a function call with DESCRIPTION instructions
-   in the scratch buffer. The user can evaluate the description
-   and easily un-comment the function and execute it.
-  "
-  (with-current-buffer "*scratch*"
-    (goto-char (point-max))
-    (insert (format "; (%s) ; un-comment and evaluate to %s\n" fn-name description))) )
+      (throw 'grail-trap '((format "installer error. please report \"%s\" to %s"
+                             (format-signal-trap trap)
+                             grail-maintainer-email))) )) )
 
 (defun grail-repair-by-installing ( package installer )
   "grail-repair-by-installing symbol:PACKAGE list|function:INSTALLER
@@ -587,16 +669,16 @@
         (cond
           ((functionp installer) (funcall installer))
           ((listp installer) (grail-run-installer installer))
-          (t (signal error
-               (format "unhandled installer type: not a function or a list %s"
-                 (princ (type-of installer))))))
+          (t (throw 'grail-trap
+               '((format "unhandled installer type: not a function or a list %s"
+                   (princ (type-of installer)))))))
+
+        ;; if there wasn't a error update the load path.
+        (grail-extend-load-path)
 
         (error
           (message "grail repair of package %s failed with %s" package-name (format-signal-trap install-trap))
           (throw 'installer-abort nil)))
-
-      ;; if there wasn't a error update the load path.
-      (grail-extend-load-path)
 
       ;; try to load it again.
       (condition-case load-trap
@@ -609,121 +691,7 @@
       (message "installation repair of dependency %s completed :)" package-name)
       t)))
 
-(defun grail-repair-by-debugging ( package )
-  "grail-repair-by-debugging symbol:PACKAGE
+(defun grail-load ( package installer )
+  (or (require package nil t) (grail-repair-by-installing package installer)))
 
-   Repair package loading by debugging.
-  "
-  (when (yes-or-no-p "repair: load the library source and enter the debugger on error ? ")
-    (message
-      "debug-on-error will be set. You may want to clear it after debugging with toggle-debug-on-error")
-
-    (find-file-read-only-other-window (find-library-name (symbol-name package)))
-    (setq debug-on-error t)
-    (funcall 'require package) ))
-
-(defun grail-repair-dependency-fn ( package installer )
-  "grail-repair-dependency-fn PACKAGE INSTALLER
-
-   Repair dependency loading problems by installation or by a
-   entry point into a debugging work-flow.
-
-   In essence this function selects between repairing by
-   installation or debugging and generates the interactive
-   function binding important variables such as the package.
-
-   Based upon a search of load-path the error will be diagnosed
-   either as a evaluation failure (if the library is found in
-   load-path) or a missing installation.
-
-   For a evaluation failure a debugging entry point is
-   constructed. For a missing entry point an installer is
-   generated.
-  "
-  (let*
-    ((pkg-name (symbol-name package))
-    ;; repair procedure is set to a diagnostic/function pair
-    ;; format (string lambda) by cons.
-
-     (repair-procedure
-       (lexical-let
-         ;; the package symbol needs to be lexically bound to the generated lambda's
-         ((pkg-symbol package)
-          (pkg-installer installer))
-
-         (if (grail-in-load-path-p pkg-name)
-           ;; if it is installed in load-path the library is aborting in
-           ;; evaluation.
-
-           (cons "%s is aborting during load on evaluation."
-             (lambda ()
-               (interactive)
-               (grail-repair-by-debugging pkg-symbol)))
-
-           (cons "%s cannot be found in the load-path"
-             (lambda ()
-               (interactive)
-               (grail-repair-by-installing pkg-symbol pkg-installer))) )))
-
-      (repair-fn-name (concat "repair-dependency-" pkg-name)) )
-
-    ;; print the diagnostic to the scratch buffer
-    (grail-dup-error-to-scratch (format (car repair-procedure) pkg-name))
-    (grail-print-fn-to-scratch repair-fn-name (concat "install or initiate debugging of " pkg-name))
-
-    (fset (intern repair-fn-name) (cdr repair-procedure)) ))
-
-;;----------------------------------------------------------------------
-;; grail forms
-;;----------------------------------------------------------------------
-
-(defmacro grail-activate-with-recovery ( group package installer &rest init-code )
-  "grail-load-dep-with-recovery string:GROUP symbol:PACKAGE INSTALLER code:INIT-CODE
-
-   Attempt to load PACKAGE via require with error trapping, diagnosis, and repair.
-
-   t is returned on success, nil on failure.
-  "
-  (let
-    ((pkg-name     (symbol-name package))
-     (diagnostic   nil)
-     (load-fn `(lambda ()
-                 (require ',package)))
-
-     (init-fn `(lambda ()
-                 (interactive)
-                 ,@init-code)) )
-
-    (if (catch 'abort ;; non-local exit for early termination from errors.
-
-      ;; try loading the package catching any diagnostic errors from signals
-      (when (setq diagnostic (diagnostic-load-elisp (funcall load-fn)))
-        (grail-dup-error-to-scratch (format
-                                      "grail: group module %s is degraded from %s loading failure %s"
-                                      group
-                                      pkg-name
-                                      (format-signal-trap diagnostic)))
-        (grail-repair-dependency-fn package (eval installer))
-        (throw 'abort t))
-
-      ;; try the initialization trapping any errors.
-      (when (setq diagnostic (diagnostic-load-elisp (funcall init-fn) ))
-        (grail-dup-error-to-scratch (format
-                                      "grail: group module %s is degraded from initialization error %s"
-                                      group
-                                      (format-signal-trap diagnostic)))
-        (throw 'abort t))
-        nil)
-
-      (let
-        ((init-fn-name (concat "initialize-" pkg-name)))
-
-        (fset (intern init-fn-name) init-fn)
-
-        (grail-print-fn-to-scratch init-fn-name (format "re-initialize %s after repair" pkg-name))
-        nil)
-
-      t) ))
-
-(provide 'grail-groups)
-
+(provide 'grail-profile)
