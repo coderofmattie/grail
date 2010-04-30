@@ -6,9 +6,9 @@
 ;;----------------------------------------------------------------------
 
 (eval-when-compile
-  (require 'grail-groups))
+  (require 'grail-profile))
 
-(use-grail-groups 0 "template" "lisp" "code-formatting" "sql")
+(use-grail-profiles 0 "template" "lisp" "code-formatting" "sql")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.

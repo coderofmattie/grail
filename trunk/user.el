@@ -8,7 +8,7 @@
 ;;----------------------------------------------------------------------
 
 (eval-when-compile
-  (require 'grail-groups)
+  (require 'grail-profile)
   (require 'grail-fn))
 
 ;;----------------------------------------------------------------------
@@ -17,8 +17,8 @@
 
 ;; (use-grail-groups "xml" "spell" "tab")
 ;;
-(use-grail-groups 0 "xml" "web")
-(use-grail-groups 1 "tab")
+(use-grail-profiles 0 "xml" "web")
+(use-grail-profiles 1 "tab")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
