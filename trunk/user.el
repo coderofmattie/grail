@@ -41,7 +41,10 @@
 
   ;; protect against IO errors by writing to a temp file and then renaming
   ;; so the original is not trashed by partial writes.
-  file-precious-flag t
+
+  ;; unfortunately this breaks hard-linking so I have been forced to
+  ;; turn it off
+  file-precious-flag nil
 
   ;; set ascii.
   current-language-environment "ASCII"
