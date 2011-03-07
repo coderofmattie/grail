@@ -81,7 +81,7 @@
 (eval-after-load 'yasnippet
   '(grail-set-faces
      (yas/field-highlight-face  (background "grey20") (foreground "dark goldenrod"))
-     (yas/mirror-highlight-face (background "grey20") (foreground "olive drab")) ))
+     ))
 
 
 
