@@ -87,7 +87,7 @@
     (insert "\n\n")))
 
 (defun grail-report-errors (message &rest errors )
-  "grail-dup-error-to-scratch ERROR-MESSAGE
+  "grail-report-errors ERROR-MESSAGE
 
   duplicate the ERROR-MESSAGE to both *Messages* as a log and to the
   *scratch* buffer as a comment where it is highly visible.
@@ -503,5 +503,76 @@
           (cdr face)))
       list)
     (cons 'progn set-face-calls)))
+
+;;----------------------------------------------------------------------
+;; ELPA
+;;
+;; The preferred way to install software is with ELPA which is a
+;; sophisticated package management system.
+;;
+;; the grail install functions are overly simplistic in comparison.
+;;----------------------------------------------------------------------
+
+(defconst elpa-url
+  "http://tromey.com/elpa/")
+
+(defun load-elpa-when-installed ()
+  "load-elpa-when-installed
+
+   If the ELPA package management system http://tromey.com/elpa/ is installed,
+   configure it for use, assuming a proper install by grail-install-elpa.
+
+   t is returned if succesful, otherwise nil is returned.
+  "
+  (interactive)
+  (if (load-elisp-if-exists (concat grail-dist-elisp "package.el"))
+    (progn
+      (unless (dir-path-if-accessible grail-dist-elpa)
+        (make-directory grail-dist-elpa t))
+
+      (setq-default package-user-dir grail-dist-elpa)
+      (push grail-dist-elpa package-directory-list)
+
+      ;; ELPA is loaded so do the ugly parts and hook into package.el's guts
+      ;; to pick up it's modifications to load-path
+
+      (defadvice package-do-activate (after grail-snoop/do-activate)
+        (let
+          ((snooped (car load-path))) ;; elpa always cons's the new path on the front.
+          (when snooped
+            (message "grail: snooped load-path update %s from package.el" snooped)
+            (setq grail-elpa-load-path (cons snooped grail-elpa-load-path))
+            (grail-extend-load-path))
+          ))
+
+      (ad-activate 'package-do-activate)
+
+      (let
+        ((elpa-errors (diagnostic-load-elisp (package-initialize))))
+
+        (if elpa-errors
+          (grail-report-errors "ELPA failed to initialize" elpa-errors)
+          t)) )
+    nil))
+
+(defun grail-install-elpa ()
+  "install the ELPA package management system"
+  (interactive)
+
+  (catch 'abort
+    (unless grail-local-profiles
+      (message "installing ELPA requires loading grail-profile.el for installation routines. Please consult README.grail and place grail-profile.el in USER_ELISP")
+      (throw 'abort))
+
+    (let
+      ((elpa-install (grail-run-installer
+                       (grail-define-installer "package"
+                         "file"
+                         (concat elpa-url "package.el"))) ))
+
+      (unless elpa-install
+        (message "ELPA installation failed %s" elpa-install)))
+
+    (load-elpa-when-installed) ))
 
 (provide 'grail-fn)

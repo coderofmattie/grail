@@ -237,27 +237,24 @@
 	(concat grail-local-dir "profiles/"))
       "The directory containing Grail profiles modules.")
 
-    ;; (grail-trap
-    ;;   "loading ELPA"
-
-    ;;   ;; activate ELPA
-    ;;   (load-elpa-when-installed))
+    ;; make sure there is a directory for session state and persistent data
+    (grail-garuntee-dir-path grail-state-path)
 
     (grail-trap
       "loading user ELISP"
       ;; elisp loads the user's general elisp library.
       (load-user-elisp "elisp"))
 
-    ;; make sure there is a directory for session state and persistent data
-    (grail-garuntee-dir-path grail-state-path)
+    ;; load ELPA when it is installed.
+    (grail-trap
+      "load ELPA"
+      (load-elpa-when-installed))
 
     ;; dummy compatability functions for recent features in emacs, or
     ;; broken ports.
 
     (unless (functionp 'window-system)
       ;; Annoying Emacs.app 0.9-rc2 compat.
-
-      (message "window-system not defined. creating a dummy function")
       (defun window-system ()
         "grail.el replacement for window system function."
         window-system))
@@ -322,11 +319,11 @@
                              (load-user-elisp "display")
                              (load-user-elisp "gui") ))) )
 
-    ;; load all the group files requested. defer profile loading
-    ;; when starting as a daemon.
-    (grail-trap
-      "loading profiles from .emacs startup"
-      (grail-load-requested-profiles)) ))
+      ;; load all the group files requested. defer profile loading
+      ;; when starting as a daemon.
+      (grail-trap
+        "loading profiles from .emacs startup"
+        (grail-load-requested-profiles)) ))
 
   (error
     (message "Grail aborted from an internal error! %s" (princ error-trap))
