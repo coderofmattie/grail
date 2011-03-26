@@ -202,7 +202,8 @@
   "
   (let
     ((checked-path (or (file-path-if-readable path)
-                       (file-path-if-readable (concat path ".el")))))
+                       (file-path-if-readable (concat path ".el"))
+                       (file-path-if-readable (concat path ".elc")) )))
 
     (if checked-path
       (let
@@ -525,7 +526,7 @@
    t is returned if succesful, otherwise nil is returned.
   "
   (interactive)
-  (if (load-elisp-if-exists (concat grail-dist-elisp "package.el"))
+  (if (load-elisp-if-exists (concat grail-dist-elisp "package"))
     (progn
       (unless (dir-path-if-accessible grail-dist-elpa)
         (make-directory grail-dist-elpa t))
