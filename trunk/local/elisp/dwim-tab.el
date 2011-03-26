@@ -9,7 +9,6 @@
 ;; Keywords: tab,dwim
 ;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
 
-
 ;; A highly overloaded "Tab" key implementation targeted at programming modes.
 
 (require 'dwim-tab-fn)
@@ -82,6 +81,36 @@
           (when (not (equal point-before (point))) (throw 'terminate-complete t))) ))
     nil))
 
+(defun dwim-tab-do-magic ( complete-functions )
+  "dwim-tab-do-magic FUNCTIONS
+
+   1. try contextual (global,local) DTRT functions at the
+      point stopping if a function succeeds.
+
+   2.A when following non-whitespace try completion functions
+     B otherwise indent according to the mode.
+
+   The context functions are shared globally, while the
+   completion functions are bound to the generated function.
+  "
+  ;; The contextual functions are tried first. The local
+  ;; context overrides the global contextual functions
+
+  ;; first try the tab context which should override the
+  ;; general tab behavior only when the text or properties
+  ;; essentially guarantee to DTRT
+  (unless (or
+            (try-context-dwim dwim-tab-local-context)
+            (try-context-dwim dwim-tab-global-context))
+
+    ;; FIXME: this regex match is fishy. It doesn't expand when the cursor
+    ;;        follows the "-" character.
+
+    (if (looking-at "\\>")
+      ;; complete or indent when the cursor is positioned at the end of a word.
+      (when (not (try-complete-dwim complete-functions)) (ding))
+      (indent-for-tab-command))) )
+
 (defun dwim-tab-generator ( complete-functions )
   "dwim-tab-generator FUNCTIONS
 
@@ -104,24 +133,7 @@
       (lambda ()
         "Complete if point is at end of a word, otherwise indent line."
         (interactive)
-
-        ;; The contextual functions are tried first. The local
-        ;; context overrides the global contextual functions
-
-        ;; first try the tab context which should override the
-        ;; general tab behavior only when the text or properties
-        ;; essentially guarantee to DTRT
-        (unless (or
-                  (try-context-dwim dwim-tab-local-context)
-                  (try-context-dwim dwim-tab-global-context))
-
-          ;; FIXME: this regex match is fishy. It doesn't expand when the cursor
-          ;;        follows the "-" character.
-
-          (if (looking-at "\\>")
-            ;; complete or indent when the cursor is positioned at the end of a word.
-            (when (not (try-complete-dwim completion)) (ding))
-            (indent-for-tab-command))) )) ))
+        (dwim-tab-do-magic completion) )) ))
 
 (defun dwim-tab-localize ( &rest completion-functions )
   "dwim-tab-localize &COMPLETE
