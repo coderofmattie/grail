@@ -7,8 +7,8 @@
   (apply 'dwim-tab-localize
     (append
       (when (templates-enabled-p)
-        (dwim-tab-local-context 'template-next-next-field)
-        (list 'template-expand))
+        (dwim-tab-local-context 'template/next)
+        (list 'template/expand))
       complete)))
 
 ;; emacs builtin modes
