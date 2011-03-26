@@ -43,7 +43,7 @@
 ;; grail can install them in a limited way.
 
 ;; To collalesce a variety of packages into a feature group Grail
-;; provides the "group" configuration files. In a group file
+;; provides the "profile" configuration files. In a profile file
 ;; third party elisp is managed with installation and configuration.
 
 ;; In a group when elisp packages are missing an install function and
@@ -58,7 +58,7 @@
 ;; detailed description of the file and directory structure that is
 ;; significant to Grail.
 
-(defconst grail-release-version "0.3.0"
+(defconst grail-release-version "0.3.1"
   "the release number of grail.el")
 
 (defconst grail-maintainer-email "codermattie@gmail.com"

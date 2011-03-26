@@ -450,7 +450,6 @@
     ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-git*") nil t)))
     (grail-git-async url module grail-buffer) ))
 
-
 (defun grail-svn-async ( url module output-buffer )
   "grail-svn-async URL PATH OUTPUT-BUFFER
 
@@ -476,6 +475,9 @@
   (let
     ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-svn*") nil t)))
     (grail-svn-async url module grail-buffer) ))
+
+(defun grail-package-installer ( module )
+  (package-install module))
 
 ;;----------------------------------------------------------------------
 ;; installer front ends
@@ -566,11 +568,14 @@
    TYPE is the format of the URL for handling things like
    compression,archives, and RCS systems.
 
-   recognized TYPE's : file, tar:bz2, tar:gz, cvs
+   recognized TYPE's : file, tar:bz2, tar:gz, cvs svn git pkg
 
    download a plain elisp file: (grail-define-installer \"bob\" \"file\" \"URL\")
    download an tar.bz2 archive: (grail-define-installer \"bob\" \"tar:bz2\" \"URL\")
    cvs checkout:              : (grail-define-installer \"bob\" \"cvs\" \"pserver\")
+   git checkout:              : (grail-define-installer \"bob\" \"git\" \"url\")
+   svn checkout:              : (grail-define-installer \"bob\" \"svn\" \"url\")
+   ELPA package:              : (grail-define-installer \"bob\" \"pkg\")
 
    Most of the time a single URL suffices. Many packages are a
    single elisp file, or a single tarball.
@@ -605,38 +610,41 @@
       (throw 'grail-trap
         '((format "installer expected package name string but got %s instead" (princ name)))))
 
-    (unless url-list
-      (throw 'grail-trap
-        '((format "grail-define-installer: installer definition for %s must be given urls" name))))
+    (if (string-equal "pkg" type)
+      `(grail-package-installer ,name) ;; a package system is the only form that won't have a url.
+      (progn
+        (unless url-list
+          (throw 'grail-trap
+            '((format "grail-define-installer: installer definition for %s must be given urls" name))))
 
-    (let
-      ((installer-calls
-        (mapcar
-           (lambda ( url )
-             (let
-               ;; simpler definitions don't require a target,url pair.
-               ;; make one up to prevent the test for and handling of
-               ;; this case from propagating down the fan-out from
-               ;; grail-define-installer.
-               ((install-pair (if (consp url) url (cons name url))))
+        (let
+          ((installer-calls
+             (mapcar
+               (lambda ( url )
+                 (let
+                   ;; simpler definitions don't require a target,url pair.
+                   ;; make one up to prevent the test for and handling of
+                   ;; this case from propagating down the fan-out from
+                   ;; grail-define-installer.
+                   ((install-pair (if (consp url) url (cons name url))))
 
-               (cond
-                 ((string-equal "file"  install-type) (grail-file-args install-pair))
-                 ((string-equal "cvs"   install-type) (grail-cvs-args  install-pair))
-                 ((string-equal "git"   install-type) (grail-git-args  install-pair))
-                 ((string-equal "svn"   install-type) (grail-svn-args  install-pair))
-                 ((string-match "tar"   install-type) (grail-tar-args  install-pair))
+                   (cond
+                     ((string-equal "file"  install-type) (grail-file-args install-pair))
+                     ((string-equal "cvs"   install-type) (grail-cvs-args  install-pair))
+                     ((string-equal "git"   install-type) (grail-git-args  install-pair))
+                     ((string-equal "svn"   install-type) (grail-svn-args  install-pair))
+                     ((string-match "tar"   install-type) (grail-tar-args  install-pair))
 
-                 (t (throw 'grail-trap
-                      '((format "grail-define-installer: I don't have an installer for %s" install-type))))) ))
-          url-list)))
+                     (t (throw 'grail-trap
+                          '((format "grail-define-installer: I don't have an installer for %s" install-type))))) ))
+               url-list)))
 
-      ;; if there are several call-outs sequence them with and so that
-      ;; a failure terminates the install process. for a single
-      ;; call-out extract the call from the map list and return it.
-      (if install-many
-        (cons 'and installer-calls)
-        (car installer-calls))) ))
+          ;; if there are several call-outs sequence them with and so that
+          ;; a failure terminates the install process. for a single
+          ;; call-out extract the call from the map list and return it.
+          (if install-many
+            (cons 'and installer-calls)
+            (car installer-calls)))) ) ))
 
 (defun grail-run-installer ( installer )
   "grail-run-installer installer
