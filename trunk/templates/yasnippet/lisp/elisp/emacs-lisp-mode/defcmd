@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# name: defsub
+# key: 
+# binding: direct-keybinding
+# expand-env: ((some-var some-value))
+# type: command
+# --
+(defun ${1:name} ()
+"$1
+
+"
+$>(interactive)
+$>$0
+$>)

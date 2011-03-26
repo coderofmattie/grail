@@ -1,6 +1,6 @@
 (defun ${1:name} ( ${2:params} )
-"
-$1 ${2:$(upcase text)}
+"$1 ${2:$(upcase text)}
+
 "
 $>$0
 $>)
