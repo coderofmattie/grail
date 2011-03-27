@@ -1,5 +1,9 @@
 ;;----------------------------------------------------------------------
-;; template group
+;; template profile.
+;;
+;; support for the yasnippet template system with a generic interface
+;; layered on. This glue API prevents the yasnippet API from creeping
+;; into the rest of my config.
 ;;----------------------------------------------------------------------
 
 (defvar templates-enabled nil
@@ -20,7 +24,6 @@
                          "yasnippet" "svn"
                          "http://yasnippet.googlecode.com/svn/trunk/"))
 
-
 ;;----------------------------------------------------------------------
 ;; configure yassnippet
 ;;----------------------------------------------------------------------
@@ -34,6 +37,11 @@
 ;; dwim-tab you get an infinite loop. setting this to nil fixes this.
 (setq yas/fallback-behavior nil)
 
+;; ignore filenames as triggers since the trigger name can be set in
+;; the snippet without the restrictions imposed by the filesystem on
+;; naming
+(setq yas/ignore-filenames-as-triggers t)
+
 ;;----------------------------------------------------------------------
 ;; templates/* an interface for loading/creating templates.
 ;;----------------------------------------------------------------------
@@ -46,8 +54,11 @@
   "the yasnippet tree path relative to grail-elisp-root")
 
 (defun templates/configure-mode ( language )
-  (message "configuring templates for language %s" language)
+  "templates/configure-mode
 
+    Configure a buffer for templates by setting the template langauge,
+    activating the template minor mode, and setting up keybindings.
+  "
   ;; set a buffer local variable describing which template language to use
   ;; for the buffer.
   (set (make-local-variable 'template-language) language)
@@ -61,9 +72,20 @@
 
   (local-set-key (kbd "C-c t e") 'template/expand)
   (local-set-key (kbd "C-c t n") 'template/next)
+
+  (local-set-key (kbd "C-c t c") 'template/new)
   )
 
 (defun templates/configure-language ( language &rest modes )
+  "templates/configure-language LANGUAGE &REST MODES
+
+   Setup templates for a language globaly. LANGUAGE is a
+   string with the language name which should be a path
+   relative to TEMPLATES-ROOT. the modes is a series of
+   strings such as \"emacs-lisp-mode\". A function to
+   configure the mode/buffer will be added to the
+   entry point hook for the mode.
+  "
   (let
     ((templates-path (concat templates-root language)))
 
@@ -92,6 +114,10 @@
     ))
 
 (defun templates/load-language ( language )
+  "templates/load-language LANGUAGE
+
+   Load the templates for LANGUAGE.
+  "
   (let
     ((path (gethash language template-languages)))
 
@@ -102,10 +128,18 @@
       (message "unable to locate templates for language %s " language) )))
 
 (defun templates/reload ()
+  "templates/reload
+
+   Reload the templates for the current language.
+  "
   (interactive)
   (templates/load-language template-language))
 
 (defun templates/list ()
+  "templates/list
+
+   List the current template table for the buffer's mode.
+  "
   (interactive)
   (yas/describe-tables))
 
@@ -114,21 +148,49 @@
 ;;----------------------------------------------------------------------
 
 (defun template/in-field-p ()
+  "template/in-field-p
+
+   return true when the point is in a yasnippet field
+  "
   (when (mode-overlay-at-point-p 'yas/snippet-reference) t))
 
 (defun template/expand ()
+  "template/expand
+
+   assuming the point is at a template name expand the template.
+  "
   (interactive)
   (when (equal 'expanded (yas/expand)) (throw 'terminate-complete t))
   nil)
 
 (defun template/next ()
+  "template/next
+
+   move to the next field in the template.
+  "
   (interactive)
   (when (template/in-field-p)
     (yas/next-field-group)
     t))
 
+(defun template/new ()
+  "templates/new
+
+   create a new template.
+  "
+  (interactive)
+  (yas/new-snippet))
+
+;;----------------------------------------------------------------------
+;; now that the API is complete mark that the template system is enabled.
+;;----------------------------------------------------------------------
+
 ;; signal that a template system is activated
 (setq templates-enabled t)
+
+;;----------------------------------------------------------------------
+;; configure the various languages for template support.
+;;----------------------------------------------------------------------
 
 ;; always load the lisp templates.
 (templates/configure-language "lisp/elisp" "elisp-interaction-mode" "emacs-lisp-mode")

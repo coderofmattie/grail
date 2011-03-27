@@ -1,9 +1,6 @@
 # -*- mode: snippet -*-
-# name: defsub
-# key: 
-# binding: direct-keybinding
-# expand-env: ((some-var some-value))
-# type: command
+# name: define a function with no arguments
+# key: defsub
 # --
 (defun ${1:name} ()
 "$1
