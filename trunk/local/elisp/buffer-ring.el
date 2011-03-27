@@ -46,6 +46,7 @@
 
 (global-set-key (kbd "C-c C-b n") 'buffer-torus-next-ring)
 (global-set-key (kbd "C-c C-b p") 'buffer-torus-prev-ring)
+(global-set-key (kbd "C-c C-b e") 'buffer-torus-delete-ring)
 
 (defvar buffer-ring-torus (make-dyn-ring)
   "a global ring of all the buffer rings. A torus I believe.")
