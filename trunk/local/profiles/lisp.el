@@ -17,13 +17,25 @@
                          "file"
                          "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el"))
 
+(grail-load 'slime     (grail-define-installer "slime"
+                          "pkg"
+                          'slime))
+
+(grail-load 'slime-repl  (grail-define-installer "slime-repl"
+                          "pkg"
+                          'slime-repl))
+
 (grail-load 'quack     (grail-define-installer "quack"
                          "file"
                          "http://www.neilvandyke.org/quack/quack.el"))
 
-(grail-load 'slime     (grail-define-installer "slime"
-                         "cvs"
-                         ":pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot"))
+(grail-load 'clojure-mode  (grail-define-installer "clojure"
+                            "pkg"
+                            'clojure-mode))
+
+(grail-load 'elein (grail-define-installer "elein"
+                     "pkg"
+                     'elein))
 
 (setq
   paren-showing t
@@ -35,6 +47,14 @@
   (paren-face-match (background "grey20")))
 
 (paren-activate)
+
+;;----------------------------------------------------------------------
+;; SLIME
+;;----------------------------------------------------------------------
+(setq
+  slime-net-coding-system 'utf-8-unix)
+
+(slime-setup '(slime-repl))
 
 ;;----------------------------------------------------------------------
 ;; scheme
@@ -62,13 +82,31 @@
   auto-mode-alist (append '(("\\.scheme$"    . scheme-mode)) auto-mode-alist ))
 
 ;;----------------------------------------------------------------------
-;; common lisp
+;; clojure/SLIME
+;;---------------------------------------------------------------------
+
+;; font-lock and key setup on the REPL
+(add-hook 'slime-repl-mode-hook 'clojure-mode-font-lock-setup)
+(add-hook 'slime-repl-mode-hook 'swap-paren-keys)
+
+;; --> elein
+
+;; elein tries to pass an encoding option to the lein swank command. This blows
+;; up horribly causing a runtime exception in the swank-clojure code. disabling
+;; it below makes everyone happy ...
+(setq elein-swank-options "")
+
+;;----------------------------------------------------------------------
+;; clojure mode
 ;;----------------------------------------------------------------------
 
-(defconst slime-project-page "http://common-lisp.net/project/slime/"
-  "the SLIME project page")
+;; electric enter is forced in the keymap without any sort of option ...
+;; turn that crap off by fixing the keymap.
 
-(setq inferior-lisp-program "sbcl")
-(slime-setup)
+(add-hook 'clojure-mode-hook
+  (lambda ()
+    (swap-paren-keys)
+    (mattie-tab-switching)
 
-
+    (substitute-key-definition 'reindent-then-newline-and-indent nil clojure-mode-map)
+    (configure-for-evaluation 'slime-eval-defun 'slime-eval-last-expression 'slime-eval-region 'slime-eval-buffer) ))
