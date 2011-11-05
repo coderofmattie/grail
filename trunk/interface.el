@@ -2,6 +2,9 @@
 ;; interface.el
 ;;----------------------------------------------------------------------
 
+;; get rid of that horrible dinging
+(setq visible-bell t)
+
 ;; disable things I don't use from eating screen-space
 
 (tool-bar-mode -1)                            ;; cannot be set with setq
