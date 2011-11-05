@@ -35,6 +35,11 @@
 
 ;; basic settings
 
+;; default to UNIX line terminators
+(set-buffer-file-coding-system 'unix 't)
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+
 (setq
   ;; backups are a poor substitute for revision control
   make-backup-files nil
@@ -46,8 +51,8 @@
   ;; turn it off
   file-precious-flag nil
 
-  ;; set ascii.
-  current-language-environment "ASCII"
+  ;; set utf-8
+  current-language-environment "UTF-8"
 
   ;; keep woman from making a frame.
   woman-use-own-frame nil
@@ -58,8 +63,6 @@
   ;; when traversing sexp's ignore comments
   parse-sexp-ignore-comments t
 
-  ;; default to UNIX line terminators
-  default-buffer-file-coding-system 'undecided-unix
 
   ;; files can have elisp statements that are executed when the
   ;; file is loaded. My paranoia says hell no.
@@ -71,6 +74,15 @@
 ;; for increased security create a temporary directory and set
 ;; temporary-file-directory to that.
 (setq temporary-file-directory (make-temp-file "emacs" t))
+
+;;----------------------------------------------------------------------
+;; use marmelade to get the latest and greatest stuff
+;;----------------------------------------------------------------------
+(eval-after-load "package"
+  '(progn
+     (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+      ;; this seems to be necessary with more than one repo
+     (package-refresh-contents)) )
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
