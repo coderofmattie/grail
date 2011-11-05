@@ -211,7 +211,9 @@
 
       (with-temp-buffer
         (url-insert-file-contents url)
-        (write-file install-path))
+        (let
+          ((buffer-file-coding-system 'no-conversion))
+          (write-file install-path)))
 
       (message "grail-file-installer: installed of %s to %s completed" name install-path))
     nil
@@ -611,7 +613,7 @@
         '((format "installer expected package name string but got %s instead" (princ name)))))
 
     (if (string-equal "pkg" type)
-      `(grail-package-installer ,name) ;; a package system is the only form that won't have a url.
+      `(grail-package-installer ',(car url-list)) ;; a package system is the only form that won't have a url.
       (progn
         (unless url-list
           (throw 'grail-trap
@@ -654,9 +656,9 @@
   (condition-case trap
     (eval installer)
     (error
-      (throw 'grail-trap '((format "installer error. please report \"%s\" to %s"
-                             (format-signal-trap trap)
-                             grail-maintainer-email))) )) )
+      (throw 'grail-trap (list (format "installer error. please report \"%s\" to %s"
+                               (format-signal-trap trap)
+                               grail-maintainer-email))) )) )
 
 (defun grail-repair-by-installing ( package installer )
   "grail-repair-by-installing symbol:PACKAGE list|function:INSTALLER
