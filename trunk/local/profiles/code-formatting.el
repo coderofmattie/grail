@@ -9,6 +9,11 @@
                          "file"
                          "http://www.wonderworks.com/download/filladapt.el"))
 
+(grail-load 'htmlize (grail-define-installer
+                       "htmlize"
+                       "pkg"
+                       'htmlize))
+
 (add-hook 'emacs-lisp-mode-hook 'turn-on-filladapt-mode)
 
 (eval-after-load 'cc-mode    '(add-hook 'c-mode-common-hook   'c-setup-filladapt))
