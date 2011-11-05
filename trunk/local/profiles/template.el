@@ -20,9 +20,13 @@
 ;; load yassnippet template system
 ;;----------------------------------------------------------------------
 
-(grail-load 'yasnippet (grail-define-installer
-                         "yasnippet" "svn"
-                         "http://yasnippet.googlecode.com/svn/trunk/"))
+;; (grail-load 'yasnippet (grail-define-installer
+;;                          "yasnippet" "svn"
+;;                          "http://yasnippet.googlecode.com/svn/trunk/"))
+
+(grail-load 'yasnippet (grail-define-installer "yasnippet"
+                         "pkg"
+                         'yasnippet))
 
 ;;----------------------------------------------------------------------
 ;; configure yassnippet
@@ -41,6 +45,10 @@
 ;; the snippet without the restrictions imposed by the filesystem on
 ;; naming
 (setq yas/ignore-filenames-as-triggers t)
+
+;; yasnippet-bundle does not define this ? WTF!!
+(if (intern-soft "yas/snippet-dirs")
+  (defvar yas/snippet-dirs '()) )
 
 ;;----------------------------------------------------------------------
 ;; templates/* an interface for loading/creating templates.
