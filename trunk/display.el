@@ -5,6 +5,9 @@
 
 (blink-cursor-mode -1)
 
+;; emacs 24 seems to need this
+(set-cursor-color "yellow")
+
 ;; parameters that need to be setup before frames are created.
 
 (setq default-frame-alist
