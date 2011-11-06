@@ -248,12 +248,8 @@
    after-make-frame-functions.
   "
   (when (and (not grail-gui-configured) (is-current-frame-gui frame))
-    (progn
-
-      (grail-trap
-        "loading the gui file"
-        (load-user-elisp "gui"))
-      (setq grail-gui-configured t)) ))
+    (load-user-elisp "gui")
+    (setq grail-gui-configured t)) )
 
 (defun grail-load-display-configuration-once ()
   "grail-load-display-configuration-once
@@ -264,10 +260,6 @@
   (unless grail-display-configured
     (load-user-elisp "display")
     (setq grail-display-configured t)))
-
-(defun grail-groups-loaded-p ()
-  "return t if grail-groups.el has been loaded"
-  (when grail-local-groups t))
 
 ;;----------------------------------------------------------------------
 ;; load-path construction
