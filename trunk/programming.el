@@ -79,8 +79,9 @@
 (push "-v" vc-bzr-log-switches)
 
 ;; support for drafting changelogs in a commit-changelog.txt file.
-(require 'commit-file)
-(activate-commit-file)
+
+;(require 'commit-file)
+;(activate-commit-file)
 
 ;;----------------------------------------------------------------------
 ;;                          Ediff
