@@ -2,5 +2,7 @@
 ;; web.el
 ;; written by Mike Mattie
 ;;;----------------------------------------------------------------------
+(setq
+  css-indent-offset 2)
 
 
