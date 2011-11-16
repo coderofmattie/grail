@@ -56,6 +56,12 @@
 
 (slime-setup '(slime-repl))
 
+(setq
+  slime-words-of-encouragement '("The name is Bond. James Bond."
+                                 "These are your father's parentheses. Elegant weapons from a more civilized age."
+                                 "We were on the edge of the desert when the Emacs took hold."
+                                 "Mine says: Desert Eagle ... .50"))
+
 ;;----------------------------------------------------------------------
 ;; scheme
 ;;----------------------------------------------------------------------
