@@ -519,7 +519,8 @@
    t is returned if succesful, otherwise nil is returned.
   "
   (interactive)
-  (if (load-elisp-if-exists (concat grail-dist-elisp "package"))
+  (if (or (when (>= emacs-major-version 24) (require 'package))
+          (load-elisp-if-exists (concat grail-dist-elisp "package")))
     (progn
       (unless (dir-path-if-accessible grail-dist-elpa)
         (make-directory grail-dist-elpa t))
