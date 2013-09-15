@@ -421,3 +421,15 @@
      (lambda ()
        (configure-for-programming 'lua-list-fn-signatures))
      t))
+
+;;----------------------------------------------------------------------
+;; logging
+;;----------------------------------------------------------------------
+
+(defun load-logging-file (log-file)
+  (switch-to-buffer (find-file-noselect log-file))
+  (rename-buffer (concat "logwatch: " log-file))
+
+  (auto-revert-tail-mode)
+  (setq buffer-read-only t)
+  (goto-char (point-max)) )
