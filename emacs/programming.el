@@ -5,10 +5,20 @@
 ;; completion etc.
 ;;----------------------------------------------------------------------
 
+(defvar templates-enabled nil
+  "a boolean for when the template system has been loaded.")
+
+(defun templates-enabled-p ()
+  "templates-enabled-p
+
+   return non-nil when templates are enabled.
+  "
+  (when templates-enabled t))
+
 (eval-when-compile
   (require 'grail-profile))
 
-(use-grail-profiles 0 "template" "lisp" "code-formatting" "sql")
+(use-grail-profiles 0 "lisp" "code-formatting" "sql")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
