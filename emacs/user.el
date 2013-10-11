@@ -17,7 +17,7 @@
 
 ;; (use-grail-groups "xml" "spell" "tab")
 ;;
-(use-grail-profiles 0 "xml" "web")
+(use-grail-profiles 0 "xml" "web" "utilities")
 (use-grail-profiles 1 "tab")
 
 ;;----------------------------------------------------------------------
