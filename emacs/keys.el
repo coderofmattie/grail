@@ -12,8 +12,6 @@
 ;; enable ffap bindings so that C-x C-f on things like include directives
 ;; opens the paths. This could be very magical.
 
-(ffap-bindings)
-
 ;; don't need compose mail right now, prefer maximize frame
 (global-set-key (kbd "C-x m")   'maximize-frame)
 

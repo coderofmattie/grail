@@ -14,11 +14,9 @@
 ;;----------------------------------------------------------------------
 ;; undistributed features.
 ;;----------------------------------------------------------------------
+(require 'dwim-tab)
 
-;; (use-grail-groups "xml" "spell" "tab")
-;;
-(use-grail-profiles 0 "xml" "web" "utilities" "tramp")
-(use-grail-profiles 1 "tab")
+(use-grail-profiles 0 "tramp" "spell")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
@@ -63,7 +61,6 @@
   ;; when traversing sexp's ignore comments
   parse-sexp-ignore-comments t
 
-
   ;; files can have elisp statements that are executed when the
   ;; file is loaded. My paranoia says hell no.
   enable-local-eval nil
@@ -79,10 +76,7 @@
 ;; use marmelade to get the latest and greatest stuff
 ;;----------------------------------------------------------------------
 (eval-after-load "package"
-  '(progn
-     (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
-      ;; this seems to be necessary with more than one repo
-     (package-refresh-contents)) )
+  '(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/")))
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
@@ -203,14 +197,6 @@
   ffap-url-fetcher 'visit-url)
 
 ;;----------------------------------------------------------------------
-;;                    Tramp remote access
-;;----------------------------------------------------------------------
-(eval-after-load 'tramp
-  '(progn
-     (setq tramp-default-method "scp2")
-     (setq tramp-terminal-type "eterm-color")))
-
-;;----------------------------------------------------------------------
 ;;                    ERC
 ;;----------------------------------------------------------------------
 
@@ -244,32 +230,6 @@
   (lambda ()
     (add-hook 'kill-buffer-hook 'rid-window t t))
   t)
-
-;;----------------------------------------------------------------------
-;;                 Structured Document Tools
-;;----------------------------------------------------------------------
-
-;; (require 'allout)
-
-;; (add-hook 'text-mode-hook
-;;   (lambda ()
-;;     ;; the allout mode keybindings are found with C-c C-h
-;;     (allout-mode)
-;;     ))
-
-;;----------------------------------------------------------------------
-;; crypto support via gnupg
-;;----------------------------------------------------------------------
-(require 'epa)
-(epa-file-enable)
-
-(setq
-  epa-file-cache-passphrase-for-symmetric-encryption t
-  epa-armor t)
-
-;; (allout-init 'report)
-;; not sure I like this. I can always use allout-minor-mode when I need
-;; it.
 
 ;;----------------------------------------------------------------------
 ;;                       Programming

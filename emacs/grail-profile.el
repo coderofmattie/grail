@@ -702,6 +702,9 @@
       t)))
 
 (defun grail-load ( package installer )
+  (unless (symbolp package)
+    (message "package is not a symbol"))
+
   (or (require package nil t) (grail-repair-by-installing package installer)))
 
 (provide 'grail-profile)

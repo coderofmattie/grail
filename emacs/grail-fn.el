@@ -86,7 +86,7 @@
 
     (insert "\n\n")))
 
-(defun grail-report-errors (message &rest errors )
+(defun grail-report-errors ( message &rest errors )
   "grail-report-errors ERROR-MESSAGE
 
   duplicate the ERROR-MESSAGE to both *Messages* as a log and to the
@@ -269,45 +269,66 @@
 ;; filter-ls: a general purpose tools for filtering directory listings.
 ;;
 
-(eval-and-compile
-  (defun filter-ls-predicate ( attr-name attr-match )
-    "create predicate filters for path/mode values"
-    (cond
-      ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
-      ((string-equal "path" attr-name) `(string-match ,attr-match (car path-pair)))
-      ((string-equal "name" attr-name) `(string-match ,attr-match
-                                          (file-name-nondirectory (car path-pair)))) ))
+;; (defun filter-ls-predicate ( attr-name attr-match )
+;;   "create predicate filters for path/mode values"
+;;   (cond
+;;    ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
+;;    ((string-equal "path" attr-name) `(string-match ,attr-match (car path-pair)))
+;;    ((string-equal "name" attr-name) `(string-match ,attr-match
+;; 						   (file-name-nondirectory (car path-pair)))) ))
 
-  (defun filter-ls-attributes ( filter-form )
-    "implement the various attribute filters for the filter-ls form"
-    (let
-      ((attr-name (symbol-name (car filter-form)))
-       (attr-match (cadr filter-form)))
+;; (defun filter-ls-attributes ( filter-form )
+;;   "implement the various attribute filters for the filter-ls form"
+;;   (let
+;;     ((attr-name (symbol-name (car filter-form))
+;;      (attr-match (cadr filter-form)))
 
-      (if (char-equal ?! (aref attr-name 0))
-        (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
-        (filter-ls-predicate attr-name attr-match)) )) )
+;;      (if (char-equal ?! (aref attr-name 0))
+;; 	 (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
+;;        (filter-ls-predicate attr-name attr-match)) )) )
 
-(defmacro filter-ls (path path-type &rest filters)
-  "filter-ls PATH PATH-TYPE
-  a form for flexibly filtering the result of listing a directory with attributes
+;; (defun filter-ls (path path-type &rest filters)
+;;   "filter-ls PATH PATH-TYPE
+;;   a form for flexibly filtering the result of listing a directory with attributes
 
-   t   absolute paths
-   nil relative paths"
-  `(apply 'map-filter-nil
-     (lambda ( path-pair )
-       (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
-         (car path-pair)))
+;;    t   absolute paths
+;;    nil relative paths"
+;;   (apply 'map-filter-nil
+;; 	 (lambda ( path-pair )
+;; 	   (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
+;; 	       (car path-pair)))
 
-     ;; reduce the attributes to a pair of the path, and the mode string
-     (mapcar (lambda ( attr-list )
-               (cons (car attr-list) (nth 9 attr-list)))
-       ;; get the list of files.
-       (directory-files-and-attributes ,path ,path-type)) ))
+;;      ;; reduce the attributes to a pair of the path, and the mode string
+;;      (mapcar (lambda ( attr-list )
+;;                (cons (car attr-list) (nth 9 attr-list)))
+;;        ;; get the list of files.
+;;        (directory-files-and-attributes ,path ,path-type)) ))
 
 ;;
 ;; load-path construction
 ;;
+
+;; (defun grail-filter-dir-list-exists (&rest final)
+;;   (let
+;;     ((output nil))
+
+;;     (unless (eq nil dir-list)
+;;       (map
+;;        (lambda ( dir )
+;; 	 (when (directory-accessible-p dir) (append output dir)))
+;;          dir-list))
+;;     output))
+
+(defun grail-filter-dir-list-exists (&rest dir-list)
+  (let
+    ((output nil))
+
+    (unless (eq nil dir-list)
+      (mapc
+       (lambda ( dir )
+	 (when (file-accessible-directory-p dir) (setq output (cons dir output))))
+         dir-list))
+    output))
 
 (defun grail-extend-load-path ()
   "grail-extend-load-path
@@ -327,73 +348,65 @@
 
    non-existent directories are filtered out.
   "
+  (let
+     ((filtered-load-path nil)
+      (new-load-path nil))
 
-  (let*
-    ((filter-dot-dirs "^\\.")
-     (extended-load-path
-       (condition-case signal-trap
-         (apply 'append
-           (seq-filter-nil
+    (setq filtered-load-path (apply 'grail-filter-dir-list-exists grail-platform-load-path))
+    (if filtered-load-path
+      (setq new-load-path (append filtered-load-path new-load-path)))
 
-             (if (file-accessible-directory-p grail-local-emacs)
-               (list grail-local-emacs))
+    (setq filtered-load-path (grail-filter-dir-list-exists grail-local-emacs))
+    (if filtered-load-path
+      (setq new-load-path (append filtered-load-path new-load-path)))
 
-             ;; prefer the load-path as it existed after loading
-             ;; the platform files over the Emacs boot load-path.
-             (or grail-platform-load-path grail-boot-load-path)
+    (setq filtered-load-path (grail-filter-dir-list-exists grail-local-elisp))
+     (if filtered-load-path
+       (setq new-load-path (append new-load-path filtered-load-path)))
 
-             (if (file-accessible-directory-p grail-local-elisp)
-               (cons grail-local-elisp
-                 (filter-ls grail-local-elisp t
-                   (type ?d)
-                   (!name filter-dot-dirs))))
+    (setq filtered-load-path (grail-filter-dir-list-exists grail-dist-elisp))
+     (if filtered-load-path
+       (setq new-load-path (append new-load-path filtered-load-path)))
 
-             ;; load the version-control based code before ELPA
-             ;; to always prefer local changes.
+    ;; (if (file-accessible-directory-p grail-dist-git)
+    ;;   (progn
+    ;;     (setq filtered-load-path (apply 'grail-filter-dir-list-exists
+    ;;                                (filter-ls grail-dist-git t
+    ;;                                  (type ?d)
+    ;;                                  (!name filter-dot-dirs))) )
+    ;;     (if filtered-load-path
+    ;;       (apply 'append new-load-path filtered-load-path))
 
-             (if (file-accessible-directory-p grail-dist-git)
-               (cons grail-dist-git
-                 (filter-ls grail-dist-git t
-                   (type ?d)
-                   (!name filter-dot-dirs))))
+    ;;     ))
 
-             (if (file-accessible-directory-p grail-dist-cvs)
-               (cons grail-dist-cvs
-                 (filter-ls grail-dist-cvs t
-                   (type ?d)
-                   (!name filter-dot-dirs))))
+    ;; (if (file-accessible-directory-p grail-dist-cvs)
+    ;;   (progn
+    ;;     (setq filtered-load-path (apply 'grail-filter-dir-list-exists
+    ;;                                (filter-ls grail-dist-cvs t
+    ;;                                  (type ?d)
+    ;;                                  (!name filter-dot-dirs))) )
+    ;;     (if filtered-load-path
+    ;;       (apply 'append new-load-path filtered-load-path))
 
-             (if (file-accessible-directory-p grail-dist-svn)
-               (cons grail-dist-svn
-                 (filter-ls grail-dist-svn t
-                   (type ?d)
-                   (!name filter-dot-dirs))))
+    ;;     ))
 
-             ;; ELPA loaded packages.
+    ;; (if (file-accessible-directory-p grail-dist-svn)
+    ;;   (progn
+    ;;     (setq filtered-load-path (apply 'grail-filter-dir-list-exists
+    ;;                                (filter-ls grail-dist-svn t
+    ;;                                  (type ?d)
+    ;;                                  (!name filter-dot-dirs))) )
+    ;;     (if filtered-load-path
+    ;;       (apply 'append new-load-path filtered-load-path))
 
-             grail-elpa-load-path
+    ;;     ))
 
-             ;; give the user a place to drop files and organize
-             ;; as they see fit.
+    (setq filtered-load-path (apply 'grail-filter-dir-list-exists grail-elpa-load-path))
+    (if filtered-load-path
+      (setq new-load-path (append new-load-path filtered-load-path)))
 
-             (if (file-accessible-directory-p grail-dist-elisp)
-               (cons grail-dist-elisp
-                 (filter-ls grail-dist-elisp t
-                   (type ?d)
-                   (!name filter-dot-dirs))))
-              ))
-
-         ;; if there is an error, trap and re-throw the error
-         (error
-           (error "grail-extend-load-path magic failed: %s. grail-fn.el has likely been humbled by recursion stack growth."
-                  (cdr signal-trap))) )) )
-
-    ;; minimally check that the extended-load-path, if it's ok AFAICT
-    ;; then update load-path
-
-    (if (and extended-load-path (listp extended-load-path))
-      (setq load-path extended-load-path)
-      (error "new extended-load-path is not a list !?! %s" (pp-to-string extended-load-path))) ))
+    (setq load-path new-load-path)
+  ))
 
 ;;----------------------------------------------------------------------
 ;; diagnostic support routines.
@@ -519,7 +532,7 @@
    t is returned if succesful, otherwise nil is returned.
   "
   (interactive)
-  (if (or (when (>= emacs-major-version 24) (require 'package))
+  (if (or (when (>= emacs-major-version 24) (require 'package nil t))
           (load-elisp-if-exists (concat grail-dist-elisp "package")))
     (progn
       (unless (dir-path-if-accessible grail-dist-elpa)

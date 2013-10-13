@@ -4,21 +4,10 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
-
-(defvar templates-enabled nil
-  "a boolean for when the template system has been loaded.")
-
-(defun templates-enabled-p ()
-  "templates-enabled-p
-
-   return non-nil when templates are enabled.
-  "
-  (when templates-enabled t))
-
 (eval-when-compile
   (require 'grail-profile))
 
-(use-grail-profiles 0 "lisp" "code-formatting" "sql")
+(use-grail-profiles 0 "lisp" "code-formatting" "sql" "template")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
@@ -85,14 +74,6 @@
 
 (require 'vc-bzr)
 
-;; enable verbose output for bzr
-(push "-v" vc-bzr-log-switches)
-
-;; support for drafting changelogs in a commit-changelog.txt file.
-
-;(require 'commit-file)
-;(activate-commit-file)
-
 ;;----------------------------------------------------------------------
 ;;                          Ediff
 ;;----------------------------------------------------------------------
@@ -128,13 +109,6 @@
 
 (add-hook 'ediff-quit-hook 'teardown-ediff-after-merge)
 
-(require 'submerge)
-
-;;----------------------------------------------------------------------
-;; working-copy
-;;----------------------------------------------------------------------
-(require 'working-copy)
-
 ;; this is insanely great. It displays the function you are "in" in terms
 ;; of the point. Really nice for reading long functions.
 
@@ -149,6 +123,7 @@
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
   (mattie-tab-switching)                  ;; my personal tab key setup.
+  (turn-on-dwim-tab)                      ;; suck cpu guessing tab completion
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
@@ -237,8 +212,10 @@
     ;; errors.
 
     (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
-    (configure-for-debugging 'edebug-defun) )
-  t)
+    (configure-for-debugging 'edebug-defun)
+
+    (dwim-tab-localize-context 'lisp-complete-symbol)
+    ) t)
 
 ;;----------------------------------------------------------------------
 ;; scheme
@@ -276,62 +253,59 @@
   '(progn
      (defvar scheme-scratch-buffer "*eval-scheme*" "the name of the scheme scratch buffer")
      (defvar default-scheme-interpreter "mzscheme")
+     t))
 
-     (defun scheme ()
-       (interactive)
+(defun scheme ()
+  (interactive)
 
-       (split-window-to-buffers
-         (or (get-buffer scheme-scratch-buffer)
-             (let
-               ((scheme-eval-buffer (get-buffer-create scheme-scratch-buffer)))
+  (split-window-to-buffers
+    (or (get-buffer scheme-scratch-buffer)
+      (let
+        ((scheme-eval-buffer (get-buffer-create scheme-scratch-buffer)))
 
-               (with-current-buffer scheme-eval-buffer
-                 (scheme-mode)
-                 (setq scheme-buffer "*scheme*"))
-               scheme-eval-buffer))
+        (with-current-buffer scheme-eval-buffer
+          (scheme-mode)
+          (setq scheme-buffer "*scheme*"))
+        scheme-eval-buffer))
 
-         (or (get-buffer "*scheme*")
-           (save-excursion
-             (condition-case nil
-               ;; try and switch to the scheme buffer moving the point to the end of the buffer.
-               (switch-to-scheme t)
-               (current-buffer)
-               (error
-                 (let
-                   ((pop-up-windows nil))
-                   (run-scheme default-scheme-interpreter)
-                   (current-buffer)))))) ))
+    (or (get-buffer "*scheme*")
+      (save-excursion
+        (condition-case nil
+          ;; try and switch to the scheme buffer moving the point to the end of the buffer.
+          (switch-to-scheme t)
+          (current-buffer)
+          (error
+            (let
+              ((pop-up-windows nil))
+              (run-scheme default-scheme-interpreter)
+              (current-buffer)))))) ))
 
-     (defun scheme-send-buffer ()
-       (interactive)
-       "send the buffer to the scheme interpreter"
-       (save-excursion
-         (mark-whole-buffer)
-         (scheme-send-region)))
+(defun scheme-send-buffer ()
+  (interactive)
+  "send the buffer to the scheme interpreter"
+  (save-excursion
+    (mark-whole-buffer)
+    (scheme-send-region)))
 
-     (add-hook 'inferior-scheme-mode-hook 'swap-paren-keys t)
+(add-hook 'inferior-scheme-mode-hook 'swap-paren-keys t)
 
-     ;; since the scheme mode bindings rely on the cmuscheme goodies don't put the hook
-     ;; in until after cmuscheme has loaded.
-     (add-hook 'scheme-mode-hook
-       (lambda ()
-         (swap-paren-keys)
-         (configure-for-programming 'scheme-list-fn-signatures)
-         (configure-for-evaluation
-           'scheme-send-definition
-           'scheme-send-last-sexp
-           'scheme-send-region
-           'scheme-send-buffer)
-         ;; (configure-for-macros     'scheme-
-         )
-       t) ))
+(add-hook 'scheme-mode-hook
+  (lambda ()
+    (swap-paren-keys)
+    (configure-for-programming 'scheme-list-fn-signatures)
+    (configure-for-evaluation
+      'scheme-send-definition
+      'scheme-send-last-sexp
+      'scheme-send-region
+      'scheme-send-buffer))
+  t)
 
 ;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
 (setq
-  auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
-                            ("\\.pm$"      . cperl-mode)
+  auto-mode-alist (append '(("\\.pl$"      . perl-mode)
+                            ("\\.pm$"      . perl-mode)
                              ) auto-mode-alist ))
 
 (defconst perl-function-regex "sub")
@@ -340,23 +314,22 @@
   (interactive)
   (occur perl-function-regex))
 
-(eval-after-load 'cperl-mode
-  '(progn
+(add-hook 'perl-mode-hook
+  (lambda ()
     (setq
-      cperl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
-      cperl-pod-here-scan nil          ;; more attempts to speed up font-lock
+      perl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
+      perl-pod-here-scan nil          ;; more attempts to speed up font-lock
 
-      cperl-indent-parens-as-block t   ;; This was a critical fix , no more
+      perl-indent-parens-as-block t   ;; This was a critical fix , no more
                                        ;; data structure indenting to the opening brace
 
-      cperl-indent-level 2             ;; indentation adjustments
-      cperl-continued-statement-offset 2)
+      perl-indent-level 2             ;; indentation adjustments
+      perl-continued-statement-offset 2)
 
-    (add-hook 'cperl-mode-hook
-      (lambda ()
-        (configure-for-programming 'perl-function-regex)
-        (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))
-      t) ))
+    (configure-for-programming 'perl-list-fn-signatures)
+
+    (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))
+  t)
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
@@ -376,29 +349,26 @@
   (interactive)
   (message "not implemented yet"))
 
-(eval-after-load 'cc-mode
-  '(progn
-     (add-hook 'c-mode-common-hook
-       (lambda ()
-         (c-set-style "linux")                 ;; base off of linux style
-         (setq c-basic-offset 2)               ;; tabs are 2 spaces
+(add-hook 'c-mode-common-hook
+  (lambda ()
+    (c-set-style "linux")                 ;; base off of linux style
+    (setq c-basic-offset 2)               ;; tabs are 2 spaces
 
-         (c-set-offset 'substatement-open '0)  ;; hanging braces
+    (c-set-offset 'substatement-open '0)  ;; hanging braces
 
-         ;; auto-hungry newline and whitespace delete
-         (c-toggle-auto-hungry-state 1) )
-       t)
+    ;; auto-hungry newline and whitespace delete
+    (c-toggle-auto-hungry-state 1))
+  t)
 
-     (add-hook 'c-mode-hook
-       (lambda ()
-         (configure-for-programming 'c-list-fn-signatures))
-       t)
+(add-hook 'c-mode-hook
+  (lambda ()
+    (configure-for-programming 'c-list-fn-signatures))
+  t)
 
-
-     (add-hook 'c++-mode-hook
-       (lambda ()
-         (configure-for-programming 'c++-list-fn-signatures))
-       t) ))
+(add-hook 'c++-mode-hook
+  (lambda ()
+    (configure-for-programming 'c++-list-fn-signatures))
+  t)
 
 ;;----------------------------------------------------------------------
 ;; Java
@@ -407,20 +377,22 @@
   '(require 'flymake))
 
 ;;----------------------------------------------------------------------
-;; Lua
+;; xml/html/css
 ;;----------------------------------------------------------------------
+(setq
+  css-indent-offset 2)
 
-(setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist ))
+(require 'nxml-mode)
 
-(defun lua-list-fn-signatures ()
-  (interactive)
-  (message "not implemented yet"))
-
-(eval-after-load 'lua-mode
-  '(add-hook 'lua-mode-hook
-     (lambda ()
-       (configure-for-programming 'lua-list-fn-signatures))
-     t))
+(setq auto-mode-alist (append '( ("\\.html$"    . nxml-mode)
+                                 ("\\.xhtml$"   . nxml-mode)
+                                 ("\\.xml$"     . nxml-mode)
+                                 ) auto-mode-alist ))
+(add-hook 'nxml-mode
+  (lambda ()
+    (dwim-tab-localize-context 'nxml-complete)
+    (turn-on-dwim-tab))
+  t)
 
 ;;----------------------------------------------------------------------
 ;; logging

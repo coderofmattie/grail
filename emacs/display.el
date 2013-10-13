@@ -72,17 +72,6 @@
      (grail-set-faces
        (flyspell-incorrect (underline "red")))))
 
-(eval-after-load 'cperl-mode
-  '(progn
-     (grail-set-faces
-       (cperl-array-face (foreground "aquamarine3") (background "grey5") (weight 'normal))
-       (cperl-hash-face (foreground "aquamarine3") (background "grey5") (weight 'normal))
-       (cperl-nonoverridable-face (foreground "DeepSkyBlue4")) )))
-
-(eval-after-load 'yasnippet
-  '(grail-set-faces
-     (yas/field-highlight-face  (background "grey20") (foreground "dark goldenrod"))
-     ))
 
 
 

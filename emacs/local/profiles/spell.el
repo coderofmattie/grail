@@ -9,19 +9,6 @@
   ispell-program-name "aspell"                     ;; use aspell.
   flyspell-issue-message-flag nil)                 ;; don't bog down in bad English.
 
-;; turn on regular flyspell mode text mode buffers.
-;; disabled: something is really wrong here. "no topics found" pops up
-;;           and key insertion fails when the underlining begins.
-
-;; (add-hook 'text-mode-hook       'flyspell-mode)
-
-;; (grail-tarball-installer
-;;   "http://www.dr-qubit.org/download.php?file=predictive/auto-overlays.tar.gz"
-;;   "auto-overlays.tar"
-;;   "gz")
-
-;; programming modes.
-
 (add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)
 
 (eval-after-load 'cperl-mode
