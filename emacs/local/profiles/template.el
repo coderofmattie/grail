@@ -125,7 +125,7 @@
     (templates/mode-setup))
   t)
 
-(add-hook 'perl-mode-hook
+(add-hook 'cperl-mode-hook
   (lambda ()
     (templates/mode-setup))
   t)

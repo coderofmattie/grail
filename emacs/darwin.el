@@ -8,11 +8,7 @@
 ;; in the apple control panel works best, along with disabling anti-aliasing.
 (setq mac-allow-anti-aliasing nil)
 
-;; (setq ns-use-qd-smoothing nil)
-
-(setq mac-option-modifier 'meta)  ;; oh happy day !!!
-                                  ;; no more hellish binding of meta
-                                  ;; on the mac key. can use CarbonEmacs again.
+(setq system-font-family "Trebuchet MS")
 
 (server-start)
 

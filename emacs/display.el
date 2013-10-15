@@ -12,8 +12,8 @@
 
 (setq default-frame-alist
   (append '((cursor-color . "yellow")
-            (mouse-color  . "red")
-            (cursor-type  . "hollow") )
+                (mouse-color  . "red")
+                (cursor-type  . "hollow") )
     default-frame-alist))
 
 (grail-set-faces
@@ -29,9 +29,10 @@
     (underline nil)
     (slant 'normal)
     (weight 'normal)
-    (height 140)
+    (width 'wide)
+    (height 170)
     (width 'normal)
-    (family "DejaVu Sans Mono"))
+    (family (or system-font-family "DejaVu Sans Mono")))
 
   ;; comments are set off-tempature to distingiush them better.
   ;; orange was chosen as a red that wasn't harsh.

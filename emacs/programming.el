@@ -303,10 +303,12 @@
 ;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
+(fset 'perl-mode 'cperl-mode)
+
 (setq
-  auto-mode-alist (append '(("\\.pl$"      . perl-mode)
-                            ("\\.pm$"      . perl-mode)
-                             ) auto-mode-alist ))
+  auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
+                                     ("\\.pm$"      . cperl-mode)
+                                     ) auto-mode-alist ))
 
 (defconst perl-function-regex "sub")
 
@@ -314,17 +316,18 @@
   (interactive)
   (occur perl-function-regex))
 
-(add-hook 'perl-mode-hook
+(add-hook 'cperl-mode-hook
   (lambda ()
     (setq
-      perl-invalid-face (quote off)   ;; disable trailing whitespace highlighting with _
-      perl-pod-here-scan nil          ;; more attempts to speed up font-lock
+      cperl-invalid-face nil
 
-      perl-indent-parens-as-block t   ;; This was a critical fix , no more
-                                       ;; data structure indenting to the opening brace
+      cperl-indent-parens-as-block t
 
-      perl-indent-level 2             ;; indentation adjustments
-      perl-continued-statement-offset 2)
+      cperl-indent-level 2
+      cperl-continued-statement-offset 2
+      cperl-close-paren-offset -2
+
+      cperl-indent-subs-specially nil)
 
     (configure-for-programming 'perl-list-fn-signatures)
 
