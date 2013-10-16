@@ -210,6 +210,8 @@
     ;; platform here.
     ;;----------------------------------------------------------------------
 
+    (defvar system-font-family nil)
+
     (grail-trap
       "Loading the OS specific elisp."
 
