@@ -17,13 +17,13 @@
                          "file"
                          "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el"))
 
-(grail-load 'slime     (grail-define-installer "slime"
-                          "pkg"
-                          'slime))
+;; (grail-load 'slime     (grail-define-installer "slime"
+;;                           "pkg"
+;;                           'slime))
 
-(grail-load 'slime-repl  (grail-define-installer "slime-repl"
-                          "pkg"
-                          'slime-repl))
+;; (grail-load 'slime-repl  (grail-define-installer "slime-repl"
+;;                           "pkg"
+;;                           'slime-repl))
 
 (grail-load 'quack     (grail-define-installer "quack"
                          "file"
@@ -54,13 +54,13 @@
 (setq
   slime-net-coding-system 'utf-8-unix)
 
-(slime-setup '(slime-repl))
+;; (slime-setup '(slime-repl))
 
-(setq
-  slime-words-of-encouragement '("The name is Bond. James Bond."
-                                 "These are your father's parentheses. Elegant weapons from a more civilized age."
-                                 "We were on the edge of the desert when the Emacs took hold."
-                                 "Mine says: Desert Eagle ... .50"))
+;; (setq
+;;   slime-words-of-encouragement '("The name is Bond. James Bond."
+;;                                  "These are your father's parentheses. Elegant weapons from a more civilized age."
+;;                                  "We were on the edge of the desert when the Emacs took hold."
+;;                                  "Mine says: Desert Eagle ... .50"))
 
 ;;----------------------------------------------------------------------
 ;; scheme

@@ -123,7 +123,6 @@
   (turn-on-font-lock)                     ;; enable syntax highlighting
 
   (mattie-tab-switching)                  ;; my personal tab key setup.
-  (turn-on-dwim-tab)                      ;; suck cpu guessing tab completion
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
@@ -303,6 +302,7 @@
 ;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
+
 (fset 'perl-mode 'cperl-mode)
 
 (setq
@@ -327,11 +327,18 @@
       cperl-continued-statement-offset 2
       cperl-close-paren-offset -2
 
-      cperl-indent-subs-specially nil)
+      cperl-indent-subs-specially nil
+
+      cperl-highlight-variables-indiscriminately t
+
+      cperl-electric-parens t)
 
     (configure-for-programming 'perl-list-fn-signatures)
 
-    (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point))
+    (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
+
+    (turn-on-dwim-tab 'cperl-indent-command)
+    )
   t)
 
 ;;----------------------------------------------------------------------

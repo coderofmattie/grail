@@ -30,6 +30,8 @@
 (defvar-local dwim-tab-local-context nil
   "A function, or list of functions ")
 
+(defvar-local dwim-tab-local-ident nil)
+
 (defun dwim-tab-localize-context ( &rest locals )
   "dwim-tab-local-context function-list
 
@@ -99,12 +101,16 @@
   "
   (interactive)
   (if (looking-at "\\>")
-    (unless (try-complete-dwim) (indent-for-tab-command))
-    (indent-for-tab-command) ))
+    (unless (try-complete-dwim) (dwim-tab-local-indent))
+    (dwim-tab-local-indent) ))
 
-(defun turn-on-dwim-tab ()
+(defun turn-on-dwim-tab ( &optional indent-function )
   (interactive)
-  (local-set-key (kbd "<tab>") 'dwim-tab-do-magic))
+
+  (if indent-function
+    (setq dwim-tab-local-indent (or indent-function 'indent-for-tab-command)))
+
+  (local-set-key (kbd "<tab>") 'dwim-tab-do-magic) )
 
 (provide 'dwim-tab)
 
