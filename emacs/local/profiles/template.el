@@ -29,6 +29,8 @@
 ;; naming
 (setq yas/ignore-filenames-as-triggers t)
 
+(setq yas-trigger-key nil)
+
 (defconst yasnippet-local-templates
   (expand-file-name (concat grail-elisp-root "templates/yasnippet/"))
   "the yasnippet tree path relative to grail-elisp-root")

@@ -10,7 +10,6 @@
 
 (setq system-font-family "Trebuchet MS")
 
-(server-start)
 
 
 

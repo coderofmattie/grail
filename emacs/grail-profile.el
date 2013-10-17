@@ -40,7 +40,9 @@
               (message "grail: loading profile %s" (concat grail-local-profiles profile))
               (let
                 ((trapped (catch 'grail-trap
-                            (load-elisp-if-exists (concat grail-local-profiles profile)))))
+                                 (catch 'grail-disabled
+                                   (load-elisp-if-exists (concat grail-local-profiles profile)) ))))
+
                 (if (consp trapped)
                   (progn
                     (push (cons (car profile-order) profile) grail-failed-profiles)

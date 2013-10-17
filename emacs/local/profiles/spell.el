@@ -9,6 +9,9 @@
   ispell-program-name "aspell"                     ;; use aspell.
   flyspell-issue-message-flag nil)                 ;; don't bog down in bad English.
 
+(unless (executable-find ispell-program-name)
+  (throw 'grail-disabled "aspell not available"))
+
 (add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)
 
 (eval-after-load 'cperl-mode

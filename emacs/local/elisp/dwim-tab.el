@@ -27,10 +27,10 @@
    functions will be executed in order until one or none returns
    non-nil.")
 
-(defvar-local dwim-tab-local-context nil
+(defvar dwim-tab-local-context nil
   "A function, or list of functions ")
 
-(defvar-local dwim-tab-local-ident nil)
+(defvar dwim-tab-local-indent 'indent-for-tab-command)
 
 (defun dwim-tab-localize-context ( &rest locals )
   "dwim-tab-local-context function-list
@@ -101,16 +101,18 @@
   "
   (interactive)
   (if (looking-at "\\>")
-    (unless (try-complete-dwim) (dwim-tab-local-indent))
-    (dwim-tab-local-indent) ))
+    (unless (try-complete-dwim) (funcall dwim-tab-local-indent))
+    (funcall dwim-tab-local-indent)) )
 
 (defun turn-on-dwim-tab ( &optional indent-function )
   (interactive)
 
-  (if indent-function
-    (setq dwim-tab-local-indent (or indent-function 'indent-for-tab-command)))
+  (if (not (equal nil indent-function))
+    (progn
+      (make-variable-buffer-local 'dwim-tab-local-indent)
+      (setq dwim-tab-local-indent indent-function) ))
 
-  (local-set-key (kbd "<tab>") 'dwim-tab-do-magic) )
+  (local-set-key (kbd "TAB") 'dwim-tab-do-magic))
 
 (provide 'dwim-tab)
 
