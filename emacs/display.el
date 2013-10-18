@@ -75,14 +75,13 @@
 
 (eval-after-load 'cperl-mode
   '(progn
+     (setq cperl-invalid-face nil)
+     
      (set-face-background 'cperl-array-face "grey5")
      (set-face-foreground 'cperl-array-face "aquamarine3")
 
      (set-face-background 'cperl-hash-face "grey5")
      (set-face-foreground 'cperl-hash-face "aquamarine3")
-
-     ;; (set-face-background 'cperl-here-face "grey5")
-     ;; (set-face-foreground 'cperl-here-face "grey50")
 
      (set-face-background 'cperl-nonoverridable-face "grey5")
      (set-face-foreground 'cperl-nonoverridable-face "DeepSkyBlue4") ))

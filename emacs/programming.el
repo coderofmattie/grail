@@ -117,12 +117,20 @@
 ;; some mundane asthetics and keybindings plus whatever dwim input
 ;; expansion I can cook up.
 
-(defun configure-for-programming ( list-fn-signatures )
+(defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
 
-  (turn-on-font-lock)                     ;; enable syntax highlighting
+  (turn-on-font-lock)                       ;; enable syntax highlighting
 
-  (mattie-tab-switching)                  ;; my personal tab key setup.
+  (mattie-disable-default-tab-keys) ;; disable local tabs if any
+
+  (unless (equal nil buffer-ring-mode)
+    (bfr-torus-get-ring buffer-ring-mode)
+    (buffer-ring-add buffer-ring-mode)
+
+    (local-set-key (kbd "<M-tab>") 'buffer-ring-cycle)
+    (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
+    (local-set-key (kbd "<M-tab>") 'buffer-ring-prev-buffer) )
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
@@ -200,7 +208,7 @@
   (lambda ()
     (swap-paren-keys)
 
-    (configure-for-programming 'elisp-list-fn-signatures)
+    (configure-for-programming 'elisp-list-fn-signatures "elisp-mode")
 
     ;; this binding is very important. normal evaluation of defuns such as defvar
     ;; and defcustom do not change the default value because the form only sets
@@ -214,7 +222,8 @@
     (configure-for-debugging 'edebug-defun)
 
     (dwim-tab-localize-context 'lisp-complete-symbol)
-    ) t)
+    (turn-on-dwim-tab 'lisp-indent-line))
+  t)
 
 ;;----------------------------------------------------------------------
 ;; scheme
@@ -302,8 +311,24 @@
 ;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
-
 (fset 'perl-mode 'cperl-mode)
+
+(eval-after-load 'cperl-mode
+  '(progn
+     (setq
+       cperl-indent-parens-as-block t
+
+       cperl-indent-level 2
+       cperl-continued-statement-offset 2
+
+       cperl-close-paren-offset -2
+
+       cperl-indent-subs-specially nil
+
+       cperl-highlight-variables-indiscriminately t
+
+       cperl-electric-parens t
+       cperl-electric-keywords t)) )
 
 (setq
   auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
@@ -318,27 +343,13 @@
 
 (add-hook 'cperl-mode-hook
   (lambda ()
-    (setq
-      cperl-invalid-face nil
+    (set-face-foreground cperl-pod-face "orange3")
 
-      cperl-indent-parens-as-block t
-
-      cperl-indent-level 2
-      cperl-continued-statement-offset 2
-      cperl-close-paren-offset -2
-
-      cperl-indent-subs-specially nil
-
-      cperl-highlight-variables-indiscriminately t
-
-      cperl-electric-parens t)
-
-    (configure-for-programming 'perl-list-fn-signatures)
+    (configure-for-programming 'perl-list-fn-signatures "perl-mode")
 
     (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
 
-    (turn-on-dwim-tab 'cperl-indent-command)
-    )
+    (turn-on-dwim-tab 'cperl-indent-command) )
   t)
 
 ;;----------------------------------------------------------------------
@@ -398,6 +409,7 @@
                                  ("\\.xhtml$"   . nxml-mode)
                                  ("\\.xml$"     . nxml-mode)
                                  ) auto-mode-alist ))
+
 (add-hook 'nxml-mode
   (lambda ()
     (dwim-tab-localize-context 'nxml-complete)

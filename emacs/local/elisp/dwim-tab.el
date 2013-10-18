@@ -20,17 +20,17 @@
   "A list of functions for contextualized-tab to try. These functions need to return t only
    if they are certain their dwim is the right dwim.")
 
-(defvar dwim-tab-fallback-context nil
+(defvar-local dwim-tab-fallback-context nil
   "A fallback completion function which defaults to hippie expand.
    set dwim-tab-fallback to a function, or a list of
    functions. When more than one function is specified the
    functions will be executed in order until one or none returns
    non-nil.")
 
-(defvar dwim-tab-local-context nil
+(defvar-local dwim-tab-local-context nil
   "A function, or list of functions ")
 
-(defvar dwim-tab-local-indent 'indent-for-tab-command)
+(defvar-local dwim-tab-local-indent 'indent-for-tab-command)
 
 (defun dwim-tab-localize-context ( &rest locals )
   "dwim-tab-local-context function-list
@@ -108,9 +108,7 @@
   (interactive)
 
   (if (not (equal nil indent-function))
-    (progn
-      (make-variable-buffer-local 'dwim-tab-local-indent)
-      (setq dwim-tab-local-indent indent-function) ))
+    (setq dwim-tab-local-indent indent-function))
 
   (local-set-key (kbd "TAB") 'dwim-tab-do-magic))
 
