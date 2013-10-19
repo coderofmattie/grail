@@ -72,8 +72,6 @@
   ;; just to be sure, this default may change in the future.
   vc-make-backup-files nil)
 
-(require 'vc-bzr)
-
 ;;----------------------------------------------------------------------
 ;;                          Ediff
 ;;----------------------------------------------------------------------
@@ -117,6 +115,17 @@
 ;; some mundane asthetics and keybindings plus whatever dwim input
 ;; expansion I can cook up.
 
+(defun configure-for-buffer-ring ( buffer-ring-mode )
+  (unless (equal nil buffer-ring-mode)
+    (buffer-ring-add buffer-ring-mode)
+
+    (local-set-key (kbd "<M-tab>")     'buffer-ring-cycle)
+    (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
+    (local-set-key (kbd "<M-left>")    'buffer-ring-prev-buffer)
+
+    (local-set-key (kbd "<M-right>")   'buffer-torus-next-ring)
+    (local-set-key (kbd "<M-left>")     'buffer-torus-prev-ring) ))
+
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
 
@@ -124,19 +133,10 @@
 
   (mattie-disable-default-tab-keys) ;; disable local tabs if any
 
-  (unless (equal nil buffer-ring-mode)
-    (bfr-torus-get-ring buffer-ring-mode)
-    (buffer-ring-add buffer-ring-mode)
-
-    (local-set-key (kbd "<M-tab>") 'buffer-ring-cycle)
-    (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
-    (local-set-key (kbd "<M-tab>") 'buffer-ring-prev-buffer) )
+  (configure-for-buffer-ring buffer-ring-mode)
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
-
-  (local-set-key (kbd "M-f") 'forward-sexp)
-  (local-set-key (kbd "M-b") 'backward-sexp)
 
   ;; it is *really* handy to see just the function signatures of all the
   ;; functions defined in a buffer. It is so useful that every programming
@@ -145,7 +145,11 @@
 
   ;; for starters this will comment the region, but a toggle command needs
   ;; to be defined.
-  (local-set-key (kbd "C-c ; r") 'comment-region))
+  (local-set-key (kbd "C-c c ;") 'comment-region))
+
+(defun configure-for-navigation ( forwards backwards )
+  (local-set-key (kbd "M-f") forwards)
+  (local-set-key (kbd "M-b") backwards))
 
 (defun configure-for-evaluation ( eval-define eval-expression eval-region eval-buffer )
   "Enable my programming customizations for the buffer
@@ -217,6 +221,8 @@
     ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
     ;; this function/keybinding should be used exclusively to avoid frustrating
     ;; errors.
+
+    (configure-for-navigation 'forward-sexp 'backward-sexp)
 
     (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
     (configure-for-debugging 'edebug-defun)
@@ -311,8 +317,6 @@
 ;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
-(fset 'perl-mode 'cperl-mode)
-
 (eval-after-load 'cperl-mode
   '(progn
      (setq
@@ -330,10 +334,12 @@
        cperl-electric-parens t
        cperl-electric-keywords t)) )
 
-(setq
-  auto-mode-alist (append '(("\\.pl$"      . cperl-mode)
-                                     ("\\.pm$"      . cperl-mode)
-                                     ) auto-mode-alist ))
+;; make cperl the default in all cases.
+(mapc
+  (lambda (pair)
+    (if (eq (cdr pair) 'perl-mode)
+      (setcdr pair 'cperl-mode)))
+     (append auto-mode-alist interpreter-mode-alist))
 
 (defconst perl-function-regex "sub")
 
@@ -345,6 +351,7 @@
   (lambda ()
     (set-face-foreground cperl-pod-face "orange3")
 
+    (configure-for-navigation 'forward-word 'backward-word)
     (configure-for-programming 'perl-list-fn-signatures "perl-mode")
 
     (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
@@ -413,7 +420,8 @@
 (add-hook 'nxml-mode
   (lambda ()
     (dwim-tab-localize-context 'nxml-complete)
-    (turn-on-dwim-tab))
+    (turn-on-dwim-tab 'nxml-indent-line)
+    (configure-for-buffer-ring "nxml-mode") )
   t)
 
 ;;----------------------------------------------------------------------
