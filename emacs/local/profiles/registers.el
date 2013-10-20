@@ -94,14 +94,20 @@
      (travel (re-search-backward "[[:word:]]+" (beginning-of-line) t 0)))
 
     (if (eq travel nil)
-      nil
+      (progn
+        (goto-char starting-point)
+        nil)
       (let
         ((register-mapping (reg-find-register-by-keyword
                              (buffer-substring-no-properties travel starting-point))))
 
-        (when (not (eq nil register-mapping))
-          (delete-region travel starting-point)
-          (insert-register register-mapping)) )) ))
+        (if (eq nil register-mapping)
+          (progn
+            (goto-char starting-point)
+            nil)
+          (progn
+            (delete-region travel starting-point)
+            (insert-register register-mapping)) ))) ))
 
 (dwim-tab-set-register-expand 'register-expand-keyword)
 
