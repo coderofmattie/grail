@@ -16,21 +16,20 @@
 (eval-when-compile
   (require 'cl))
 
+(defvar dwim-tab-register-expand nil
+  "dwim-tab function for expanding registers")
+
 (defvar dwim-tab-global-context nil
   "A list of functions for contextualized-tab to try. These functions need to return t only
    if they are certain their dwim is the right dwim.")
-
-(defvar-local dwim-tab-fallback-context nil
-  "A fallback completion function which defaults to hippie expand.
-   set dwim-tab-fallback to a function, or a list of
-   functions. When more than one function is specified the
-   functions will be executed in order until one or none returns
-   non-nil.")
 
 (defvar-local dwim-tab-local-context nil
   "A function, or list of functions ")
 
 (defvar-local dwim-tab-local-indent 'indent-for-tab-command)
+
+(defun dwim-tab-set-register-expand ( expander )
+  (setq dwim-tab-register-expand expander))
 
 (defun dwim-tab-localize-context ( &rest locals )
   "dwim-tab-local-context function-list
@@ -50,15 +49,6 @@
   "
   (apply 'add-to-list 'dwim-tab-global-context globals))
 
-(defun dwim-tab-fallack-context ( &rest fallbacks  )
-  "dwim-tab-fallback-context function
-
-   Add a context function to the Tab hook. If the function detects that
-   the point is within it's context, or turf then it should DTRT and
-   return non-nil.
-  "
-  (apply 'add-to-list 'dwim-tab-fallback-context fallbacks))
-
 (defun try-complete-dwim ()
   "try-complete-dwim COMPLETE
 
@@ -70,11 +60,13 @@
     ((complete nil)
      (point-before (point)))
 
-    (setq complete (append dwim-tab-fallback-context complete))
     (setq complete (append dwim-tab-global-context complete))
     (setq complete (append dwim-tab-local-context complete))
 
     (setq complete (nreverse complete))
+
+    (when dwim-tab-register-expand
+      (setq complete (cons dwim-tab-register-expand complete)))
 
     (catch 'terminate-complete
       (unless complete
