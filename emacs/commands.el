@@ -6,7 +6,6 @@
 ;;----------------------------------------------------------------------
 
 (require 'ucase-word)
-(require 'buffer-ring)
 
 (eval-when-compile
   (require 'cl))
@@ -315,25 +314,6 @@
   "copy the list at the point to the kill ring"
   (interactive)
   (save-excursion
-    (do-lisp-list 'copy-region-as-kill)
-    ))
+    (do-lisp-list 'copy-region-as-kill) ))
 
-;;----------------------------------------------------------------------
-;; default register
-;;----------------------------------------------------------------------
-
-(defun assign-default-register ( register )
-  "assign the default register"
-  (interactive "cregister? ")
-  (set default-register register))
-
-(defun set-default-register ()
-  (interactive)
-
-  (set-register default-register
-    (filter-buffer-substring (region-beginning) (region-end))))
-
-(defun insert-default-register ()
-  (interactive)
-  (insert-register default-register))
 
