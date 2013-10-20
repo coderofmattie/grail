@@ -73,6 +73,23 @@
   vc-make-backup-files nil)
 
 ;;----------------------------------------------------------------------
+;;                           Diff
+;;----------------------------------------------------------------------
+(require 'diff)
+
+(setq
+  diff-switches "-U3")                 ;; turn on standard context diffs,
+
+(add-hook 'diff-mode-hook
+
+  ;; when diff is called it will pop a window which is nice, but killing
+  ;; the buffer did not get rid of the popped window , until now.
+
+  (lambda ()
+    (add-hook 'kill-buffer-hook 'rid-window t t))
+  t)
+
+;;----------------------------------------------------------------------
 ;;                          Ediff
 ;;----------------------------------------------------------------------
 
