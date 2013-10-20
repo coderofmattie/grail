@@ -15,10 +15,9 @@
 ;; undistributed features.
 ;;----------------------------------------------------------------------
 (require 'dwim-tab)
-
 (require 'buffer-ring)
 
-(use-grail-profiles 0 "tramp" "spell")
+(use-grail-profiles 0 "tramp" "spell" "register")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
