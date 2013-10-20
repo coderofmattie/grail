@@ -16,6 +16,8 @@
 ;;----------------------------------------------------------------------
 (require 'dwim-tab)
 
+(require 'buffer-ring)
+
 (use-grail-profiles 0 "tramp" "spell")
 
 ;;----------------------------------------------------------------------
@@ -128,8 +130,7 @@
 
     ;; make up-down go through the history list.
     (local-set-key (kbd "<up>") 'comint-previous-input)
-    (local-set-key (kbd "<down>") 'comint-next-input)
-    )
+    (local-set-key (kbd "<down>") 'comint-next-input))
   t)
 
 ;;----------------------------------------------------------------------
@@ -212,24 +213,6 @@
     ;; turn on truncate mode before erc eats all available RAM.
      (require 'erc-truncate)
      (erc-truncate-mode 1)))
-
-;;----------------------------------------------------------------------
-;;                           Diff
-;;----------------------------------------------------------------------
-
-(require 'diff)
-
-(setq
-  diff-switches "-U3")                 ;; turn on standard context diffs,
-
-(add-hook 'diff-mode-hook
-
-  ;; when diff is called it will pop a window which is nice, but killing
-  ;; the buffer did not get rid of the popped window , until now.
-
-  (lambda ()
-    (add-hook 'kill-buffer-hook 'rid-window t t))
-  t)
 
 ;;----------------------------------------------------------------------
 ;;                       Programming
