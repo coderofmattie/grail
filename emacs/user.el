@@ -17,7 +17,7 @@
 (require 'dwim-tab)
 (require 'buffer-ring)
 
-(use-grail-profiles 0 "tramp" "spell" "register")
+(use-grail-profiles 0 "tramp" "spell" "registers")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
