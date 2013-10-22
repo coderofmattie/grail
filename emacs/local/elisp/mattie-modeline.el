@@ -17,6 +17,8 @@
    Construct a modified string for the modeline.
   "
   (concat
+    (symbol-name buffer-file-coding-system)
+    "/"
     (if (or (and (local-variable-p 'view-read-only) view-read-only)
             (and (local-variable-p 'buffer-read-only) buffer-read-only))
       "RO"

@@ -35,9 +35,10 @@
 ;; basic settings
 
 ;; default to UNIX line terminators
-(set-buffer-file-coding-system 'unix 't)
-(prefer-coding-system 'utf-8)
-(set-default-coding-systems 'utf-8)
+(setq buffer-file-coding-system 'utf-8-unix)
+(prefer-coding-system 'utf-8-unix)
+(set-language-environment "UTF-8")
+(set-locale-environment "en_US.UTF-8")
 
 (setq
   ;; backups are a poor substitute for revision control
@@ -213,7 +214,6 @@
 (require 'ido)
 
 (setq ido-enable-flex-matching t)
-(setq ido-everywhere t)
 (setq ido-use-filename-at-point 'guess)
 
 (ido-mode 1)
