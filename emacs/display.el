@@ -42,6 +42,7 @@
     (width 'normal)
     (family (select-best-font-family)))
 
+
   ;; comments are set off-tempature to distingiush them better.
   ;; orange was chosen as a red that wasn't harsh.
   (font-lock-comment-face (foreground "orange3"))
@@ -74,6 +75,9 @@
   (ediff-fine-diff-face-A  (underline "orange2"))
   (ediff-fine-diff-face-B  (underline "orange2"))
   (ediff-fine-diff-face-C  (underline "orange2")) )
+
+(set-face-attribute 'default nil
+  :font (concat (select-best-font-family) ":spacing=m"))
 
 (eval-after-load 'flyspell
   '(progn
