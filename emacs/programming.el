@@ -348,8 +348,7 @@
 
        cperl-highlight-variables-indiscriminately t
 
-       cperl-electric-parens t
-       cperl-electric-keywords t)) )
+       cperl-electric-parens t)) )
 
 ;; make cperl the default in all cases.
 (mapc
