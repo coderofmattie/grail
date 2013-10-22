@@ -16,6 +16,14 @@
                 (cursor-type  . "hollow") )
     default-frame-alist))
 
+
+(defun select-best-font-family ()
+  (catch 'best-font
+    (dolist (canidate platform-font-family)
+      (when (member canidate (font-family-list))
+        (throw 'best-font canidate))
+      nil)))
+
 (grail-set-faces
   ;; the default face
 
@@ -32,7 +40,7 @@
     (width 'wide)
     (height 170)
     (width 'normal)
-    (family (or system-font-family "DejaVu Sans Mono")))
+    (family (select-best-font-family)))
 
   ;; comments are set off-tempature to distingiush them better.
   ;; orange was chosen as a red that wasn't harsh.
@@ -65,8 +73,7 @@
 
   (ediff-fine-diff-face-A  (underline "orange2"))
   (ediff-fine-diff-face-B  (underline "orange2"))
-  (ediff-fine-diff-face-C  (underline "orange2"))
-  )
+  (ediff-fine-diff-face-C  (underline "orange2")) )
 
 (eval-after-load 'flyspell
   '(progn
@@ -76,7 +83,7 @@
 (eval-after-load 'cperl-mode
   '(progn
      (setq cperl-invalid-face nil)
-     
+
      (set-face-background 'cperl-array-face "grey5")
      (set-face-foreground 'cperl-array-face "aquamarine3")
 
@@ -85,7 +92,3 @@
 
      (set-face-background 'cperl-nonoverridable-face "grey5")
      (set-face-foreground 'cperl-nonoverridable-face "DeepSkyBlue4") ))
-
-
-
-
