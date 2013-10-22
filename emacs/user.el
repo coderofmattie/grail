@@ -40,6 +40,9 @@
 (set-language-environment "UTF-8")
 (set-locale-environment "en_US.UTF-8")
 
+;; force it everywhere
+(setq file-coding-system-alist '( (".*" . utf-8-unix) ))
+
 (setq
   ;; backups are a poor substitute for revision control
   make-backup-files nil
@@ -50,9 +53,6 @@
   ;; unfortunately this breaks hard-linking so I have been forced to
   ;; turn it off
   file-precious-flag nil
-
-  ;; set utf-8
-  current-language-environment "UTF-8"
 
   ;; keep woman from making a frame.
   woman-use-own-frame nil
