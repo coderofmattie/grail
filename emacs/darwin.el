@@ -8,7 +8,7 @@
 ;; in the apple control panel works best, along with disabling anti-aliasing.
 (setq mac-allow-anti-aliasing nil)
 
-(setq platform-font-family (list "DejaVu Sans Mono" "Trebuchet MS"))
+(setq platform-font-family (list "DejaVu LGC Sans Mono" "DejaVu Sans Mono" "Trebuchet MS"))
 
 
 
