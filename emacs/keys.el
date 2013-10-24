@@ -33,12 +33,10 @@
 ;; escape = (execute-extended-command)
 
 ;; standard emacs prompt for a interactive command
-
 (global-set-key (kbd "<escape>") 'execute-extended-command)
 
-(defun mattie-disable-default-tab-keys ()
-  (local-unset-key (kbd "<M-tab>"))
-  (local-unset-key (kbd "<S-tab>")))
+(global-set-key (kbd "<M-tab>") 'switch-to-prev-buffer)
+(global-unset-key (kbd "<S-tab>"))
 
 ;; misc keybindings
 

@@ -148,8 +148,6 @@
 
   (turn-on-font-lock)                       ;; enable syntax highlighting
 
-  (mattie-disable-default-tab-keys) ;; disable local tabs if any
-
   (configure-for-buffer-ring buffer-ring-mode)
 
   ;; better return key for programming
