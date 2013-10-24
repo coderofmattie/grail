@@ -230,7 +230,7 @@
     (progn
       (message
         "This buffer is already in ring %s, delete it before adding it to another ring"
-        (bfr-ring-name buffer-ring))
+        buffer-ring-name)
       nil)
     (progn
       (if (bfr-ring-add-buffer name (current-buffer))
