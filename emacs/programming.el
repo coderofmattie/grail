@@ -129,19 +129,14 @@
 
 (which-function-mode)
 
-;; some mundane asthetics and keybindings plus whatever dwim input
-;; expansion I can cook up.
-
 (defun configure-for-buffer-ring ( buffer-ring-mode )
-  (unless (equal nil buffer-ring-mode)
-    (buffer-ring-add buffer-ring-mode)
-
-    (local-set-key (kbd "<M-tab>")     'buffer-ring-cycle)
+  (when (buffer-ring-add buffer-ring-mode)
+    (local-set-key (kbd "<M-tab>")    'buffer-ring-cycle)
     (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
-    (local-set-key (kbd "<M-left>")    'buffer-ring-prev-buffer)
+    (local-set-key (kbd "<M-left>")   'buffer-ring-prev-buffer)
 
-    (local-set-key (kbd "<M-right>")   'buffer-torus-next-ring)
-    (local-set-key (kbd "<M-left>")     'buffer-torus-prev-ring) ))
+    (local-set-key (kbd "<M-right>")  'buffer-torus-next-ring)
+    (local-set-key (kbd "<M-left>")   'buffer-torus-prev-ring)) )
 
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
@@ -435,7 +430,7 @@
   (lambda ()
     (dwim-tab-localize-context 'nxml-complete)
     (turn-on-dwim-tab 'nxml-indent-line)
-    (configure-for-buffer-ring "nxml-mode") )
+    (configure-for-buffer-ring "nxml-mode"))
   t)
 
 ;;----------------------------------------------------------------------
