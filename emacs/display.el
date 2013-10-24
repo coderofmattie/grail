@@ -16,7 +16,6 @@
                 (cursor-type  . "hollow") )
     default-frame-alist))
 
-
 (defun select-best-font-family ()
   (catch 'best-font
     (dolist (canidate platform-font-family)
@@ -84,15 +83,47 @@
      (set-face-background 'cperl-nonoverridable-face "grey5")
      (set-face-foreground 'cperl-nonoverridable-face "DeepSkyBlue4") ))
 
-(eval-after-load 'ediff
-  '(progn
-     (ediff-current-diff-face-A (background "grey13") (foreground "dark goldenrod"))
-     (ediff-current-diff-face-B (background "grey13") (foreground "dark khaki"))
-     (ediff-current-diff-face-C (background "grey13") (foreground "olive drab"))
+(add-hook 'ediff-mode-hook 'set-custom-ediff-faces t)
 
-     (ediff-even-diff-face-A (background "grey12") (foreground "light slate grey"))
-     (ediff-even-diff-face-B (background "grey12") (foreground "light slate grey"))
-     (ediff-even-diff-face-C (background "grey12") (foreground "light slate grey"))
+(defun set-custom-ediff-faces ()
+  (let
+    ((diff-bg-color "khaki")
+     (diff-bg-selected-color "khaki")
+     (diff-fg-color "forest green"))
 
-     (ediff-fine-diff-face-A  (underline "orange2"))
-     (ediff-fine-diff-face-B  (underline "orange2")) ))
+    (set-face-background 'ediff-current-diff-A diff-bg-selected-color)
+    (set-face-foreground 'ediff-current-diff-A diff-fg-color)
+
+    (set-face-background 'ediff-current-diff-B diff-bg-selected-color)
+    (set-face-foreground 'ediff-current-diff-B diff-fg-color)
+
+    (set-face-background 'ediff-current-diff-C diff-bg-selected-color)
+    (set-face-foreground 'ediff-current-diff-C diff-fg-color)
+
+    (set-face-background 'ediff-even-diff-A diff-bg-color)
+    (set-face-foreground 'ediff-even-diff-A diff-fg-color)
+
+    (set-face-background 'ediff-even-diff-B diff-bg-color)
+    (set-face-foreground 'ediff-even-diff-B diff-fg-color)
+
+    (set-face-background 'ediff-even-diff-C diff-bg-color)
+    (set-face-foreground 'ediff-even-diff-C diff-fg-color)
+
+    (set-face-background 'ediff-odd-diff-A diff-bg-color)
+    (set-face-foreground 'ediff-odd-diff-A diff-fg-color)
+
+    (set-face-background 'ediff-odd-diff-B diff-bg-color)
+    (set-face-foreground 'ediff-odd-diff-B diff-fg-color)
+
+    (set-face-background 'ediff-odd-diff-C diff-bg-color)
+    (set-face-foreground 'ediff-odd-diff-C diff-fg-color)
+
+    (set-face-background 'ediff-fine-diff-A "dark khaki")
+    (set-face-foreground 'ediff-fine-diff-A "red")
+
+    (set-face-background 'ediff-fine-diff-B "dark khaki")
+    (set-face-foreground 'ediff-fine-diff-B "red")
+
+    (set-face-background 'ediff-fine-diff-C "dark khaki")
+    (set-face-foreground 'ediff-fine-diff-C "red") ))
+
