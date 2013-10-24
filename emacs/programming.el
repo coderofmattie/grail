@@ -426,7 +426,7 @@
                                  ("\\.xml$"     . nxml-mode)
                                  ) auto-mode-alist ))
 
-(add-hook 'nxml-mode
+(add-hook 'nxml-mode-hook
   (lambda ()
     (dwim-tab-localize-context 'nxml-complete)
     (turn-on-dwim-tab 'nxml-indent-line)
