@@ -299,19 +299,22 @@
       (message "buffers in [%s]: %s" bfr-ring-name buffer-list) )
     (message "This buffer is not in a ring.") ))
 
+(defun bfr-switch-to-buffer-by-id ( id )
+  (let
+    ((target-buffer (bfr-find-buffer-for-id id) ))
+
+    (if target-buffer
+      (switch-to-buffer target-buffer)
+      (message "buffer to switch to not found .. very bad")) ))
+
 (defun bfr-rotate-buffer-ring ( direction )
   (if (bfr-in-ring-p)
     (if (< (dyn-ring-size buffer-ring) 2)
       (message "There is only one buffer in the ring.")
       (progn
         (funcall direction buffer-ring)
-
-        (let
-          ((target-buffer (bfr-find-buffer-for-id (dyn-ring-value buffer-ring)) ))
-
-          (if target-buffer
-            (switch-to-buffer target-buffer)
-            (message "next buffer not found .. very bad")) )) )))
+        (bfr-switch-to-buffer-by-id (dyn-ring-value buffer-ring)) ))
+    (message "buffer not in ring.")) )
 
 (defun buffer-ring-prev-buffer ()
   "buffer-ring-prev-buffer
@@ -352,17 +355,19 @@
 
 (defun bfr-rotate-buffer-torus ( direction )
   (if (< (dyn-ring-size buffer-ring-torus) 2)
-    (message "There is only one buffer ring; ignoring the rotate command")
+    (message "There is only one buffer ring; ignoring the rotate global ring command")
     ;; rotate past any empties
     (if (dyn-ring-rotate-until
           buffer-ring-torus
           direction
           (lambda ( buffer-ring )
-            (not (dyn-ring-empty-p buffer-ring))))
+            (not (dyn-ring-empty-p (cdr buffer-ring)))))
       (progn
         (message "switching to ring %s" (bfr-current-name))
-        (switch-to-buffer (dyn-ring-value (bfr-current-ring))))
+        (let
+          ((current-head (dyn-ring-value (cdr (dyn-ring-value buffer-ring-torus)))))
 
+          (bfr-switch-to-buffer-by-id current-head) ))
       (message "All of the buffer rings are empty. Keeping the current ring position")) ))
 
 (defun buffer-torus-next-ring ()
