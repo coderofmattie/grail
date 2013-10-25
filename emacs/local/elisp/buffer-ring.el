@@ -155,8 +155,21 @@
     ((found (dyn-ring-find buffer-ring
               (lambda ( ring-element )
                 (when (string-equal (dyn-ring-element-value ring-element) id) t)) )))
-    (when found
-      (car found)) ))
+    (if found
+      (car found)
+      nil) ))
+
+(defun bfr-ring-find-unused-id ( ring )
+  (let
+    ((tentative-id nil))
+
+    (catch 'free-id
+      (dolist (attempt-count '(1 2 3 4 5))
+        (setq tentative-id (bfr-make-buffer-id))
+
+        (unless (bfr-ring-find-buffer ring tentative-id)
+          (throw 'free-id tentative-id)))
+      nil) ))
 
 (defun bfr-ring-add-buffer ( ring-name buffer )
   "bfr-ring-add-buffer RING BUFFER
@@ -177,7 +190,16 @@
 
       ;; set the name of the ring for interface purposes
       (set (make-local-variable 'buffer-ring-name) ring-name)
-      (bfr-set-buffer-id (current-buffer) (bfr-make-buffer-id))
+
+      (let
+        ((found-id (bfr-ring-find-unused-id buffer-ring)))
+
+        (unless found-id
+          (message "could not find a unused id for buffer after several attempts. aborting.")
+          (throw 'abort nil))
+
+        (bfr-set-buffer-id (current-buffer) found-id))
+
       (set (make-local-variable 'buffer-ring-modeline) (concat " Ring (" ring-name ") "))
 
       (set (make-local-variable 'buffer-ring-element)
