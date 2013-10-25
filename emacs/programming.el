@@ -132,11 +132,12 @@
 (defun configure-for-buffer-ring ( buffer-ring-mode )
   (when (buffer-ring-add buffer-ring-mode)
     (local-set-key (kbd "<M-tab>")    'buffer-ring-cycle)
+
     (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
     (local-set-key (kbd "<M-left>")   'buffer-ring-prev-buffer)
 
-    (local-set-key (kbd "<M-right>")  'buffer-torus-next-ring)
-    (local-set-key (kbd "<M-left>")   'buffer-torus-prev-ring)) )
+    (local-set-key (kbd "<M-up>")   'buffer-torus-next-ring)
+    (local-set-key (kbd "<M-down>") 'buffer-torus-prev-ring)) )
 
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
