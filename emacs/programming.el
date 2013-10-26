@@ -209,6 +209,20 @@
      (add-hook 'erc-mode-hook 'swap-paren-keys t)))
 
 ;;----------------------------------------------------------------------
+;; shell-script
+;;----------------------------------------------------------------------
+(defconst shell-function-regex "function")
+
+(defun shell-list-fn-signatures ()
+  (interactive)
+  (occur shell-function-regex))
+
+(add-hook 'sh-mode-hook
+  (lambda ()
+    (configure-for-programming 'shell-list-fn-signatures "shell-mode"))
+  t)
+
+;;----------------------------------------------------------------------
 ;; Emacs Lisp
 ;;----------------------------------------------------------------------
 ;; basic settings
