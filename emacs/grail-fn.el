@@ -265,7 +265,6 @@
 
 (defun filter-path-by-attributes ( path filter-name filter-value )
   "create predicate filters for path/mode values"
-  (message "filter is %s value is: %s" (princ filter-name) (princ filter-value))
 
   (catch 'result
     (cond
@@ -278,8 +277,9 @@
             ((and (stringp file-type) (string-equal filter-value "lnk")) (throw 'result t))
             ((and (eq file-type nil) (string-equal filter-value "file")) (throw 'result t)) ) ))
 
-      ((string-equal "path" filter-name) (when (equal 0 (string-match filter-value (car path)))
-                                           (throw 'result t))) )
+      ((string-equal "path" filter-name)
+        (when (equal 0 (string-match filter-value (car path)))
+          (throw 'result t))) )
     nil))
 
 (defmacro filter-path-with-match-sense ( path filter &rest body )
@@ -291,15 +291,13 @@
 
 (defun filter-dir-by-attributes ( directory filters )
   (let
-    ((contents (directory-files-and-attributes directory t))
+    ((contents (directory-files-and-attributes directory ))
      (filtered nil))
 
     (mapc (lambda ( path )
             (catch 'eliminate
-
               (mapc (lambda ( filter )
                       (filter-path-with-match-sense path filter
-                        (message "positive hit for %s" path)
                         (throw 'eliminate t)))
                 filters)
 
@@ -307,7 +305,7 @@
       contents)
 
     (mapcar (lambda ( path-with-attributes )
-              (car path-with-attributes))
+              (concat directory "/" (car path-with-attributes)) )
       filtered) ))
 
 (defun grail-filter-directory-list ( dir-list )
@@ -361,6 +359,10 @@
      (if filtered-load-path
        (setq new-load-path (append new-load-path filtered-load-path)))
 
+    (setq filtered-load-path (grail-filter-directory-list grail-elpa-load-path))
+     (if filtered-load-path
+       (setq new-load-path (append new-load-path filtered-load-path)))
+
     (if (file-accessible-directory-p grail-dist-cvs)
       (progn
         (setq filtered-load-path (filter-dir-by-attributes grail-dist-cvs
@@ -369,33 +371,8 @@
         (if filtered-load-path
           (setq new-load-path (append new-load-path filtered-load-path))) ))
 
-    ;; (if (file-accessible-directory-p grail-dist-git)
-    ;;   (progn
-    ;;     (setq filtered-load-path (apply 'grail-filter-dir-list-exists
-    ;;                                (filter-ls grail-dist-git t
-    ;;                                  (type ?d)
-    ;;                                  (!name filter-dot-dirs))) )
-    ;;     (if filtered-load-path
-    ;;       (apply 'append new-load-path filtered-load-path))
-
-    ;;     ))
-
-    ;; (if (file-accessible-directory-p grail-dist-svn)
-    ;;   (progn
-    ;;     (setq filtered-load-path (apply 'grail-filter-dir-list-exists
-    ;;                                (filter-ls grail-dist-svn t
-    ;;                                  (type ?d)
-    ;;                                  (!name filter-dot-dirs))) )
-    ;;     (if filtered-load-path
-    ;;       (apply 'append new-load-path filtered-load-path))
-
-    ;;     ))
-
-    (setq filtered-load-path (grail-filter-directory-list grail-elpa-load-path))
     (if filtered-load-path
-      (setq new-load-path (append new-load-path filtered-load-path)))
-
-    (setq load-path new-load-path) ))
+      (setq load-path new-load-path)) ))
 
 ;;----------------------------------------------------------------------
 ;; diagnostic support routines.
