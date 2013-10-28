@@ -7,7 +7,11 @@
 (eval-when-compile
   (require 'grail-profile))
 
-(use-grail-profiles 0 "lisp" "code-formatting" "sql" "template" "slime")
+;; load base profiles first
+(use-grail-profiles 0 "lisp" "code-formatting" "sql")
+
+;; load profiles that may depend on base profiles
+(use-grail-profiles 1 "template" "slime")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
@@ -174,6 +178,7 @@
    C-c e d : evaluate a define
    C-c e e : evaluate last or current sexp
    C-c e r : evaluate the region.
+   C-c e b : evaluate the buffer.
   "
 
   ;; These bindings use C-c <char> which is reserved for the user so
@@ -340,8 +345,31 @@
   t)
 
 ;;----------------------------------------------------------------------
+;; common lisp
+;;----------------------------------------------------------------------
+(defvar cl-function-decl ".*(defun.*")
+
+(defun cl-list-functions ()
+  (interactive)
+  (occur cl-function-decl))
+
+(require 'lisp-mode)
+
+(setq lisp-mode-hook nil)
+
+(add-hook 'lisp-mode-hook
+  (lambda ()
+    (swap-paren-keys)
+
+    (configure-for-programming 'cl-list-functions "lisp-mode")
+
+    (configure-for-navigation 'forward-sexp 'backward-sexp) )
+  t)
+
+;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
+
 ;; make cperl the default in all cases.
 (mapc
   (lambda (pair)
