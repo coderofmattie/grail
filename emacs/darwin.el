@@ -10,7 +10,7 @@
 
 (setq platform-font-family '("DejaVu LGC Sans Mono" "DejaVu Sans Mono" "Trebuchet MS"))
 
-(mask-grail-profiles "slime")
+(mask-grail-profiles "slime" "spell")
 
 
 
