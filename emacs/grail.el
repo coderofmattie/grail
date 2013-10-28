@@ -243,7 +243,7 @@
     (grail-garuntee-dir-path grail-state-path)
 
     (grail-trap
-      "loading user ELISP"
+      "loading user ELISP library"
       ;; elisp loads the user's general elisp library.
       (load-user-elisp "elisp"))
 

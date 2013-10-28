@@ -16,12 +16,6 @@
  eval-expression-print-level nil
  print-level nil)
 
-(require 'cm-util)
-(require 'cm-compat)
-(require 'cm-list)
-(require 'cm-lisp)
-(require 'cm-string)
-
 ;; much like easy-mmode-define-keymap macro but with a little more
 ;; juice doing the defvar part as well.
 

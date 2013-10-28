@@ -200,12 +200,12 @@
   "
   (let
     ((checked-path (or (file-path-if-readable path)
-                       (file-path-if-readable (concat path ".el"))
-                       (file-path-if-readable (concat path ".elc")) )))
+                       (file-path-if-readable (concat path ".elc"))
+                       (file-path-if-readable (concat path ".el")) )))
 
     (if checked-path
       (let
-        ((trap (catch 'grail-trap (load-elisp-trapping-errors path))))
+        ((trap (catch 'grail-trap (load-elisp-trapping-errors checked-path))))
 
         (when (consp trap)
           (throw 'grail-trap (cons "grail: unexepected error loading an existing path; likely a syntax problem, or a missing require"
