@@ -8,6 +8,10 @@
   (require 'cl)
   (require 'grail-fn))
 
+(defvar grail-masked-profiles
+  nil
+  "List of grail profiles masked by the user.")
+
 (defvar grail-requested-profiles
   nil
   "List of grail profiles requested by the user.")
@@ -37,18 +41,25 @@
           (message "grail: loading order %d -> %s" (car profile-order) (cdr profile-order))
           (mapc
             (lambda ( profile )
-              (message "grail: loading profile %s" (concat grail-local-profiles profile))
-              (let
-                ((trapped (catch 'grail-trap
-                                 (catch 'grail-disabled
-                                   (load-elisp-if-exists (concat grail-local-profiles profile)) ))))
+              (catch 'skip-profile
+                (when (member profile grail-masked-profiles)
+                  (message "ignoring masked profile %s" profile)
+                  (throw 'skip-profile t))
 
-                (if (consp trapped)
-                  (progn
-                    (push (cons (car profile-order) profile) grail-failed-profiles)
-                    (message "grail: profile %s failed to load" profile)
-                    (apply 'grail-report-errors (format "grail: profile %s failed to load" profile) trapped))
-                  (push profile grail-loaded-profiles)) ))
+                (message "grail: loading profile %s" (concat grail-local-profiles profile))
+
+                (let
+                  ((trapped (catch 'grail-trap
+                              (catch 'grail-disabled
+                                (load-elisp-if-exists (concat grail-local-profiles profile)) ))))
+
+                  (if (consp trapped)
+                    (progn
+                      (push (cons (car profile-order) profile) grail-failed-profiles)
+                      (message "grail: profile %s failed to load" profile)
+                      (apply 'grail-report-errors
+                        (format "grail: profile %s failed to load" profile) trapped))
+                    (push profile grail-loaded-profiles)) )))
             (cdr profile-order)))
           order-sorted)
       t)))
@@ -71,6 +82,14 @@
    files have been loaded.
   "
   (push (cons order request-list) grail-requested-profiles))
+
+
+(defun mask-grail-profiles ( &rest request-list )
+  "use-grail-groups: ORDER LIST
+
+   mask profiles to not be loaded.
+  "
+  (setq grail-masked-profiles (append request-list grail-masked-profiles)))
 
 ;;----------------------------------------------------------------------
 ;; installation support routines.

@@ -210,6 +210,10 @@
     ;; platform here.
     ;;----------------------------------------------------------------------
 
+    (grail-trap
+      "loading grail profiles support"
+      (load-user-elisp "grail-profile"))
+
     (defvar system-font-family nil)
 
     (grail-trap
@@ -232,11 +236,7 @@
     ;; support for profiles.
     ;;----------------------------------------------------------------------
 
-    (defvar grail-local-profiles
-      (when (grail-trap
-	     "loading grail profiles support"
-	     (load-user-elisp "grail-profile"))
-	(concat grail-local-dir "profiles/"))
+    (defvar grail-local-profiles (concat grail-local-dir "profiles/")
       "The directory containing Grail profiles modules.")
 
     ;; make sure there is a directory for session state and persistent data
