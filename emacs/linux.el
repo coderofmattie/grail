@@ -3,4 +3,6 @@
 ;; linux specific platform
 ;;----------------------------------------------------------------------
 
-(setq platform-font-family (list "DejaVu Sans Mono"))
+(setq platform-font-family '("DejaVu LGC Sans Mono" "DejaVu Sans Mono"))
+
+

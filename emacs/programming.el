@@ -7,7 +7,7 @@
 (eval-when-compile
   (require 'grail-profile))
 
-(use-grail-profiles 0 "lisp" "code-formatting" "sql" "template")
+(use-grail-profiles 0 "lisp" "code-formatting" "sql" "template" "slime")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
