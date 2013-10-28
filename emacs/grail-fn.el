@@ -161,8 +161,6 @@
     ((frame (or frame-arg (selected-frame)))
      (frame-type (framep frame)))
 
-;;    (message "frame type is %s" (princ frame-type))
-
     (when (and frame-type
             (or
               (equal 'x frame-type)
@@ -265,70 +263,65 @@
 ;; load-path construction
 ;;----------------------------------------------------------------------
 
-;;
-;; filter-ls: a general purpose tools for filtering directory listings.
-;;
+(defun filter-path-by-attributes ( path filter-name filter-value )
+  "create predicate filters for path/mode values"
+  (message "filter is %s value is: %s" (princ filter-name) (princ filter-value))
 
-;; (defun filter-ls-predicate ( attr-name attr-match )
-;;   "create predicate filters for path/mode values"
-;;   (cond
-;;    ((string-equal "type" attr-name) `(char-equal ,attr-match  (aref (cdr path-pair) 0)))
-;;    ((string-equal "path" attr-name) `(string-match ,attr-match (car path-pair)))
-;;    ((string-equal "name" attr-name) `(string-match ,attr-match
-;; 						   (file-name-nondirectory (car path-pair)))) ))
+  (catch 'result
+    (cond
+      ((string-equal "type" filter-name)
+        (let
+          ((file-type (nth 1 path)))
 
-;; (defun filter-ls-attributes ( filter-form )
-;;   "implement the various attribute filters for the filter-ls form"
-;;   (let
-;;     ((attr-name (symbol-name (car filter-form))
-;;      (attr-match (cadr filter-form)))
+          (cond
+            ((and (eq file-type t) (string-equal filter-value "dir")) (throw 'result t))
+            ((and (stringp file-type) (string-equal filter-value "lnk")) (throw 'result t))
+            ((and (eq file-type nil) (string-equal filter-value "file")) (throw 'result t)) ) ))
 
-;;      (if (char-equal ?! (aref attr-name 0))
-;; 	 (list 'not (filter-ls-predicate (substring attr-name 1) attr-match))
-;;        (filter-ls-predicate attr-name attr-match)) )) )
+      ((string-equal "path" filter-name) (when (equal 0 (string-match filter-value (car path)))
+                                           (throw 'result t))) )
+    nil))
 
-;; (defun filter-ls (path path-type &rest filters)
-;;   "filter-ls PATH PATH-TYPE
-;;   a form for flexibly filtering the result of listing a directory with attributes
+(defmacro filter-path-with-match-sense ( path filter &rest body )
+  `(if (eq 'not (car ,filter))
+     (when (filter-path-by-attributes ,path (car (cdr ,filter)) (car (cdr (cdr ,filter))))
+       ,@body)
+     (unless (filter-path-by-attributes ,path (car ,filter) (car (cdr ,filter)))
+       ,@body) ) )
 
-;;    t   absolute paths
-;;    nil relative paths"
-;;   (apply 'map-filter-nil
-;; 	 (lambda ( path-pair )
-;; 	   (if ,(cons 'and (mapcar 'filter-ls-attributes filters))
-;; 	       (car path-pair)))
-
-;;      ;; reduce the attributes to a pair of the path, and the mode string
-;;      (mapcar (lambda ( attr-list )
-;;                (cons (car attr-list) (nth 9 attr-list)))
-;;        ;; get the list of files.
-;;        (directory-files-and-attributes ,path ,path-type)) ))
-
-;;
-;; load-path construction
-;;
-
-;; (defun grail-filter-dir-list-exists (&rest final)
-;;   (let
-;;     ((output nil))
-
-;;     (unless (eq nil dir-list)
-;;       (map
-;;        (lambda ( dir )
-;; 	 (when (directory-accessible-p dir) (append output dir)))
-;;          dir-list))
-;;     output))
-
-(defun grail-filter-dir-list-exists (&rest dir-list)
+(defun filter-dir-by-attributes ( directory filters )
   (let
-    ((output nil))
+    ((contents (directory-files-and-attributes directory t))
+     (filtered nil))
 
-    (unless (eq nil dir-list)
-      (mapc
-       (lambda ( dir )
-	 (when (file-accessible-directory-p dir) (setq output (cons dir output))))
-         dir-list))
-    output))
+    (mapc (lambda ( path )
+            (catch 'eliminate
+
+              (mapc (lambda ( filter )
+                      (filter-path-with-match-sense path filter
+                        (message "positive hit for %s" path)
+                        (throw 'eliminate t)))
+                filters)
+
+              (setq filtered (cons path filtered)) ))
+      contents)
+
+    (mapcar (lambda ( path-with-attributes )
+              (car path-with-attributes))
+      filtered) ))
+
+(defun grail-filter-directory-list ( dir-list )
+  (let
+    ((exists-list nil))
+
+    (if (listp dir-list)
+      (mapc (lambda ( dir )
+              (when (dir-path-if-accessible dir)
+                (setq exists-list (cons dir exists-list))) )
+        dir-list)
+      (when (dir-path-if-accessible dir-list)
+	(setq exists-list (list dir-list))) )
+    exists-list))
 
 (defun grail-extend-load-path ()
   "grail-extend-load-path
@@ -352,37 +345,34 @@
      ((filtered-load-path nil)
       (new-load-path nil))
 
-    (setq filtered-load-path (apply 'grail-filter-dir-list-exists grail-platform-load-path))
+    (setq filtered-load-path (grail-filter-directory-list grail-platform-load-path))
     (if filtered-load-path
       (setq new-load-path (append filtered-load-path new-load-path)))
 
-    (setq filtered-load-path (grail-filter-dir-list-exists grail-local-emacs))
+    (setq filtered-load-path (grail-filter-directory-list grail-local-emacs))
     (if filtered-load-path
       (setq new-load-path (append filtered-load-path new-load-path)))
 
-    (setq filtered-load-path (grail-filter-dir-list-exists grail-local-elisp))
+    (setq filtered-load-path (grail-filter-directory-list grail-local-elisp))
      (if filtered-load-path
        (setq new-load-path (append new-load-path filtered-load-path)))
 
-    (setq filtered-load-path (grail-filter-dir-list-exists grail-dist-elisp))
+    (setq filtered-load-path (grail-filter-directory-list grail-dist-elisp))
      (if filtered-load-path
        (setq new-load-path (append new-load-path filtered-load-path)))
+
+    (if (file-accessible-directory-p grail-dist-cvs)
+      (progn
+        (setq filtered-load-path (filter-dir-by-attributes grail-dist-cvs
+                                   '( ("type" "dir")
+                                      (not "path" "^\.\.?$") )))
+        (if filtered-load-path
+          (setq new-load-path (append new-load-path filtered-load-path))) ))
 
     ;; (if (file-accessible-directory-p grail-dist-git)
     ;;   (progn
     ;;     (setq filtered-load-path (apply 'grail-filter-dir-list-exists
     ;;                                (filter-ls grail-dist-git t
-    ;;                                  (type ?d)
-    ;;                                  (!name filter-dot-dirs))) )
-    ;;     (if filtered-load-path
-    ;;       (apply 'append new-load-path filtered-load-path))
-
-    ;;     ))
-
-    ;; (if (file-accessible-directory-p grail-dist-cvs)
-    ;;   (progn
-    ;;     (setq filtered-load-path (apply 'grail-filter-dir-list-exists
-    ;;                                (filter-ls grail-dist-cvs t
     ;;                                  (type ?d)
     ;;                                  (!name filter-dot-dirs))) )
     ;;     (if filtered-load-path
@@ -401,12 +391,11 @@
 
     ;;     ))
 
-    (setq filtered-load-path (apply 'grail-filter-dir-list-exists grail-elpa-load-path))
+    (setq filtered-load-path (grail-filter-directory-list grail-elpa-load-path))
     (if filtered-load-path
       (setq new-load-path (append new-load-path filtered-load-path)))
 
-    (setq load-path new-load-path)
-  ))
+    (setq load-path new-load-path) ))
 
 ;;----------------------------------------------------------------------
 ;; diagnostic support routines.
