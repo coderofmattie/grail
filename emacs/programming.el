@@ -156,7 +156,8 @@
   ;; it is *really* handy to see just the function signatures of all the
   ;; functions defined in a buffer. It is so useful that every programming
   ;; mode needs to define a function so that it is bound to a key.
-  (local-set-key (kbd "C-c c s") list-fn-signatures)
+  (when list-fn-signatures
+    (local-set-key (kbd "C-c c s") list-fn-signatures))
 
   ;; for starters this will comment the region, but a toggle command needs
   ;; to be defined.
@@ -363,7 +364,9 @@
 
     (configure-for-programming 'cl-list-functions "lisp-mode")
 
-    (configure-for-navigation 'forward-sexp 'backward-sexp) )
+    (configure-for-navigation 'forward-sexp 'backward-sexp)
+
+    (turn-on-dwim-tab 'common-lisp-indent-function) )
   t)
 
 ;;----------------------------------------------------------------------
