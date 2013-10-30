@@ -27,6 +27,16 @@
                                   "We were on the edge of the desert when the Emacs took hold."
                                   "Mine says: Desert Eagle ... .50"))
 
+(add-hook 'slime-connected-hook
+  (lambda ()
+    (swap-paren-keys)
+
+    (configure-for-buffer-ring "lisp-mode")
+    (configure-for-navigation 'forward-sexp 'backward-sexp)
+
+    (rename-buffer (generate-new-buffer-name "cl-repl")) )
+  t)
+
 (add-hook 'lisp-mode-hook
   (lambda ()
     (slime-mode t)
