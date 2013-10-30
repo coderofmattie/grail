@@ -65,10 +65,7 @@
 
   ;; files can have elisp statements that are executed when the
   ;; file is loaded. My paranoia says hell no.
-  enable-local-eval nil
-
-  ;; when a buffer is toggled to read only enter view mode
-  view-read-only t)
+  enable-local-eval nil )
 
 ;; for increased security create a temporary directory and set
 ;; temporary-file-directory to that.
@@ -217,6 +214,51 @@
 (setq ido-use-filename-at-point 'guess)
 
 (ido-mode 1)
+
+;;----------------------------------------------------------------------
+;; attempt to make paths writable. not normally how I do it but perforce
+;; brain damage has brought me to this.
+;;----------------------------------------------------------------------
+(defun turn-off-read-only ()
+  (interactive)
+
+  (read-only-mode 0)
+  (view-mode 0) )
+
+(defun turn-on-read-only ()
+  (interactive)
+
+  (read-only-mode 1)
+  (view-mode 1) )
+
+(defun toggle-read-only ()
+  (interactive)
+
+  (if (or (and (local-variable-p 'view-read-only) view-read-only)
+          (and (local-variable-p 'buffer-read-only) buffer-read-only))
+    (turn-off-read-only)
+    (turn-on-read-only) ))
+
+(global-set-key (kbd "C-x C-q") 'toggle-read-only)
+
+(defun make-path-writable ( path )
+  (set-file-modes path
+    (file-modes-symbolic-to-number "ug+w" (file-modes path))) )
+
+(defun choose-writeable-or-view ( path )
+  (unless (file-writable-p buffer-file-name)
+    (if (eq 't (y-or-n-p "Read Only File: View RO <n> or turn writable? <y>"))
+      (progn
+        (make-path-writable buffer-file-name)
+        (turn-off-read-only)
+        (message "making file writable and turning off read-only") )
+      (progn
+        (message "turning on read-only")
+        (turn-on-read-only)) )))
+
+(add-hook 'find-file-hook
+  (lambda ()
+    (choose-writeable-or-view buffer-file-name)) )
 
 ;;----------------------------------------------------------------------
 ;;                       Programming
