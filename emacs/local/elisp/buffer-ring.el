@@ -27,7 +27,7 @@
 
 ;;; Code:
 
-(defconst buffer-ring-version "0.1.0" "buffer-ring version")
+(defconst buffer-ring-version "0.1.1" "buffer-ring version")
 (require 'dynamic-ring)
 
 ;;

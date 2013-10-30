@@ -27,7 +27,7 @@
 
 ;;; Code:
 
-(defconst dynamic-ring-version "0.0.2" "dynamic-ring version")
+(defconst dynamic-ring-version "0.1.1" "dynamic-ring version")
 
 (eval-when-compile
   (require 'cl))
