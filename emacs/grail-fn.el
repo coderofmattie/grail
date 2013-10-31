@@ -340,36 +340,37 @@
    non-existent directories are filtered out.
   "
   (let
-     ((filtered-load-path nil)
-      (new-load-path nil))
+     ((new-load-path nil)
 
-    (setq filtered-load-path (grail-filter-directory-list grail-platform-load-path))
-    (if filtered-load-path
-      (setq new-load-path (append filtered-load-path new-load-path)))
+      (gather-load-path
+        (lambda ( dir &optional subdirs )
+          (let
+            ((filtered-load-path nil))
 
-    (setq filtered-load-path (grail-filter-directory-list grail-local-emacs))
-    (if filtered-load-path
-      (setq new-load-path (append filtered-load-path new-load-path)))
+            (setq filtered-load-path
+              (if subdirs
+                (when (file-accessible-directory-p dir)
+                  (filter-dir-by-attributes dir
+                    '( ("type" "dir")
+                     (not "path" "^\.\.?$")) ))
+                (grail-filter-directory-list dir)) )
 
-    (setq filtered-load-path (grail-filter-directory-list grail-local-elisp))
-     (if filtered-load-path
-       (setq new-load-path (append new-load-path filtered-load-path)))
+            (when filtered-load-path
+              (setq new-load-path (append filtered-load-path new-load-path))) )) ))
 
-    (setq filtered-load-path (grail-filter-directory-list grail-dist-elisp))
-     (if filtered-load-path
-       (setq new-load-path (append new-load-path filtered-load-path)))
+    (funcall gather-load-path grail-platform-load-path)
 
-    (setq filtered-load-path (grail-filter-directory-list grail-elpa-load-path))
-     (if filtered-load-path
-       (setq new-load-path (append new-load-path filtered-load-path)))
+    (funcall gather-load-path grail-local-emacs)
 
-    (if (file-accessible-directory-p grail-dist-cvs)
-      (progn
-        (setq filtered-load-path (filter-dir-by-attributes grail-dist-cvs
-                                   '( ("type" "dir")
-                                      (not "path" "^\.\.?$") )))
-        (if filtered-load-path
-          (setq new-load-path (append new-load-path filtered-load-path))) ))
+    (funcall gather-load-path grail-local-elisp)
+
+    (funcall gather-load-path grail-dist-elisp)
+
+    (funcall gather-load-path grail-elpa-load-path)
+
+    (funcall gather-load-path grail-dist-cvs 't)
+
+    (funcall gather-load-path grail-dist-git 't)
 
     (if new-load-path
       (setq load-path new-load-path)) ))
