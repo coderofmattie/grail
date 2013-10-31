@@ -453,12 +453,12 @@
 
 (add-hook 'c-mode-hook
   (lambda ()
-    (configure-for-programming 'c-list-fn-signatures))
+    (configure-for-programming 'c-list-fn-signatures "c-mode"))
   t)
 
 (add-hook 'c++-mode-hook
   (lambda ()
-    (configure-for-programming 'c++-list-fn-signatures))
+    (configure-for-programming 'c++-list-fn-signatures "c++-mode"))
   t)
 
 ;;----------------------------------------------------------------------
