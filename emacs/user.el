@@ -247,7 +247,7 @@
 
 (defun choose-writeable-or-view ( path )
   (unless (file-writable-p buffer-file-name)
-    (if (eq 't (y-or-n-p "Read Only File: View RO <n> or turn writable? <y>"))
+    (if (eq 't (y-or-n-p "Read Only File: attempt to make writable? "))
       (progn
         (make-path-writable buffer-file-name)
         (turn-off-read-only)
