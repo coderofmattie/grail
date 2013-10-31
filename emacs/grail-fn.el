@@ -371,7 +371,7 @@
         (if filtered-load-path
           (setq new-load-path (append new-load-path filtered-load-path))) ))
 
-    (if filtered-load-path
+    (if new-load-path
       (setq load-path new-load-path)) ))
 
 ;;----------------------------------------------------------------------
