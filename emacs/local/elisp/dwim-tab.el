@@ -11,8 +11,6 @@
 
 ;; A highly overloaded "Tab" key implementation targeted at programming modes.
 
-(require 'dwim-tab-fn)
-
 (eval-when-compile
   (require 'cl))
 
