@@ -72,3 +72,16 @@
                 (number-to-string x))))
       (list (nth 3 (decode-time)) (nth 4 (decode-time)) (nth 5 (decode-time)) ))
     string))
+
+(defun strip-minor-mode-keymap ( target-keymap )
+  (let
+    ((stripped-list nil))
+
+    (mapc
+      (lambda (minor-keymap)
+        (unless (eq target-keymap (car minor-keymap))
+          (setq stripped-list (append minor-keymap stripped-list)) ))
+      minor-mode-map-alist)
+
+    (setq minor-mode-map-alist stripped-list) ))
+
