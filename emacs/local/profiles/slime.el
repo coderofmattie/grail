@@ -6,11 +6,16 @@
 
 (grail-load 'slime     (grail-define-installer "slime"
                          "cvs"
-                         ":pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot" ))
+                         ":pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot"))
 
-;; (grail-load 'slime-repl  (grail-define-installer "slime-repl"
-;;                           "pkg"
-;;                           'slime-repl))
+(grail-define-installer "hypersec" "tar:gz"
+                                 "ftp://ftp.lispworks.com/pub/software_tools/reference/HyperSpec-7-0.tar.gz")
+
+(setq hyperspec-dir
+  (grail-fetch-docs "hyperspec"
+    (grail-define-installer "hyperspec" "tar:gz"
+      "ftp://ftp.lispworks.com/pub/software_tools/reference/HyperSpec-7-0.tar.gz")
+    0 ))
 
 ;;----------------------------------------------------------------------
 ;; SLIME
