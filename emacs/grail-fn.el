@@ -372,6 +372,8 @@
 
     (funcall gather-load-path grail-dist-git 't)
 
+    (funcall gather-load-path grail-dist-bzr 't)
+
     (if new-load-path
       (setq load-path new-load-path)) ))
 

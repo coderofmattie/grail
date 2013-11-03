@@ -114,6 +114,14 @@
     (error (throw 'grail-trap
              (list (message "grail-recursive-delete-directory failed") (format-signal-trap trapped-error)))) ))
 
+(defvar grail-dist-default-directory grail-dist-elisp)
+
+(defun grail-dist-default-to-packages ()
+  (setq grail-dist-default-directory grail-dist-elisp))
+
+(defun grail-dist-default-to-docs ()
+  (setq grail-dist-default-directory grail-dist-docs dir-name))
+
 (defun grail-dist-install-directory ( &optional package )
   "grail-dist-install-directory &optional string:PACKAGE
 
@@ -125,8 +133,8 @@
   (grail-garuntee-dir-path (expand-file-name
                              (concat
                              (if package
-                               (concat grail-dist-elisp "/" package)
-                               grail-dist-elisp)
+                               (concat grail-dist-default-directory "/" package)
+                               grail-dist-default-directory)
                                "/"))))
 
 (defun grail-download-dir-and-file-path ( name )
@@ -162,6 +170,35 @@
 ;;----------------------------------------------------------------------
 ;; async chain.
 ;;----------------------------------------------------------------------
+
+(defun grail-buffer-exists-p ( buffer-name )
+  (if (not (eq nil (get-buffer buffer-name)))
+    t
+    nil))
+
+(defun get-time-in-seconds ()
+  (truncate (time-to-seconds (current-time))))
+
+(defun grail-process-async-wait ( proc-buffer-name )
+  (let
+    ((timeout 25)
+     (last-size (buffer-size (get-buffer proc-buffer-name)))
+     (last-time (get-time-in-seconds)))
+
+  (catch 'timeout
+    (while (grail-buffer-exists-p proc-buffer-name)
+      (sleep-for 0.25)
+
+      (let
+        ((check-size (buffer-size (get-buffer proc-buffer-name))))
+
+        (if (> check-size last-size)
+          (progn
+            (setq last-size check-size)
+            (setq last-time (get-time-in-seconds)))
+          (when (>  (- (get-time-in-seconds) last-time) timeout)
+            (throw 'timeout nil)) )))
+    t)))
 
 (defun grail-process-async-chain ( start-process-fn doesnt-start-fn proc-fail-fn
                                    do-after-fn next-fn)
@@ -217,6 +254,20 @@
                 (funcall fail-fn)) ))) ))))
 
 ;;----------------------------------------------------------------------
+;; grail-run-and-wait
+;;----------------------------------------------------------------------
+
+(defun grail-run-and-wait ( base-name fn )
+  (let*
+    ((output-buffer-name   (generate-new-buffer-name base-name))
+     (output-buffer-object (pop-to-buffer output-buffer-name nil t))
+     (status nil))
+
+    (funcall fn output-buffer-object)
+
+    (grail-process-async-wait output-buffer-name) ))
+
+;;----------------------------------------------------------------------
 ;; installation library
 ;;----------------------------------------------------------------------
 
@@ -263,13 +314,22 @@
 ;; tar
 ;;
 
+(defvar grail-untar-strip-command nil)
+
+(defun grail-untar-strip-by-el ()
+  (setq grail-untar-strip-command (concat "--wildcards" " " (quote-string-for-shell "*.el"))) )
+
+(defun grail-untar-strip-by-depth ( levels )
+  (setq grail-untar-strip-command
+    (if (> levels 0)
+      (concat "--strip-components" " " (number-to-string levels))
+      " ")))
+
 (defun grail-untar-async ( path target-dir compression output-buffer )
   "grail-untar-async PATH DIR COMPRESSION OUTPUT-BUFFER
 
    untar PATH in DIR with output going to OUTPUT-BUFFER.
    return the process object or nil if there was an error.
-
-   Only files with the \".el\" extension will be extracted.
   "
   (condition-case trapped-error
     (start-process-shell-command "grail-untar" output-buffer
@@ -283,20 +343,20 @@
         "f")
       (quote-string-for-shell path)
       "-C" (quote-string-for-shell target-dir)
-      "--wildcards" (quote-string-for-shell "*.el"))
+      grail-untar-strip-command)
     (error
       (progn
         (message "grail-untar-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defun grail-untar-local-archive ( path compression )
+(defun grail-untar-local-archive ( path compression tar-buffer )
   "grail-untar-local-archive PATH COMPRESSION
 
    extract the local archive PATH in directory name with COMPRESSION.
   "
   (lexical-let
     ((archive-path   path)
-     (grail-buffer (pop-to-buffer (generate-new-buffer "*grail-install*") nil t)))
+     (grail-buffer   tar-buffer))
 
     (grail-process-async-chain
       ;; start the untar
@@ -316,9 +376,9 @@
         (message "extracting %s has completed." archive-path))
 
       ;; no chaining
-      nil)))
+      nil) ))
 
-(defun grail-untar-remote-archive ( name url compression )
+(defun grail-untar-remote-archive ( name url compression tar-buffer)
   "grail-untar-remote-archive NAME URL COMPRESSION
 
    Download a tarball from a remote url and install it. It is currently
@@ -326,12 +386,10 @@
   "
   (save-excursion
     (lexical-let*
-      ((dl-dir-and-file nil)
-       (old-window       (selected-window))
-
-       ;; open a new window but do not put it in recently selected
-       (grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-install*") nil t))
-       (grail-window  (not (eq old-window (selected-window)))))
+      ((target-dir      name)
+       (dl-dir-and-file nil)
+       (old-window      (selected-window))
+       (install-buffer  tar-buffer))
 
       (catch 'abort
         ;; confirm with the user that they want to install the file.
@@ -355,7 +413,7 @@
               (grail-wget-url-async
                 dl-url
                 (cdr dl-dir-and-file)
-                grail-buffer))
+                install-buffer))
 
             ;; the downloader doesn't start cleanup function
             (lambda ()
@@ -378,11 +436,13 @@
                 ;; start the untar
                 (lambda ()
                   (message "starting the untar")
-                  (grail-untar-async (cdr dl-dir-and-file) (grail-dist-install-directory) compression-type grail-buffer))
+                  (grail-untar-async (cdr dl-dir-and-file) (grail-dist-install-directory target-dir)
+                    compression-type install-buffer))
 
                 ;; tar doesn't start cleanup function
                 (lambda ()
-                  (insert "could not start tar to extract the downloaded archive. Install aborted, deleting downloads.\n")
+                  (insert "could not start tar to extract the downloaded archive. Install aborted, deleting downgrail: cleaning up downloads
+loads.\n")
                   (grail-cleanup-download dl-dir-and-file t))
 
                 ;; the tar fail cleanup function
@@ -392,21 +452,42 @@
 
                 ;; the tar succeeded function
                 (lambda ()
-                  (insert "grail: Installation Completed ! Re-Generating load-path\n")
-                  (grail-extend-load-path)
-
                   (insert "grail: cleaning up downloads\n")
                   (grail-cleanup-download dl-dir-and-file)
-
-                  (delete-windows-on grail-buffer)
-                  (kill-buffer grail-buffer)
+                  (kill-buffer install-buffer)
                   t)
 
                 ;; terminate the chain.
                 nil))) )
         ;; return nil if an abort is not thrown.
-        nil))
-    )) ;; save excursion and the defun.
+        nil)) ))
+
+;;----------------------------------------------------------------------
+;; tar installer
+;;
+;;----------------------------------------------------------------------
+
+(defvar grail-tar-buffer "*grail tar*")
+
+(defun grail-tar-local-installer ( name url compression )
+  (let
+    ((name-arg        name)
+     (url-arg         url)
+     (compression-arg compression))
+
+    (grail-run-and-wait grail-tar-buffer
+      (lambda ( run-buffer )
+        (grail-untar-remote-archive name-arg url-arg compression run-buffer))) ))
+
+(defun grail-tar-remote-installer ( name url compression )
+  (let
+    ((name-arg        name)
+     (url-arg         url)
+     (compression-arg compression))
+
+    (grail-run-and-wait grail-tar-buffer
+      (lambda ( run-buffer )
+        (grail-untar-remote-archive name-arg url-arg compression run-buffer))) ))
 
 ;;----------------------------------------------------------------------
 ;; version control
@@ -419,13 +500,14 @@
 ;; cvs
 ;;
 
-(defun grail-cvs-async ( url module output-buffer )
+(defun grail-cvs-async ( url dir module output-buffer )
   "grail-cvs-async URL PATH OUTPUT-BUFFER
 
+   retrieve a remote tree via cvs.
   "
   (condition-case trapped-error
     (let
-      ((default-directory (grail-garuntee-dir-path grail-dist-cvs)))
+      ((default-directory (grail-garuntee-dir-path dir)))
 
       (start-process-shell-command "grail-cvs" output-buffer
         "cvs"
@@ -438,16 +520,31 @@
         (message "grail-cvs-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
+(defvar grail-cvs-buffer "*grail-cvs*")
+
 (defun grail-cvs-installer ( module url )
-  (let
-    ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-cvs*") nil t)))
-    (grail-cvs-async url module grail-buffer) ))
+  (lexical-let
+    ((module-arg module)
+     (url-arg    url))
+
+    (grail-run-and-wait grail-cvs-buffer
+      (lambda ( run-buffer )
+        (grail-cvs-async url-arg grail-dist-cvs module-arg run-buffer))) ))
+
+(defun grail-cvs-docs ( module url )
+  (lexical-let
+    ((module-arg module)
+     (url-arg    url))
+
+    (grail-run-and-wait grail-cvs-buffer
+      (lambda ( run-buffer )
+        (grail-cvs-async url-arg grail-dist-docs module-arg run-buffer))) ))
 
 ;;
 ;; git
 ;;
 
-(defun grail-git-async ( url module output-buffer )
+(defun grail-git-async ( url dir module output-buffer )
   "grail-git-async URL PATH OUTPUT-BUFFER
 
    retrieve the URL to PATH, with OUTPUT-BUFFER as the output
@@ -456,7 +553,7 @@
   "
   (condition-case trapped-error
     (let
-      ((default-directory (grail-garuntee-dir-path grail-dist-git)))
+      ((default-directory (grail-garuntee-dir-path dir)))
 
       (start-process-shell-command "grail-git" output-buffer
         "git"
@@ -468,12 +565,32 @@
         (message "grail-git-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defun grail-git-installer ( module url )
-  (let
-    ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-git*") nil t)))
-    (grail-git-async url module grail-buffer) ))
+(defvar grail-git-buffer "*grail-git*")
 
-(defun grail-svn-async ( url module output-buffer )
+(defun grail-git-installer ( module url )
+  (lexical-let
+    ((module-arg module)
+     (url-arg    url))
+
+    (grail-run-and-wait grail-git-buffer
+      (lambda ( run-buffer )
+        (grail-git-async url-arg grail-dist-git module-arg run-buffer))) ))
+
+
+(defun grail-git-docs ( module url )
+  (lexical-let
+    ((module-arg module)
+     (url-arg    url))
+
+    (grail-run-and-wait grail-git-buffer
+      (lambda ( run-buffer )
+        (grail-git-async url-arg grail-dist-docs module-arg run-buffer))) ))
+
+;;
+;; svn
+;;
+
+(defun grail-svn-async ( url dir module output-buffer )
   "grail-svn-async URL PATH OUTPUT-BUFFER
 
    retrieve the URL to PATH, with OUTPUT-BUFFER as the output
@@ -482,7 +599,7 @@
   "
   (condition-case trapped-error
     (let
-      ((default-directory (grail-garuntee-dir-path grail-dist-svn)))
+      ((default-directory (grail-garuntee-dir-path dir)))
 
       (start-process-shell-command "grail-svn" output-buffer
         "svn"
@@ -494,10 +611,72 @@
         (message "grail-svn-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
+(defvar grail-svn-buffer "*grail-svn*")
+
 (defun grail-svn-installer ( module url )
-  (let
-    ((grail-buffer  (pop-to-buffer (generate-new-buffer "*grail-svn*") nil t)))
-    (grail-svn-async url module grail-buffer) ))
+  (lexical-let
+    ((module-arg   module)
+     (url-arg      url))
+
+    (grail-run-and-wait grail-svn-buffer
+      (lambda ( run-buffer )
+        (grail-svn-async url-arg grail-dist-svn module-arg run-buffer))) ))
+
+(defun grail-svn-docs ( module url )
+  (lexical-let
+    ((module-arg  module)
+     (url-arg     url))
+
+    (grail-run-and-wait grail-svn-buffer
+      (lambda ( run-buffer )
+        (grail-svn-async url-arg grail-dist-docs module-arg run-buffer))) ))
+
+;;
+;; bzr
+;;
+
+(defun grail-bzr-async ( url dir module output-buffer )
+  "grail-bzr-async URL PATH OUTPUT-BUFFER
+
+   retrieve the URL to PATH, with OUTPUT-BUFFER as the output
+   buffer. The process object created is returned, or nil if a
+   process could not be created.
+  "
+  (condition-case trapped-error
+    (let
+      ((default-directory (grail-garuntee-dir-path dir)))
+
+      (start-process-shell-command "grail-bzr" output-buffer
+        "bzr"
+        "branch"
+        (quote-string-for-shell url)
+        (quote-string-for-shell module)))
+    (error
+      (progn
+        (message "grail-bzr-async failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
+(defun grail-bzr-installer ( module url )
+  (lexical-let
+    ((module-arg  module)
+     (url-arg     url))
+
+    (grail-run-and-wait grail-svn-buffer
+      (lambda ( run-buffer )
+        (grail-svn-async url-arg grail-dist-bzr module-arg run-buffer))) ))
+
+(defun grail-bzr-docs ( module url )
+  (lexical-let
+    ((module-arg  module)
+     (url-arg     url))
+
+    (grail-run-and-wait grail-svn-buffer
+      (lambda ( run-buffer )
+        (grail-svn-async url-arg grail-dist-docs module-arg run-buffer))) ))
+
+;;
+;; ELPA
+;;
 
 (defun grail-package-installer ( module )
   (package-install module))
@@ -555,8 +734,8 @@
   ;; compression. The name is used for naming the download. This is
   ;; especially useful when the downloads are saved.
   (if (string-match "archived:\\(.*\\)" (grail-url install-pair))
-    `(grail-untar-local-archive ,(concat grail-dist-archive (match-string 1 (grail-url install-pair))) ,compression)
-    `(grail-untar-remote-archive ,(grail-target install-pair) ,(grail-url install-pair) ,compression)))
+    `(grail-tar-local-installer ,(concat grail-dist-archive (match-string 1 (grail-url install-pair))) ,compression)
+    `(grail-tar-remote-installer ,(grail-target install-pair) ,(grail-url install-pair) ,compression)))
 
 (defun grail-cvs-args ( install-pair )
   `(grail-cvs-installer ,(grail-target install-pair) ,(grail-url install-pair)))
@@ -566,6 +745,9 @@
 
 (defun grail-svn-args ( install-pair )
   `(grail-svn-installer ,(grail-target install-pair) ,(grail-url install-pair)))
+
+(defun grail-bzr-args ( install-pair )
+  `(grail-bzr-installer ,(grail-target install-pair) ,(grail-url install-pair)))
 
 (defun grail-decompose-installer-type ( type-spec )
   "grail-decompose-installer-type SPEC
@@ -591,13 +773,14 @@
    TYPE is the format of the URL for handling things like
    compression,archives, and RCS systems.
 
-   recognized TYPE's : file, tar:bz2, tar:gz, cvs svn git pkg
+   recognized TYPE's : file, tar:bz2, tar:gz, cvs svn git bzr pkg
 
    download a plain elisp file: (grail-define-installer \"bob\" \"file\" \"URL\")
    download an tar.bz2 archive: (grail-define-installer \"bob\" \"tar:bz2\" \"URL\")
    cvs checkout:              : (grail-define-installer \"bob\" \"cvs\" \"pserver\")
    git checkout:              : (grail-define-installer \"bob\" \"git\" \"url\")
    svn checkout:              : (grail-define-installer \"bob\" \"svn\" \"url\")
+   bzr checkout:              : (grail-define-installer \"bob\" \"bzr\" \"url\")
    ELPA package:              : (grail-define-installer \"bob\" \"pkg\")
 
    Most of the time a single URL suffices. Many packages are a
@@ -656,6 +839,7 @@
                      ((string-equal "cvs"   install-type) (grail-cvs-args  install-pair))
                      ((string-equal "git"   install-type) (grail-git-args  install-pair))
                      ((string-equal "svn"   install-type) (grail-svn-args  install-pair))
+                     ((string-equal "bzr"   install-type) (grail-bzr-args  install-pair))
                      ((string-match "tar"   install-type) (grail-tar-args  install-pair))
 
                      (t (throw 'grail-trap
@@ -693,6 +877,9 @@
   (let
     ((package-name    (symbol-name package)))
 
+    (grail-dist-default-to-packages)
+    (grail-untar-strip-by-el)
+
     (catch 'installer-abort
       (condition-case install-trap
 
@@ -727,5 +914,21 @@
     (message "package is not a symbol"))
 
   (or (require package nil t) (grail-repair-by-installing package installer)))
+
+(defun grail-fetch-docs ( top-level-dir installer strip-level )
+  (let
+    ((dir-path (concat grail-dist-docs top-level-dir)))
+
+    (if (dir-path-if-accessible dir-path)
+      dir-path
+      (progn
+        (grail-dist-default-to-docs)
+        (grail-untar-strip-by-depth strip-level)
+
+        (grail-run-installer installer)
+
+        (if (dir-path-if-accessible dir-path)
+          dir-path
+          nil))) ))
 
 (provide 'grail-profile)

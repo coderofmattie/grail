@@ -161,6 +161,10 @@
       (concat grail-dist-dir "archive/")
       "The directory for managing distributed packages")
 
+    (defvar grail-dist-docs
+      (concat grail-dist-dir "docs/")
+      "the directory containing third party docs")
+
     (defvar grail-dist-elisp
       (concat grail-dist-dir "elisp/")
       "The directory containing third-party elisp extensions of Emacs.")
@@ -171,15 +175,19 @@
 
     (defvar grail-dist-cvs
       (concat grail-dist-dir "cvs/")
-      "version control managed third party elisp")
+      "cvs version control managed third party elisp")
+
+    (defvar grail-dist-bzr
+      (concat grail-dist-dir "bzr/")
+      "bzr version control managed third party elisp")
 
     (defvar grail-dist-git
       (concat grail-dist-dir "git/")
-      "version control managed third party elisp")
+      "git version control managed third party elisp")
 
     (defvar grail-dist-svn
       (concat grail-dist-dir "svn/")
-      "version control managed third party elisp")
+      "subversion version control managed third party elisp")
 
     (defvar grail-elpa-load-path nil
       "The load-path extensions made by ELPA package activation")
