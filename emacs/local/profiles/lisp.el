@@ -6,17 +6,6 @@
 
 ;; third party extensions for general lisp support.
 
-;;----------------------------------------------------------------------
-;; parentheses matching
-;;----------------------------------------------------------------------
-
-;; mic-paren fancy paren/delimited highlighting. It is particularly
-;;           valuable for reverse highlighting regions.
-
-(grail-load 'mic-paren (grail-define-installer "mic-paren"
-                         "file"
-                         "http://www.emacswiki.org/cgi-bin/emacs/download/mic-paren.el"))
-
 (grail-load 'quack     (grail-define-installer "quack"
                          "file"
                          "http://www.neilvandyke.org/quack/quack.el"))
@@ -24,20 +13,6 @@
 (grail-load 'clojure-mode  (grail-define-installer "clojure"
                             "pkg"
                             'clojure-mode))
-
-;;----------------------------------------------------------------------
-;; paren mode configuration - most important mode of them all
-;;----------------------------------------------------------------------
-(setq
-  paren-showing t
-  show-paren-style 'parenthesis
-  show-paren-delay 1
-  paren-sexp-mode 'match)
-
-(grail-set-faces
-  (paren-face-match (background "grey20")))
-
-(paren-activate)
 
 ;;----------------------------------------------------------------------
 ;; scheme
