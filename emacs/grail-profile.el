@@ -181,7 +181,7 @@
 
 (defun grail-process-async-wait ( proc-buffer-name )
   (let
-    ((timeout 25)
+    ((timeout 30)
      (last-size (buffer-size (get-buffer proc-buffer-name)))
      (last-time (get-time-in-seconds)))
 
