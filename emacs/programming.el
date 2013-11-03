@@ -8,9 +8,9 @@
   (require 'grail-profile))
 
 ;; load base profiles first
-(use-grail-profiles 0 "code-highlighting" "code-editing")
+(use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting")
 
-(use-grail-profiles 1 "lisp" "code-formatting" "sql")
+(use-grail-profiles 1 "elisp" "lisp" "sql")
 
 ;; load profiles that may depend on base profiles
 (use-grail-profiles 2 "template" "slime")
