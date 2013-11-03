@@ -8,10 +8,12 @@
   (require 'grail-profile))
 
 ;; load base profiles first
-(use-grail-profiles 0 "lisp" "code-formatting" "sql")
+(use-grail-profiles 0 "code-highlighting" "code-editing")
+
+(use-grail-profiles 1 "lisp" "code-formatting" "sql")
 
 ;; load profiles that may depend on base profiles
-(use-grail-profiles 1 "template" "slime")
+(use-grail-profiles 2 "template" "slime")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
@@ -226,40 +228,6 @@
 (add-hook 'sh-mode-hook
   (lambda ()
     (configure-for-programming 'shell-list-fn-signatures "shell-mode"))
-  t)
-
-;;----------------------------------------------------------------------
-;; Emacs Lisp
-;;----------------------------------------------------------------------
-;; basic settings
-(setq
-  lisp-indent-offset 2)
-
-(defun elisp-list-fn-signatures ()
-  (interactive)
-  (occur "(defun"))
-
-(add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    (swap-paren-keys)
-
-    (configure-for-programming 'elisp-list-fn-signatures "elisp-mode")
-
-    ;; this binding is very important. normal evaluation of defuns such as defvar
-    ;; and defcustom do not change the default value because the form only sets
-    ;; the value if nil.
-
-    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
-    ;; this function/keybinding should be used exclusively to avoid frustrating
-    ;; errors.
-
-    (configure-for-navigation 'forward-sexp 'backward-sexp)
-
-    (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
-    (configure-for-debugging 'edebug-defun)
-
-    (dwim-tab-localize-context 'lisp-complete-symbol)
-    (turn-on-dwim-tab 'lisp-indent-line))
   t)
 
 ;;----------------------------------------------------------------------
