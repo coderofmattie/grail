@@ -75,12 +75,12 @@
 
 (defun strip-minor-mode-keymap ( target-keymap )
   (let
-    ((stripped-list nil))
+    ((stripped-list '()))
 
     (mapc
       (lambda (minor-keymap)
         (unless (eq target-keymap (car minor-keymap))
-          (setq stripped-list (append minor-keymap stripped-list)) ))
+          (setq stripped-list (cons minor-keymap stripped-list)) ))
       minor-mode-map-alist)
 
     (setq minor-mode-map-alist stripped-list) ))
