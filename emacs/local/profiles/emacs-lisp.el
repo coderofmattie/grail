@@ -11,8 +11,6 @@
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
-    (swap-paren-keys)
-
     (configure-for-programming 'elisp-list-fn-signatures "elisp-mode")
 
     ;; this binding is very important. normal evaluation of defuns such as defvar
@@ -23,7 +21,7 @@
     ;; this function/keybinding should be used exclusively to avoid frustrating
     ;; errors.
 
-    (configure-for-navigation 'forward-sexp 'backward-sexp)
+    (lisp-smart-parens-editing)
 
     (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
     (configure-for-debugging 'edebug-defun)
