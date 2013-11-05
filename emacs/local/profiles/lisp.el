@@ -4,55 +4,50 @@
 ;; Copyright: Mike Mattie 2009
 ;;----------------------------------------------------------------------
 
-;; third party extensions for general lisp support.
+(defun lisp-smart-region-left ()
+  (interactive)
 
-(grail-load 'quack     (grail-define-installer "quack"
-                         "file"
-                         "http://www.neilvandyke.org/quack/quack.el"))
+  (set-mark-command)
+  (sp-backward-up-sexp) )
 
-(grail-load 'clojure-mode  (grail-define-installer "clojure"
-                            "pkg"
-                            'clojure-mode))
+(defun lisp-smart-region-right ()
+  (interactive)
 
-;;----------------------------------------------------------------------
-;; scheme
-;;----------------------------------------------------------------------
+  (set-mark-command)
+  (sp-up-sexp) )
 
-(setq-default
-  quack-dir (grail-garuntee-dir-path (concat grail-state-path "quack/"))
-  quack-default-program default-scheme-interpreter
+(defun insert-smart-remapped-char ( character )
+  (setq last-command-event character)
+  (sp--self-insert-command 0) )
 
-  ;; don't always prompt for the scheme interpreter. Use the default.
-  quack-run-scheme-always-prompts-p nil
+(defun insert-dumb-remapped-char ( character )
+  (insert-char character)
+  (self-insert-command 0) )
 
-  ;; don't use customize to save settings.
-  quack-options-persist-p nil
+(defun lisp-smart-parens ()
+  "bind the parentheses to the brace keys, while the shifted
+   paren keys become the braces."
+  (interactive)
 
-  ;; fontify using Emacs faces, don't use a drscheme theme clone.
-  quack-fontify-style 'emacs
+  ;; make the parentheses a bit easier to type, less shifting.
+  (local-set-key (kbd "[") (lambda () (interactive) (insert-smart-remapped-char ?\( )) )
+  (local-set-key (kbd "]") (lambda () (interactive) (insert-dumb-remapped-char ?\) )) )
 
-  ;; tabs are evil
-  quack-tabs-are-evil-p t)
+  (local-set-key (kbd "(") (lambda () (interactive) (insert-smart-remapped-char ?\[)) )
+  (local-set-key (kbd ")") (lambda () (interactive) (insert-dumb-remapped-char ?\])) ) )
 
-;; quack adds all the typical extensions when loaded, so only add non-standard
-;; ones.
-(setq
-  auto-mode-alist (append '(("\\.scheme$"    . scheme-mode)) auto-mode-alist ))
+(defun lisp-smart-navigation ()
+  (configure-for-navigation 'sp-next-sexp 'sp-prev-sexp)
 
-;;----------------------------------------------------------------------
-;; clojure mode
-;;----------------------------------------------------------------------
+  (local-set-key (kbd "<C-up>") 'sp-backward-up-sexp)
+  (local-set-key (kbd "<C-down>") 'sp-up-sexp)
 
-;; has not been used in ages. needs to be fast-forwarded for the new
-;; environment it is in.
+  (local-set-key (kbd "M-d") 'sp-kill-sexp)
 
-;; electric enter is forced in the keymap without any sort of option ...
-;; turn that crap off by fixing the keymap.
+  (local-set-key (kbd "<C-left>") 'lisp-smart-region-left) )
 
-;; (add-hook 'clojure-mode-hook
-;;   (lambda ()
-;;     (swap-paren-keys)
-;;     (mattie-tab-switching)
+(defun lisp-smart-parens-editing ()
+  (smartparens-mode 1)
 
-;;     (substitute-key-definition 'reindent-then-newline-and-indent nil clojure-mode-map)
-;;     (configure-for-evaluation 'slime-eval-defun 'slime-eval-last-expression 'slime-eval-region 'slime-eval-buffer) ))
+  (lisp-smart-navigation)
+  (lisp-smart-parens) )
