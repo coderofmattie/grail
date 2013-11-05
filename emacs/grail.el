@@ -307,6 +307,8 @@
 
         (load-user-elisp "user")
 
+        (load-user-elisp "programming")
+
         ;; load commands and keys last so they can use definitions from user.el
         ;; and friends.
         (load-user-elisp "commands")
