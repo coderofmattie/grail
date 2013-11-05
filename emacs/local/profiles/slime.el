@@ -34,10 +34,9 @@
 
 (add-hook 'slime-connected-hook
   (lambda ()
-    (swap-paren-keys)
+    (lisp-smart-parens-editing)
 
     (configure-for-buffer-ring "lisp-mode")
-    (configure-for-navigation 'forward-sexp 'backward-sexp)
 
     (rename-buffer (generate-new-buffer-name "cl-repl")) )
   t)
