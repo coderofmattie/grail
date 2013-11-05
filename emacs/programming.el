@@ -162,11 +162,11 @@
   ;; functions defined in a buffer. It is so useful that every programming
   ;; mode needs to define a function so that it is bound to a key.
   (when list-fn-signatures
-    (local-set-key (kbd "C-c c s") list-fn-signatures))
+    (local-set-key (kbd "C-c s") list-fn-signatures))
 
   ;; for starters this will comment the region, but a toggle command needs
   ;; to be defined.
-  (local-set-key (kbd "C-c c ;") 'comment-region))
+  (local-set-key (kbd "C-c ;") 'comment-region))
 
 (defun configure-for-navigation ( forwards backwards )
   (local-set-key (kbd "M-f") forwards)
@@ -195,17 +195,14 @@
   (local-set-key (kbd "C-c e r") eval-region)
   (local-set-key (kbd "C-c e b") eval-buffer))
 
+(defun configure-for-docs ( lookup-at-point-fn )
+  (local-set-key (kbd "C-c f") lookup-at-point-fn))
 
 (defun configure-for-debugging ( eval-debug )
   (local-set-key (kbd "C-c d d") eval-debug))
 
 (defun configure-for-macros ( expand-macro )
   (local-set-key (kbd "C-c m e") expand-macro) )
-
-;; IRC which I use almost exclusively for #emacs
-(eval-after-load 'erc
-  '(progn
-     (add-hook 'erc-mode-hook 'swap-paren-keys t)))
 
 ;;----------------------------------------------------------------------
 ;; shell-script
@@ -219,7 +216,7 @@
 (add-hook 'sh-mode-hook
   (lambda ()
     (configure-for-programming 'shell-list-fn-signatures "shell-mode")
-    (setq sh-indentation 2) )
+    (setq sh-indentation 2))
   t)
 
 ;;----------------------------------------------------------------------
@@ -272,20 +269,6 @@
 ;;----------------------------------------------------------------------
 (setq
   css-indent-offset 2)
-
-(require 'nxml-mode)
-
-(setq auto-mode-alist (append '( ("\\.html$"    . nxml-mode)
-                                 ("\\.xhtml$"   . nxml-mode)
-                                 ("\\.xml$"     . nxml-mode)
-                                 ) auto-mode-alist ))
-
-(add-hook 'nxml-mode-hook
-  (lambda ()
-    (dwim-tab-localize-context 'nxml-complete)
-    (turn-on-dwim-tab 'nxml-indent-line)
-    (configure-for-buffer-ring "nxml-mode"))
-  t)
 
 ;;----------------------------------------------------------------------
 ;; logging
