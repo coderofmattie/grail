@@ -18,7 +18,7 @@
 
 (defun insert-smart-remapped-char ( character )
   (setq last-command-event character)
-  (sp--self-insert-command 0) )
+  (sp--self-insert-command 1) )
 
 (defun insert-dumb-remapped-char ( character )
   (insert-char character)
@@ -37,7 +37,7 @@
   (local-set-key (kbd ")") (lambda () (interactive) (insert-dumb-remapped-char ?\])) ) )
 
 (defun lisp-smart-navigation ()
-  (configure-for-navigation 'sp-next-sexp 'sp-prev-sexp)
+  (configure-for-navigation 'sp-next-sexp 'sp-previous-sexp)
 
   (local-set-key (kbd "<C-up>") 'sp-backward-up-sexp)
   (local-set-key (kbd "<C-down>") 'sp-up-sexp)
