@@ -42,6 +42,8 @@
   (lambda ()
     (slime-mode t)
 
+    (dwim-tab-localize-context 'slime-complete-symbol)
+
     (configure-for-evaluation
       'slime-eval-defun
       'slime-eval-last-expression
