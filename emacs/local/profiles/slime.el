@@ -15,7 +15,7 @@
   (grail-fetch-docs "hyperspec"
     (grail-define-installer "hyperspec" "tar:gz"
       "ftp://ftp.lispworks.com/pub/software_tools/reference/HyperSpec-7-0.tar.gz")
-    0 ))
+    1))
 
 ;;----------------------------------------------------------------------
 ;; SLIME
