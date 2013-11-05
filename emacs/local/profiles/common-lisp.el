@@ -17,6 +17,6 @@
 
     (lisp-smart-parens-editing)
 
-    (turn-on-dwim-tab 'common-lisp-indent-function) )
+    (turn-on-dwim-tab 'common-lisp-indent-function))
   t)
 
