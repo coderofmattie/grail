@@ -10,10 +10,13 @@
 ;; load base profiles first
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting")
 
-(use-grail-profiles 1 "elisp" "lisp" "sql")
+(use-grail-profiles 1 "lisp")
+
+;; not done yet: "clojure"
+(use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl")
 
 ;; load profiles that may depend on base profiles
-(use-grail-profiles 2 "template" "slime")
+(use-grail-profiles 3 "template" "slime")
 
 ;;----------------------------------------------------------------------
 ;;                       misc.
@@ -199,18 +202,6 @@
 (defun configure-for-macros ( expand-macro )
   (local-set-key (kbd "C-c m e") expand-macro) )
 
-(defun swap-paren-keys ()
-  "bind the parentheses to the brace keys, while the shifted
-   paren keys become the braces."
-  (interactive)
-
-  ;; make the parentheses a bit easier to type, less shifting.
-  (local-set-key (kbd "[") (lambda () (interactive) (insert-char ?\( 1 nil)))
-  (local-set-key (kbd "]") (lambda () (interactive) (insert-char ?\) 1 nil)))
-
-  (local-set-key (kbd "(") (lambda () (interactive) (insert-char ?\[ 1 nil)))
-  (local-set-key (kbd ")") (lambda () (interactive) (insert-char ?\] 1 nil))) )
-
 ;; IRC which I use almost exclusively for #emacs
 (eval-after-load 'erc
   '(progn
@@ -227,167 +218,8 @@
 
 (add-hook 'sh-mode-hook
   (lambda ()
-    (configure-for-programming 'shell-list-fn-signatures "shell-mode"))
-  t)
-
-;;----------------------------------------------------------------------
-;; scheme
-;;----------------------------------------------------------------------
-
-;; the atom definition is tweaked for regex purpose. Without including
-;; the list symbols the regex would run over lists in it's quest for
-;; whitespace.
-
-(defconst scheme-regex-whitespace "[ \n\t]" "whitespace in scheme")
-(defconst scheme-regex-atom "[^ \n\t()]+" "whitespace in scheme")
-
-(defconst scheme-function-regex (concat
-                                  "("
-                                  scheme-regex-whitespace "*"
-                                  "define"
-                                  scheme-regex-whitespace "+"
-                                  "("
-                                  scheme-regex-whitespace "*"
-                                  scheme-regex-atom
-                                  scheme-regex-whitespace "+"))
-
-(defun scheme-list-fn-signatures ()
-  (interactive)
-  (occur scheme-function-regex))
-
-;; the actual scheme-mode comes from scheme. the cmuscheme, and quack are layered on top
-;; of scheme mode. scheme can get loaded from an auto-mode-alist hit, so make sure that
-;; when scheme mode is loaded, that cmuscheme gets layered on too.
-
-(eval-after-load 'scheme
-  '(require 'cmuscheme))
-
-(eval-after-load 'cmuscheme
-  '(progn
-     (defvar scheme-scratch-buffer "*eval-scheme*" "the name of the scheme scratch buffer")
-     (defvar default-scheme-interpreter "mzscheme")
-     t))
-
-(defun scheme ()
-  (interactive)
-
-  (split-window-to-buffers
-    (or (get-buffer scheme-scratch-buffer)
-      (let
-        ((scheme-eval-buffer (get-buffer-create scheme-scratch-buffer)))
-
-        (with-current-buffer scheme-eval-buffer
-          (scheme-mode)
-          (setq scheme-buffer "*scheme*"))
-        scheme-eval-buffer))
-
-    (or (get-buffer "*scheme*")
-      (save-excursion
-        (condition-case nil
-          ;; try and switch to the scheme buffer moving the point to the end of the buffer.
-          (switch-to-scheme t)
-          (current-buffer)
-          (error
-            (let
-              ((pop-up-windows nil))
-              (run-scheme default-scheme-interpreter)
-              (current-buffer)))))) ))
-
-(defun scheme-send-buffer ()
-  (interactive)
-  "send the buffer to the scheme interpreter"
-  (save-excursion
-    (mark-whole-buffer)
-    (scheme-send-region)))
-
-(add-hook 'inferior-scheme-mode-hook 'swap-paren-keys t)
-
-(add-hook 'scheme-mode-hook
-  (lambda ()
-    (swap-paren-keys)
-    (configure-for-programming 'scheme-list-fn-signatures)
-    (configure-for-evaluation
-      'scheme-send-definition
-      'scheme-send-last-sexp
-      'scheme-send-region
-      'scheme-send-buffer))
-  t)
-
-;;----------------------------------------------------------------------
-;; common lisp
-;;----------------------------------------------------------------------
-(defvar cl-function-decl ".*(defun.*")
-
-(defun cl-list-functions ()
-  (interactive)
-  (occur cl-function-decl))
-
-(require 'lisp-mode)
-
-(setq lisp-mode-hook nil)
-
-(add-hook 'lisp-mode-hook
-  (lambda ()
-    (swap-paren-keys)
-
-    (configure-for-programming 'cl-list-functions "lisp-mode")
-
-    (configure-for-navigation 'forward-sexp 'backward-sexp)
-
-    (turn-on-dwim-tab 'common-lisp-indent-function) )
-  t)
-
-;;----------------------------------------------------------------------
-;; perl5
-;;----------------------------------------------------------------------
-
-;; make cperl the default in all cases.
-(mapc
-  (lambda (pair)
-    (if (eq (cdr pair) 'perl-mode)
-      (setcdr pair 'cperl-mode)))
-     (append auto-mode-alist interpreter-mode-alist))
-
-(require 'cperl-mode)
-
-(progn
-  (setq
-    cperl-indent-parens-as-block t
-
-    cperl-indent-level 2
-    cperl-continued-statement-offset 2
-
-    cperl-close-paren-offset -2
-
-    cperl-indent-subs-specially nil
-
-    cperl-highlight-variables-indiscriminately t
-
-    cperl-electric-parens t))
-
-(defconst perl-function-regex "sub")
-
-(defun perl-list-fn-signatures ()
-  (interactive)
-  (occur perl-function-regex))
-
-(add-hook 'cperl-mode-hook
-  (lambda ()
-    (unless (boundp 'cperl-mode-configured)
-      (set-face-foreground cperl-pod-face "orange3")
-
-      (configure-for-navigation 'forward-word 'backward-word)
-      (configure-for-programming 'perl-list-fn-signatures "perl-mode")
-
-      (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
-
-      (turn-on-dwim-tab 'cperl-indent-command)
-
-      ;; cperl-mode-hook gets called twice. somewhere in cperl-mode
-      ;; emacs is setting cperl-mode-hook as a delayed hook execution
-      ;; and running all the hooks twice. would like to figure that
-      ;; out but this will work for now.
-      (set (make-variable-buffer-local 'cperl-mode-configured) t) ))
+    (configure-for-programming 'shell-list-fn-signatures "shell-mode")
+    (setq sh-indentation 2) )
   t)
 
 ;;----------------------------------------------------------------------
