@@ -8,9 +8,6 @@
                          "cvs"
                          ":pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot"))
 
-(grail-define-installer "hypersec" "tar:gz"
-                                 "ftp://ftp.lispworks.com/pub/software_tools/reference/HyperSpec-7-0.tar.gz")
-
 (setq hyperspec-dir
   (grail-fetch-docs "hyperspec"
     (grail-define-installer "hyperspec" "tar:gz"
