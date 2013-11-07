@@ -223,7 +223,8 @@
   (interactive)
 
   (read-only-mode 0)
-  (view-mode 0) )
+  (view-mode 0)
+  (make-path-writable buffer-file-name))
 
 (defun turn-on-read-only ()
   (interactive)
@@ -231,7 +232,7 @@
   (read-only-mode 1)
   (view-mode 1) )
 
-(defun toggle-read-only ()
+(defun my-toggle-read-only ()
   (interactive)
 
   (if (or (and (local-variable-p 'view-read-only) view-read-only)
@@ -239,7 +240,7 @@
     (turn-off-read-only)
     (turn-on-read-only) ))
 
-(global-set-key (kbd "C-x C-q") 'toggle-read-only)
+(global-set-key (kbd "C-x C-q") 'my-toggle-read-only)
 
 (defun make-path-writable ( path )
   (set-file-modes path
