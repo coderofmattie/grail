@@ -11,6 +11,10 @@
 (set-face-background 'sp-wrap-overlay-face "grey10")
 (set-face-background 'sp-wrap-tag-overlay-face "grey10")
 
+(defun procedural-smart-parens-editing ()
+  (interactive)
+  (smartparens-mode 1) )
+
 
 
 
