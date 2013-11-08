@@ -317,3 +317,17 @@
     (do-lisp-list 'copy-region-as-kill) ))
 
 
+(defun convert-dos-eol-to-civilized ()
+  (interactive)
+  (let
+    ((bad-eol-regex "\(.*\)\r\n")
+     (good-eol-character "\1\n"))
+
+    (save-excursion
+      (let
+        ((end-point (progn (end-of-buffer) (point))))
+
+        (beginning-of-buffer)
+
+        (query-replace-regexp bad-eol-regex good-eol-character nil (point) end-point) )) ))
+
