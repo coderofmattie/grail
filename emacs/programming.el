@@ -13,7 +13,7 @@
 (use-grail-profiles 1 "lisp")
 
 ;; not done yet: "clojure"
-(use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl")
+(use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl" "shell-scripting")
 
 ;; load profiles that may depend on base profiles
 (use-grail-profiles 3 "template" "slime")
@@ -203,21 +203,6 @@
 
 (defun configure-for-macros ( expand-macro )
   (local-set-key (kbd "C-c m e") expand-macro) )
-
-;;----------------------------------------------------------------------
-;; shell-script
-;;----------------------------------------------------------------------
-(defconst shell-function-regex "function")
-
-(defun shell-list-fn-signatures ()
-  (interactive)
-  (occur shell-function-regex))
-
-(add-hook 'sh-mode-hook
-  (lambda ()
-    (configure-for-programming 'shell-list-fn-signatures "shell-mode")
-    (setq sh-indentation 2))
-  t)
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
