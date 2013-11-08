@@ -48,5 +48,8 @@
       ;; emacs is setting cperl-mode-hook as a delayed hook execution
       ;; and running all the hooks twice. would like to figure that
       ;; out but this will work for now.
-      (set (make-variable-buffer-local 'cperl-mode-configured) t) ))
+      (set (make-variable-buffer-local 'cperl-mode-configured) t)
+
+      (procedural-smart-parens-editing)
+      (setq sp-escape-char "\\") ))
   t)
