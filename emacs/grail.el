@@ -233,6 +233,12 @@
           ((string-equal "darwin"    system-type)  "darwin")
           ((string-equal "windows"   system-type)  "windows"))))
 
+    (grail-trap
+      "Loading the hostname specific elisp."
+
+      (load-user-elisp
+        (system-name)) )
+
     ;; save the state of load-path after the platform file if any has
     ;; been loaded.
     (setq grail-platform-load-path load-path)
