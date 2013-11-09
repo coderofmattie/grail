@@ -85,3 +85,10 @@
 
     (setq minor-mode-map-alist stripped-list) ))
 
+(defun buffer-modifiable-p (buffer)
+  (with-current-buffer buffer
+    (not (or (and (local-variable-p 'view-read-only) view-read-only)
+             (and (local-variable-p 'buffer-read-only) buffer-read-only))) ))
+
+
+

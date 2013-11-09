@@ -316,12 +316,11 @@
   (save-excursion
     (do-lisp-list 'copy-region-as-kill) ))
 
-
 (defun convert-dos-eol-to-civilized ()
   (interactive)
   (let
-    ((bad-eol-regex "\(.*\)\r\n")
-     (good-eol-character "\1\n"))
+    ((bad-eol-regex "")
+     (good-eol-character ""))
 
     (save-excursion
       (let
@@ -329,5 +328,11 @@
 
         (beginning-of-buffer)
 
-        (query-replace-regexp bad-eol-regex good-eol-character nil (point) end-point) )) ))
+        (replace-regexp bad-eol-regex good-eol-character nil (point) end-point) )) )
 
+  (when (> (length buffer-file-name) 0)
+    (save-buffer)) )
+
+(defun opportunistic-convert-eol-to-civilized ()
+  (when (buffer-modifiable-p)
+    (convert-dos-eol-to-civilized) ))
