@@ -2,6 +2,13 @@
 ;; shell-script
 ;;----------------------------------------------------------------------
 
+(setq advanced-bash-scripting-guide
+  (grail-fetch-docs "advanced-bash-scripting-guide"
+    (grail-define-installer "advanced-bash-scripting-guide" "tar:gz"
+      "http://www.tldp.org/LDP/abs/abs-guide.html.tar.gz")
+    1))
+
+(setq advanced-bash-scripting-guide (concat advanced-bash-scripting-guide "/index.html"))
 
 (defconst shell-function-regex "function")
 
