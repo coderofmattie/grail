@@ -28,6 +28,6 @@
 
 ;; other window is more useful. there is no really good way
 ;; for buffer switching outside of buffer ring
-(global-set-key (kbd "<M-tab>") 'other-window)
+(global-set-key (kbd "<M-tab>") 'next-window)
 
 
