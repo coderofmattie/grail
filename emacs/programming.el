@@ -7,15 +7,17 @@
 (eval-when-compile
   (require 'grail-profile))
 
-;; load base profiles first
-(use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting")
+;; re-usable programming modules
+(use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
 
-(use-grail-profiles 1 "lisp")
+;; higher level functionality
+(use-grail-profiles 1 "lisp" "code-documentation")
 
+;; language profiles
 ;; not done yet: "clojure"
 (use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl" "shell-scripting")
 
-;; load profiles that may depend on base profiles
+;; advanced functionality
 (use-grail-profiles 3 "template" "slime")
 
 ;;----------------------------------------------------------------------
@@ -172,12 +174,16 @@
   (local-set-key (kbd "M-f") forwards)
   (local-set-key (kbd "M-b") backwards))
 
+(defun configure-for-repl ( repl-invoke )
+  (local-set-key (kbd "C-c e r") repl-invoke))
+
 (defun configure-for-evaluation ( eval-define eval-expression eval-region eval-buffer )
   "Enable my programming customizations for the buffer
 
    eval-def     : this should evaluate definitions, variables,constants, and functions.
    eval-expr    : evaluate the current or last expression
    eval-region  : evaluate the region
+   eval-buffer  : evaluate the buffer
 
    C-c e     will be the prefix for evaluation functions:
 
@@ -195,8 +201,8 @@
   (local-set-key (kbd "C-c e r") eval-region)
   (local-set-key (kbd "C-c e b") eval-buffer))
 
-(defun configure-for-docs ( lookup-at-point-fn )
-  (local-set-key (kbd "C-c f") lookup-at-point-fn))
+(defun configure-for-docs ( docs-fn )
+  (local-set-key (kbd "C-c f") docs-fn))
 
 (defun configure-for-debugging ( eval-debug )
   (local-set-key (kbd "C-c d d") eval-debug))
