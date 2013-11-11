@@ -20,6 +20,7 @@
   (other-window-non-interactive))
 
 (defun code-documentation-browse-action ( &optional url )
+  (interactive)
   (if (get-buffer documentation-buffer-name)
     (if (string-equal url documentation-browse-current-url)
       (pop-to-buffer documentation-buffer-name)
@@ -29,23 +30,22 @@
 
     (code-documentation-browse-popup (or url documentation-browse-default-url)) ))
 
-(defun code-documentation-setup ( buffer-name ring-name default-url )
+(defun code-documentation-setup ( buffer-name ring-name default-url &optional browser-fn )
   (setq
     documentation-buffer-name buffer-name
     documentation-ring-name ring-name
-    documentation-browse-fn browse-fn)
+    documentation-browse-default-url default-url
 
-  (make-variable-buffer-local 'browse-url-browser-function)
-  (setq browse-url-browser-function 'code-documentation-browse-popup))
+    documentation-browse-fn (or browser-fn browser-profile-url-command))
 
-(defun browser-profile-set-as-default ()
-  (make-variable-buffer-local 'browse-url-browser-function)
-  (setq browse-url-browser-function browser-profile-url-command))
+  (configure-for-docs 'code-documentation-browse-action))
 
-(defun code-documentation-setup ( buffer-name ring-name default-url )
+(defun code-documentation-override-browser ( buffer-name ring-name default-url )
   (setq
     documentation-buffer-name buffer-name
-    documentation-ring-name docs-ring-name
+    documentation-ring-name ring-name
     documentation-browse-default-url default-url)
 
-  (browser-profile-set-as-default code-documentation-browse-action))
+  (make-variable-buffer-local 'browse-url-browser-function)
+  (setq browse-url-browser-function 'code-documentation-browse-action))
+
