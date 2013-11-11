@@ -91,6 +91,7 @@
              (and (local-variable-p 'buffer-read-only) buffer-read-only))) ))
 
 (defun other-window-non-interactive ()
+  (interactive)
   (other-window 1))
 
 
