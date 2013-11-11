@@ -10,36 +10,14 @@
 (eval-when-compile
   (require 'cl))
 
-;; this doesn't work because I don't seem to be able to trap the error ?
-;; (defun backward-and-up-sexp ()
-;;   (interactive)
-
-;;   (condition-case trap
-;;     (backward-sexp)
-;;     (error
-;;       (down-list))))
-
 (defun mail ()
   "start mutt mail client"
   (interactive)
   (ansi-term "mutt" "mutt"))
 
-(defun elisp ()
-  "elisp
-
-   Pop up the scratch buffer in the other window."
-  (interactive)
-  (pop-to-buffer (get-buffer-create "*scratch*"))
-  (lisp-interaction-mode))
-
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"
   (message "the hex is %x" number))
-
-;; this is somewhat silly now since modes turn it on.
-(defun show-bad-ws()
-  (interactive)
-  (highlight-regexp "\t"))
 
 (defun rid-window ()
   "get rid of the current window"
@@ -62,12 +40,6 @@
     (switch-to-buffer (generate-new-buffer url))
     (url-insert-file-contents url)))
 
-(defun xml-before-doc-close ()
-  "move the point immediately before the closing of the document"
-  (interactive)
-  (buffer-end 1)
-  (re-search-backward "</" nil t))
-
 (defun export-buffer-to-clipboard ()
   "copy the entire buffer to the clipboard"
   (interactive)
@@ -83,38 +55,6 @@
   "
   (interactive "afunction? ")
   (message "returned: %s" (princ (funcall fn))) )
-
-;;----------------------------------------------------------------------
-;; repl
-;;
-;; Handy tool for exploratory programming. pops a new frame with the
-;; interpreter for the language running in a REPL loop.
-;;----------------------------------------------------------------------
-
-(defun repl ( lang )
-  "start a REPL interpreter interface in a new frame based upon a
-  given or inferred language parameter"
-
-  (interactive "MLanguage: ")
-
-  (lexical-let
-    ((repl-frame (make-frame))
-      )
-
-    (select-frame-set-input-focus repl-frame)
-
-    (cond
-      ((string-equal "perl5" lang)
-	(switch-to-buffer (make-comint "perl5 REPL" "/usr/bin/perl" nil "-d" "-e shell")))
-      ((string-equal "elisp" lang)
-        (ielm))
-      (t (message "I don't support language %s" lang)))
-
-  (add-hook 'kill-buffer-hook
-    (lambda ()
-      (delete-frame repl-frame))
-    t t)
-    ))
 
 ;;----------------------------------------------------------------------
 ;; bounds-scan. Scan for the bounds indicated by delimiters. This
