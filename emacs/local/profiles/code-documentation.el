@@ -10,14 +10,18 @@
 (defvar-local documentation-browse-current-url nil)
 
 (defun code-documentation-browse-popup ( url )
-  (setq documentation-browse-current-url url)
-  (browser-profile-make-unique documentation-buffer-name documentation-ring-name)
+  (let
+    ((original-buffer (current-buffer)))
 
-  (funcall browser-profile-url-command url)
+    (setq documentation-browse-current-url url)
+    (browser-profile-make-unique documentation-buffer-name documentation-ring-name)
 
-  (pop-to-buffer documentation-buffer-name nil t)
+    (funcall browser-profile-url-command url)
 
-  (other-window-non-interactive))
+    (switch-to-buffer original-buffer)
+    (pop-to-buffer documentation-buffer-name nil t)
+
+    (other-window-non-interactive)) )
 
 (defun code-documentation-browse-action ( &optional url )
   (interactive)
