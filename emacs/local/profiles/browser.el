@@ -34,7 +34,7 @@
   (make-variable-buffer-local 'show-trailing-whitespace)
   (setq show-trailing-whitespace nil)
 
-  (browser-profile-close-winow-on-kill)
+  (browser-profile-close-window-on-kill)
 
   (when (browser-profile-unique-p)
     (buffer-ring-add browser-profile-ring-name)
