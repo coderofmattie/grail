@@ -153,8 +153,6 @@
 
 (defun configure-for-buffer-ring ( buffer-ring-mode )
   (when (buffer-ring-add buffer-ring-mode)
-    (local-set-key (kbd "<M-tab>")    'buffer-ring-cycle)
-
     (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
     (local-set-key (kbd "<M-left>")   'buffer-ring-prev-buffer)
 
