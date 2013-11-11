@@ -84,6 +84,7 @@
   vc-make-backup-files nil)
 
 (defun version-control-source-file-dir ()
+  (interactive)
   (vc-dir (file-name-directory buffer-file-name)) )
 
 (defun configure-for-version-control ()
