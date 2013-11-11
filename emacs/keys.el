@@ -5,15 +5,8 @@
 ;; keybinding tools and configuration.
 ;;----------------------------------------------------------------------
 
-;;----------------------------------------------------------------------
-;;                    Global Key-Bindings
-;;----------------------------------------------------------------------
-
-;; enable ffap bindings so that C-x C-f on things like include directives
-;; opens the paths. This could be very magical.
-
-;; don't need compose mail right now, prefer maximize frame
-(global-set-key (kbd "C-x m")   'maximize-frame)
+;; remove keybindings
+(global-unset-key (kbd "<S-tab>"))
 
 (global-set-key (kbd "C-x C-c") 'delete-frame)
 
@@ -30,17 +23,11 @@
 
 (global-set-key (kbd "M-r")     'query-replace-regexp)
 
-;; escape = (execute-extended-command)
-
 ;; standard emacs prompt for a interactive command
 (global-set-key (kbd "<escape>") 'execute-extended-command)
 
-(global-set-key (kbd "<M-tab>") 'switch-to-prev-buffer)
-(global-unset-key (kbd "<S-tab>"))
-
-;; misc keybindings
-
-(global-set-key (kbd "M-C-u") 'toggle-ucase-word)
-
+;; other window is more useful. there is no really good way
+;; for buffer switching outside of buffer ring
+(global-set-key (kbd "<M-tab>") 'other-window)
 
 
