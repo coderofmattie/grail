@@ -9,8 +9,6 @@
 (defvar-local documentation-browse-default-url nil)
 (defvar-local documentation-browse-current-url nil)
 
-;; make tab work like ctrl-x-o
-
 (defun code-documentation-browse-popup ( url )
   (setq documentation-browse-current-url url)
   (browser-profile-make-unique documentation-buffer-name documentation-ring-name)
@@ -19,8 +17,7 @@
 
   (pop-to-buffer documentation-buffer-name nil t)
 
-  (other-window)
-  )
+  (other-window-non-interactive))
 
 (defun code-documentation-browse-action ( &optional url )
   (if (get-buffer documentation-buffer-name)

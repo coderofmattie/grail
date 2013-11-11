@@ -90,5 +90,8 @@
     (not (or (and (local-variable-p 'view-read-only) view-read-only)
              (and (local-variable-p 'buffer-read-only) buffer-read-only))) ))
 
+(defun other-window-non-interactive ()
+  (other-window 1))
+
 
 
