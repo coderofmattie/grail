@@ -5,58 +5,55 @@
 ;;----------------------------------------------------------------------
 (require 'eww)
 
-(defvar eww-uniquify-buffer-name nil)
-(defvar eww-uniquify-ring-name nil)
+(defvar-local browser-profile-buffer-name nil)
+(defvar-local browser-profile-ring-name nil)
 
-(defun uniquify-requested-p ()
-  (if (and eww-uniquify-buffer-name eww-uniquify-ring-name)
-    t
-    nil))
+(defvar-local browser-profile-url-command 'eww)
+(defvar-local browser-profile-file-command 'eww-open-file)
 
-(defun uniquify-request-unique (new-buffer-name new-ring-name)
+(defun browser-profile-unique-p ()
+  (and browser-profile-buffer-name browser-profile-ring-name))
+
+(defun browser-profile-make-unique (new-buffer-name new-ring-name)
   (setq
-    eww-uniquify-buffer-name new-buffer-name
-    eww-uniquify-ring-name new-ring-name))
+    browser-profile-buffer-name new-buffer-name
+    browser-profile-ring-name new-ring-name))
 
-(defun uniquify-clear ()
+(defun browser-profile-clear-unique ()
   (setq
-    eww-uniquify-buffer-name nil
-    eww-uniquify-ring-name nil))
+    browser-profile-buffer-name nil
+    browser-profile-ring-name nil))
 
-(defadvice eww-setup-buffer (after uniquify-modify-buffer)
-  (when (uniquify-requested-p)
-    (buffer-ring-add eww-uniquify-ring-name)
-    (rename-buffer eww-uniquify-buffer-name)
+(defun browser-profile-close-window-on-kill ()
+  (add-hook 'kill-buffer-hook
+    (lambda ()
+      (rid-window))
+    t))
 
-    (uniquify-clear))
+(defadvice eww-setup-buffer (after browser-profile-hooks)
+  (make-variable-buffer-local 'show-trailing-whitespace)
+  (setq show-trailing-whitespace nil)
+
+  (browser-profile-close-winow-on-kill)
+
+  (when (browser-profile-unique-p)
+    (buffer-ring-add browser-profile-ring-name)
+    (rename-buffer browser-profile-buffer-name)
+
+    (browser-profile-clear-unique))
+
   ad-return-value)
 
-(defun uniquify-enable()
+(defun browser-profile-unique-enable()
+  (interactive)
   (ad-activate 'eww-setup-buffer))
 
-(defun uniquify-disable()
+(defun browser-profile-unique-disable()
+  (interactive)
   (ad-deactivate 'eww-setup-buffer))
 
-(defun popup-browse-html ( url &rest args)
-  (let
-    ((doc-buffer-name (generate-new-buffer-name "browser")))
+(browser-profile-unique-enable)
 
-    (pop-to-buffer doc-buffer-name)
-    (eww url) ))
-
-(defun set-popup-browse-html-local ()
+(defun browser-profile-set-as-default ( &optional wrapper-fn )
   (make-variable-buffer-local 'browse-url-browser-function)
-  (setq browse-url-browser-function 'popup-browse-html))
-
-    ;; (with-current-buffer doc-buffer-name
-    ;;   (make-variable-buffer-local 'kill-buffer-hook)
-    ;;   (add-hook 'kill-buffer-hook
-    ;;     (lambda ()
-    ;;       (rid-window))
-    ;;     t)
-
-;; turn on uniquify by default
-(uniquify-enable)
-
-
-
+  (setq browse-url-browser-function (or wrapper-fn browser-profile-url-command)))
