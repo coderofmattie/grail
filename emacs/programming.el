@@ -83,6 +83,12 @@
   ;; just to be sure, this default may change in the future.
   vc-make-backup-files nil)
 
+(defun version-control-source-file-dir ()
+  (vc-dir (file-name-directory buffer-file-name)) )
+
+(defun configure-for-version-control ()
+  (local-set-key (kbd "C-c v v") 'version-control-source-file-dir))
+
 ;;----------------------------------------------------------------------
 ;;                           Diff
 ;;----------------------------------------------------------------------
@@ -140,6 +146,10 @@
 
 (which-function-mode)
 
+(defun pop-dired-in-source-file ()
+  (interactive)
+  (dired-other-window (file-name-directory buffer-file-name)) )
+
 (defun configure-for-buffer-ring ( buffer-ring-mode )
   (when (buffer-ring-add buffer-ring-mode)
     (local-set-key (kbd "<M-tab>")    'buffer-ring-cycle)
@@ -160,6 +170,8 @@
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
+  (local-set-key (kbd "C-c f") 'pop-dired-in-source-file)
+
   ;; it is *really* handy to see just the function signatures of all the
   ;; functions defined in a buffer. It is so useful that every programming
   ;; mode needs to define a function so that it is bound to a key.
@@ -168,7 +180,9 @@
 
   ;; for starters this will comment the region, but a toggle command needs
   ;; to be defined.
-  (local-set-key (kbd "C-c ;") 'comment-region))
+  (local-set-key (kbd "C-c ;") 'comment-region)
+
+  (configure-for-version-control))
 
 (defun configure-for-navigation ( forwards backwards )
   (local-set-key (kbd "M-f") forwards)
@@ -202,7 +216,7 @@
   (local-set-key (kbd "C-c e b") eval-buffer))
 
 (defun configure-for-docs ( docs-fn )
-  (local-set-key (kbd "C-c f") docs-fn))
+  (local-set-key (kbd "C-c h") docs-fn))
 
 (defun configure-for-debugging ( eval-debug )
   (local-set-key (kbd "C-c d d") eval-debug))
