@@ -5,8 +5,8 @@
 ;;----------------------------------------------------------------------
 (require 'eww)
 
-(defvar-local browser-profile-buffer-name nil)
-(defvar-local browser-profile-ring-name nil)
+(defvar browser-profile-buffer-name nil)
+(defvar browser-profile-ring-name nil)
 
 (defvar-local browser-profile-url-command 'eww)
 (defvar-local browser-profile-file-command 'eww-open-file)
@@ -24,31 +24,25 @@
     browser-profile-buffer-name nil
     browser-profile-ring-name nil))
 
-(defun browser-profile-close-window-on-kill ()
-  (add-hook 'kill-buffer-hook
-    (lambda ()
-      (rid-window))
-    t))
-
 (defadvice eww-setup-buffer (after browser-profile-hooks)
   (make-variable-buffer-local 'show-trailing-whitespace)
   (setq show-trailing-whitespace nil)
 
-  (browser-profile-close-window-on-kill)
-
   (when (browser-profile-unique-p)
-    (buffer-ring-add browser-profile-ring-name)
     (rename-buffer browser-profile-buffer-name)
+
+    (with-current-buffer browser-profile-buffer-name
+      (configure-for-buffer-ring browser-profile-ring-name))
 
     (browser-profile-clear-unique))
 
   ad-return-value)
 
-(defun browser-profile-unique-enable()
+(defun browser-profile-unique-enable ()
   (interactive)
   (ad-activate 'eww-setup-buffer))
 
-(defun browser-profile-unique-disable()
+(defun browser-profile-unique-disable ()
   (interactive)
   (ad-deactivate 'eww-setup-buffer))
 
