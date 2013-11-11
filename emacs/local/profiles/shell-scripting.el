@@ -10,8 +10,6 @@
 
 (setq advanced-bash-scripting-guide (concat "file://" advanced-bash-scripting-guide "/index.html"))
 
-;; (code-documentation-browse-popup advanced-bash-scripting-guide)
-
 (defconst shell-function-regex "function")
 
 (defun shell-list-fn-signatures ()
@@ -21,6 +19,9 @@
 (add-hook 'sh-mode-hook
   (lambda ()
     (configure-for-programming 'shell-list-fn-signatures "shell-mode")
+
+    (code-documentation-setup "shell-docs" "shell-mode" advanced-bash-scripting-guide)
+
     (setq sh-indentation 2)
     (procedural-smart-parens-editing) )
   t)
