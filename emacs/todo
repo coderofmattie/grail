@@ -1,0 +1,150 @@
+* docs
+
+  get it finished. determing whether the buffer can be switched to
+  is wrong in the default case in which it should ignore current
+  url possibly ?
+
+* WEB
+
+  html is going to html mode, fix that and get it into a ring. put css
+  into the ring too.
+
+* cpan
+
+  fucking cpan. copy regular files.
+
+  look in bin for files as well.
+
+  figure out the auto suffix directory bullshit.
+
+* perl
+
+  need xsh2 now
+
+need the virtual box high-jack of the dev-environment real fucking soon.
+the broken-ness of the tools is not working anymore.
+
+two highest priorities are perl debugging and pulling out the vm
+
+* navigation
+
+  investigate use of tags yet again
+
+* dos line endings.
+
+  finish fixing the dos line ending issue. need to hoist the
+  detection of a read-only buffer.
+
+* editing
+
+  fix single quote in lisp
+
+  when adjecent to text even in lisp a square bracket is inserted.
+  fix this. just use the damn character i type. even better would
+  be if it wrapped the word.
+
+  this may possibly due to insert.
+
+  figure out all the damn magic and figure out how to wrap
+  a word in the given parentheses which it can do.
+
+  get the smart insert working where it chooses to insert a pair
+  or a single instance.
+
+  doing anything local will require adding a paren to override the
+  global default.
+
+  it would be nice to insert a pair and then put the point inside
+  the pair with a paren on each side.
+
+* bash
+
+  get the bloody indent working right.
+
+* grail hacking
+
+  when files like elisp bomb it still crashes everything.
+
+* clojure
+
+  get the clojure examples rounded up and on the website. see if there is
+  any value to getting clojure running.
+
+  consider getting clojure jack-in/swank going for portable stuff.
+
+* cpan work
+
+  finish up the cpan work with the rewrite. Once the core version is working
+  I can rebuild the classic-deps functionality of building a debian package
+  on top of it.
+
+  -- the basic stuff is now working, but that auto directory is completely
+     breaking everything.
+
+* merging
+
+  do some ediff work. setup tab'ing so that left and right go between the diff panes
+  and down/up jumps between the merge pane. left and right should jump from merge
+  pane to the correct side.
+
+
+* templates
+
+ fix perl foreach template
+
+ build the pop-up completion interface for completing a template. it is
+ the only way it will be useful.
+
+bind pop to mark command.
+
+* sepia/perl
+
+  need alot of debugging work with sepia/padwalker etc... and using
+  the trick from the office script.
+
+* working copy / p4
+
+  need working copy up and running real fast.
+
+  needs to have a way to detect when to turn on p4 mode. needs to
+  integrate with a vc p4 mode to know when to do switching.
+
+  when it syncs it restores p4 locking and takes updates. when
+  the update is done merge back.
+
+  there is a mode for p4.
+
+* firewall
+
+  Need to get the firewall back on track, fix up the logging and consider
+  adding the active defenses back.
+
+  for firewall i want that splunk alternative handling logging. in fact
+  I want it for everything.
+
+* perl commit
+
+  need the indentation switching stat. if a
+  mode doesn't do it use a external tool. -- update: use perltidy.
+
+* virtualbox
+
+  work out the virtual box filesystem sharing problem. roll a driver
+  package if necessary.
+
+get eclipse set up for java, and get ahead of the game. prune out those
+release branches in setting up linked folders. make them go to the trunk.
+
+* create a ring for dired.
+
+create wrappers for system name e.g is-linux,is-darwin
+
+dig into the failure to reload a installed package.
+
+finish lisp mode, get all completions, indent levels, and the
+other basics done.
+
+
+
+
+
