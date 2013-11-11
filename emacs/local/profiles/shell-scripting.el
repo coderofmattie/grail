@@ -8,7 +8,9 @@
       "http://www.tldp.org/LDP/abs/abs-guide.html.tar.gz")
     1))
 
-(setq advanced-bash-scripting-guide (concat advanced-bash-scripting-guide "/index.html"))
+(setq advanced-bash-scripting-guide (concat "file://" advanced-bash-scripting-guide "/index.html"))
+
+;; (code-documentation-browse-popup advanced-bash-scripting-guide)
 
 (defconst shell-function-regex "function")
 
