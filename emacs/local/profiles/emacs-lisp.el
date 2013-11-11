@@ -2,6 +2,14 @@
 ;; Emacs Lisp
 ;;----------------------------------------------------------------------
 
+(defun emacs-lisp-create-repl ( repl-name )
+  (with-current-buffer (get-buffer-create repl-name)
+    (lisp-interaction-mode)))
+
+(repl-setup-for-langauge "elisp-repl" "elisp-mode" 'emacs-lisp-create-repl)
+
+(repl-setup-for-command  "elisp" "elisp-repl" "elisp-mode" 'emacs-lisp-create-repl)
+
 (setq
   lisp-indent-offset 2)
 
