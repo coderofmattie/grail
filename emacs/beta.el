@@ -41,32 +41,6 @@
   (interactive "F")
   (find-file-read-only (locate-library (concat library-name ".el"))))
 
-;; This is a handy little function that allows you to localize
-;; a distributed elisp source file. It assumes that the current
-;; buffer is a distributed elisp file, and that localized-source-dir
-;; points to a real directory.
-
-;; This function needs to at least temporarily preserve version information
-;; so that good diffs ( with ancestor information ) can be produced easily
-
-(defun localize-distrib ()
-  "localize a distributed lisp file by writing a copy of the file
-   to a directory searched before the distributed lisp files"
-  (interactive)
-
-  (let
-    ((new-name (file-name-nondirectory (buffer-file-name))))
-
-    (let
-      ((new-path
-        (concat localized-source-dir
-          (if (string-equal "gz" (file-name-extension new-name))
-            (file-name-sans-extension new-name)
-            (new-name)))))
-      (if (yes-or-no-p (concat "localize distributed file " new-name " to " new-path))
-        (write-file new-path)
-        (message "aborted localizing distributed file")) )))
-
 ;; as soon as it works on darwin it can go to stable.el.
 (defun copy-region-to-clipboard ()
   "copy the region to the clipboard"
