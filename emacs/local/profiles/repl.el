@@ -33,7 +33,7 @@
 
   (configure-for-repl 'repl-invoke))
 
-(defun repl-setup-for-language ( language buffer-name ring-name create-fn )
+(defun repl-setup-for-command ( language buffer-name ring-name create-fn )
   (lexical-let
     ((lexical-buffer-name buffer-name)
      (lexical-ring-name ring-name)
