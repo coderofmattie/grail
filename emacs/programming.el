@@ -189,7 +189,7 @@
   (local-set-key (kbd "M-b") backwards))
 
 (defun configure-for-repl ( repl-invoke )
-  (local-set-key (kbd "C-c e r") repl-invoke))
+  (local-set-key (kbd "C-c r") repl-invoke))
 
 (defun configure-for-evaluation ( eval-define eval-expression eval-region eval-buffer )
   "Enable my programming customizations for the buffer
