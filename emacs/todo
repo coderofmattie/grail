@@ -1,3 +1,36 @@
+* vpn.
+
+  make it so the vpn does a discovery. loop through all of the
+  servers and start the first one that works.
+
+* networking
+
+  make the net-wall script switch on hostname to keep it sane.
+
+  finish the route replacement stuff for interfaces.
+
+  rename the config files for the various firewalls.
+
+  inspect the firewalls to see if they are as tight as possible.
+
+  use the proxy on khan as it is a big performance win.
+
+* shell/session
+
+  going to lose my mind with the paths issues if it is not fixed.
+
+   - fix session first and get it right.
+
+   - fix zsh setup moving it's stuff to session so it is applied for
+     the session.
+
+* dired
+
+  create a way to zap all the dired buffers.
+
+  see if I can force all dired into a single buffer instead of creating
+  one per dir.
+
 * docs
 
   get it finished. determing whether the buffer can be switched to
@@ -121,6 +154,8 @@ bind pop to mark command.
 
   for firewall i want that splunk alternative handling logging. in fact
   I want it for everything.
+
+  get a log view going. preferable as a background.
 
 * perl commit
 
