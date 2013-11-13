@@ -280,6 +280,16 @@
         "grail.el replacement for daemonp function."
         nil))
 
+    (when (daemonp)
+      (let
+        ((server-dir (file-name-directory (getenv "EMACS_SERVER_FILE"))))
+
+        (when (file-accessible-directory-p server-dir)
+          (setq
+            server-socket-dir server-dir
+            server-auth-dir server-dir
+            server-use-tcp t)) ))
+
     ;;----------------------------------------------------------------------
     ;; load the configuration based on mode.
     ;;----------------------------------------------------------------------
