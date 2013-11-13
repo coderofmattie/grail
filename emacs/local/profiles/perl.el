@@ -24,7 +24,7 @@
 
     cperl-highlight-variables-indiscriminately t
 
-    cperl-electric-parens t))
+    cperl-electric-parens nil))
 
 (defconst perl-function-regex "sub")
 
