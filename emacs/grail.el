@@ -279,14 +279,17 @@
         "grail.el replacement for daemonp function."
         nil))
 
-    (let
-      ((server-dir (file-name-directory (getenv "EMACS_SERVER_FILE"))))
+    (let*
+      ((server-env  (getenv "EMACS_SERVER_FILE"))
+       (server-dir  (if server-env (file-name-directory server-env) nil)))
 
-      (when (file-accessible-directory-p server-dir)
-        (setq
-          server-socket-dir server-dir
-          server-auth-dir server-dir
-          server-use-tcp t)) )
+       (if server-dir
+         (when (file-accessible-directory-p server-dir)
+           (setq
+             server-socket-dir server-dir
+             server-auth-dir server-dir
+             server-use-tcp t))
+         (message "grail: EMACS_SERVER_FILE not set - please set for correct server start")) )
 
     ;;----------------------------------------------------------------------
     ;; load the configuration based on mode.
