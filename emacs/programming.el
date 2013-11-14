@@ -179,6 +179,7 @@
 
   ;; for starters this will comment the region, but a toggle command needs
   ;; to be defined.
+  (local-set-key (kbd "C-c u ;") 'uncomment-region)
   (local-set-key (kbd "C-c ;") 'comment-region)
 
   (configure-for-version-control))
