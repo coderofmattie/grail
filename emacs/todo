@@ -1,3 +1,15 @@
+* shell
+
+  make a comand that looks for a shell/term mode.
+
+  if found pop-to-buffer
+
+  if not found detect bash/or zsh with executable-p
+
+  launch the term if so and hook it into the shell ring
+
+  make it keybound to switch to it.
+
 * vpn.
 
   make it so the vpn does a discovery. loop through all of the
