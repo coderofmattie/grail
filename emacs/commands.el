@@ -256,7 +256,7 @@
   (save-excursion
     (do-lisp-list 'copy-region-as-kill) ))
 
-(defun convert-dos-eol-to-civilized ()
+(defun scrub-dos-eol ()
   (interactive)
   (let
     ((bad-eol-regex "")
@@ -273,6 +273,25 @@
   (when (> (length buffer-file-name) 0)
     (save-buffer)) )
 
-(defun opportunistic-convert-eol-to-civilized ()
+(defun scrub-tabs ()
+  (interactive)
+
+  (let
+    ((end-point (progn
+                  (end-of-buffer)
+                  (point)))
+      (begin-point
+        (progn
+          (beginning-of-buffer)
+          (point)))
+      (result 0))
+
+    (setq result (replace-regexp "	" " " nil begin-point end-point))
+
+    (when (and result (> result 0))
+      (message "WARNING: %s tab characters found!" result)) ))
+
+(defun scrub-when-modifiable ()
   (when (buffer-modifiable-p)
-    (convert-dos-eol-to-civilized) ))
+    (scrub-dos-eol)
+    (scrub-tabs) ))

@@ -35,11 +35,10 @@
 ;; "dirty" files.
 
 (setq-default indent-tabs-mode nil)
-(setq-default show-trailing-whitespace t)
 
-;; make sure tabs are impossible to miss.
-(global-hi-lock-mode 1)
-(highlight-regexp "\t")
+(require 'whitespace)
+
+(setq-default whitespace-style '(face trailing tabs))
 
 ;;----------------------------------------------------------------------
 ;;                      font-lock engine
@@ -164,12 +163,15 @@
 
   (turn-on-font-lock)                       ;; enable syntax highlighting
 
+  ;; highlight all fucked up files.
+  (whitespace-mode)
+
   (configure-for-buffer-ring buffer-ring-mode)
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
-  (local-set-key (kbd "C-c f") 'pop-dired-in-source-file)
+  (local-set-key (kbd "C-c x f") 'pop-dired-in-source-file)
 
   ;; it is *really* handy to see just the function signatures of all the
   ;; functions defined in a buffer. It is so useful that every programming
@@ -181,6 +183,8 @@
   ;; to be defined.
   (local-set-key (kbd "C-c u ;") 'uncomment-region)
   (local-set-key (kbd "C-c ;") 'comment-region)
+
+  (local-set-key (kbd "C-c f s") 'sort-lines)
 
   (configure-for-version-control))
 
