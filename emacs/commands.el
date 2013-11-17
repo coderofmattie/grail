@@ -256,10 +256,17 @@
   (save-excursion
     (do-lisp-list 'copy-region-as-kill) ))
 
+(defun warn-if-dos-eol ()
+  (interactive)
+  (save-excursion
+    (beginning-of-buffer)
+    (when (search-forward-regexp "$" nil t)
+      (message "!WARNING! DOS EOL lines in file"))))
+
 (defun scrub-dos-eol ()
   (interactive)
   (let
-    ((bad-eol-regex "")
+    ((bad-eol-regex "$")
      (good-eol-character ""))
 
     (save-excursion
@@ -276,22 +283,29 @@
 (defun scrub-tabs ()
   (interactive)
 
-  (let
-    ((end-point (progn
-                  (end-of-buffer)
-                  (point)))
-      (begin-point
-        (progn
-          (beginning-of-buffer)
-          (point)))
-      (result 0))
+  (save-excursion
+    (let
+      ((end-point (progn
+                    (end-of-buffer)
+                    (point)))
+        (begin-point
+          (progn
+            (beginning-of-buffer)
+            (point)))
+        (result 0))
 
-    (setq result (replace-regexp "	" " " nil begin-point end-point))
+      (setq result (replace-regexp "	" " " nil begin-point end-point))
 
-    (when (and result (> result 0))
-      (message "WARNING: %s tab characters found!" result)) ))
+      (when (and result (> result 0))
+        (message "WARNING: %s tab characters found!" result)) )) )
 
 (defun scrub-when-modifiable ()
   (when (buffer-modifiable-p)
     (scrub-dos-eol)
     (scrub-tabs) ))
+
+(defun what-face (pos)
+  (interactive "d")
+  (let ((face (or (get-char-property (point) 'read-face-name)
+                  (get-char-property (point) 'face))))
+    (if face (message "Face: %s" face) (message "No face at %d" pos))))

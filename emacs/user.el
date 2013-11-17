@@ -119,8 +119,6 @@
   (lambda ()
     (ansi-color-for-comint-mode-on)
 
-    (setq show-trailing-whitespace nil)   ;; disable trailing whitespace highlighting
-
     ;; make up-down go through the history list.
     (local-set-key (kbd "<up>") 'comint-previous-input)
     (local-set-key (kbd "<down>") 'comint-next-input))
@@ -131,12 +129,6 @@
 ;;----------------------------------------------------------------------
 
 (require 'term)
-
-(add-hook 'term-mode-hook
-  ;; disable trailing whitespace for terminal emulation
-  (lambda ()
-    (setq show-trailing-whitespace nil))
-  t)
 
 ;; setup a hook that runs when the term process exits
 (defvar term-process-exit-hook nil
@@ -170,9 +162,6 @@
 
   (add-hook 'eshell-mode-hook
     (lambda ()
-      ;; disable trailing whitespace
-      (setq show-trailing-whitespace nil)
-
       ;; add a list of commands that will pop a term buffer for out-of-eshell
       ;; handling. Note: the variable eshell-visual-commands is buffer-local.
       (setq eshell-visual-commands

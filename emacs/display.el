@@ -83,8 +83,6 @@
      (set-face-background 'cperl-nonoverridable-face "grey5")
      (set-face-foreground 'cperl-nonoverridable-face "DeepSkyBlue4") ))
 
-(add-hook 'ediff-mode-hook 'set-custom-ediff-faces t)
-
 (defun set-custom-ediff-faces ()
   (let
     ((diff-bg-color "khaki")
@@ -126,4 +124,28 @@
 
     (set-face-background 'ediff-fine-diff-C "dark khaki")
     (set-face-foreground 'ediff-fine-diff-C "red") ))
+
+(add-hook 'ediff-mode-hook 'set-custom-ediff-faces t)
+
+(setq whitespace-mode-hook nil)
+
+(add-hook 'whitespace-mode-hook
+  (lambda ()
+    (set-face-background 'whitespace-tab "red")
+    (set-face-foreground 'whitespace-tab "yellow")
+
+    (set-face-attribute 'whitespace-tab nil :underline t)
+    (set-face-attribute 'whitespace-tab nil :inverse-video nil)
+
+    (set-face-background 'whitespace-trailing "red")
+    (set-face-foreground 'whitespace-trailing "yellow")
+
+    (set-face-attribute 'whitespace-trailing nil :underline t)
+    (set-face-attribute 'whitespace-trailing nil :inverse-video nil))
+  t)
+
+
+
+
+
 

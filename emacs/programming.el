@@ -31,14 +31,36 @@
 ;;                   whitespace dogma
 ;;----------------------------------------------------------------------
 
-;; space vs. tab, trailing, can get into alot of trouble committing
-;; "dirty" files.
-
 (setq-default indent-tabs-mode nil)
 
 (require 'whitespace)
 
-(setq-default whitespace-style '(face trailing tabs))
+(defun update-whitespace-mappings ( type char map-to )
+  (let
+    ((new-mapping  nil)
+     (replaced nil))
+
+    (mapc (lambda ( mapping )
+            (unless (eq (car mapping) type)
+              (setq new-mapping (cons mapping new-mapping)) ))
+      whitespace-display-mappings)
+
+    (setq whitespace-display-mappings
+      (cons (list type char (make-vector 1 map-to))
+            (reverse new-mapping))) ))
+
+(setq whitespace-style '(face trailing tabs empty tab-mark))
+
+(update-whitespace-mappings 'tab-mark ?	 ?ɤ)
+(update-whitespace-mappings 'space-mark ? ?ɤ)
+
+(defun warn-if-tabs-in-buffer ()
+  (interactive)
+
+  (save-excursion
+    (beginning-of-buffer)
+    (when (search-forward "	" nil t)
+      (message "!WARNING! TAB chacters found in this buffer!"))))
 
 ;;----------------------------------------------------------------------
 ;;                      font-lock engine
@@ -113,8 +135,8 @@
 ;; I will enventually create my interactive merge interface with this
 ;; mode as a foundation. Until then tweak the basics.
 
-(require 'ediff)		          ;; 2-3 way merge tool, can be used
-					  ;; for cherry picking and splitting
+(require 'ediff)          ;; 2-3 way merge tool, can be used
+                          ;; for cherry picking and splitting
 
 (setq
   ediff-custom-diff-options "-U3"         ;; same for ediff
@@ -164,6 +186,8 @@
   (turn-on-font-lock)                       ;; enable syntax highlighting
 
   ;; highlight all fucked up files.
+  (warn-if-tabs-in-buffer)
+  (warn-if-dos-eol)
   (whitespace-mode)
 
   (configure-for-buffer-ring buffer-ring-mode)
@@ -233,9 +257,9 @@
 ;;----------------------------------------------------------------------
 
 (setq auto-mode-alist (append '(("\\.c$"       . c-mode)
-				("\\.cc$"      . c++-mode)
-				("\\.cpp$"     . c++-mode)
-				("\\.h$"       . c++-mode)
+                                ("\\.cc$"      . c++-mode)
+                                ("\\.cpp$"     . c++-mode)
+                                ("\\.h$"       . c++-mode)
                                  ) auto-mode-alist ))
 
 (defun c-list-fn-signatures ()
