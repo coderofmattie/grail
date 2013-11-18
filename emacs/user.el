@@ -17,7 +17,9 @@
 (require 'dwim-tab)
 (require 'buffer-ring)
 
-(use-grail-profiles 0 "tramp" "spell" "registers" "browser")
+(use-grail-profiles 0 "tramp" "spell" "registers" "browser" "terminal")
+
+(use-grail-profiles 10 "activate-buffer-status")
 
 ;;----------------------------------------------------------------------
 ;;                    General Modifications
@@ -34,18 +36,38 @@
 
 ;; basic settings
 
-;; default to UNIX line terminators
-(setq buffer-file-coding-system 'utf-8-unix)
-(prefer-coding-system 'utf-8-unix)
-(set-language-environment "UTF-8")
-(set-locale-environment "en_US.UTF-8")
+;;----------------------------------------------------------------------
+;; buffer coding and line ending handling
+;;
+;; unix eol, utf-8 coding, and tab character insertion
+;;----------------------------------------------------------------------
+(setq
+  buffer-file-coding-system 'utf-8-unix
+  set-language-environment "UTF-8"
+  set-locale-environment "en_US.UTF-8")
 
-;; force it everywhere
 (setq file-coding-system-alist '( (".*" . utf-8-unix) ))
 
+(prefer-coding-system 'utf-8-unix)
+
+(require 'eol-utilities)
+
+;;----------------------------------------------------------------------
+;; whitespace handling. tabs are evil.
+;;----------------------------------------------------------------------
+
+(setq-default indent-tabs-mode nil)
+(require 'whitespace-utilities)
+
+;;----------------------------------------------------------------------
+;; lots of defaults that will be broken out when they become more than
+;; setting a single flag.
+;;----------------------------------------------------------------------
+
 (setq
-  ;; backups are a poor substitute for revision control
-  make-backup-files nil
+  ;; turn off backups and auto-save is just plain dangerous
+  backup-inhibited t
+  auto-save-default nil
 
   ;; protect against IO errors by writing to a temp file and then renaming
   ;; so the original is not trashed by partial writes.
@@ -65,11 +87,7 @@
 
   ;; files can have elisp statements that are executed when the
   ;; file is loaded. My paranoia says hell no.
-  enable-local-eval nil )
-
-;; for increased security create a temporary directory and set
-;; temporary-file-directory to that.
-(setq temporary-file-directory (make-temp-file "emacs" t))
+  enable-local-eval nil)
 
 ;;----------------------------------------------------------------------
 ;; use marmelade to get the latest and greatest stuff
@@ -125,31 +143,6 @@
   t)
 
 ;;----------------------------------------------------------------------
-;;                    Term
-;;----------------------------------------------------------------------
-
-(require 'term)
-
-;; setup a hook that runs when the term process exits
-(defvar term-process-exit-hook nil
-  "a hook run when the term process exists")
-
-;; infect the term-sentinel function
-(defadvice term-sentinel (around term-sentinel-hook (proc msg))
-  (let
-    ((pbuffer (process-buffer proc))
-     (did-exit (memq (process-status proc) '(signal exit))))
-    ad-do-it
-    (when did-exit (run-hooks-with-arg term-process-exit-hook pbuffer)) ))
-
-;; get rid of the buffer when the process exits
-(add-hook 'term-process-exit-hook (lambda ( pbuffer )
-                                    (kill-buffer pbuffer))
-  t)
-
-(ad-activate 'term-sentinel)
-
-;;----------------------------------------------------------------------
 ;;                    EShell
 ;;----------------------------------------------------------------------
 
@@ -165,7 +158,7 @@
       ;; add a list of commands that will pop a term buffer for out-of-eshell
       ;; handling. Note: the variable eshell-visual-commands is buffer-local.
       (setq eshell-visual-commands
-	(append eshell-visual-commands (list "ssh" "su" "telnet"
+ (append eshell-visual-commands (list "ssh" "su" "telnet"
                                              "ftp" "lftp" "links")))
 
       ;; I rarely want to quit eshell. when I do I can use quit. map
@@ -201,50 +194,9 @@
 (ido-mode 1)
 
 ;;----------------------------------------------------------------------
-;; attempt to make paths writable. not normally how I do it but perforce
-;; brain damage has brought me to this.
+;; read/write perm handling
 ;;----------------------------------------------------------------------
-(defun turn-off-read-only ()
-  (interactive)
-
-  (read-only-mode 0)
-  (view-mode 0)
-  (make-path-writable buffer-file-name))
-
-(defun turn-on-read-only ()
-  (interactive)
-
-  (read-only-mode 1)
-  (view-mode 1) )
-
-(defun my-toggle-read-only ()
-  (interactive)
-
-  (if (or (and (local-variable-p 'view-read-only) view-read-only)
-          (and (local-variable-p 'buffer-read-only) buffer-read-only))
-    (turn-off-read-only)
-    (turn-on-read-only) ))
-
-(global-set-key (kbd "C-x C-q") 'my-toggle-read-only)
-
-(defun make-path-writable ( path )
-  (set-file-modes path
-    (file-modes-symbolic-to-number "ug+w" (file-modes path))) )
-
-(defun choose-writeable-or-view ( path )
-  (unless (file-writable-p buffer-file-name)
-    (if (eq 't (y-or-n-p "Read Only File: attempt to make writable? "))
-      (progn
-        (make-path-writable buffer-file-name)
-        (turn-off-read-only)
-        (message "making file writable and turning off read-only") )
-      (progn
-        (message "turning on read-only")
-        (turn-on-read-only)) )))
-
-(add-hook 'find-file-hook
-  (lambda ()
-    (choose-writeable-or-view buffer-file-name)) )
+(require 'rw-utilities)
 
 ;;----------------------------------------------------------------------
 ;; Beta features
@@ -254,4 +206,3 @@
 ;; require some more work for completion.
 
 (load-user-elisp "beta")
-

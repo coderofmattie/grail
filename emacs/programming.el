@@ -4,8 +4,8 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
-(eval-when-compile
-  (require 'grail-profile))
+(require 'grail-profile)
+(require 'buffer-status)
 
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
@@ -21,61 +21,6 @@
 (use-grail-profiles 3 "template" "slime")
 
 ;;----------------------------------------------------------------------
-;;                       misc.
-;;----------------------------------------------------------------------
-
-;; found this on emacs-wiki , all scripts are automatically made executable.
-(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t)
-
-;;----------------------------------------------------------------------
-;;                   whitespace dogma
-;;----------------------------------------------------------------------
-
-(setq-default indent-tabs-mode nil)
-
-(require 'whitespace)
-
-(defun update-whitespace-mappings ( type char map-to )
-  (let
-    ((new-mapping  nil)
-     (replaced nil))
-
-    (mapc (lambda ( mapping )
-            (unless (eq (car mapping) type)
-              (setq new-mapping (cons mapping new-mapping)) ))
-      whitespace-display-mappings)
-
-    (setq whitespace-display-mappings
-      (cons (list type char (make-vector 1 map-to))
-            (reverse new-mapping))) ))
-
-(setq whitespace-style '(face trailing tabs empty tab-mark))
-
-(update-whitespace-mappings 'tab-mark ?	 ?ɤ)
-(update-whitespace-mappings 'space-mark ? ?ɤ)
-
-(defun warn-if-tabs-in-buffer ()
-  (interactive)
-
-  (save-excursion
-    (beginning-of-buffer)
-    (when (search-forward "	" nil t)
-      (message "!WARNING! TAB chacters found in this buffer!"))))
-
-;;----------------------------------------------------------------------
-;;                      font-lock engine
-;;----------------------------------------------------------------------
-
-;; tune font-lock, important for hairy files.
-(setq jit-lock-contextually nil          ;; only refontify modified lines
-      jit-lock-defer-contextually t      ;; until 5 seconds has passed
-      jit-lock-stealth-time 10)          ;; refontify 10 seconds after no input
-
-
-;; 2008-10-25 : ? Deprecated I think. a relic of the CVS 23.x days
-(auto-composition-mode 0) ;; 23.x this is buggy, definitely for 23.0.60
-
-;;----------------------------------------------------------------------
 ;;                          GUD
 ;;----------------------------------------------------------------------
 
@@ -85,7 +30,6 @@
 ;;----------------------------------------------------------------------
 ;;                           VC
 ;;----------------------------------------------------------------------
-
 (require 'vc)
 
 ;; VC - I wish Version Control did foo ... oh wait, it's already bound
@@ -183,11 +127,7 @@
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
 
-  (turn-on-font-lock)                       ;; enable syntax highlighting
-
   ;; highlight all fucked up files.
-  (warn-if-tabs-in-buffer)
-  (warn-if-dos-eol)
   (whitespace-mode)
 
   (configure-for-buffer-ring buffer-ring-mode)
@@ -209,6 +149,9 @@
   (local-set-key (kbd "C-c ;") 'comment-region)
 
   (local-set-key (kbd "C-c f s") 'sort-lines)
+
+  ;; found this on emacs-wiki , all scripts are automatically made executable.
+  (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t)
 
   (configure-for-version-control))
 
