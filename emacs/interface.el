@@ -15,8 +15,8 @@
 
 (display-time)                            ;; display the time on the modeline
 
-(column-number-mode 1)		          ;; handy guides when following
-(line-number-mode 1)			  ;; errors
+(column-number-mode 1)                    ;; handy guides when following
+(line-number-mode 1)                      ;; errors
 
 (toggle-uniquify-buffer-names)                ;; more intelligent unique buffer names, will automatically
                                               ;; simplify buffer names when collisions are reduced.
@@ -26,6 +26,9 @@
 
 (setq initial-scratch-message nil)            ;; nix the scratch message, and the splash screen.
 (setq inhibit-splash-screen t)
+(setq inhibit-startup-echo-area-message t)
+
+(setq global-font-lock-mode 1)                ;; turn on font lock mode globally
 
 (transient-mark-mode -1)                        ;; not a big fan of transient mark mode.
 
