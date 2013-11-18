@@ -39,7 +39,7 @@
     (if (eq 't (y-or-n-p "Read Only File: attempt to make writable? "))
       (progn
         (rw-make-path-writable buffer-file-name)
-        (turn-off-read-only)
+        (rw-turn-off-buffer-read-only)
         (message "making file writable and turning off read-only") )
       nil)))
 
