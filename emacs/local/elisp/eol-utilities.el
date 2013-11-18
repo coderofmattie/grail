@@ -22,10 +22,7 @@
 
         (beginning-of-buffer)
 
-        (replace-regexp bad-eol-regex good-eol-character nil (point) end-point) )) )
-
-  (when (> (length buffer-file-name) 0)
-    (save-buffer)) )
+        (replace-regexp bad-eol-regex good-eol-character nil (point) end-point) )) ))
 
 (add-hook 'after-change-major-mode-hook 'warn-if-dos-eol-in-buffer t)
 
