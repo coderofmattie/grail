@@ -6,6 +6,7 @@
 ;;----------------------------------------------------------------------
 
 (require 'ucase-word)
+(require 'buffer-status)
 
 (eval-when-compile
   (require 'cl))
@@ -255,49 +256,6 @@
   (interactive)
   (save-excursion
     (do-lisp-list 'copy-region-as-kill) ))
-
-(defun warn-if-dos-eol ()
-  (interactive)
-  (save-excursion
-    (beginning-of-buffer)
-    (when (search-forward-regexp "$" nil t)
-      (message "!WARNING! DOS EOL lines in file"))))
-
-(defun scrub-dos-eol ()
-  (interactive)
-  (let
-    ((bad-eol-regex "$")
-     (good-eol-character ""))
-
-    (save-excursion
-      (let
-        ((end-point (progn (end-of-buffer) (point))))
-
-        (beginning-of-buffer)
-
-        (replace-regexp bad-eol-regex good-eol-character nil (point) end-point) )) )
-
-  (when (> (length buffer-file-name) 0)
-    (save-buffer)) )
-
-(defun scrub-tabs ()
-  (interactive)
-
-  (save-excursion
-    (let
-      ((end-point (progn
-                    (end-of-buffer)
-                    (point)))
-        (begin-point
-          (progn
-            (beginning-of-buffer)
-            (point)))
-        (result 0))
-
-      (setq result (replace-regexp "	" " " nil begin-point end-point))
-
-      (when (and result (> result 0))
-        (message "WARNING: %s tab characters found!" result)) )) )
 
 (defun scrub-when-modifiable ()
   (when (buffer-modifiable-p)
