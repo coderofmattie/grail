@@ -28,7 +28,9 @@
 ;;; Code:
 
 (defconst buffer-ring-version "0.1.1" "buffer-ring version")
+
 (require 'dynamic-ring)
+(require 'buffer-status)
 
 ;;
 ;; default keymap
@@ -99,7 +101,7 @@
     (if buffer-ring
       ;; if it already exists return the ring.
       (progn
-        (message "Adding to existing ring: %s" name)
+        (buffer-status-add (format "Adding to existing ring: %s" name))
         buffer-ring)
 
       ;; otherwise create a new ring buffer, which is a cons of the
