@@ -25,9 +25,6 @@
     browser-profile-ring-name nil))
 
 (defadvice eww-setup-buffer (after browser-profile-hooks)
-  (make-variable-buffer-local 'show-trailing-whitespace)
-  (setq show-trailing-whitespace nil)
-
   (when (browser-profile-unique-p)
     (rename-buffer browser-profile-buffer-name)
 
