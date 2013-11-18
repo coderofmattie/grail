@@ -7,7 +7,7 @@
 (defvar perforce-trees nil)
 
 (defun perforce-in-use-p ()
-  (if (perfoce-trees)
+  (if perforce-trees
     t
     nil))
 
@@ -48,7 +48,7 @@
       (mapc (lambda ( perforce-tree )
               (when (pforce-is-subdir-of perforce-tree query-path)
                 (throw 'is-pforce t)))
-        pforce-trees)
+        perforce-trees)
 
       nil)))
 

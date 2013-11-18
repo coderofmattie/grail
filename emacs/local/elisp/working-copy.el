@@ -88,9 +88,9 @@
   (interactive)
 
   (wc-update-local-file)
-  (wc-rcs-checkin "first check-in")
-
   (wc-update-upstream-file)
-  (wc-update-ancestor-file))
+  (wc-update-ancestor-file)
+
+  (wc-rcs-checkin "first check-in"))
 
 (provide 'working-copy)
