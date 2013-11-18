@@ -223,27 +223,27 @@
 
     (defvar system-font-family nil)
 
-    (grail-trap
-      "Loading the OS specific elisp."
-
-      (load-user-elisp
-        (cond
-          ((string-equal "gnu/linux" system-type)  "linux")
-          ((string-equal "darwin"    system-type)  "darwin")
-          ((string-equal "windows"   system-type)  "windows"))))
-
-    (grail-trap
-      "Loading the hostname specific elisp."
-
-      (load-user-elisp
-        (system-name)) )
-
     ;; save the state of load-path after the platform file if any has
     ;; been loaded.
     (setq grail-platform-load-path load-path)
 
     ;; integrate the user's Elisp tree into the load-path for the first time.
     (grail-extend-load-path)
+
+    (grail-trap
+      "Loading the OS specific elisp."
+
+      (load-user-elisp
+        (cond
+          ((string-equal "gnu/linux" system-type)  "systems/linux")
+          ((string-equal "darwin"    system-type)  "systems/darwin")
+          ((string-equal "windows"   system-type)  "systems/windows"))))
+
+    (grail-trap
+      "Loading the hostname specific elisp."
+
+      (load-user-elisp
+        (concat "hosts/" (system-name))) )
 
     ;;----------------------------------------------------------------------
     ;; support for profiles.
