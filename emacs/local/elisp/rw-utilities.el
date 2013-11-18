@@ -33,7 +33,8 @@
   (set-file-modes path
     (file-modes-symbolic-to-number "ug+w" (file-modes path))) )
 
-(defun rw-ask-if-make-writable ( path )
+(defun rw-ask-if-make-writable ()
+  (interactive)
   (unless (file-writable-p buffer-file-name)
     (if (eq 't (y-or-n-p "Read Only File: attempt to make writable? "))
       (progn
