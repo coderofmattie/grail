@@ -30,5 +30,5 @@
 ;; for buffer switching outside of buffer ring
 (global-set-key (kbd "<M-tab>") 'other-window-non-interactive)
 
-
-
+(global-set-key (kbd "<prior>") 'beginning-of-buffer)
+(global-set-key (kbd "<next>")  'end-of-buffer)
