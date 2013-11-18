@@ -10,7 +10,7 @@
   (concat buffer-file-name ".local"))
 
 (defun wc-upstream-file ()
-  (concat buffer-file-name ".local"))
+  (concat buffer-file-name ".upstream"))
 
 (defun wc-write-to-file ( path )
   (save-excursion
@@ -42,33 +42,42 @@
 (defun wc-command-buffer ()
   (get-buffer-create "*working-copy-rcs*"))
 
+(defvar wc-wrappers-dir (concat grail-elisp-root "/wrappers/"))
+
 (defun wc-run-rcs-command ( command args )
   (catch 'abort
     (let
-      ((rcs-buffer (wc-command-buffer))
-       (check-in-dir (file-name-directory (wc-local-file))))
+      ((rcs-buffer (get-buffer-create "*wc rcs*"))
+       (old-buffer (current-buffer)))
 
-      (unless (and check-in-dir (file-directory-p check-in-dir))
-        (message "wc RCS abort! directory %s does not exist!")
-        (throw 'abort))
+      (save-excursion
+        (with-current-buffer rcs-buffer
+          (apply 'start-process "working-copy-rcs" rcs-buffer command args))
 
+        (pop-to-buffer rcs-buffer nil t)
+        (other-window 1) )) ))
+
+(defun wc-rcs-start-for-buffer ()
+  (let
+    ((check-in-dir (file-name-directory (wc-local-file))))
+
+    (unless (and check-in-dir (file-directory-p check-in-dir))
       (let
         ((rcs-storage (concat check-in-dir "/RCS")))
 
         (unless (file-directory-p rcs-storage)
-          (make-directory rcs-storage)) )
+          (make-directory rcs-storage)) )))
 
-      (with-current-buffer rcs-buffer
-        (apply 'start-process "working-copy-rcs" rcs-buffer command (cons "-t-wc-file" args)))
+  (wc-rcs-checkin "first commit"))
 
-      (pop-to-buffer rcs-buffer nil t) )))
-
-(defun wc-rcs-checkin ( log-message )
-  (wc-run-rcs-command "ci" `("-u" ,(concat "-m" log-message) ,(wc-local-file)))
+(defun wc-rcs-checkout-only ()
   (wc-run-rcs-command "co" `("-l" ,(wc-local-file))) )
 
+(defun wc-rcs-checkin ( log-message )
+  (wc-run-rcs-command (concat wc-wrappers-dir "rcs-ci") `( ,(wc-local-file) ,log-message))
+  (wc-rcs-checkout-only))
+
 (defun wc-local-commit ( log-message )
-  (interactive "commit message: %s")
   (catch 'abort
     (unless log-message
       (message "you did not supply a commit message")
@@ -91,6 +100,6 @@
   (wc-update-upstream-file)
   (wc-update-ancestor-file)
 
-  (wc-rcs-checkin "first check-in"))
+  (wc-rcs-start-for-buffer))
 
 (provide 'working-copy)
