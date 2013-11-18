@@ -1,0 +1,11 @@
+#! /bin/bash
+
+file=$1
+message=$2
+
+echo <<EOF | ci -u "$1"
+description.
+$2
+.
+
+EOF
