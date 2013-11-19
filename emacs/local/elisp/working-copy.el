@@ -119,6 +119,7 @@
     (buffer-substring start-of-log end-of-log) ))
 
 (defun wc-commit-from-log-buffer ()
+  (interactive)
   (let
     ((log-buf (current-buffer)))
 
@@ -131,17 +132,15 @@
 
 (defun wc-setup-log-buffer ()
   (let
-    ((log-buffer (get-buffer-create "*rcs-log"))
-     (this-buffer (current-buffer)))
+    ((log-buffer (get-buffer-create "*wc-log*"))
+     (this-buffer (current-buffer))
+     (this-file  (wc-local-file)) )
 
-    (with-current-buffer
-      (make-variable-buffer-local 'file-to-commit)
-      (make-variable-buffer-local 'initiated-from-buffer)
+    (with-current-buffer log-buffer
+      (set (make-local-variable 'file-to-commit) this-file)
+      (set (make-local-variable 'initiated-from-buffer) this-buffer)
 
-      (setq file-to-commit (wc-local-file))
-      (setq initiated-from-buffer this-buffer)
-
-      (local-set-key (kbd "C-c C-c") 'wc-commmit-from-log-buffer))
+      (local-set-key (kbd "C-c C-c") 'wc-commit-from-log-buffer))
 
     log-buffer))
 
