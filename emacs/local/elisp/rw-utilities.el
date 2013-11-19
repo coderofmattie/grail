@@ -26,8 +26,8 @@
   (interactive)
 
   (if buffer-read-only
-    (turn-off-buffer-read-only)
-    (turn-on-buffer-read-only)) )
+    (rw-turn-off-buffer-read-only)
+    (rw-turn-on-buffer-read-only)) )
 
 (defun rw-make-path-writable ( path )
   (set-file-modes path
