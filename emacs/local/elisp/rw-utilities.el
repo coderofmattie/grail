@@ -12,15 +12,11 @@
 
 (defun rw-turn-off-buffer-read-only ()
   (interactive)
-
-  (read-only-mode 0)
-  (view-mode 0))
+  (read-only-mode 0))
 
 (defun rw-turn-on-buffer-read-only ()
   (interactive)
-
-  (read-only-mode 1)
-  (view-mode 1))
+  (read-only-mode 1))
 
 (defun rw-toggle-read-only ()
   (interactive)
