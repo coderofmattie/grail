@@ -12,6 +12,9 @@
 (defun wc-upstream-file ()
   (concat buffer-file-name ".upstream"))
 
+(defun wc-merge-file ()
+  (concat buffer-file-name ".merge"))
+
 (defun wc-working-copy-file-p ( path )
   (file-readable-p (concat path ".local")))
 
@@ -29,7 +32,9 @@
       (write-region (point) end-of-file path) )))
 
 (defun wc-insert-from-file ( path )
-  (insert-file-contents path nil nil nil t))
+  (if (file-readable-p path)
+    (insert-file-contents path nil nil nil t)
+    (message "could not find file %s to load" path) ))
 
 (defun wc-refresh-from-upstream ()
   (wc-insert-from-file (wc-upstream-file)))
@@ -37,16 +42,25 @@
 (defun wc-refresh-from-local ()
   (wc-insert-from-file (wc-local-file)))
 
+(defun wc-update-protected-file ( path )
+  (when (file-readable-p path)
+    (rw-make-path-writable path))
+
+  (wc-write-to-file path)
+
+  (rw-make-path-readonly path) )
+
 (defun wc-update-ancestor-file ()
-  (wc-write-to-file (wc-ancestor-file)))
+  (interactive)
+  (wc-update-protected-file (wc-ancestor-file)) )
+
+(defun wc-update-upstream-file ()
+  (interactive)
+  (wc-update-protected-file (wc-upstream-file)) )
 
 (defun wc-update-local-file ()
   (interactive)
   (wc-write-to-file (wc-local-file)))
-
-(defun wc-update-upstream-file ()
-  (interactive)
-  (wc-write-to-file (wc-upstream-file)))
 
 (defun wc-command-buffer ()
   (get-buffer-create "*working-copy-rcs*"))
@@ -158,6 +172,58 @@
 
   (wc-update-local-file)
   (wc-commit-local) )
+
+(defun wc-files-same-p ( file-a file-b )
+  (let
+    ((exit-status nil))
+
+    (with-temp-buffer
+      (setq exit-status
+        (shell-command (format "cmp %s %s" file-a file-b) (current-buffer) (current-buffer)) ))
+
+    (if (equal 0 exit-status)
+      t
+      nil) ))
+
+(defun wc-diff ( other-file other )
+  (save-buffer)
+
+  (catch 'same
+    (when (wc-files-same-p buffer-file-name other-file)
+      (message "wc: primary and %s copy are the same" other)
+      (throw 'same t))
+
+    (ediff-files buffer-file-name other-file)
+    (message "A is primary , B is %s" other) ))
+
+(defun wc-diff-local ()
+  (interactive)
+  (wc-diff (wc-local-file) "local") )
+
+(defun wc-diff-upstream ()
+  (interactive)
+  (wc-diff (wc-upstream-file) "upstream"))
+
+(defun wc-start-merge ()
+  (interactive)
+
+  (when (file-readable-p (wc-merge-file))
+    (delete-file (wc-merge-file)) )
+
+  (ediff-merge-files-with-ancestor
+    (wc-upstream-file) (wc-local-file) (wc-ancestor-file)
+    nil (wc-merge-file)) )
+
+(defun wc-finish-merge ()
+  (interactive)
+
+  (catch 'abort
+    (unless (file-readable-p (wc-merge-file))
+      (message "there is no merge in progress to finish.")
+      (throw 'abort t))
+
+    (wc-insert-from-file (wc-merge-file))
+    (file-delete (wc-merge-file)) ))
 
 (defun wc-init ()
   (interactive)

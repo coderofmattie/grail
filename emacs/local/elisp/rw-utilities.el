@@ -31,7 +31,11 @@
 
 (defun rw-make-path-writable ( path )
   (set-file-modes path
-    (file-modes-symbolic-to-number "ug+w" (file-modes path))) )
+    (file-modes-symbolic-to-number "u+w" (file-modes path))) )
+
+(defun rw-make-path-readonly ( path )
+  (set-file-modes path
+    (file-modes-symbolic-to-number "u-w" (file-modes path))) )
 
 (defun rw-ask-if-make-writable ()
   (interactive)
