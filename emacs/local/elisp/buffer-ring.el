@@ -119,7 +119,7 @@
 ;;
 
 (defun bfr-make-buffer-id ()
-  (number-to-string (random 500)))
+  (number-to-string (random 10000)))
 
 (defun bfr-set-buffer-id ( buffer id )
   (with-current-buffer buffer
