@@ -1,3 +1,13 @@
+* merging work
+
+  update both wrappers for diff and merge. they
+  both need to make sure a emacs is running so
+  they do not hang on waiting for a emacs.
+
+  need to test external diff, external 3 way merge
+
+* working copy / p4
+
 * shell
 
   make a comand that looks for a shell/term mode.
@@ -17,24 +27,9 @@
 
 * networking
 
-  make the net-wall script switch on hostname to keep it sane.
-
   finish the route replacement stuff for interfaces.
 
-  rename the config files for the various firewalls.
-
   inspect the firewalls to see if they are as tight as possible.
-
-  use the proxy on khan as it is a big performance win.
-
-* shell/session
-
-  going to lose my mind with the paths issues if it is not fixed.
-
-   - fix session first and get it right.
-
-   - fix zsh setup moving it's stuff to session so it is applied for
-     the session.
 
 * dired
 
@@ -74,11 +69,6 @@ two highest priorities are perl debugging and pulling out the vm
 * navigation
 
   investigate use of tags yet again
-
-* dos line endings.
-
-  finish fixing the dos line ending issue. need to hoist the
-  detection of a read-only buffer.
 
 * editing
 
@@ -146,18 +136,6 @@ bind pop to mark command.
 
   need alot of debugging work with sepia/padwalker etc... and using
   the trick from the office script.
-
-* working copy / p4
-
-  need working copy up and running real fast.
-
-  needs to have a way to detect when to turn on p4 mode. needs to
-  integrate with a vc p4 mode to know when to do switching.
-
-  when it syncs it restores p4 locking and takes updates. when
-  the update is done merge back.
-
-  there is a mode for p4.
 
 * firewall
 
