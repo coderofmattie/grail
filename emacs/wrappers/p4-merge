@@ -1,16 +1,23 @@
 #! /bin/bash
 
 ancestor_file=$1
-current_file=$2
+upstream_file=$2
 local_file=$3
 merge_file=$4
 
-exec /Applications/Emacs.app/Contents/MacOS/bin/emacsclient -n -e
-   "(ediff-3-way-merge \"$2\" \"$3\" \"$1\" nil \"$1\" )"
+host_sys=$(uname)
 
+case $host_sys in
+  "Darwin")
+     pgrep -i emacs
+     if [[ $? != 0 ]]
 
+     emacs_dir="/Applications/Emacs.app/Contents/MacOS/bin/"
 
-
-
-
-
+     exec /Applications/Emacs.app/Contents/MacOS/bin/emacsclient -n -e \
+       "(ediff-3-way-merge \"$upstream_file\" \"$local_file\" \"$ancestor_file\" nil \"$merge_file\" )"
+   ;;
+   *)
+     echo "no implementation for: $host_sys"
+   ;;
+esac
