@@ -245,6 +245,13 @@
       (load-user-elisp
         (concat "hosts/" (system-name))) )
 
+
+    (grail-trap
+      "Loading the username specific elisp."
+
+      (load-user-elisp
+        (concat "users/" (user-login-name))) )
+
     ;;----------------------------------------------------------------------
     ;; support for profiles.
     ;;----------------------------------------------------------------------
