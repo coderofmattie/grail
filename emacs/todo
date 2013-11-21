@@ -1,3 +1,49 @@
+* financials
+
+  get a card for myself. link all accounts to it and move
+  payment over to it.
+
+  dynadot
+
+  runbox
+
+  airvpn
+
+  laptop insurance
+
+  paypall account
+
+  move comcast over to it.
+
+  put a buffer in.
+
+  start a account for cloud server space. either ronku
+  or a full blown server. make sure it is in europe.
+
+* email
+
+  generate a new key for the account. make sure it
+  has a revoke key.
+
+* backups
+
+  get a cdrom backup of my encryption keys. also do a
+  full password list. put it in the safe box with the
+  backup drive.
+
+  make sure the revoke key is there !!!
+
+  make sure the encrypted filesystem stuff is on
+  the cdrom too.
+
+  verify the cdrom by sha1sum. write a script to
+  do it.
+
+  also I want the keys for airvpn on there.
+
+  find a way to backup the virtual box image.
+  make it rsync not a image copy.
+
 * merging work
 
   update both wrappers for diff and merge. they
@@ -6,8 +52,53 @@
 
   need to test external diff, external 3 way merge
 
+* tag work
+
+  finish the implementation and test the command queue
+  stuff.
+
+  figure out how to drive dir sets and update/refresh
+  a tags table.
+
+  make the right tags table available via the mode.
+  maybe there is a variable that could be used.
+
+  build some bindings etc.
+
+  look into building a grep command like interface
+  with the files hyperlinked so you do not have to
+  do the full loop.
+
+  do a update on a long idle timer, maybe 3 minutes.
+  it adds a find -mnewer based update on the tags
+  table and triggers the in emacs update.
+
 * working copy / p4
 
+  need to test all the working copy stuff. the various
+  kinds of update operations.
+
+  need to make sure that in every case external data
+  coming in does not result in a data loss scenario.
+  pushing the primary file off to local is a data loss
+  since the state of local is destroyed.
+
+  second step is to operate working copy from the
+  p4 utilities. the p4 functions should be scenarios
+  not just wrappers. this connection of p4 to working-copy
+  is the lowest layer.
+
+  need tree based operations. the key would be compiling
+  a list of every working copy path.
+
+  need a way in the perforce aspect to determine if a file
+  is perforce managed by path.
+
+  need a way to do file sets so operations can be set based.
+  yep it is vc emulation but there is not much of a option
+  outside of building a vc backend. actually that is a awesome
+  idea so look into what is involved. FUCKING AWESOME IDEA.
+      
 * shell
 
   make a comand that looks for a shell/term mode.
@@ -96,10 +187,6 @@ two highest priorities are perl debugging and pulling out the vm
 
   get the bloody indent working right.
 
-* grail hacking
-
-  when files like elisp bomb it still crashes everything.
-
 * clojure
 
   get the clojure examples rounded up and on the website. see if there is
@@ -118,10 +205,7 @@ two highest priorities are perl debugging and pulling out the vm
 
 * merging
 
-  do some ediff work. setup tab'ing so that left and right go between the diff panes
-  and down/up jumps between the merge pane. left and right should jump from merge
-  pane to the correct side.
-
+  make sure multi-file merging is working correctly.
 
 * templates
 
