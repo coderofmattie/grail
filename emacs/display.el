@@ -23,11 +23,13 @@
         (throw 'best-font canidate))
       nil)))
 
+(defconst codermattie-bg-color "grey5")
+
 (grail-set-faces
   ;; the default face
 
   (default
-    (background "grey5")
+    (background codermattie-bg-color)
     (foreground "grey65")
     (inverse-video nil)
     (box nil)
@@ -74,13 +76,13 @@
   '(progn
      (setq cperl-invalid-face nil)
 
-     (set-face-background 'cperl-array-face "grey5")
+     (set-face-background 'cperl-array-face codermattie-bg-color)
      (set-face-foreground 'cperl-array-face "aquamarine3")
 
-     (set-face-background 'cperl-hash-face "grey5")
+     (set-face-background 'cperl-hash-face codermattie-bg-color)
      (set-face-foreground 'cperl-hash-face "aquamarine3")
 
-     (set-face-background 'cperl-nonoverridable-face "grey5")
+     (set-face-background 'cperl-nonoverridable-face codermattie-bg-color)
      (set-face-foreground 'cperl-nonoverridable-face "DeepSkyBlue4") ))
 
 (defun set-custom-ediff-faces ()
@@ -137,15 +139,9 @@
     (set-face-attribute 'whitespace-tab nil :underline t)
     (set-face-attribute 'whitespace-tab nil :inverse-video nil)
 
-    (set-face-background 'whitespace-trailing "red")
+    (set-face-background 'whitespace-trailing codermattie-bg-color)
     (set-face-foreground 'whitespace-trailing "yellow")
 
     (set-face-attribute 'whitespace-trailing nil :underline t)
     (set-face-attribute 'whitespace-trailing nil :inverse-video nil))
   t)
-
-
-
-
-
-
