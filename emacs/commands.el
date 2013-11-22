@@ -281,3 +281,8 @@
                  (point))) )
 
       (copy-region-as-kill start end) )))
+
+(defun copy-region-to-clipboard ()
+  "copy the region to the clipboard"
+  (interactive)
+  (x-select-text (filter-buffer-substring (region-beginning) (region-end))) )
