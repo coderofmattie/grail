@@ -105,7 +105,9 @@
 
     (kill-buffer panel) ))
 
-(add-hook 'ediff-quit-hook 'teardown-ediff-after-merge)
+(add-hook 'ediff-quit-hook 'teardown-ediff-after-merge t)
+
+(require 'external-merge-command)
 
 ;; this is insanely great. It displays the function you are "in" in terms
 ;; of the point. Really nice for reading long functions.
