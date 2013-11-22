@@ -80,11 +80,11 @@
 
 (defun wc-build-rcs-command ( cmd next &rest args )
   (lexical-let
-    ((full-args (cons cmd args))
+    ((full-cmd  (string-join " " (cons cmd args)))
      (bind-next next))
 
     `((lambda ()
-        (start-process-shell-command "wc-rcs" (wc-get-rcs-buffer) ,(string-join " " full-args)) )
+        (start-process-shell-command "wc-rcs" (wc-get-rcs-buffer) ,full-cmd) )
 
        (lambda ()
          (message "rcs command did not start!")
