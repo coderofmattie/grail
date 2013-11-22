@@ -267,3 +267,8 @@
   (let ((face (or (get-char-property (point) 'read-face-name)
                   (get-char-property (point) 'face))))
     (if face (message "Face: %s" face) (message "No face at %d" pos))))
+
+(defun copy-region-to-clipboard ()
+  "copy the region to the clipboard"
+  (interactive)
+  (x-select-text (filter-buffer-substring (region-beginning) (region-end))) )

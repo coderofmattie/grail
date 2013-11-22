@@ -41,15 +41,6 @@
   (interactive "F")
   (find-file-read-only (locate-library (concat library-name ".el"))))
 
-;; as soon as it works on darwin it can go to stable.el.
-(defun copy-region-to-clipboard ()
-  "copy the region to the clipboard"
-  (interactive)
-  (let
-    ((x-select-enable-clipboard t))
-    (x-select-text (filter-buffer-substring (region-beginning) (region-end)) t)
-    ))
-
 (defun find-child-directory-in-ancestor ( child parent )
   (catch 'done
     (unless (file-accessible-directory-p parent) (throw 'done nil))

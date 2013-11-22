@@ -8,6 +8,9 @@
 ;; emacs 24 seems to need this
 (set-cursor-color "yellow")
 
+(setq
+  x-select-enable-clipboard t)
+
 ;; parameters that need to be setup before frames are created.
 
 (setq default-frame-alist
