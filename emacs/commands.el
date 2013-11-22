@@ -267,3 +267,17 @@
   (let ((face (or (get-char-property (point) 'read-face-name)
                   (get-char-property (point) 'face))))
     (if face (message "Face: %s" face) (message "No face at %d" pos))))
+
+(defun copy-buffer ( &rest args )
+  (interactive)
+
+  (save-excursion
+    (let
+      ((end   (progn
+                (end-of-buffer)
+                (point)))
+        (start (progn
+                 (beginning-of-buffer)
+                 (point))) )
+
+      (copy-region-as-kill start end) )))
