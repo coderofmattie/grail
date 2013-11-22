@@ -52,7 +52,8 @@
 (setq whitespace-style '(face trailing tabs empty tab-mark))
 
 (update-whitespace-mappings 'tab-mark ?	 ?ɤ)
-(update-whitespace-mappings 'space-mark ? ?ɤ)
+(update-whitespace-mappings 'space-mark (elt " " 0) ?ɤ)
+(update-whitespace-mappings 'newline-mark (elt "\n" 0) ?ɤ)
 
 (add-hook 'find-file-hook 'warn-if-tabs-in-buffer t)
 
