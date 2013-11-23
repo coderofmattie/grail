@@ -43,7 +43,7 @@
 
       " "
 
-      "[" (:propertize mode-name face (:weight bold)) ":" minor-mode-alist "]"
+      "[" (:propertize mode-name face (:weight bold)) "] "
 
       buffer-ring-modeline
 
@@ -51,5 +51,3 @@
   (force-mode-line-update))
 
 (provide 'mattie-modeline)
-
-

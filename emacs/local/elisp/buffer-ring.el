@@ -202,7 +202,7 @@
 
         (bfr-set-buffer-id (current-buffer) found-id))
 
-      (set (make-local-variable 'buffer-ring-modeline) (concat " Ring (" ring-name ") "))
+      (set (make-local-variable 'buffer-ring-modeline) (concat "(" ring-name ")"))
 
       (set (make-local-variable 'buffer-ring-element)
         (dyn-ring-insert buffer-ring
