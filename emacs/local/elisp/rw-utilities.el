@@ -1,6 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; read/write handling
 ;;----------------------------------------------------------------------
+(require 'file-utilities)
 
 ;; attempt to make paths writable. not normally how I do it but perforce
 ;; brain damage has brought me to this.
@@ -25,20 +26,12 @@
     (rw-turn-off-buffer-read-only)
     (rw-turn-on-buffer-read-only)) )
 
-(defun rw-make-path-writable ( path )
-  (set-file-modes path
-    (file-modes-symbolic-to-number "u+w" (file-modes path))) )
-
-(defun rw-make-path-readonly ( path )
-  (set-file-modes path
-    (file-modes-symbolic-to-number "u-w" (file-modes path))) )
-
 (defun rw-ask-if-make-writable ()
   (interactive)
   (unless (file-writable-p buffer-file-name)
     (if (eq 't (y-or-n-p "Read Only File: attempt to make writable? "))
       (progn
-        (rw-make-path-writable buffer-file-name)
+        (files-make-path-writable buffer-file-name)
         (rw-turn-off-buffer-read-only)
         (message "making file writable and turning off read-only") )
       nil)))
