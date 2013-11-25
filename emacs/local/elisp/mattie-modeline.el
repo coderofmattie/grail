@@ -47,7 +47,7 @@
 
       buffer-ring-modeline
 
-      "->" (which-func-mode ("" which-func-format)) ))
+      wc-modeline))
   (force-mode-line-update))
 
 (provide 'mattie-modeline)
