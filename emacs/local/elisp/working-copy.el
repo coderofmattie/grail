@@ -2,24 +2,49 @@
 ;; working-copy
 ;; emulate local commit features and deal with perforce.
 ;;----------------------------------------------------------------------
+(require 'file-utilities)
+
+(defvar wc-home-dir (concat (getenv "HOME") "/"))
+
+(defun wc-dir-for-buffer-file ( file )
+  (concat wc-home-dir "code/"
+    (files-child-of-path wc-home-dir (file-name-directory file))) )
+
+(wc-dir-for-buffer-file buffer-file-name)
+
+(defun wc-set-paths-for-buffer ()
+  (make-local-variable 'wc-ancestor-file-path)
+  (make-local-variable 'wc-local-file-path)
+  (make-local-variable 'wc-upstream-file-path)
+  (make-local-variable 'wc-merge-file-path)
+
+  (let
+    ((local-dir (wc-working-copy-dir-for-file buffer-file-name))
+      (filename  (file-name-nondirectory buffer-file-name)))
+
+    (unless (grail-garuntee-dir-path local-dir)
+      (message "wc: could not create or access directory: %s" local-dir) )
+
+    (setq
+      wc-ancestor-file-path (concat local-dir filename ".ancestor")
+      wc-local-file-path    (concat local-dir filename ".local")
+      wc-upstream-file-path (concat local-dir filename ".upstream")
+      wc-merge-file-path    (concat local-dir filename ".merge")) ))
 
 (defun wc-ancestor-file ()
-  (concat buffer-file-name ".ancestor"))
+  wc-ancestor-file-path)
 
 (defun wc-local-file ()
-  (concat buffer-file-name ".local"))
+  wc-local-file-path)
 
 (defun wc-upstream-file ()
-  (concat buffer-file-name ".upstream"))
+  wc-upstream-file-path)
 
 (defun wc-merge-file ()
-  (concat buffer-file-name ".merge"))
+  wc-merge-file-path)
 
-(defun wc-working-copy-file-p ( path )
-  (file-readable-p (concat path ".local")))
-
-(defun wc-working-copy-buffer-p ()
-  (file-readable-p (wc-local-file)))
+(defun wc-working-copy-file-p ()
+  (file-readable-p wc-local-file-path))
 
 (defun wc-write-to-file ( path )
   (save-excursion
@@ -44,11 +69,11 @@
 
 (defun wc-update-protected-file ( path )
   (when (file-readable-p path)
-    (rw-make-path-writable path))
+    (files-make-path-writable path))
 
   (wc-write-to-file path)
 
-  (rw-make-path-readonly path) )
+  (files-make-path-readonly path) )
 
 (defun wc-update-ancestor-file ()
   (interactive)
@@ -227,6 +252,8 @@
 
 (defun wc-init ()
   (interactive)
+
+  (wc-set-paths-for-buffer)
 
   (wc-update-local-file)
   (wc-update-upstream-file)

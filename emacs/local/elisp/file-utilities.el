@@ -34,8 +34,6 @@
           ((next-root  (car root-dirs))
            (next-child (car child-dirs)))
 
-          (message "root %s child %s" next-root next-child)
-
           (when next-root
             (unless (and next-root next-child)
               (throw 'done nil))
