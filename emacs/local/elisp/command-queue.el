@@ -12,6 +12,7 @@
 (defvar cmd-queue-run-handle nil)
 
 (defun cmd-queue-start ()
+  (message "starting command queue")
   (setq cmd-queue-run-handle
     (run-with-idle-timer cmd-queue-idle-start-work t 'cmd-queue-processor)) )
 
@@ -46,8 +47,8 @@
               (message "cmd-queue command %s did not start!" ,bind-command)
               (cmd-queue-finish-task nil))
 
-            (lambda ()
-              (message "cmd-queue command %s returned error!" ,bind-command)
+            (lambda ( exit-status )
+              (message "cmd-queue command %s returned error! %s" ,bind-command exit-status)
               (cmd-queue-finish-task nil))
 
             (lambda ()
@@ -60,7 +61,7 @@
 
 (defun cmd-queue-add-task ( command callback )
   (unless cmd-queue-run-handle
-    (cmd-queue-start) )
+    (cmd-queue-start))
   (setq cmd-queue-tasks (cons (cmd-queue-task-create command callback) cmd-queue-tasks)) )
 
 (defun cmd-queue-work-runnable-p ()
