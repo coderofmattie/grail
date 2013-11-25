@@ -3,22 +3,13 @@
 ;;
 ;; rouge system specific configuration
 ;;----------------------------------------------------------------------
-
 (require 'cm-string)
+(require 'file-utilities)
 (require 'perforce-utilities)
 
-(defun relative-to-home-path ( path &optional dir )
-  (let
-    ((home-dir (getenv "HOME")))
-
-    (concat "/"
-      (string-join "/" (split-string (concat home-dir "/" path) "[/]" t))
-      (if dir "/" "")) ))
-
-(pforce-add-tree (relative-to-home-path "/media/codebase/perforce/classic" t))
-(pforce-add-tree (relative-to-home-path "work/import-codebase" t))
-(pforce-add-tree (relative-to-home-path "work/core-codebase" t))
-(pforce-add-tree (relative-to-home-path "work/import-codebase" t))
+(pforce-add-tree (files-make-path-rooted-to-home "work/import-codebase"))
+(pforce-add-tree (files-make-path-rooted-to-home "work/core-codebase"))
+(pforce-add-tree (files-make-path-rooted-to-home "work/import-codebase"))
 
 (perforce-activate-with-working-copy)
 

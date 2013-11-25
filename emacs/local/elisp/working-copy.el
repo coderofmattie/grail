@@ -6,11 +6,9 @@
 
 (defvar wc-home-dir (concat (getenv "HOME") "/"))
 
-(defun wc-dir-for-buffer-file ( file )
+(defun wc-dir-for-file ( file )
   (concat wc-home-dir "code/"
     (files-child-of-path wc-home-dir (file-name-directory file))) )
-
-(wc-dir-for-buffer-file buffer-file-name)
 
 (defun wc-set-paths-for-buffer ()
   (make-local-variable 'wc-ancestor-file-path)
@@ -19,7 +17,7 @@
   (make-local-variable 'wc-merge-file-path)
 
   (let
-    ((local-dir (wc-working-copy-dir-for-file buffer-file-name))
+    ((local-dir (wc-dir-for-file buffer-file-name))
       (filename  (file-name-nondirectory buffer-file-name)))
 
     (unless (grail-garuntee-dir-path local-dir)
@@ -112,15 +110,15 @@
         (start-process-shell-command "wc-rcs" (wc-get-rcs-buffer) ,full-cmd) )
 
        (lambda ()
-         (message "rcs command did not start!")
+         (message "rcs command did not start! %s" ,full-cmd)
          (wc-popup-rcs-buffer))
 
        (lambda ()
-         (message "rcs command returned error!")
+         (message "rcs command returned error! %s" ,full-cmd)
          (wc-popup-rcs-buffer))
 
        (lambda ()
-         (message "rcs command completed.")
+         (message "rcs command completed. %s" ,full-cmd)
          (wc-popup-rcs-buffer)
          t)
        ,bind-next) ))

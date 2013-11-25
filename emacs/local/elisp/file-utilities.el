@@ -3,6 +3,11 @@
 ;;----------------------------------------------------------------------
 (require 'cm-string)
 
+(defconst files-home-dir (concat (getenv "HOME") "/"))
+
+(defun files-make-path-rooted-to-home ( path )
+  (concat files-home-dir path))
+
 (defun files-make-path-writable ( path )
   (set-file-modes path
     (file-modes-symbolic-to-number "u+w" (file-modes path))) )
