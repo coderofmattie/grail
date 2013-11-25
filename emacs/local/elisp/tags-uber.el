@@ -26,7 +26,7 @@
 ;; (tags-uber-delete-tags-file (tags-uber-tags-path "cperl-mode" "imports"))
 
 (defconst tags-uber-cmd-base
-  "ctags-exuberant -V -e --file-scope=yes --links=yes --sort=yes -a -L -")
+  "ctags-exuberant -V -e --links=yes -a -L -")
 
 (defun tags-uber-find-initialize ( file-match tree-list )
   (string-join " "
@@ -481,5 +481,18 @@
       (if runnable
         (tags-uber-queue-job runnable)
         nil)) ))
+
+(defun tags-uber-load-tags-for-mode ()
+  (interactive)
+  (catch 'done
+
+    (mapcar
+      (lambda (loaded-entry)
+        (when (string-equal major-mode (tags-uber-loaded-entry-mode loaded-entry))
+          (visit-tags-table (tags-uber-loaded-entry-file loaded-entry) t)
+          (message "tags uber: visting table %s" (tags-uber-loaded-entry-name loaded-entry))
+          (throw 'done t) ))
+      tags-uber-loaded-table)
+    nil))
 
 (provide 'tags-uber)
