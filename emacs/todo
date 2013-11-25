@@ -1,3 +1,21 @@
+p4
+---------------
+
+perforce-activate needs to trigger on trying to convert a buffer
+from ro -> rw as well
+
+wc
+---------------
+
+have rcs stop mutilating the headers on checkin. this churn
+will cause conflicts on every single merge.
+
+rcs-command execute is busted. doesn't print the command that
+got screwed up
+
+lexical binding problem in command formation for local commit.
+fix it now.
+
 * financials
 
   move payments over to the new card.
