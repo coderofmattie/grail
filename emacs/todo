@@ -1,7 +1,8 @@
 * financials
 
-  get a card for myself. link all accounts to it and move
-  payment over to it.
+  move payments over to the new card.
+
+  setup a new misinformation paypal account.
 
   dynadot
 
@@ -20,10 +21,18 @@
   start a account for cloud server space. either ronku
   or a full blown server. make sure it is in europe.
 
+* http/privacy
+
+  look at blocking a list of undesirable servers via
+  polipo. the firewall bogs down with a long block list.
+
+  look at other things polipo can do to lock things down
+  quite a bit, or even better do some spoofing if possible
+  just for fun.
+
 * email
 
-  generate a new key for the account. make sure it
-  has a revoke key.
+  generate the revoke key for the new e-mail key.
 
 * backups
 
@@ -32,6 +41,10 @@
   backup drive.
 
   make sure the revoke key is there !!!
+
+  move the revoke keys to external cdrom storage only.
+
+  burn at least two cdroms.
 
   make sure the encrypted filesystem stuff is on
   the cdrom too.
@@ -45,10 +58,6 @@
   make it rsync not a image copy.
 
 * merging work
-
-  update both wrappers for diff and merge. they
-  both need to make sure a emacs is running so
-  they do not hang on waiting for a emacs.
 
   need to test external diff, external 3 way merge
 
@@ -122,6 +131,10 @@
 
   inspect the firewalls to see if they are as tight as possible.
 
+* security
+
+  put the sshd on a wheel setup so only codermattie can pam authenticate.
+
 * dired
 
   create a way to zap all the dired buffers.
@@ -157,10 +170,6 @@ the broken-ness of the tools is not working anymore.
 
 two highest priorities are perl debugging and pulling out the vm
 
-* navigation
-
-  investigate use of tags yet again
-
 * editing
 
   fix single quote in lisp
@@ -182,10 +191,6 @@ two highest priorities are perl debugging and pulling out the vm
 
   it would be nice to insert a pair and then put the point inside
   the pair with a paren on each side.
-
-* bash
-
-  get the bloody indent working right.
 
 * clojure
 
@@ -221,15 +226,15 @@ bind pop to mark command.
   need alot of debugging work with sepia/padwalker etc... and using
   the trick from the office script.
 
+* database
+
+  see if there is a way to use sepia with DBI as a way to execute SQL
+  repl style from a SQL mode.
+
 * firewall
 
-  Need to get the firewall back on track, fix up the logging and consider
-  adding the active defenses back.
-
-  for firewall i want that splunk alternative handling logging. in fact
-  I want it for everything.
-
-  get a log view going. preferable as a background.
+  need a easier way to open close ports. this could be in the form
+  of other config's to handle load/unloads
 
 * perl commit
 
