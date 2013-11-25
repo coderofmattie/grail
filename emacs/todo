@@ -1,3 +1,12 @@
+moving stuff around
+-------------------
+
+move all networking to networking.
+
+make sure daemon stuff is in daemons
+
+move ssh out of shell and into networking
+
 p4
 ---------------
 
