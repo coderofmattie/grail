@@ -438,7 +438,7 @@
             (cons mode tags-name)
             selected-pair))
         tags-uber-selected-for-mode)
-      (cons mode tags-name)) ) )
+      (list (cons mode tags-name))) ) )
 
 (defvar tags-uber-running-job nil)
 
@@ -454,7 +454,8 @@
         (tags-uber-set-selected-for-mode loaded-mode loaded-name)) )
     (message "uber tags: job failure! mode %s name %s command %s" loaded-mode loaded-name command) )
 
-  (setq tags-uber-running-job nil)) )
+  (setq tags-uber-running-job nil))
+  (tags-uber-switch-for-mode))
 
 (defun tags-uber-queue-job ( loaded-entry )
   (catch 'abort
@@ -511,6 +512,8 @@
   (setq tags-uber-loaded-for-mode (cons mode table-name))
   t)
 
+(tags-uber-get-selected-for-mode "elisp-mode")
+
 (defun tags-uber-load-tags-for-mode ()
   (interactive)
 
@@ -521,7 +524,7 @@
 
       (if selected-table-name
         (let
-          ((load-entry (tags-uber-loaded-table-find major-mode selected-table-name)))
+          ((load-entry (tags-uber-loaded-find major-mode selected-table-name)))
           (tags-uber-visit-for-mode major-mode selected-table-name (tags-uber-loaded-entry-file load-entry)) )
         nil) )) )
 
