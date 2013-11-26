@@ -6,6 +6,7 @@
 ;;----------------------------------------------------------------------
 (require 'grail-profile)
 (require 'buffer-status)
+(require 'tags-uber)
 
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
@@ -126,11 +127,16 @@
     (local-set-key (kbd "<M-up>")   'buffer-torus-next-ring)
     (local-set-key (kbd "<M-down>") 'buffer-torus-prev-ring)) )
 
+(defun configure-for-tags-uber ()
+  (local-set-key (kbd "C-c t s") 'tags-search))
+
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
 
   ;; highlight all fucked up files.
   (whitespace-mode)
+
+  (configure-for-tags-uber)
 
   (configure-for-buffer-ring buffer-ring-mode)
 

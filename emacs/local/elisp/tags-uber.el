@@ -317,6 +317,8 @@
   (let
     ((generator (tags-uber-get-command-generator mode)))
 
+    (tags-uber-global-init)
+
     (catch 'abort
       (unless generator
         (message "tags uber: failed to find command generator for mode: %s" mode)
@@ -482,17 +484,45 @@
         (tags-uber-queue-job runnable)
         nil)) ))
 
+(defvar tags-uber-loaded-for-mode nil)
+
+(defun tags-uber-loaded-for-this-mode ()
+  (and tags-uber-loaded-for-mode
+       (string-equal major-mode tags-uber-loaded-for-mode)))
+
 (defun tags-uber-load-tags-for-mode ()
   (interactive)
+
   (catch 'done
 
     (mapcar
       (lambda (loaded-entry)
-        (when (string-equal major-mode (tags-uber-loaded-entry-mode loaded-entry))
+        (when (and
+                (string-equal major-mode (tags-uber-loaded-entry-mode loaded-entry))
+                (tags-uber-loaded-entry-status loaded-entry))
           (visit-tags-table (tags-uber-loaded-entry-file loaded-entry))
-          (message "tags uber: visting table %s" (tags-uber-loaded-entry-name loaded-entry))
           (throw 'done t) ))
       tags-uber-loaded-table)
     nil))
+
+(defun tags-uber-switch-for-mode ()
+  (if tags-uber-global-ready
+    (or (tags-uber-loaded-for-this-mode)
+        (tags-uber-load-tags-for-mode))
+    nil))
+
+(defadvice switch-to-buffer (after tags-switch)
+  (tags-uber-switch-for-mode)
+  ad-return-value)
+
+(defvar tags-uber-global-ready nil)
+
+(defun tags-uber-global-ready-p ()
+  tags-uber-global-ready)
+
+(defun tags-uber-global-init ()
+  (unless tags-uber-global-ready
+    (setq tags-uber-global-ready t)
+    (ad-activate 'switch-to-buffer)) )
 
 (provide 'tags-uber)
