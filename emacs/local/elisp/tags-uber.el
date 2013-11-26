@@ -555,4 +555,12 @@
     tags-uber-selected-for-mode nil
     tags-uber-loaded-for-mode nil))
 
+(defun tags-uber-incremental-search ( search-query )
+  (interactive "Mtag search incremental regex: " )
+  (tags-search search-query))
+
+(defun tags-uber-search ( search-query )
+  (interactive "Mtag search regex: " )
+  (tags-apropos search-query))
+
 (provide 'tags-uber)
