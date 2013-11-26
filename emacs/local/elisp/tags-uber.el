@@ -489,7 +489,7 @@
     (mapcar
       (lambda (loaded-entry)
         (when (string-equal major-mode (tags-uber-loaded-entry-mode loaded-entry))
-          (visit-tags-table (tags-uber-loaded-entry-file loaded-entry) t)
+          (visit-tags-table (tags-uber-loaded-entry-file loaded-entry))
           (message "tags uber: visting table %s" (tags-uber-loaded-entry-name loaded-entry))
           (throw 'done t) ))
       tags-uber-loaded-table)
