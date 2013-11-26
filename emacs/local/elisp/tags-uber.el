@@ -142,7 +142,7 @@
      (did-update nil))
 
     (mapc
-      (lambda (existing-entry)
+      (lambda ( existing-entry )
         (setq updated-table
           (cons
             (if (tags-uber-table-entry-same-p existing-entry new-entry)
@@ -163,10 +163,15 @@
     did-update))
 
 ;; (tags-uber-builder-table-update
-;;   (tags-uber-table-entry-create "cperl-mode" "imports" "imports.tags" "create" "update"))
+;;    (tags-uber-table-entry-create "cperl-mode" "imports" "imports.tags" "create" "update"))
 
 ;; (tags-uber-builder-table-update
-;;   (tags-uber-table-entry-create "cperl-mode" "exports" "imports.tags" "create" "update"))
+;;    (tags-uber-table-entry-create "cperl-mode" "exports" "imports.tags" "create" "update"))
+
+;; (tags-uber-builder-table-update
+;;    (tags-uber-table-entry-create "suck" "exports" "imports.tags" "create" "update"))
+
+;; tags-uber-builder-table
 
 ;; tags-uber-builder-table
 
@@ -271,15 +276,21 @@
 
 (defun tags-uber-loaded-mark-ready ( mode table-name )
   (let
-    ((ready-entry nil))
+    ((ready-entry nil)
+     (new-table nil))
 
-    (mapcar
-      (lambda ( entry )
-        (when (tags-uber-loaded-entry-matches-p mode table-name entry)
-          (setq ready-entry
-            (tags-uber-loaded-entry-mark-ready entry (tags-uber-create-timestamp)))) )
-      tags-uber-loaded-table)
+    (setq new-table
+      (mapcar
+        (lambda ( entry )
+          (if (tags-uber-loaded-entry-matches-p mode table-name entry)
+            (progn
+              (setq ready-entry
+                (tags-uber-loaded-entry-mark-ready entry (tags-uber-create-timestamp))) )
+            entry))
+        tags-uber-loaded-table))
 
+    (when ready-entry
+      (setq tags-uber-loaded-table new-table))
     ready-entry))
 
 ;; (tags-uber-loaded-mark-ready "cperl-mode" "imports")
@@ -303,7 +314,6 @@
 
 ;; (tags-uber-loaded-delete "cperl-mode" "imports")
 
-;; tags-uber-loaded-table
 
 (defun tags-uber-loaded-entry-purge ( mode table-name )
   (let
@@ -319,32 +329,30 @@
 
     (tags-uber-global-init)
 
-    (catch 'abort
+    (catch 'all-abort
       (unless generator
         (message "tags uber: failed to find command generator for mode: %s" mode)
         (throw 'abort t))
 
       (mapc
         (lambda ( new-table )
-          (let*
-            ((table-name   (car new-table))
-             (table-file   (tags-uber-tags-path mode table-name))
-             (source-trees (cdr new-table))
-             (commands     (funcall generator table-file source-trees)))
+          (catch 'table-abort
+            (let*
+              ((table-name   (car new-table))
+               (table-file   (tags-uber-tags-path mode table-name))
+               (source-trees (cdr new-table))
+               (commands     (funcall generator table-file source-trees)))
 
-            (dolist ( source-dir source-trees )
-              (unless (file-directory-p source-dir)
-                (message "uber tags: source directory %s does not exist. aborting add." source-dir)
-                (throw 'abort t)) )
+              (dolist ( source-dir source-trees )
+                (unless (file-directory-p source-dir)
+                  (throw 'table-abort t)) )
 
-            (tags-uber-loaded-entry-purge mode table-name)
+              (tags-uber-builder-table-update
+                (tags-uber-table-entry-create mode table-name table-file
+                  (car commands) (cdr commands)))
 
-            (tags-uber-builder-table-update
-              (tags-uber-table-entry-create mode table-name table-file
-                (car commands) (cdr commands)))
-
-            (tags-uber-loaded-add
-              (tags-uber-loaded-entry-create mode table-name table-file)) ))
+              (tags-uber-loaded-add
+                (tags-uber-loaded-entry-create mode table-name table-file)) )))
         tables)
       nil)))
 
@@ -360,8 +368,7 @@
 
 ;; tags-uber-loaded-table
 
-(defun tags-uber-loaded-table-entry-compare ( left right )
-  (message "got here")
+(defun tags-uber-loaded-entry-compare ( left right )
   (catch 'returned
     (let
       ((left-status  (tags-uber-loaded-entry-status left))
@@ -376,8 +383,7 @@
         left) )))
 
 (defun tags-uber-loaded-table-sort ( table )
-  (message "in sort")
-  (sort table 'uber-loaded-table-entry-compare))
+  (sort table 'tags-uber-loaded-entry-compare))
 
 (defconst tags-uber-refresh-interval (* 60 15))
 
@@ -396,8 +402,6 @@
           nil)) )))
 
 (defun tags-uber-next-to-load ()
-  (message "got there")
-
   (catch 'next-canidate
     (unless tags-uber-loaded-table
       (throw 'next-canidate nil))
@@ -463,7 +467,6 @@
       ((builder-entry (tags-uber-builder-table-find (tags-uber-loaded-entry-file loaded-entry)) )
        (builder-command nil))
 
-      (message "builder entry %s" (princ builder-entry) )
       (setq builder-command
         (if (tags-uber-loaded-entry-status loaded-entry)
           (tags-uber-table-entry-update builder-entry)
@@ -495,7 +498,6 @@
 
     (let
       ((runnable (tags-uber-next-to-load)))
-      (message "got to run")
 
       (if runnable
         (tags-uber-queue-job runnable)
