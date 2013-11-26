@@ -128,7 +128,8 @@
     (local-set-key (kbd "<M-down>") 'buffer-torus-prev-ring)) )
 
 (defun configure-for-tags-uber ()
-  (local-set-key (kbd "C-c i s") 'tags-search))
+  (local-set-key (kbd "C-c i i") 'tags-uber-incremental)
+  (local-set-key (kbd "C-c i s") 'tags-uber-search))
 
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
