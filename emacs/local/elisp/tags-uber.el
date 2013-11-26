@@ -416,22 +416,45 @@
 
     nil))
 
+(defvar tags-uber-selected-for-mode nil)
+
+(defun tags-uber-get-selected-for-mode ( mode )
+  (if tags-uber-selected-for-mode
+    (catch 'found
+      (mapc
+        (lambda ( selected-pair )
+          (when (string-equal mode (car selected-pair))
+            (throw 'found (cdr selected-pair)) ))
+        tags-uber-selected-for-mode)
+      nil)
+    nil))
+
+(defun tags-uber-set-selected-for-mode ( mode tags-name )
+  (setq tags-uber-selected-for-mode
+    (if tags-uber-selected-for-mode
+      (mapcar
+        (lambda ( selected-pair )
+          (if (string-equal (car selected-pair) mode)
+            (cons mode tags-name)
+            selected-pair))
+        tags-uber-selected-for-mode)
+      (cons mode tags-name)) ) )
+
 (defvar tags-uber-running-job nil)
 
 (defun tags-uber-job-callback ( command status )
+  (let
+    ((loaded-mode (tags-uber-loaded-entry-mode tags-uber-running-job))
+     (loaded-name (tags-uber-loaded-entry-name tags-uber-running-job)))
+
   (if status
     (progn
-      (tags-uber-loaded-mark-ready
-        (tags-uber-loaded-entry-mode tags-uber-running-job)
-        (tags-uber-loaded-entry-name tags-uber-running-job)))
+      (tags-uber-loaded-mark-ready loaded-mode loaded-name)
+      (unless (tags-uber-get-selected-for-mode loaded-mode)
+        (tags-uber-set-selected-for-mode loaded-mode loaded-name)) )
+    (message "uber tags: job failure! mode %s name %s command %s" loaded-mode loaded-name command) )
 
-    (progn
-      (message "uber tags: job failure! mode %s name %s command %s"
-        (tags-uber-loaded-entry-mode tags-uber-running-job)
-        (tags-uber-loaded-entry-name tags-uber-running-job)
-        command)) )
-
-  (setq tags-uber-running-job nil))
+  (setq tags-uber-running-job nil)) )
 
 (defun tags-uber-queue-job ( loaded-entry )
   (catch 'abort
@@ -459,13 +482,6 @@
       (setq tags-uber-running-job loaded-entry)
       (cmd-queue-add-task builder-command 'tags-uber-job-callback)) t))
 
-(defun tags-uber-reset-all ()
-  (interactive)
-  (setq
-    tags-uber-running-job nil
-    tags-uber-loaded-table nil
-    tags-uber-builder-table nil))
-
 (defun tags-uber-try-to-start-a-job ()
   (interactive)
 
@@ -488,28 +504,29 @@
 
 (defun tags-uber-loaded-for-this-mode ()
   (and tags-uber-loaded-for-mode
-       (string-equal major-mode tags-uber-loaded-for-mode)))
+       (string-equal major-mode (car tags-uber-loaded-for-mode))) )
+
+(defun tags-uber-visit-for-mode ( mode table-name table-file )
+  (visit-tags-table table-file)
+  (setq tags-uber-loaded-for-mode (cons mode table-name))
+  t)
 
 (defun tags-uber-load-tags-for-mode ()
   (interactive)
 
-  (catch 'done
+  (if (tags-uber-loaded-for-this-mode)
+    t
+    (let
+      ((selected-table-name (tags-uber-get-selected-for-mode major-mode)))
 
-    (mapcar
-      (lambda (loaded-entry)
-        (when (and
-                (string-equal major-mode (tags-uber-loaded-entry-mode loaded-entry))
-                (tags-uber-loaded-entry-status loaded-entry))
-          (visit-tags-table (tags-uber-loaded-entry-file loaded-entry))
-          (throw 'done t) ))
-      tags-uber-loaded-table)
-    nil))
+      (if selected-table-name
+        (let
+          ((load-entry (tags-uber-loaded-table-find major-mode selected-table-name)))
+          (tags-uber-visit-for-mode major-mode selected-table-name (tags-uber-loaded-entry-file load-entry)) )
+        nil) )) )
 
 (defun tags-uber-switch-for-mode ()
-  (if tags-uber-global-ready
-    (or (tags-uber-loaded-for-this-mode)
-        (tags-uber-load-tags-for-mode))
-    nil))
+  (and tags-uber-global-ready (tags-uber-load-tags-for-mode)) )
 
 (defadvice switch-to-buffer (after tags-switch)
   (tags-uber-switch-for-mode)
@@ -524,5 +541,15 @@
   (unless tags-uber-global-ready
     (setq tags-uber-global-ready t)
     (ad-activate 'switch-to-buffer)) )
+
+(defun tags-uber-reset-all ()
+  (interactive)
+  (setq
+    tags-uber-global-ready nil
+    tags-uber-running-job nil
+    tags-uber-loaded-table nil
+    tags-uber-builder-table nil
+    tags-uber-selected-for-mode nil
+    tags-uber-loaded-for-mode nil))
 
 (provide 'tags-uber)
