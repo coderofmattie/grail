@@ -6,12 +6,14 @@
 (require 'command-queue)
 (require 'cm-string)
 
+(require 'search-trees)
+
+(require 'ido)
+
 (defvar tags-uber-tags-dir (concat (getenv "HOME") "/code/tags"))
 
 (defun tags-uber-tags-path ( mode table-name )
   (concat tags-uber-tags-dir "/" mode "-" table-name))
-
-(tags-uber-tags-path "cperl-mode" "imports")
 
 (defun tags-uber-check-tags-dir ()
   (unless (file-directory-p tags-uber-tags-dir)
@@ -130,9 +132,9 @@
 ;;   (tags-uber-table-entry-create "cperl-mode" "imports" "imports.tags" "create" "update")
 ;;   (tags-uber-table-entry-create "cperl-mode" "imports" "imports.tags" "create" "update"))
 
-(tags-uber-table-entry-same-p
-  (tags-uber-table-entry-create "cperl-mode" "imports" "imports.tags" "create" "update")
-  (tags-uber-table-entry-create "cperl-mode" "exports" "imports.tags" "create" "update"))
+;; (tags-uber-table-entry-same-p
+;;   (tags-uber-table-entry-create "cperl-mode" "imports" "imports.tags" "create" "update")
+;;   (tags-uber-table-entry-create "cperl-mode" "exports" "imports.tags" "create" "update"))
 
 (defvar tags-uber-builder-table '())
 
@@ -314,7 +316,6 @@
 
 ;; (tags-uber-loaded-delete "cperl-mode" "imports")
 
-
 (defun tags-uber-loaded-entry-purge ( mode table-name )
   (let
     ((deleted (tags-uber-loaded-delete mode table-name)))
@@ -332,7 +333,7 @@
     (catch 'all-abort
       (unless generator
         (message "tags uber: failed to find command generator for mode: %s" mode)
-        (throw 'abort t))
+        (throw 'all-abort t))
 
       (mapc
         (lambda ( new-table )
@@ -355,6 +356,14 @@
                 (tags-uber-loaded-entry-create mode table-name table-file)) )))
         tables)
       nil)))
+
+(defun tags-uber-update-trees-for-host ( host mode )
+  (mapc
+    (lambda ( table-list )
+      (tags-uber-update-for-mode mode table-list))
+    (search-trees-get-for-host-and-mode host mode)))
+
+;; (tags-uber-update-trees-for-host "Khan" "cperl-mode")
 
 ;; (setq tags-uber-builder-table nil)
 
@@ -514,7 +523,29 @@
   (setq tags-uber-loaded-for-mode (cons mode table-name))
   t)
 
-(tags-uber-get-selected-for-mode "elisp-mode")
+;; (tags-uber-get-selected-for-mode "elisp-mode")
+
+(defun tags-uber-all-table-names ( mode )
+  (let
+    ((found-tables nil))
+
+    (mapc
+      (lambda ( entry )
+        (when (string-equal mode (tags-uber-loaded-entry-mode entry))
+          (cons found-tables (tags-uber-loaded-entry-name entry) found-tables) ))
+      tags-uber-loaded-table)
+
+    found-tables))
+
+(defun tags-uber-select-table ()
+  (interactive)
+
+  (let
+    ((tables (tags-uber-all-table-names major-mode) ))
+
+    (if tables
+      (ido-completing-read "choose table: " tables)
+      (message "no tables were found for the current mode %s" major-mode)) ))
 
 (defun tags-uber-load-tags-for-mode ()
   (interactive)
