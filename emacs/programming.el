@@ -127,6 +127,11 @@
     (local-set-key (kbd "<M-up>")   'buffer-torus-next-ring)
     (local-set-key (kbd "<M-down>") 'buffer-torus-prev-ring)) )
 
+(grail-trap
+  "Loading search paths."
+
+  (load-user-elisp "search-paths"))
+
 (defun configure-for-tags-uber ()
   (local-set-key (kbd "C-c i i") 'tags-uber-incremental)
   (local-set-key (kbd "C-c i s") 'tags-uber-search))
