@@ -6,11 +6,11 @@
 (defvar search-trees-global-user nil)
 
 (defun search-trees-add-for-host ( host mode &rest tree-list )
-  (dolist (next-tree tree)
+  (dolist (next-tree tree-list)
     (setq search-trees-global-host (cons (list host mode next-tree) search-trees-global-host)) ))
 
-(defun search-trees-add-for-user ( user mode &rest tree )
-  (dolist (next-tree tree)
+(defun search-trees-add-for-user ( user mode &rest tree-list )
+  (dolist (next-tree tree-list)
     (setq search-trees-global-user (cons (list user mode next-tree) search-trees-global-user)) ))
 
 (defun search-trees-get-for-host-and-mode ( host mode )
