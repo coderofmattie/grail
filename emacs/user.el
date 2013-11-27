@@ -205,4 +205,7 @@
 ;; beta features are commands that are in development, usable, but
 ;; require some more work for completion.
 
-(load-user-elisp "beta")
+(grail-trap
+  "Loading beta features."
+
+  (load-user-elisp "beta"))
