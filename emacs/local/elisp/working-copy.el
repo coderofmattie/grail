@@ -7,7 +7,7 @@
 (defvar wc-home-dir (concat (getenv "HOME") "/"))
 
 (defun wc-dir-for-file ( file )
-  (concat wc-home-dir "code/"
+  (concat wc-home-dir "code/working-copy/"
     (files-child-of-path wc-home-dir (file-name-directory file))) )
 
 (defun wc-set-paths-for-buffer ()
