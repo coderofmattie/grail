@@ -222,8 +222,7 @@
 
    With this function processes can be changed by nesting another
    grail-process-async-chain as the tail, or NEXT-FN function for
-   a sequence of process execution.
-  "
+   a sequence of process execution."
   (lexical-let
     ((async-proc (funcall start-process-fn))
      (no-start   doesnt-start-fn)
@@ -368,8 +367,8 @@
         (message "archive program did not start for %s!" archive-path))
 
       ;; FIXME: how do we clean up the target directory ?
-      (lambda ()
-        (message "extracting %s failed!" archive-path))
+      (lambda ( exit-status )
+        (message "extracting %s failed! status %s " archive-path exit-status))
 
       ;; what to do when it finishes.
       (lambda ()
@@ -421,7 +420,7 @@
               (grail-cleanup-download dl-dir-and-file t))
 
             ;; the downloader fail cleanup function
-            (lambda ()
+            (lambda ( exit-status )
               (grail-cleanup-download dl-dir-and-file t)
               (message "download of %s failed! Install aborted, and downloads deleted." (cdr dl-dir-and-file)))
 
@@ -446,7 +445,7 @@ loads.\n")
                   (grail-cleanup-download dl-dir-and-file t))
 
                 ;; the tar fail cleanup function
-                (lambda ()
+                (lambda ( exit-status )
                   (insert (format "could not install files in %s from downloaded archive." grail-dist-elisp))
                   (grail-cleanup-download dl-dir-and-file t))
 
