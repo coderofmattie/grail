@@ -4,6 +4,7 @@
 ;; run commands in the background in a worker queue like implementation
 ;;----------------------------------------------------------------------
 (require 'grail-profile)
+(require 'async-command-builders)
 
 (defconst cmd-queue-idle-start-work 4)
 
@@ -35,34 +36,14 @@
   (get-buffer-create "*cmd-queue-work*"))
 
 (defun cmd-queue-task-create ( command callback )
-  (let
-    ((grail-async-runner
-       (lexical-let
-         ((bind-command command))
-
-         `((lambda ()
-             (start-process-shell-command "cmd-queue" (cmd-queue-get-work-buffer) ,bind-command))
-
-            (lambda ()
-              (message "cmd-queue command %s did not start!" ,bind-command)
-              (cmd-queue-finish-task nil))
-
-            (lambda ( exit-status )
-              (message "cmd-queue command %s returned error! %s" ,bind-command exit-status)
-              (cmd-queue-finish-task nil))
-
-            (lambda ()
-              (message "cmd-queue command %s completed." ,bind-command)
-              (cmd-queue-finish-task t)
-              t)
-            nil)) ))
-
-    (list grail-async-runner callback command) ))
+  (list (async-build-basic "cmd-queue" command 'cmd-queue-finish-task) callback command))
 
 (defun cmd-queue-add-task ( command callback )
   (unless cmd-queue-run-handle
     (cmd-queue-start))
-  (setq cmd-queue-tasks (cons (cmd-queue-task-create command callback) cmd-queue-tasks)) )
+
+  (setq cmd-queue-tasks
+    (cons (cmd-queue-task-create command callback) cmd-queue-tasks)) )
 
 (defun cmd-queue-work-runnable-p ()
   (and cmd-queue-tasks (not cmd-queue-task-in-progress)) )
