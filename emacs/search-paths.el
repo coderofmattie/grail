@@ -20,3 +20,5 @@
      "/web/auto/import/lib/"
      "/web/auto/export/inventory/"))
 
+(search-trees-add-for-user "codermattie" "emacs-lisp-mode"
+  '("emacs" "/home/codermattie/config/emacs/local"))
