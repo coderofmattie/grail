@@ -6,10 +6,14 @@
 ;; distributed with emacs. Any third party or risky features should
 ;; be loaded via load-style.
 ;;----------------------------------------------------------------------
-
 (eval-when-compile
   (require 'grail-profile)
   (require 'grail-fn))
+
+;;----------------------------------------------------------------------
+;; crypto
+;;----------------------------------------------------------------------
+(require 'public-key)
 
 ;;----------------------------------------------------------------------
 ;; undistributed features.
