@@ -251,7 +251,7 @@
                 (and (funcall after-fn) (and chain-fn (funcall chain-fn)))
 
                 ;; if the process exits non-zero call (proc-fail-fn)
-                (funcall fail-fn process-exit-status)) ))) ))))
+                (funcall fail-fn (process-exit-status bound-proc)) ))) )) )))
 
 ;;----------------------------------------------------------------------
 ;; grail-run-and-wait
