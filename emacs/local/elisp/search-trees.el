@@ -13,20 +13,23 @@
   (dolist (next-tree tree-list)
     (setq search-trees-global-user (cons (list user mode next-tree) search-trees-global-user)) ))
 
-(defun search-trees-get-for-host-and-mode ( host mode )
+(defun search-trees-get-for-key ( key mode search-table)
   (let
-    ((all-trees nil)
-     (host (system-name)))
+    ((all-trees nil))
 
     (mapc
-      (lambda ( host-tree )
-        (when (and (string-equal host (car host-tree))
-                   (string-equal mode (cadr host-tree)))
+      (lambda ( tree-entry )
+        (when (and (string-equal key (car tree-entry))
+                   (string-equal mode (cadr tree-entry)))
           (let
-            ((table (nth 2 host-tree)))
+            ((table (nth 2 tree-entry)))
             (setq all-trees (cons (cons (car table) (cdr table)) all-trees)) ) ))
-      search-trees-global-host)
-
+      search-table)
     all-trees))
+
+(defun search-trees-get-for-host-and-user ( mode )
+  (append
+    (search-trees-get-for-key (user-login-name) mode search-trees-global-user)
+    (search-trees-get-for-key (system-name) mode search-trees-global-host)) )
 
 (provide 'search-trees)
