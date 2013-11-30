@@ -357,13 +357,14 @@
         tables)
       nil)))
 
-(defun tags-uber-update-trees-for-host ( host mode )
+(defun tags-uber-update-from-search-trees ( mode )
   (mapc
-    (lambda ( table-list )
-      (tags-uber-update-for-mode mode table-list))
-    (search-trees-get-for-host-and-mode host mode)))
+    (lambda ( table-spec )
+      (tags-uber-update-for-mode mode table-spec))
+    (search-trees-get-for-host-and-user mode)) )
 
-;; (tags-uber-update-trees-for-host "Khan" "cperl-mode")
+;; (tags-uber-update-from-search-trees "cperl-mode")
+;; (tags-uber-update-from-search-trees "emacs-lisp-mode")
 
 ;; (setq tags-uber-builder-table nil)
 
@@ -539,7 +540,6 @@
 
 (defun tags-uber-select-table ()
   (interactive)
-
   (let
     ((tables (tags-uber-all-table-names major-mode) ))
 
@@ -576,7 +576,7 @@
 (defun tags-uber-global-init ()
   (unless tags-uber-global-ready
     (setq tags-uber-global-ready t)
-    (ad-activate 'switch-to-buffer)) )
+    (ad-activate 'switch-to-buffer) ))
 
 (defun tags-uber-reset-all ()
   (interactive)
