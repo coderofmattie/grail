@@ -2,7 +2,11 @@
 ;; working-copy
 ;; emulate local commit features and deal with perforce.
 ;;----------------------------------------------------------------------
+
+(require 'cm-string)
 (require 'file-utilities)
+(require 'async-command-builders)
+(require 'grail-profile)
 
 (defvar wc-home-dir (concat (getenv "HOME") "/"))
 
@@ -114,9 +118,9 @@
 (defun wc-rcs-command-ok-p ()
   wc-rcs-last-exit-status)
 
-(defun wc-rcs-command-builder ( cmd &rest args )
-  (async-build-basic "wc-rcs" (string-join " " (cons cmd args))
-    'wc-rcs-command-callback (wc-rcs-command-buffer)) )
+(defun wc-rcs-command-builder ( &rest command-string )
+  (async-build-basic "wc-rcs" (string-join " " command-string)
+                     'wc-rcs-command-callback (wc-rcs-command-buffer)) )
 
 (defun wc-rcs-command-builder-init ( path )
   (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-init") path "initialize rcs"))
@@ -131,7 +135,7 @@
   (apply 'grail-process-async-chain constructed-command))
 
 (defun wc-rcs-init ( path )
-  (wc-run-rcs-command-run
+  (wc-rcs-command-run
     (wc-rcs-command-builder-init path))
 
   (when (wc-rcs-command-ok-p)
@@ -139,20 +143,12 @@
       (wc-rcs-command-builder-checkin path "first checkin"))) )
 
 (defun wc-rcs-checkout ( file )
-  (wc-run-rcs-command-run
+  (wc-rcs-command-run
     (wc-rcs-command-builder-checkout file)) )
 
 (defun wc-rcs-checkin ( file log-message )
-  (lexical-let
-    ((checkin-file file))
-
-    (wc-run-rcs-command
-      (wc-build-rcs-command
-        (concat wc-wrappers-dir "rcs-ci")
-        `(lambda ()
-           (wc-run-rcs-command
-             (wc-build-rcs-command "co" nil "-l" ,file)))
-        file log-message)) ))
+  (wc-rcs-command-run
+    (wc-rcs-command-builder-checkin file log-message)) )
 
 (defun wc-extract-log-from-buffer ()
   (let
@@ -182,7 +178,7 @@
   (let
     ((log-buffer (get-buffer-create "*wc-log*"))
      (this-buffer (current-buffer))
-     (this-file  (wc-local-file)) )
+     (this-file   (wc-local-file)))
 
     (with-current-buffer log-buffer
       (set (make-local-variable 'file-to-commit) this-file)
