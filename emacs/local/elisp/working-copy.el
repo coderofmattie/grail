@@ -71,7 +71,7 @@
 
   (wc-write-to-file path)
 
-  (files-make-path-readonly path) )
+  (files-make-path-readonly path))
 
 (defun wc-update-ancestor-file ()
   (interactive)
@@ -85,51 +85,62 @@
   (interactive)
   (wc-write-to-file (wc-local-file)))
 
-(defun wc-command-buffer ()
+(defun wc-rcs-command-buffer ()
   (get-buffer-create "*working-copy-rcs*"))
 
 (defvar wc-wrappers-dir (concat grail-elisp-root "/wrappers/"))
-
-(defun wc-get-rcs-buffer ()
-  (get-buffer-create "*wc rcs*"))
 
 (defun wc-popup-rcs-buffer ()
   (let
     ((old-buffer (current-buffer)))
 
-    (pop-to-buffer (wc-get-rcs-buffer) nil t)
+    (pop-to-buffer (wc-rcs-command-buffer))
     (other-window 1)
     (switch-to-buffer old-buffer) ))
 
-(defun wc-build-rcs-command ( cmd next &rest args )
-  (lexical-let
-    ((full-cmd  (string-join " " (cons cmd args)))
-     (bind-next next))
+(defvar wc-rcs-last-exit-status nil)
 
-    `((lambda ()
-        (start-process-shell-command "wc-rcs" (wc-get-rcs-buffer) ,full-cmd) )
+(defun wc-rcs-command-callback ( status )
+  (wc-popup-rcs-buffer)
 
-       (lambda ()
-         (message "rcs command did not start! %s" ,full-cmd)
-         (wc-popup-rcs-buffer))
+  (if status
+    (progn
+      (message "rcs command failed. %s" status)
+      (setq wc-rcs-last-exit-status nil))
+    (progn
+      (message "rcs command finished.")
+      (setq wc-rcs-last-exit-status t))) )
 
-       (lambda ()
-         (message "rcs command returned error! %s" ,full-cmd)
-         (wc-popup-rcs-buffer))
+(defun wc-rcs-command-ok-p ()
+  wc-rcs-last-exit-status)
 
-       (lambda ()
-         (message "rcs command completed. %s" ,full-cmd)
-         (wc-popup-rcs-buffer)
-         t)
-       ,bind-next) ))
+(defun wc-rcs-command-builder ( cmd &rest args )
+  (async-build-basic "wc-rcs" (string-join " " (cons cmd args))
+    'wc-rcs-command-callback (wc-rcs-command-buffer)) )
 
-(defun wc-run-rcs-command ( constructed-command )
-  (wc-get-rcs-buffer)
+(defun wc-rcs-command-builder-init ( path )
+  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-init") path "initialize rcs"))
+
+(defun wc-rcs-command-builder-checkin ( path log )
+  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-checkin") path log))
+
+(defun wc-rcs-command-builder-checkout ( path )
+  (wc-rcs-command-builder "co" "-u" path))
+
+(defun wc-rcs-command-run ( constructed-command )
   (apply 'grail-process-async-chain constructed-command))
 
+(defun wc-rcs-init ( path )
+  (wc-run-rcs-command-run
+    (wc-rcs-command-builder-init path))
+
+  (when (wc-rcs-command-ok-p)
+    (wc-run-rcs-command-run
+      (wc-rcs-command-builder-checkin path "first checkin"))) )
+
 (defun wc-rcs-checkout ( file )
-  (wc-run-rcs-command
-    (wc-build-rcs-command "co" nil "-l" file)) )
+  (wc-run-rcs-command-run
+    (wc-rcs-command-builder-checkout file)) )
 
 (defun wc-rcs-checkin ( file log-message )
   (lexical-let
