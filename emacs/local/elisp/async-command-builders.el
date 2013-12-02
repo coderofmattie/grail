@@ -2,7 +2,7 @@
 ;; async-command-builders.el
 ;;----------------------------------------------------------------------
 
-(defun async-build-basic ( prefix command callback &option use-buffer )
+(defun async-build-basic ( prefix command callback &optional use-buffer )
   (let
     ((grail-async-runner
        (lexical-let
