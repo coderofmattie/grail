@@ -2,8 +2,8 @@
 ;; enhanced terminal
 ;;----------------------------------------------------------------------
 (grail-load 'multi-term (grail-define-installer "multi-term"
-                         "pkg"
-                         'multi-term))
+                         "file"
+                         "http://www.emacswiki.org/emacs/download/multi-term.el"))
 
 (setq multi-term-program "/bin/zsh")
 
