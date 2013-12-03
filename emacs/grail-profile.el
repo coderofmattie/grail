@@ -912,7 +912,16 @@ loads.\n")
   (unless (symbolp package)
     (message "package is not a symbol"))
 
-  (or (require package nil t) (grail-repair-by-installing package installer)))
+  (let
+    ((trap-result (catch 'grail-trap
+                    (or (require package nil t)
+                        (grail-repair-by-installing package installer))) ))
+
+    (if (listp trap-result)
+      (progn
+        (message "got fail %s" (princ trap-result))
+        nil)
+      trap-result)) )
 
 (defun grail-fetch-docs ( top-level-dir installer strip-level )
   (let
