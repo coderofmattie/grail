@@ -28,4 +28,7 @@
     (car list)
     (if (cdr list) (prefix-strings prefix (cdr list))) ))
 
+(defun string-strip-leading-whitespace ( string )
+  (replace-regexp-in-string "^ *" "" string))
+
 (provide 'cm-string)
