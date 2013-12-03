@@ -2,11 +2,12 @@
 ;; async-command-builders.el
 ;;----------------------------------------------------------------------
 
-(defun async-build-basic ( prefix command callback )
+(defun async-build-basic ( prefix command callback &option use-buffer )
   (let
     ((grail-async-runner
        (lexical-let
-         ((output-buffer (get-buffer-create (concat prefix "-proc")))
+         ((output-buffer (or use-buffer
+                             (get-buffer-create (concat prefix "-proc"))))
           (bind-command command)
           (bind-prefix  prefix)
           (bind-callback callback))
