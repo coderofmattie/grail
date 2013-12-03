@@ -1,15 +1,10 @@
 ;;----------------------------------------------------------------------
 ;; perl5
 ;;----------------------------------------------------------------------
-
-;; make cperl the default in all cases.
-(mapc
-  (lambda (pair)
-    (if (eq (cdr pair) 'perl-mode)
-      (setcdr pair 'cperl-mode)))
-     (append auto-mode-alist interpreter-mode-alist))
-
 (require 'cperl-mode)
+(require 'remap-assoc-mode)
+
+(remap-assoc-mode-to 'perl-mode 'cperl-mode)
 
 (progn
   (setq
