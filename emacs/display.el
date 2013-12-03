@@ -148,3 +148,12 @@
     (set-face-attribute 'whitespace-trailing nil :underline t)
     (set-face-attribute 'whitespace-trailing nil :inverse-video nil))
   t)
+
+(defun display-faces-for-web-mode ()
+  ;; language syntax is the darkest shade of blue
+  (set-face-foreground 'web-mode-doctype-face         "DeepSkyBlue4")
+  (set-face-foreground 'web-mode-html-tag-face        "SkyBlue3")
+  (set-face-foreground 'web-mode-html-attr-name-face  "aquamarine3")
+  (set-face-foreground 'web-mode-html-attr-value-face "grey50") )
+
+(add-hook 'web-mode-hook 'display-faces-for-web-mode t)
