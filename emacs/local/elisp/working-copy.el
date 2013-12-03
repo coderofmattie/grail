@@ -7,12 +7,17 @@
 (require 'file-utilities)
 (require 'async-command-builders)
 (require 'grail-profile)
+(require 'buffer-status)
 
 (defvar wc-home-dir (concat (getenv "HOME") "/"))
+(defvar wc-modeline-status "")
 
 (defun wc-dir-for-file ( file )
   (concat wc-home-dir "code/working-copy/"
     (files-child-of-path wc-home-dir (file-name-directory file))) )
+
+(defun wc-is-path-working-copy ( path )
+  (file-readable-p (concat (wc-dir-for-file path) "/" (file-name-nondirectory path) ".local")) )
 
 (defun wc-set-paths-for-buffer ()
   (make-local-variable 'wc-ancestor-file-path)
@@ -32,6 +37,10 @@
       wc-local-file-path    (concat local-dir filename ".local")
       wc-upstream-file-path (concat local-dir filename ".upstream")
       wc-merge-file-path    (concat local-dir filename ".merge")) ))
+
+(defun wc-set-modeline-for-buffer ()
+  (make-local-variable 'wc-modeline-status)
+  (setq wc-modeline-status "|WC"))
 
 (defun wc-ancestor-file ()
   wc-ancestor-file-path)
@@ -255,15 +264,28 @@
     (wc-insert-from-file (wc-merge-file))
     (file-delete (wc-merge-file)) ))
 
+(defun wc-visit ()
+  (interactive)
+
+  (when (wc-is-path-working-copy (buffer-file-name))
+    (buffer-status-add "working-copy enabled")
+
+    (wc-set-paths-for-buffer)
+    (wc-set-modeline-for-buffer) ))
+
 (defun wc-init ()
   (interactive)
 
   (wc-set-paths-for-buffer)
+  (wc-set-modeline-for-buffer)
 
   (wc-update-local-file)
   (wc-update-upstream-file)
   (wc-update-ancestor-file)
 
   (wc-rcs-checkin (wc-local-file) "first commit"))
+
+(defun wc-enable-globally ()
+  (add-hook 'find-file-hook 'wc-visit t))
 
 (provide 'working-copy)

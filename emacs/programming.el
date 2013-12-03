@@ -7,6 +7,7 @@
 (require 'grail-profile)
 (require 'buffer-status)
 (require 'tags-uber)
+(require 'working-copy)
 
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
@@ -55,6 +56,11 @@
 
 (defun configure-for-version-control ()
   (local-set-key (kbd "C-c v v") 'version-control-source-file-dir))
+
+;;----------------------------------------------------------------------
+;;                           working-copy
+;;----------------------------------------------------------------------
+(wc-enable-globally)
 
 ;;----------------------------------------------------------------------
 ;;                           Diff

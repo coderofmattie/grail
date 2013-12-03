@@ -1,6 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; mattie-modeline
 ;;----------------------------------------------------------------------
+(require 'cm-string)
 
 (defun mattie-modeline-modified ()
   "mattie-modeline-modified
@@ -23,8 +24,9 @@
       ((and buffer-file-name (recent-auto-save-p)) "!BKP")
       (t "-"))
     "/"
-    vc-mode
-    "]" ))
+    (if vc-mode (string-strip-leading-whitespace vc-mode) "")
+    (if wc-modeline-status wc-modeline-status "")
+    "]"))
 
 (defun setup-mattie-modeline ()
   (setq-default mode-line-format
