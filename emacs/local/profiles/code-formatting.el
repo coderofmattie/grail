@@ -9,10 +9,10 @@
                          "file"
                          "http://www.wonderworks.com/download/filladapt.el"))
 
-(grail-load 'htmlize (grail-define-installer
-                       "htmlize"
-                       "pkg"
-                       'htmlize))
+(grail-load 'htmlfontify (grail-define-installer
+                          "htmlfontify"
+                          "pkg"
+                          'htmlfontify))
 
 (add-hook 'emacs-lisp-mode-hook 'turn-on-filladapt-mode)
 
@@ -22,4 +22,3 @@
 (eval-after-load 'cmuscheme  '(add-hook 'scheme-mode-hook     'turn-on-filladapt-mode))
 
 ;; I would like to find a mode that lines up columns within code.
-
