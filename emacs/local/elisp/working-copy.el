@@ -135,10 +135,13 @@
   (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-init") path "initialize rcs"))
 
 (defun wc-rcs-command-builder-checkin ( path log )
-  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-checkin") path log))
+  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-checkin") path log)
+
+  (when (wc-rcs-command-ok-p)
+    (wc-rcs-checkout path)) )
 
 (defun wc-rcs-command-builder-checkout ( path )
-  (wc-rcs-command-builder "co" "-u" path))
+  (wc-rcs-command-builder "co" "-l" "-kb" path))
 
 (defun wc-rcs-command-run ( constructed-command )
   (apply 'grail-process-async-chain constructed-command))
@@ -149,15 +152,27 @@
 
   (when (wc-rcs-command-ok-p)
     (wc-run-rcs-command-run
-      (wc-rcs-command-builder-checkin path "first checkin"))) )
+      (wc-rcs-command-builder-checkin path "first checkin")))
+
+  (when (wc-rcs-command-ok-p)
+    (wc-rcs-checkout path)) )
 
 (defun wc-rcs-checkout ( file )
   (wc-rcs-command-run
-    (wc-rcs-command-builder-checkout file)) )
+    (wc-rcs-command-builder-checkout file))
+
+  (unless (wc-rcs-command-ok-p)
+    (message "rcs command failure! for file %s" file))
+
+  (unless (file-writable-p file)
+    (message "rcs command completed for checkout but perms are botched: %s" file)) )
 
 (defun wc-rcs-checkin ( file log-message )
   (wc-rcs-command-run
-    (wc-rcs-command-builder-checkin file log-message)) )
+    (wc-rcs-command-builder-checkin file log-message))
+
+  (when (wc-rcs-command-ok-p)
+    (wc-rcs-checkout path)) )
 
 (defun wc-extract-log-from-buffer ()
   (let
@@ -197,6 +212,10 @@
 
     log-buffer))
 
+(defun wc-checkout-local ()
+  (interactive)
+  (wc-rcs-checkout (wc-local-file)) )
+
 (defun wc-commit-local ()
   (interactive)
 
@@ -224,16 +243,16 @@
       t
       nil) ))
 
-(defun wc-diff ( other-file other )
+(defun wc-primary-diff ( other-file other-name )
   (save-buffer)
 
   (catch 'same
     (when (wc-files-same-p buffer-file-name other-file)
-      (message "wc: primary and %s copy are the same" other)
+      (message "wc: primary and %s copy are the same" other-name)
       (throw 'same t))
 
     (ediff-files buffer-file-name other-file)
-    (message "A is primary , B is %s" other) ))
+    (message "A is primary , B is %s" other-name) ))
 
 (defun wc-diff-local ()
   (interactive)
@@ -264,6 +283,15 @@
     (wc-insert-from-file (wc-merge-file))
     (file-delete (wc-merge-file)) ))
 
+(defun wc-key-bindings ()
+  (local-set-key (kbd "C-c w s") 'wc-update-local-file)
+  (local-set-key (kbd "C-c w c") 'wc-commit-local)
+
+  (local-set-key (kbd "C-c w C") 'wc-commit)
+
+  (local-set-key (kbd "C-c w u") 'wc-diff-upstream)
+  (local-set-key (kbd "C-c w l") 'wc-diff-local) )
+
 (defun wc-visit ()
   (interactive)
 
@@ -271,7 +299,9 @@
     (buffer-status-add "working-copy enabled")
 
     (wc-set-paths-for-buffer)
-    (wc-set-modeline-for-buffer) ))
+    (wc-set-modeline-for-buffer)
+
+    (wc-key-bindings) ))
 
 (defun wc-init ()
   (interactive)
