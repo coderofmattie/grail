@@ -96,8 +96,8 @@
 ;;----------------------------------------------------------------------
 ;; use marmelade to get the latest and greatest stuff
 ;;----------------------------------------------------------------------
-(eval-after-load "package"
-  '(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/")))
+;; (eval-after-load "package"
+;;   '(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/")))
 
 ;;----------------------------------------------------------------------
 ;; associate major modes with file extensions.
