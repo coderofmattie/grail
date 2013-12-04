@@ -5,7 +5,7 @@ message=$2
 
 # -u   : do not lock
 
-echo <<EOF | ci  -u "$1"
+echo <<EOF | ci -u "$1"
 description.
 $2
 .

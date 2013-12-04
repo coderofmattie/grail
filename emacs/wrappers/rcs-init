@@ -8,7 +8,7 @@ message=$2
 # -u   : remove lock
 # -T   : preserve modification time
 
-echo <<EOF | rcs -kb -u -U -T "$1"
+echo <<EOF | rcs -i -kb -u -U -T "$1"
 description.
 $2
 .
