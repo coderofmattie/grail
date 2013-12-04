@@ -21,7 +21,7 @@
 (require 'dwim-tab)
 (require 'buffer-ring)
 
-(use-grail-profiles 0 "tramp" "spell" "registers" "browser" "terminal" "jabber-emacs")
+(use-grail-profiles 0 "tramp" "spell" "registers" "browser" "terminal" "jabber-emacs" "dwim-complete")
 
 (use-grail-profiles 10 "activate-buffer-status")
 
