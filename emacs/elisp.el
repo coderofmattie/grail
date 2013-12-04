@@ -94,5 +94,27 @@
   (interactive)
   (other-window 1))
 
+(defun select-word ()
+  (interactive)
+  (let
+    ((begin nil)
+     (end   nil)
+     (pos   (point)))
 
+    (catch 'fail
+      (save-excursion
+        (backward-word)
+        (setq begin (point))
 
+        (goto-char pos)
+
+        (forward-word)
+        (setq end (point))
+
+        (unless (and (< begin pos )
+                     (> end pos ))
+          (throw 'fail nil)) )
+
+      (push-mark begin)
+      (goto-char end)
+      t)))

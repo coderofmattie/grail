@@ -73,6 +73,12 @@
   (interactive)
   (dired-other-window (file-name-directory buffer-file-name)) )
 
+(defun configure-for-select ( select-inner select-outer )
+  (local-set-key (kbd "C-c s w")  'select-word)
+
+  (local-set-key (kbd "C-c s i")  select-inner)
+  (local-set-key (kbd "C-c s o")  select-outer))
+
 (defun configure-for-buffer-ring ( buffer-ring-mode )
   (when (buffer-ring-add buffer-ring-mode)
     (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
