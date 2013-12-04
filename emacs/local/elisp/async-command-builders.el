@@ -2,13 +2,6 @@
 ;; async-command-builders.el
 ;;----------------------------------------------------------------------
 
-(defun async-build-chained-fn ( next-builder )
-  (lexical-let
-    ((builder next-builder))
-
-    (lambda ()
-      (apply 'grail-process-async-chain builder)) ))
-
 (defun async-build-basic ( prefix command callback &optional use-buffer &optional chained )
   (let
     ((grail-async-runner
@@ -40,19 +33,14 @@
             ,bind-next)) ))
     grail-async-runner))
 
+(defun async-build-exp ( body )
+  `(async-build-basic ,@(car body)
+     ,(if (eq nil (cdr body))
+        'nil
+        `(lambda ()
+           (apply 'grail-process-async-chain ,(async-build-exp (cdr body)) )) )) )
+
 (defmacro async-build-chained ( &rest body )
-  (let
-    ((this-builder nil))
-
-    (dolist ( builder (reverse body) )
-      (let
-        ((evaluated (mapcar 'eval builder)))
-
-        (setq this-builder
-          (if this-builder
-            (apply 'async-build-basic (append evaluated (list (async-build-chained-fn this-builder)) ))
-            (apply 'async-build-basic evaluated))) ))
-
-    `',this-builder))
+  `'(apply 'grail-process-async-chain ,(async-build-exp body)) )
 
 (provide 'async-command-builders)
