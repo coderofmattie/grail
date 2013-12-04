@@ -256,11 +256,11 @@
 
 (defun wc-diff-local ()
   (interactive)
-  (wc-diff (wc-local-file) "local") )
+  (wc-primary-diff (wc-local-file) "local") )
 
 (defun wc-diff-upstream ()
   (interactive)
-  (wc-diff (wc-upstream-file) "upstream"))
+  (wc-primary-diff (wc-upstream-file) "upstream"))
 
 (defun wc-start-merge ()
   (interactive)
