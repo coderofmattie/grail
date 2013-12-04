@@ -90,9 +90,13 @@
 
 (defun set-custom-ediff-faces ()
   (let
-    ((diff-bg-color "khaki")
-     (diff-bg-selected-color "khaki")
-     (diff-fg-color "forest green"))
+    ((diff-bg-color "AntiqueWhite4")
+     (diff-bg-selected-color "CadetBlue")
+
+     (diff-fg-color "grey35")
+
+     (diff-fine-bg "SkyBlue4")
+     (diff-fine-fg "grey65"))
 
     (set-face-background 'ediff-current-diff-A diff-bg-selected-color)
     (set-face-foreground 'ediff-current-diff-A diff-fg-color)
@@ -121,14 +125,14 @@
     (set-face-background 'ediff-odd-diff-C diff-bg-color)
     (set-face-foreground 'ediff-odd-diff-C diff-fg-color)
 
-    (set-face-background 'ediff-fine-diff-A "dark khaki")
-    (set-face-foreground 'ediff-fine-diff-A "red")
+    (set-face-background 'ediff-fine-diff-A diff-fine-bg)
+    (set-face-foreground 'ediff-fine-diff-A diff-fine-fg)
 
-    (set-face-background 'ediff-fine-diff-B "dark khaki")
-    (set-face-foreground 'ediff-fine-diff-B "red")
+    (set-face-background 'ediff-fine-diff-B diff-fine-bg)
+    (set-face-foreground 'ediff-fine-diff-B diff-fine-fg)
 
-    (set-face-background 'ediff-fine-diff-C "dark khaki")
-    (set-face-foreground 'ediff-fine-diff-C "red") ))
+    (set-face-background 'ediff-fine-diff-C diff-fine-bg)
+    (set-face-foreground 'ediff-fine-diff-C diff-fine-fg) ))
 
 (add-hook 'ediff-mode-hook 'set-custom-ediff-faces t)
 
