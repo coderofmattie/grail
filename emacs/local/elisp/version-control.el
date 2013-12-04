@@ -14,6 +14,7 @@
 
 (defun ver-ctl-bindings ()
   (local-set-key (kbd "C-c r d") 'ver-ctl-diff)
-  (local-set-key (kbd "C-c r v") 'ver-ctl-dir) )
+  (local-set-key (kbd "C-c r v") 'ver-ctl-dir)
+  (local-set-key (kbd "C-c r l") 'vc-print-log))
 
 (provide 'version-control)
