@@ -251,8 +251,8 @@
       (message "wc: primary and %s copy are the same" other-name)
       (throw 'same t))
 
-    (ediff-files buffer-file-name other-file)
-    (message "A is primary , B is %s" other-name) ))
+    (ediff-files other-file buffer-file-name)
+    (message "A is %s B is primary" other-name) ))
 
 (defun wc-diff-local ()
   (interactive)
