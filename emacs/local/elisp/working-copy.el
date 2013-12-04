@@ -142,20 +142,14 @@
   (setq wc-rcs-last-exit-status nil)
   (apply 'grail-process-async-chain constructed-command))
 
-
-(defun foo-init ( path )
-  (async-build-exp
-    '( ((concat wc-wrappers-dir "/rcs-init") path "initialize rcs")
-       ((concat wc-wrappers-dir "/rcs-checkin") path "first checkin") ))
-
 (defun wc-rcs-init ( path )
-  (apply 'wc-rcs-command-run
+  (wc-rcs-command-run
     (async-build-chained
-      ("wc-rcs" (string-join " " (concat wc-wrappers-dir "/rcs-init") path "initialize rcs")
+      ("wc-rcs" (string-join " " (list (concat wc-wrappers-dir "/rcs-init") path "initialize rcs"))
         'wc-rcs-command-callback (wc-rcs-command-buffer))
 
-      ("wc-rcs" (string-join " " (concat wc-wrappers-dir "/rcs-checkin") path "first checkin")
-        'wc-rcs-command-callback (wc-rcs-command-buffer)) )))
+      ("wc-rcs" (string-join " " (list (concat wc-wrappers-dir "/rcs-checkin") path "first checkin"))
+        'wc-rcs-command-callback (wc-rcs-command-buffer)) )) )
 
 (defun wc-rcs-checkout ( file )
   (wc-rcs-command-run
