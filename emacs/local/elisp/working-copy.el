@@ -124,38 +124,38 @@
       (message "rcs command finished.")
       (setq wc-rcs-last-exit-status t))) )
 
-(defun wc-rcs-command-ok-p ()
-  wc-rcs-last-exit-status)
-
 (defun wc-rcs-command-builder ( &rest command-string )
   (async-build-basic "wc-rcs" (string-join " " command-string)
                      'wc-rcs-command-callback (wc-rcs-command-buffer)) )
 
-(defun wc-rcs-command-builder-init ( path )
-  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-init") path "initialize rcs"))
+(defun wc-rcs-command-chain-builder ( chain &rest builders )
+  (async-build-basic "wc-rcs" (string-join " " command-string)
+    'wc-rcs-command-callback (wc-rcs-command-buffer) chain))
 
 (defun wc-rcs-command-builder-checkin ( path log )
-  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-checkin") path log)
-
-  (when (wc-rcs-command-ok-p)
-    (wc-rcs-checkout path)) )
+  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-checkin") path log))
 
 (defun wc-rcs-command-builder-checkout ( path )
   (wc-rcs-command-builder "co" "-l" "-kb" path))
 
 (defun wc-rcs-command-run ( constructed-command )
+  (setq wc-rcs-last-exit-status nil)
   (apply 'grail-process-async-chain constructed-command))
 
+
+(defun foo-init ( path )
+  (async-build-exp
+    '( ((concat wc-wrappers-dir "/rcs-init") path "initialize rcs")
+       ((concat wc-wrappers-dir "/rcs-checkin") path "first checkin") ))
+
 (defun wc-rcs-init ( path )
-  (wc-rcs-command-run
-    (wc-rcs-command-builder-init path))
+  (apply 'wc-rcs-command-run
+    (async-build-chained
+      ("wc-rcs" (string-join " " (concat wc-wrappers-dir "/rcs-init") path "initialize rcs")
+        'wc-rcs-command-callback (wc-rcs-command-buffer))
 
-  (when (wc-rcs-command-ok-p)
-    (wc-run-rcs-command-run
-      (wc-rcs-command-builder-checkin path "first checkin")))
-
-  (when (wc-rcs-command-ok-p)
-    (wc-rcs-checkout path)) )
+      ("wc-rcs" (string-join " " (concat wc-wrappers-dir "/rcs-checkin") path "first checkin")
+        'wc-rcs-command-callback (wc-rcs-command-buffer)) )))
 
 (defun wc-rcs-checkout ( file )
   (wc-rcs-command-run
@@ -312,7 +312,7 @@
   (wc-update-upstream-file)
   (wc-update-ancestor-file)
 
-  (wc-rcs-checkin (wc-local-file) "first commit"))
+  (wc-rcs-init (wc-local-file)))
 
 (defun wc-enable-globally ()
   (add-hook 'find-file-hook 'wc-visit t))
