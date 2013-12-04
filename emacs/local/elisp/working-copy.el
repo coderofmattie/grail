@@ -280,8 +280,7 @@
       (message "there is no merge in progress to finish.")
       (throw 'abort t))
 
-    (wc-insert-from-file (wc-merge-file))
-    (file-delete (wc-merge-file)) ))
+    (wc-insert-from-file (wc-merge-file)) ))
 
 (defun wc-key-bindings ()
   (local-set-key (kbd "C-c w s") 'wc-update-local-file)
