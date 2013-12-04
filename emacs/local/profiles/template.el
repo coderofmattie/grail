@@ -32,30 +32,27 @@
 (setq yas-trigger-key nil)
 
 (defconst yasnippet-local-templates
-  (expand-file-name (concat grail-elisp-root "templates/yasnippet/"))
+  (expand-file-name (concat grail-elisp-root "templates/yasnippet"))
   "the yasnippet tree path relative to grail-elisp-root")
 
-(defun templates/extend-templates ( extensions )
-  "templates/configure-language LANGUAGE &REST MODES
-
-   Setup templates for a language globaly. LANGUAGE is a
-   string with the language name which should be a path
-   relative to TEMPLATES-ROOT. the modes is a series of
-   strings such as \"emacs-lisp-mode\". A function to
-   configure the mode/buffer will be added to the
-   entry point hook for the mode.
-  "
+(defun templates-update-dirs ( &rest custom-dirs )
   (let
-    (make-variable-buffer-local 'yas-snippet-dirs)
+    ((new-dirs nil))
 
-    ;; add it to the list of paths kept by yasnippet
-    (when (file-accessible-directory-p extensions)
-      (setq yas-snippet-dirs (cons extensions yas-snippet-dirs))
-      (yas-load-directory extensions) ) ))
+    (mapc
+      (lambda ( dir )
+        (when (file-accessible-directory-p dir)
+          (setq new-dirs (cons dir new-dirs))) )
+      (append custom-dirs yas-snippet-dirs))
 
+    (setq yas-snippet-dirs new-dirs)
+    (yas-reload-all) ))
 
-(templates/extend-templates yasnippet-local-templates)
-(yas-reload-all)
+(templates-update-dirs yasnippet-local-templates)
+
+(setq yas-prompt-functions
+  '(template/helm-prompt
+    yas-ido-prompt))
 
 (defun templates/mode-setup ()
   ;; activate yasnippet in the buffer
@@ -65,6 +62,8 @@
   (dwim-tab-localize-context 'template/next)
 
   (local-set-key (kbd "C-c t l") 'templates/list)
+
+  (local-set-key (kbd "C-c t i") 'template/insert)
 
   (local-set-key (kbd "C-c t e") 'template/expand)
   (local-set-key (kbd "C-c t n") 'template/next)
@@ -118,6 +117,30 @@
   (interactive)
   (yas-new-snippet))
 
+(defun template/helm-prompt (prompt choices &optional display-fn)
+  "Use helm to select a snippet. Put this into `yas/prompt-functions.'"
+  (interactive)
+  (setq display-fn (or display-fn 'identity))
+  (if (require 'helm-config)
+    (let (tmpsource cands result rmap)
+      (setq cands (mapcar (lambda (x) (funcall display-fn x)) choices))
+      (setq rmap (mapcar (lambda (x) (cons (funcall display-fn x) x)) choices))
+      (setq tmpsource
+        (list
+          (cons 'name prompt)
+          (cons 'candidates cands)
+          '(action . (("Expand" . (lambda (selection) selection))))
+          ))
+      (setq result (helm-other-buffer '(tmpsource) "*helm-select-yasnippet"))
+      (if (null result)
+        (signal 'quit "user quit!")
+        (cdr (assoc result rmap))))
+    nil))
+
+(defun template/insert ()
+  (interactive)
+  (yas-insert-snippet))
+
 ;;----------------------------------------------------------------------
 ;; configure the various languages for template support.
 ;;----------------------------------------------------------------------
@@ -128,6 +151,11 @@
   t)
 
 (add-hook 'cperl-mode-hook
+  (lambda ()
+    (templates/mode-setup))
+  t)
+
+(add-hook 'web-mode-hook
   (lambda ()
     (templates/mode-setup))
   t)

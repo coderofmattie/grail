@@ -154,6 +154,8 @@
   t)
 
 (defun display-faces-for-web-mode ()
+  (set-face-background 'web-mode-current-element-highlight-face "grey20")
+
   ;; language syntax is the darkest shade of blue
   (set-face-foreground 'web-mode-doctype-face         "DeepSkyBlue4")
   (set-face-foreground 'web-mode-html-tag-face        "SkyBlue3")
