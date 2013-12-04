@@ -38,9 +38,9 @@
      ,(if (eq nil (cdr body))
         'nil
         `(lambda ()
-           (apply 'grail-process-async-chain ,(async-build-exp (cdr body)) )) )) )
+           (apply 'grail-process-async-chain ,(async-build-exp (cdr body))) )) ))
 
 (defmacro async-build-chained ( &rest body )
-  `'(apply 'grail-process-async-chain ,(async-build-exp body)) )
+  (async-build-exp body))
 
 (provide 'async-command-builders)
