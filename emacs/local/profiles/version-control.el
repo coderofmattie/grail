@@ -34,6 +34,7 @@
 ;;----------------------------------------------------------------------
 (require 'log-mode)
 
+<<<<<<< 5db1e2e9
 (defun ver-ctl-log-dir ( &optional path )
   ;; use a path for code buffers. egg sets default-directory
   ;; in log buffers.
@@ -55,6 +56,15 @@
 (defun ver-ctl-log-files ()
   (let
     ((log-dir (funcall ver-ctl-log-dir-locate)))
+=======
+(defun ver-ctl-log-dir ( path )
+  (dir-path-if-accessible
+    (expand-file-name (concat (ver-ctl-root path) "/logs/"))) )
+
+(defun ver-ctl-log-files ()
+  (let
+    ((log-dir (ver-ctl-log-dir buffer-file-name)))
+>>>>>>> HEAD~5
 
     (when log-dir
       (directory-files log-dir t "\\.log$")) ))
@@ -74,6 +84,7 @@
       nil
       (assoc input log-pairs)) ))
 
+<<<<<<< 5db1e2e9
 (defun ver-ctl-log-file-list ()
   (interactive)
   (message "log files: %s"
@@ -162,6 +173,26 @@
   (lambda ()
     (ver-ctl-log-bindings))
   t)
+=======
+;; (ver-ctl-log-file-pairs (ver-ctl-log-files))
+
+;; (ver-ctl-log-completion "foo" (ver-ctl-log-file-pairs (ver-ctl-log-files)) )
+
+(defun ver-ctl-log-file-open ()
+  (interactive)
+  (let
+    ((existing-logs (ver-ctl-log-file-pairs (ver-ctl-log-files)) ))
+
+    (if existing-logs
+      (let
+        ((selected (ver-ctl-log-completion "choose log: " existing-logs)))
+
+        (if selected
+          (switch-to-buffer
+            (pop-to-buffer (find-file-noselect (cdr selected)) nil t))
+          (message "no log selected!")) )
+      (message "no log files found!")) ))
+>>>>>>> HEAD~5
 
 ;;----------------------------------------------------------------------
 ;; commands
