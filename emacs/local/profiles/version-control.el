@@ -71,7 +71,7 @@
 
     (define-key ver-map "s" 'ver-ctl-status)
     (define-key ver-map "x" 'ver-ctl-interface)
-    (define-key ver-map "r" 'ver-ctl-status)
+    (define-key ver-map "r" 'ver-ctl-repo)
 
     (local-set-key (kbd "C-c v") ver-map)))
 
@@ -80,5 +80,6 @@
   (setq mattie-modeline-branch 'ver-ctl-branch-current)
 
   (ver-ctl-bindings))
+(setq configure-programming-hook nil)
 
 (add-hook 'configure-programming-hook 'ver-ctl-hook t)
