@@ -94,5 +94,8 @@
   (interactive)
   (other-window 1))
 
-
-
+(defun run-custom-hooks ( hook-list )
+  (mapc
+    (lambda ( hook )
+      (funcall hook))
+    hook-list))

@@ -65,7 +65,7 @@
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
 
-  (apply 'run-hooks configure-programming-hook)
+  (run-custom-hooks configure-programming-hook)
 
   ;; highlight all fucked up files.
   (whitespace-mode)
