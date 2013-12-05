@@ -31,6 +31,10 @@
 
 (setq yas-trigger-key nil)
 
+;; this seems to be necessary now that yas clobbering of tab
+;; cannot be turned off
+(strip-minor-mode-keymap 'yas-minor-mode)
+
 (defconst yasnippet-local-templates
   (expand-file-name (concat grail-elisp-root "templates/yasnippet/"))
   "the yasnippet tree path relative to grail-elisp-root")
