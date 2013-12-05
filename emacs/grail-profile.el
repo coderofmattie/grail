@@ -575,7 +575,6 @@ loads.\n")
       (lambda ( run-buffer )
         (grail-git-async url-arg grail-dist-git module-arg run-buffer))) ))
 
-
 (defun grail-git-docs ( module url )
   (lexical-let
     ((module-arg module)
@@ -584,6 +583,15 @@ loads.\n")
     (grail-run-and-wait grail-git-buffer
       (lambda ( run-buffer )
         (grail-git-async url-arg grail-dist-docs module-arg run-buffer))) ))
+
+(defun grail-git-templates ( template-dir module url )
+  (lexical-let
+    ((module-arg module)
+     (url-arg    url))
+
+    (grail-run-and-wait grail-git-buffer
+      (lambda ( run-buffer )
+        (grail-git-async url-arg template-dir module-arg run-buffer))) ))
 
 ;;
 ;; svn
