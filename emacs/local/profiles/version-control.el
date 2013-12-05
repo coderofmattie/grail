@@ -1,8 +1,14 @@
 ;;----------------------------------------------------------------------
 ;; version-control.el
 ;;----------------------------------------------------------------------
+(require 'cm-string)
+
 (require 'vc)
 (require 'merging)
+
+(grail-load 'egg (grail-define-installer "egg"
+                          "git"
+                          "git://github.com/byplayer/egg.git"))
 
 (setq
   vc-handled-backends `(Bzr SVN Git Hg Arch SCCS Mtn CVS RCS)
@@ -11,7 +17,6 @@
   vc-make-backup-files nil)
 
 (defun ver-ctl-branch-list ()
-  (interactive)
   (let*
     ((vc-fileset (vc-deduce-fileset t))
      (backend (car vc-fileset)))
@@ -19,37 +24,52 @@
     (funcall (vc-find-backend-function backend 'branches)) ))
 
 (defun ver-ctl-branch-current ()
-  (interactive)
   (car (ver-ctl-branch-list)))
+
+;;----------------------------------------------------------------------
+;; commands
+;;----------------------------------------------------------------------
+
+(defun ver-ctl-branch-show-all ()
+  (interactive)
+  (message "branches: %s" (string-join "," (ver-ctl-branch-list))) )
 
 (defun ver-ctl-diff ()
   (interactive)
-  (ediff-revision buffer-file-name) )
+  (ediff-revision buffer-file-name))
 
-(defun ver-ctl-dir ()
+(defun ver-ctl-file-log ()
   (interactive)
-  (vc-dir (file-name-directory buffer-file-name)) )
+  (egg-file-log buffer-file-name))
 
-(defun ver-ctl-revert ()
+(defun ver-ctl-execute ()
   (interactive)
-  (if (yes-or-no-p "revert? y/n")
-    (progn
-      (vc-revert-file buffer-file-name)
-      (revert-buffer nil t t))
-    (message "nothing done.")) )
+  (execute-extended-command nil "egg-next-action"))
+
+(defun ver-ctl-status ()
+  (interactive)
+  (execute-extended-command nil "egg-status"))
+
+(defun ver-ctl-interface ()
+  (interactive)
+  (execute-extended-command nil "egg-log"))
+
+(make-sparse-keymap)
 
 (defun ver-ctl-bindings ()
-  (local-set-key (kbd "C-c r d") 'ver-ctl-diff)
-  (local-set-key (kbd "C-c r v") 'ver-ctl-dir)
-  (local-set-key (kbd "C-c r l") 'vc-print-log)
+  (let
+    ((ver-map (make-sparse-keymap)))
 
-  (local-set-key (kbd "C-c r a") 'vc-register)
-  (local-set-key (kbd "C-c r v") 'vc-next-action)
+    (define-key ver-map "d" 'ver-ctl-diff)
+    (define-key ver-map "l" 'ver-ctl-file-log)
 
-  (local-set-key (kbd "C-c r r") 'ver-ctl-revert)
+    (define-key ver-map "v" 'ver-ctl-execute)
 
-  (local-set-key (kbd "C-c r m") 'vc-merge)
-  (local-set-key (kbd "C-c r p") 'vc-pull))
+    (define-key ver-map "s" 'ver-ctl-status)
+
+    (define-key ver-map "x" 'ver-ctl-interface)
+
+    (local-set-key (kbd "C-c v") ver-map)))
 
 (defun vert-ctl-hook ()
   (make-variable-buffer-local 'mattie-modeline-branch)
@@ -58,4 +78,3 @@
   (ver-ctl-bindings))
 
 (add-hook 'configure-programming-hook 'ver-ctl-hook t)
-
