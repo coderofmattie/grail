@@ -44,17 +44,21 @@
 
 (defun ver-ctl-execute ()
   (interactive)
-  (execute-extended-command nil "egg-next-action"))
+  (call-interactively 'egg-next-action))
 
 (defun ver-ctl-status ()
   (interactive)
-  (execute-extended-command nil "egg-status"))
+  (call-interactively 'egg-status))
 
 (defun ver-ctl-interface ()
   (interactive)
-  (execute-extended-command nil "egg-log"))
+  (call-interactively 'egg-log))
 
-(make-sparse-keymap)
+(defun ver-ctl-repo ()
+  (interactive)
+
+  (setq current-prefix-arg 4)
+  (call-interactively 'egg-log))
 
 (defun ver-ctl-bindings ()
   (let
@@ -66,12 +70,12 @@
     (define-key ver-map "v" 'ver-ctl-execute)
 
     (define-key ver-map "s" 'ver-ctl-status)
-
     (define-key ver-map "x" 'ver-ctl-interface)
+    (define-key ver-map "r" 'ver-ctl-status)
 
     (local-set-key (kbd "C-c v") ver-map)))
 
-(defun vert-ctl-hook ()
+(defun ver-ctl-hook ()
   (make-variable-buffer-local 'mattie-modeline-branch)
   (setq mattie-modeline-branch 'ver-ctl-branch-current)
 
