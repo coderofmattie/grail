@@ -118,3 +118,10 @@
       (push-mark begin)
       (goto-char end)
       t)))
+
+(defun run-custom-hooks ( hook-list )
+  (mapc
+    (lambda ( hook )
+      (funcall hook))
+    hook-list))
+
