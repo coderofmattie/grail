@@ -4,6 +4,24 @@
 (require 'vc)
 (require 'merging)
 
+(setq
+  vc-handled-backends `(Bzr SVN Git Hg Arch SCCS Mtn CVS RCS)
+  vc-delete-logbuf-window t
+  ;; just to be sure, this default may change in the future.
+  vc-make-backup-files nil)
+
+(defun ver-ctl-branch-list ()
+  (interactive)
+  (let*
+    ((vc-fileset (vc-deduce-fileset t))
+     (backend (car vc-fileset)))
+
+    (funcall (vc-find-backend-function backend 'branches)) ))
+
+(defun ver-ctl-branch-current ()
+  (interactive)
+  (car (ver-ctl-branch-list)))
+
 (defun ver-ctl-diff ()
   (interactive)
   (ediff-revision buffer-file-name) )
@@ -33,4 +51,11 @@
   (local-set-key (kbd "C-c r m") 'vc-merge)
   (local-set-key (kbd "C-c r p") 'vc-pull))
 
-(provide 'version-control)
+(defun vert-ctl-hook ()
+  (make-variable-buffer-local 'mattie-modeline-branch)
+  (setq mattie-modeline-branch 'ver-ctl-branch-current)
+
+  (ver-ctl-bindings))
+
+(add-hook 'configure-programming-hook 'ver-ctl-hook t)
+

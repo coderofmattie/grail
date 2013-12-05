@@ -8,14 +8,12 @@
 (require 'buffer-status)
 (require 'tags-uber)
 (require 'working-copy)
-(require 'version-control)
-(require 'merging)
 
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
 
 ;; higher level functionality
-(use-grail-profiles 1 "lisp" "code-documentation")
+(use-grail-profiles 1 "lisp" "code-documentation" "version-control")
 
 ;; language profiles
 ;; not done yet: "clojure"
@@ -30,34 +28,6 @@
 
 (setq                     ;; cmd window + src
   gdb-show-main t)
-
-;;----------------------------------------------------------------------
-;;                           VC
-;;----------------------------------------------------------------------
-(require 'vc)
-
-;; VC - I wish Version Control did foo ... oh wait, it's already bound
-;; VC.
-
-;; I use SubVersion as a master repository, and bzr as my sandbox
-;; to create clean bisect atmoic changesets. Change the order
-;; of the VC backends so bzr, svn are the first canidates for
-;; registering files.
-
-;; make sure the creatures from the black lagoon, CVS/RCS are dead last.
-
-(setq
-  vc-handled-backends `(Bzr SVN Git Hg Arch SCCS Mtn CVS RCS)
-  vc-delete-logbuf-window t
-  ;; just to be sure, this default may change in the future.
-  vc-make-backup-files nil)
-
-(defun version-control-source-file-dir ()
-  (interactive)
-  (vc-dir (file-name-directory buffer-file-name)) )
-
-(defun configure-for-version-control ()
-  (local-set-key (kbd "C-c v v") 'version-control-source-file-dir))
 
 ;;----------------------------------------------------------------------
 ;;                           working-copy
@@ -90,10 +60,12 @@
   (local-set-key (kbd "C-c i i") 'tags-uber-incremental)
   (local-set-key (kbd "C-c i s") 'tags-uber-search))
 
+(defvar configure-programming-hook nil)
+
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
 
-  (ver-ctl-bindings)
+  (apply 'run-hooks configure-programming-hook)
 
   ;; highlight all fucked up files.
   (whitespace-mode)
@@ -121,9 +93,7 @@
   (local-set-key (kbd "C-c f s") 'sort-lines)
 
   ;; found this on emacs-wiki , all scripts are automatically made executable.
-  (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t)
-
-  (configure-for-version-control))
+  (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t) )
 
 (defun configure-for-navigation ( forwards backwards )
   (local-set-key (kbd "M-f") forwards)

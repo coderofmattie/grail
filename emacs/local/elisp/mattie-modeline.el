@@ -3,6 +3,11 @@
 ;;----------------------------------------------------------------------
 (require 'cm-string)
 
+(defun mattie-modeline-branch-null ()
+  "")
+
+(defvar mattie-modeline-branch 'mattie-modeline-branch-null)
+
 (defun mattie-modeline-modified ()
   "mattie-modeline-modified
 
@@ -24,7 +29,10 @@
       ((and buffer-file-name (recent-auto-save-p)) "!BKP")
       (t "-"))
     "/"
-    (if vc-mode (string-strip-leading-whitespace vc-mode) "")
+    (if vc-mode
+      (concat (string-strip-leading-whitespace vc-mode) ":"
+              (funcall mattie-modeline-branch))
+      "")
     (if wc-modeline-status wc-modeline-status "")
     "]"))
 
