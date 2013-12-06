@@ -4,6 +4,8 @@
 (require 'search-trees)
 
 (search-trees-add-for-host "rouge" "cperl-mode"
+  '("classic"   "/home/codermattie/work/inventory-codebase")
+  '("core"      "/home/codermattie/work/inventory-codebase")
   '("inventory" "/home/codermattie/work/inventory-codebase")
   '("system"
      "/usr/local/lib/perl/5.14.2"

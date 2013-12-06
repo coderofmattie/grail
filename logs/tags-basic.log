@@ -1,0 +1,14 @@
+summary: basic tags support working
+
+description:
+
+Get the most minimal tags support working. This
+consists only of adding in timer support
+for the existing perl functionality.
+
+[search-trees.el]: add current paths
+  * update with new workspace paths
+
+
+
+
