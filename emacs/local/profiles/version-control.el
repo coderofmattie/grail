@@ -74,9 +74,10 @@
       nil
       (assoc input log-pairs)) ))
 
-;; (ver-ctl-log-file-pairs (ver-ctl-log-files))
-
-;; (ver-ctl-log-completion "foo" (ver-ctl-log-file-pairs (ver-ctl-log-files)) )
+(defun ver-ctl-log-file-list ()
+  (interactive)
+  (message "log files: %s"
+    (string-join "," (mapcar 'car (ver-ctl-log-file-pairs (ver-ctl-log-files))))) )
 
 (defun ver-ctl-log-select ( prompt )
   (let
@@ -99,6 +100,18 @@
           (pop-to-buffer (find-file-noselect (cdr log-file)) nil t))
         (message "no log selected!")) )) )
 
+(defun ver-ctl-log-file-create ( log-name )
+  (interactive "Mname of log: ")
+
+  (let
+    ((log-file (concat (ver-ctl-log-dir buffer-file-name) "/" log-name ".log") ))
+
+    (if (file-exists-p log-file)
+      (message "log file %s already exists!" log-file)
+      (progn
+        (switch-to-buffer
+          (pop-to-buffer (find-file-noselect log-file) nil t))) )) )
+
 (defun ver-ctl-log-insert-label ()
   (interactive)
   (catch 'no-log-files
@@ -109,12 +122,31 @@
         (insert (concat "<" (car log-file) "> "))
         (message "no log selected!")) )))
 
+(defun ver-ctl-log-insert-log ()
+  (interactive)
+  (catch 'no-log-files
+    (let
+      ((log-file (ver-ctl-log-select "choose log file: ")))
+
+      (if log-file
+        (progn
+          (insert-file-contents (cdr log-file))
+
+          (when (yes-or-no-p "delete log after insert? ")
+            (delete-file (cdr log-file))
+            (message "log: %s deleted" (car log-file))) )
+
+        (message "no log selected!")) )))
+
 (defun ver-ctl-log-bindings ()
   (let
     ((ver-map (make-sparse-keymap)))
 
+    (define-key ver-map "l" 'ver-ctl-log-file-list)
+    (define-key ver-map "c" 'ver-ctl-log-file-create)
     (define-key ver-map "o" 'ver-ctl-log-file-open)
-    (define-key ver-map "l" 'ver-ctl-log-insert-label)
+    (define-key ver-map "i" 'ver-ctl-log-insert-label)
+    (define-key ver-map "m" 'ver-ctl-log-insert-log)
 
     (local-set-key (kbd "C-c l") ver-map)))
 
