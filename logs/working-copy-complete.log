@@ -1,0 +1,13 @@
+summary: completion of working copy
+
+description:
+
+The working copy code needs to be completed. to do this the implementation
+must be completed and there needs to be full testing performed.
+
+  * finish the work on async-builder to deal with the lexical capture
+    issue. systematic testing of various scenarios to be listed in
+    this log file.
+
+
+
