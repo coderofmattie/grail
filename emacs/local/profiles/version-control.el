@@ -34,13 +34,27 @@
 ;;----------------------------------------------------------------------
 (require 'log-mode)
 
-(defun ver-ctl-log-dir ( path )
-  (dir-path-if-accessible
-    (expand-file-name (concat (ver-ctl-root path) "/logs/"))) )
+(defun ver-ctl-log-dir ( &optional path )
+  ;; use a path for code buffers. egg sets default-directory
+  ;; in log buffers.
+  (dir-path-if-accessible (expand-file-name
+                            (concat
+                              (if path
+                                (ver-ctl-root path)
+                                default-directory)
+                              "/logs/"))) )
+
+(defun ver-ctl-log-dir-normal ()
+  (ver-ctl-log-dir buffer-file-name))
+
+(defun ver-ctl-log-dir-logmode ()
+  (ver-ctl-dir))
+
+(defvar ver-ctl-log-dir-locate 'ver-ctl-log-dir-normal)
 
 (defun ver-ctl-log-files ()
   (let
-    ((log-dir (ver-ctl-log-dir buffer-file-name)))
+    ((log-dir (funcall ver-ctl-log-dir-locate)))
 
     (when log-dir
       (directory-files log-dir t "\\.log$")) ))
@@ -103,6 +117,19 @@
     (define-key ver-map "l" 'ver-ctl-log-insert-label)
 
     (local-set-key (kbd "C-c l") ver-map)))
+
+(defvar ver-ctl-egg-log-hook nil)
+
+(defadvice egg-commit-log-edit ( after ver-ctl/log-edit-hook )
+  (run-custom-hooks ver-ctl-egg-log-hook)
+  ad-return-value)
+
+(ad-activate 'egg-commit-log-edit)
+
+(add-hook 'ver-ctl-egg-log-hook
+  (lambda ()
+    (ver-ctl-log-bindings))
+  t)
 
 ;;----------------------------------------------------------------------
 ;; commands
