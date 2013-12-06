@@ -23,5 +23,6 @@
     (code-documentation-setup "shell-docs" "shell-mode" advanced-bash-scripting-guide)
 
     (setq sh-indentation 2)
-    (procedural-smart-parens-editing) )
+    (procedural-smart-parens-editing)
+    (turn-on-dwim-tab 'indent-for-tab-command))
   t)

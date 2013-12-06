@@ -192,3 +192,8 @@
   (lambda ()
     (templates/mode-setup))
   t)
+
+(add-hook 'sh-mode-hook
+  (lambda ()
+    (templates/mode-setup))
+  t)

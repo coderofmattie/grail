@@ -1,0 +1,4 @@
+#name : mkdir
+# --
+test -d ${1:dir} || mkdir -p $1
+$0

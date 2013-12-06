@@ -1,0 +1,12 @@
+summary: create templates
+
+description:
+
+a tag for marking the creation of templates
+
+[emacs/templates/yasnippet/local]: 
+  * various templates
+
+
+
+
