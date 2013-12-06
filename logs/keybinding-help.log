@@ -1,0 +1,14 @@
+summary: help for keybindings
+
+description:
+
+create a simple way to get help for keybindings. the prefix is
+easy to remember but the specific actions are not. Start off
+with a simple solution by adding a "h" to every group that
+lists them on the modeline.
+
+[elisp.el]: core functions available early.
+
+
+
+

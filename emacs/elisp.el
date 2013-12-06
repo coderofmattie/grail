@@ -4,6 +4,7 @@
 ;; Copyright (C) 2008 Mike Mattie
 ;; Description: basic elisp programming tools.
 ;;----------------------------------------------------------------------
+(require 'cm-string)
 
 ;; increase the max eval depth to 4k. Hope this doesn't croak Emacs.
 (setq max-lisp-eval-depth 4096)
@@ -124,3 +125,55 @@
     (lambda ( hook )
       (funcall hook))
     hook-list))
+
+(defun keybindings-help-first-line ( fn )
+  (let
+    ((docs (documentation fn)))
+
+    (if docs
+      (car
+        (split-string docs "
+"))
+      "?")))
+
+(defun keybindings-help-display ( group-name keymap )
+  (format "key set: %s
+%s"
+    group-name
+    (string-join "
+"
+      (mapcar
+        (lambda ( keymap-pair )
+          (format "(%s) %s"
+            (char-to-string (car keymap-pair))
+            (keybindings-help-first-line (cdr keymap-pair))) )
+        (cdr keymap)) ) ))
+
+(defconst keybindings-help-buffer-name "*keybindings help*")
+
+(defun keybindings-help-quit ()
+  (interactive)
+
+  (other-window 1)
+  (delete-other-windows)
+
+  (kill-buffer (get-buffer keybindings-help-buffer-name)) )
+
+(defun keybindings-help-fn ( group-name keymap )
+  (lexical-let
+    ((doc-string (keybindings-help-display group-name keymap)))
+
+    (lambda ()
+      (interactive)
+
+      (switch-to-buffer
+        (with-current-buffer
+          (pop-to-buffer
+            (get-buffer-create keybindings-help-buffer-name))
+
+          (insert doc-string)
+
+          (local-set-key (kbd "q") 'keybindings-help-quit)
+          (message "press \"q\" to quit help.")
+
+          (current-buffer))) )) )

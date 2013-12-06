@@ -6,6 +6,9 @@
 (require 'vc)
 (require 'merging)
 
+;; egg fails with a busted autoload without this require
+(require 'edmacro)
+
 (grail-load 'egg (grail-define-installer "egg"
                           "git"
                           "git://github.com/byplayer/egg.git"))
@@ -75,6 +78,7 @@
       (assoc input log-pairs)) ))
 
 (defun ver-ctl-log-file-list ()
+  "list log files"
   (interactive)
   (message "log files: %s"
     (string-join "," (mapcar 'car (ver-ctl-log-file-pairs (ver-ctl-log-files))))) )
@@ -90,6 +94,7 @@
         (throw 'no-log-files nil)) ) ))
 
 (defun ver-ctl-log-file-open ()
+  "open log"
   (interactive)
   (catch 'no-log-files
     (let
@@ -101,6 +106,7 @@
         (message "no log selected!")) )) )
 
 (defun ver-ctl-log-file-create ( log-name )
+  "create log"
   (interactive "Mname of log: ")
 
   (let
@@ -113,6 +119,7 @@
           (pop-to-buffer (find-file-noselect log-file) nil t))) )) )
 
 (defun ver-ctl-log-insert-label ()
+  "insert label"
   (interactive)
   (catch 'no-log-files
     (let
@@ -123,6 +130,7 @@
         (message "no log selected!")) )))
 
 (defun ver-ctl-log-insert-log ()
+  "insert log as msg"
   (interactive)
   (catch 'no-log-files
     (let
@@ -148,6 +156,7 @@
     (define-key ver-map "i" 'ver-ctl-log-insert-label)
     (define-key ver-map "m" 'ver-ctl-log-insert-log)
 
+    (define-key ver-map "h" (keybindings-help-fn "ver log" ver-map))
     (local-set-key (kbd "C-c l") ver-map)))
 
 (defvar ver-ctl-egg-log-hook nil)
