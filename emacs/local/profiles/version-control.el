@@ -64,20 +64,38 @@
 
 ;; (ver-ctl-log-completion "foo" (ver-ctl-log-file-pairs (ver-ctl-log-files)) )
 
-(defun ver-ctl-log-file-open ()
-  (interactive)
+(defun ver-ctl-log-select ( prompt )
   (let
     ((existing-logs (ver-ctl-log-file-pairs (ver-ctl-log-files)) ))
 
     (if existing-logs
       (let
-        ((selected (ver-ctl-log-completion "choose log: " existing-logs)))
+        ((log-pair (ver-ctl-log-completion prompt existing-logs)))
 
-        (if selected
-          (switch-to-buffer
-            (pop-to-buffer (find-file-noselect (cdr selected)) nil t))
-          (message "no log selected!")) )
-      (message "no log files found!")) ))
+        (if log-pair
+          (cdr log-pair)
+          nil))
+      (progn
+        (message "no log files found! ")
+        (throw 'no-log-files nil)) ) ))
+
+(defun ver-ctl-log-file-open ()
+  (interactive)
+  (catch 'no-log-files
+    (let
+      ((log-file (ver-ctl-log-select "choose log: ")))
+
+      (if log-file
+        (switch-to-buffer
+          (pop-to-buffer (find-file-noselect log-file) nil t))
+        (message "no log selected!")) )) )
+
+(defun ver-ctl-log-bindings ()
+  (let
+    ((ver-map (make-sparse-keymap)))
+
+    (define-key ver-map "o" 'ver-ctl-log-file-open)
+    (local-set-key (kbd "C-c l") ver-map)))
 
 ;;----------------------------------------------------------------------
 ;; commands
@@ -142,7 +160,9 @@
   (make-variable-buffer-local 'mattie-modeline-branch)
   (setq mattie-modeline-branch 'ver-ctl-branch-current)
 
-  (ver-ctl-bindings))
+  (ver-ctl-bindings)
+  (ver-ctl-log-bindings))
+
 (setq configure-programming-hook nil)
 
 (add-hook 'configure-programming-hook 'ver-ctl-hook t)
