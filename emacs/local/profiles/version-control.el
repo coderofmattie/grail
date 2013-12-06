@@ -238,6 +238,4 @@
   (ver-ctl-bindings)
   (ver-ctl-log-bindings))
 
-(setq configure-programming-hook nil)
-
 (add-hook 'configure-programming-hook 'ver-ctl-hook t)
