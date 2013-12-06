@@ -187,3 +187,8 @@
   (lambda ()
     (templates/mode-setup))
   t)
+
+(add-hook 'log-mode-hook
+  (lambda ()
+    (templates/mode-setup))
+  t)
