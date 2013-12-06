@@ -69,12 +69,7 @@
     ((existing-logs (ver-ctl-log-file-pairs (ver-ctl-log-files)) ))
 
     (if existing-logs
-      (let
-        ((log-pair (ver-ctl-log-completion prompt existing-logs)))
-
-        (if log-pair
-          (cdr log-pair)
-          nil))
+      (ver-ctl-log-completion prompt existing-logs)
       (progn
         (message "no log files found! ")
         (throw 'no-log-files nil)) ) ))
@@ -83,18 +78,30 @@
   (interactive)
   (catch 'no-log-files
     (let
-      ((log-file (ver-ctl-log-select "choose log: ")))
+      ((log-file (ver-ctl-log-select "choose log file: ")))
 
       (if log-file
         (switch-to-buffer
-          (pop-to-buffer (find-file-noselect log-file) nil t))
+          (pop-to-buffer (find-file-noselect (cdr log-file)) nil t))
         (message "no log selected!")) )) )
+
+(defun ver-ctl-log-insert-label ()
+  (interactive)
+  (catch 'no-log-files
+    (let
+      ((log-file (ver-ctl-log-select "choose log label: ")))
+
+      (if log-file
+        (insert (concat "<" (car log-file) "> "))
+        (message "no log selected!")) )))
 
 (defun ver-ctl-log-bindings ()
   (let
     ((ver-map (make-sparse-keymap)))
 
     (define-key ver-map "o" 'ver-ctl-log-file-open)
+    (define-key ver-map "l" 'ver-ctl-log-insert-label)
+
     (local-set-key (kbd "C-c l") ver-map)))
 
 ;;----------------------------------------------------------------------
