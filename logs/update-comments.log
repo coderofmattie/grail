@@ -1,0 +1,13 @@
+summary: update the comments to a standard form
+
+description:
+
+Update all the source headers to a useful standard.
+It should be name of the file, summary, description,
+and notes.
+
+then build a template that auto inserts name and the
+rest of of the jazz.
+
+
+

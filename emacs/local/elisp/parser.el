@@ -1,16 +1,6 @@
-;;; parser.el --- Elisp Macro DSL Parser Compiler
-
-;; Copyright (C) 2008 Mike Mattie
-
-;; Author: Mike Mattie <codermattie@gmail.com>
-;; Maintainer: Mike Mattie <codermattie@gmail.com>
-;; Created: 2008-01-04
-;; Version: 0.0.7
-;; Keywords: parser
-;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
-
-;;; Commentary:
-
+;;----------------------------------------------------------------------
+;; parser.el
+;;
 ;; An experimental parser-compiler DSL that emphasizes concise and
 ;; flexible expression with a lispy interface to render gnarly
 ;; scripting tasks trivial as parsing in Emacs should be.
@@ -125,9 +115,7 @@
 ;; Principles,Techniques,and Tools
 ;; Alfred V.Aho, Ravi Sethi, Jeffrey D.Ullman
 ;; 1986, Addison Wesley
-
-;;; Code:
-
+;;----------------------------------------------------------------------
 (require 'cl)
 (require 'parser-fn)
 (require 'closure)

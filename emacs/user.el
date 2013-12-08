@@ -1,10 +1,5 @@
 ;;----------------------------------------------------------------------
 ;; user.el
-;; written by: Mike Mattie
-;;
-;; the code in this file should depend only on reliable features
-;; distributed with emacs. Any third party or risky features should
-;; be loaded via load-style.
 ;;----------------------------------------------------------------------
 (eval-when-compile
   (require 'grail-profile)

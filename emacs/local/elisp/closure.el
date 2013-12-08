@@ -1,14 +1,8 @@
-;;; closure.el --- pseudo closures to save and re-enter an execution environment.
-
-;; Copyright (C) 2008 Mike Mattie
-
-;; Author: Mike Mattie <codermattie@gmail.com>
-;; Maintainer: Mike Mattie <codermattie@gmail.com>
-;; Created: 2008-01-04
-;; Version: 0.0.2
-;; Keywords: closure
-;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
-
+;;----------------------------------------------------------------------
+;; closure.el
+;;
+;; pseudo closures to save and re-enter an execution environment.
+;;----------------------------------------------------------------------
 (defconst closure-release-version "0.0.2"
   "the release number of closure.el")
 

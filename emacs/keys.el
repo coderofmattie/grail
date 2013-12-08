@@ -1,6 +1,5 @@
 ;;----------------------------------------------------------------------
 ;; keys.el
-;; Primary Author: Mike Mattie (codermattie@gmail.com)
 ;;
 ;; keybinding tools and configuration.
 ;;----------------------------------------------------------------------

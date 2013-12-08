@@ -1,16 +1,6 @@
-;;; dwim-tab.el --- DWIM tab overloading.
-
-;; Copyright (C) 2008 Mike Mattie
-
-;; Author: Mike Mattie <codermattie@gmail.com>
-;; Maintainer: Mike Mattie <codermattie@gmail.com>
-;; Created: 2007-12-15
-;; Version: 0.0.1
-;; Keywords: tab,dwim
-;; License: LGPL <http://www.gnu.org/licenses/lgpl.html>
-
-;; A highly overloaded "Tab" key implementation targeted at programming modes.
-
+;;----------------------------------------------------------------------
+;; dwim-tab.el
+;;----------------------------------------------------------------------
 (eval-when-compile
   (require 'cl))
 

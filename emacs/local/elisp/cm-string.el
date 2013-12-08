@@ -1,8 +1,5 @@
 ;;;----------------------------------------------------------------------
 ;; cm-string.el
-;; Primary Author: Mike Mattie
-;; Copyright (C) 2009 Mike Mattie
-;; License: LGPL-v3
 ;;;----------------------------------------------------------------------
 
 (defun bracket-strings ( bracket list )

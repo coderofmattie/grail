@@ -41,4 +41,3 @@
   (if (string-match "[^[:blank:]]" string ) string))
 
 (provide 'cm-util)
-

@@ -1,8 +1,5 @@
 ;;;----------------------------------------------------------------------
 ;; grail.el
-;; Primary Author: Mike Mattie
-;; Copyright (C) 2008,2009 Mike Mattie
-;; License: LGPL-v3
 ;;----------------------------------------------------------------------
 
 ;; Grail loads an .emacs configuration in a robust, modular, and mode

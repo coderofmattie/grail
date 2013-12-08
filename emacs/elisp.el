@@ -1,8 +1,5 @@
 ;;----------------------------------------------------------------------
 ;; elisp.el
-;; Primary Author: Mike Mattie
-;; Copyright (C) 2008 Mike Mattie
-;; Description: basic elisp programming tools.
 ;;----------------------------------------------------------------------
 (require 'cm-string)
 

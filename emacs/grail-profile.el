@@ -1,8 +1,5 @@
 ;;;----------------------------------------------------------------------
 ;; grail-profile.el
-;; Primary Author: Mike Mattie
-;; Copyright (C) 2010 Mike Mattie
-;; License: LGPL-v3
 ;;----------------------------------------------------------------------
 (eval-when-compile
   (require 'cl)

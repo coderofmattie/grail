@@ -1,8 +1,5 @@
 ;;;----------------------------------------------------------------------
 ;; grail-fn.el
-;; Primary Author: Mike Mattie
-;; Copyright (C) 2008,2009 Mike Mattie
-;; License: LPGL-v3
 ;;----------------------------------------------------------------------
 
 ;; grail-fn is a library of functions required by grail to boot. These
