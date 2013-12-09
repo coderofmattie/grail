@@ -177,38 +177,52 @@
 ;;----------------------------------------------------------------------
 
 (defun ver-ctl-branch-show-all ()
+  "ver-ctl-branch-show-all: show all branches in repo"
   (interactive)
   (message "branches: %s" (string-join "," (ver-ctl-branch-list))) )
 
 (defun ver-ctl-diff ()
+  "ver-ctl-file-diff: diff file against version"
   (interactive)
   (ediff-revision buffer-file-name))
 
 (defun ver-ctl-file-log ()
+  "ver-ctl-file-log: diff file against version"
   (interactive)
   (egg-file-log buffer-file-name))
 
+(defun ver-ctl-file-blame ()
+  "ver-ctl-file-blame: toggle blame mode"
+  (interactive)
+  (egg-file-toggle-blame-mode))
+
 (defun ver-ctl-file-resolve ()
+  "ver-ctl-file-resolve: mark file as resolved"
   (interactive)
   (egg-resolve-merge-with-ediff))
 
 (defun ver-ctl-file-merge ()
+  "ver-ctl-file-merge: merge conflicted file"
   (interactive)
   (egg-log-buffer-merge))
 
 (defun ver-ctl-execute ()
+  "ver-ctl-execute: perform the next version control action"
   (interactive)
   (call-interactively 'egg-next-action))
 
 (defun ver-ctl-status ()
+  "ver-ctl-status: show version control tree status"
   (interactive)
   (call-interactively 'egg-status))
 
 (defun ver-ctl-interface ()
+  "ver-ctl-interface: show version control interface"
   (interactive)
   (call-interactively 'egg-log))
 
 (defun ver-ctl-repo ()
+  "ver-ctl-repo: show the entire repository"
   (interactive)
 
   (setq current-prefix-arg 4)
@@ -220,14 +234,17 @@
 
     (define-key ver-map "d" 'ver-ctl-diff)
     (define-key ver-map "l" 'ver-ctl-file-log)
+    (define-key ver-map "b" 'ver-ctl-file-blame)
 
     (define-key ver-map "v" 'ver-ctl-execute)
-    (define-key ver-map "c" 'ver-ctl-resolve)
-    (define-key ver-map "m" 'ver-ctl-merge)
+    (define-key ver-map "c" 'ver-ctl-file-resolve)
+    (define-key ver-map "m" 'ver-ctl-file-merge)
 
     (define-key ver-map "s" 'ver-ctl-status)
     (define-key ver-map "x" 'ver-ctl-interface)
     (define-key ver-map "r" 'ver-ctl-repo)
+
+    (define-key ver-map "h" (keybindings-help-fn "ver ctl" ver-map))
 
     (local-set-key (kbd "C-c v") ver-map)))
 
