@@ -37,6 +37,18 @@
   "
   (apply 'add-to-list 'dwim-tab-global-context globals))
 
+(defvar dwim-buffer-change-status nil)
+
+(defun dwim-buffer-change-hook ( start end )
+  (setq dwim-buffer-change-status t))
+
+ (defun dwim-install-change-hook ()
+   (setq dwim-buffer-change-status nil)
+   (add-hook 'before-change-functions 'dwim-buffer-change-hook nil t))
+
+ (defun dwim-remove-change-hook ()
+   (remove-hook 'before-change-functions 'dwim-buffer-change-hook t))
+
 (defun try-complete-dwim ()
   "try-complete-dwim COMPLETE
 
@@ -46,26 +58,34 @@
   (interactive)
   (let
     ((complete nil)
-     (point-before (point)))
+     (point-before (point))
+     (success nil))
 
-    (setq complete (append dwim-tab-global-context complete))
-    (setq complete (append dwim-tab-local-context complete))
-
-    (setq complete (nreverse complete))
+    (setq complete (append
+                     dwim-tab-local-context
+                     dwim-tab-global-context complete))
 
     (when dwim-tab-register-expand
       (setq complete (cons dwim-tab-register-expand complete)))
 
-    (catch 'terminate-complete
-      (unless complete
-        (throw 'terminate-complete nil))
+    (when complete
+      (dwim-install-change-hook)
 
-        (dolist (fn complete)
-          (funcall fn)
+      (setq dwim-buffer-change-status nil)
 
-          (unless (equal point-before (point))
-            (throw 'terminate-complete t)))
-      nil) ))
+      (while complete
+        (funcall (car complete))
+
+        (setq complete
+          (if dwim-buffer-change-status
+            (progn
+              (setq success t)
+              nil)
+            (cdr complete))) )
+
+      (dwim-remove-change-hook))
+
+      success))
 
 (defun dwim-tab-do-magic ()
   "dwim-tab-do-magic FUNCTIONS
@@ -80,8 +100,11 @@
    completion functions are bound to the generated function.
   "
   (interactive)
+
   (if (looking-at "\\>")
-    (unless (try-complete-dwim) (funcall dwim-tab-local-indent))
+    (if (try-complete-dwim)
+      t
+      (funcall dwim-tab-local-indent))
     (funcall dwim-tab-local-indent)) )
 
 (defun turn-on-dwim-tab ( &optional indent-function )

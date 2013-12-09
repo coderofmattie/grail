@@ -34,6 +34,6 @@
     (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
     (configure-for-debugging 'edebug-defun)
 
-    (dwim-tab-localize-context 'lisp-complete-symbol)
+;;    (dwim-tab-localize-context 'completion-at-point)
     (turn-on-dwim-tab 'lisp-indent-line))
   t)

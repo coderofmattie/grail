@@ -22,14 +22,16 @@
 ;; unbind the yasnippet keymap and call the previous keymap function
 ;; which is of course dwim-tab. When calling yas/expand from inside
 ;; dwim-tab you get an infinite loop. setting this to nil fixes this.
+
+;; this also fixes expand going into a template selection menu which
+;; is not what is wanted since I want to seperate expansion from
+;; completion using dwim-tab
 (setq yas-fallback-behavior nil)
 
 ;; ignore filenames as triggers since the trigger name can be set in
 ;; the snippet without the restrictions imposed by the filesystem on
 ;; naming
 (setq yas/ignore-filenames-as-triggers t)
-
-(setq yas-trigger-key nil)
 
 ;; this seems to be necessary now that yas clobbering of tab
 ;; cannot be turned off
@@ -78,9 +80,10 @@
 
 (templates-update-collections)
 
+;; strip off all the completion methods so that
+;; only my completion system is used.
 (setq yas-prompt-functions
-  '(template/helm-prompt
-    yas-ido-prompt))
+  '(template/helm-prompt))
 
 (defun templates/mode-setup ()
   ;; activate yasnippet in the buffer
@@ -115,7 +118,7 @@
 
    return true when the point is in a yasnippet field
   "
-  (when (mode-overlay-at-point-p 'yas--field) t))
+  (mode-overlay-near-point-p 'yas--field))
 
 (defun template/expand ()
   "template/expand
@@ -145,25 +148,29 @@
   (interactive)
   (yas-new-snippet))
 
-(defun template/helm-prompt (prompt choices &optional display-fn)
-  "Use helm to select a snippet. Put this into `yas/prompt-functions.'"
-  (interactive)
-  (setq display-fn (or display-fn 'identity))
-  (if (require 'helm-config)
-    (let (tmpsource cands result rmap)
-      (setq cands (mapcar (lambda (x) (funcall display-fn x)) choices))
-      (setq rmap (mapcar (lambda (x) (cons (funcall display-fn x) x)) choices))
-      (setq tmpsource
-        (list
-          (cons 'name prompt)
-          (cons 'candidates cands)
-          '(action . (("Expand" . (lambda (selection) selection))))
-          ))
-      (setq result (helm-other-buffer '(tmpsource) "*helm-select-yasnippet"))
-      (if (null result)
-        (signal 'quit "user quit!")
-        (cdr (assoc result rmap))))
-    nil))
+;; (defun template/helm-prompt (prompt choices &optional display-fn)
+;;   "Use helm to select a snippet. Put this into `yas/prompt-functions.'"
+;;   (interactive)
+;;   (setq display-fn (or display-fn 'identity))
+;;   (if (require 'helm-config)
+;;     (let (tmpsource cands result rmap)
+;;       (setq cands (mapcar (lambda (x) (funcall display-fn x)) choices))
+;;       (setq rmap (mapcar (lambda (x) (cons (funcall display-fn x) x)) choices))
+;;       (setq tmpsource
+;;         (list
+;;           (cons 'name prompt)
+;;           (cons 'candidates cands)
+;;           '(action . (("Expand" . (lambda (selection) selection))))
+;;           ))
+;;       (setq result (helm-other-buffer '(tmpsource) "*helm-select-yasnippet"))
+;;       (if (null result)
+;;         (signal 'quit "user quit!")
+;;         (cdr (assoc result rmap))))
+;;     nil))
+
+(defun template/helm-prompt ( prompt choices &optional foo )
+  (dwim-complete/helm prompt choices (get-buffer-create "yasnippet/complete")))
+
 
 (defun template/insert ()
   (interactive)

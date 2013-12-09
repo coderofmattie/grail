@@ -162,3 +162,23 @@
   (set-face-foreground 'web-mode-html-attr-value-face "grey50") )
 
 (add-hook 'web-mode-hook 'display-faces-for-web-mode t)
+
+(defun display-faces-for-helm ()
+  (set-face-background 'helm-source-header "black")
+  (set-face-foreground 'helm-source-header "DeepSkyBlue4")
+
+  (set-face-background 'helm-visible-mark "black")
+  (set-face-foreground 'helm-visible-mark "orange1")
+
+  (set-face-background 'helm-header "black")
+  (set-face-foreground 'helm-header "LightSteelBlue")
+
+  (set-face-background 'helm-candidate-number "black")
+  (set-face-foreground 'helm-candidate-number "firebrick1")
+
+  (set-face-background 'helm-selection "grey20")
+  (set-face-foreground 'helm-selection "LightSteelBlue"))
+
+(eval-after-load 'helm
+  '(progn
+     (display-faces-for-helm)))
