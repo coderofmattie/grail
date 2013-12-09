@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name: header
+# key: header
+# --
+;;----------------------------------------------------------------------
+;; ${1:`(file-name-nondirectory buffer-file-name)`} - $2
+;;
+;; description:
+;; 
+;; $3
+;;----------------------------------------------------------------------
+
+$0
+
+(provides '${4:`(file-name-base buffer-file-name)`})
+

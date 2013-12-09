@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
-# name: define the header and footer for a GNU Emacs module
-# key: heading
+# name: banner
+# key: banner
 # --
 ;;; ${1:`(file-name-sans-extension (file-name-nondirectory buffer-file-name))`}.el --- ${2:description}
 
