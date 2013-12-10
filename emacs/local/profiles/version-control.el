@@ -231,9 +231,18 @@
 
     (local-set-key (kbd "C-c v") ver-map)))
 
+
+(defun ver-ctl-modeline-string ()
+  (let
+    ((detect-vcs (vc-backend buffer-file-name)))
+
+    (if detect-vcs
+      (concat (format "%s" detect-vcs) "->" (ver-ctl-branch-current))
+      "") ))
+
 (defun ver-ctl-hook ()
-  (make-variable-buffer-local 'mattie-modeline-branch)
-  (setq mattie-modeline-branch 'ver-ctl-branch-current)
+  (make-variable-buffer-local 'mattie-modeline-vcs)
+  (setq mattie-modeline-vcs   'ver-ctl-modeline-string)
 
   (ver-ctl-bindings)
   (ver-ctl-log-bindings))

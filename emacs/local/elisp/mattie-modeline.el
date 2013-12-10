@@ -29,9 +29,8 @@
       ((and buffer-file-name (recent-auto-save-p)) "!BKP")
       (t "-"))
     "/"
-    (if vc-mode
-      (concat (string-strip-leading-whitespace vc-mode) ":"
-              (funcall mattie-modeline-branch))
+    (if (and (boundp 'mattie-modeline-vcs) (functionp 'mattie-modeline-vcs))
+      (funcall mattie-modeline-vcs)
       "")
     (if wc-modeline-status wc-modeline-status "")
     "]"))
