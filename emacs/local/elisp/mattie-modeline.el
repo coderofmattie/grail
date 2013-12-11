@@ -29,7 +29,7 @@
       ((and buffer-file-name (recent-auto-save-p)) "!BKP")
       (t "-"))
     "/"
-    (if (and (boundp 'mattie-modeline-vcs) (functionp 'mattie-modeline-vcs))
+    (if (and (boundp 'mattie-modeline-vcs) (functionp mattie-modeline-vcs))
       (funcall mattie-modeline-vcs)
       "")
     (if wc-modeline-status wc-modeline-status "")
