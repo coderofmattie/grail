@@ -133,7 +133,9 @@
     'wc-rcs-command-callback (wc-rcs-command-buffer) chain))
 
 (defun wc-rcs-command-builder-checkin ( path log )
-  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-checkin") path log))
+  (wc-rcs-command-builder (concat wc-wrappers-dir "/rcs-checkin")
+    path
+    log))
 
 (defun wc-rcs-command-builder-checkout ( path )
   (wc-rcs-command-builder "co" "-l" "-kb" path))
@@ -145,10 +147,16 @@
 (defun wc-rcs-init ( path )
   (wc-rcs-command-run
     (async-build-chained
-      ("wc-rcs" (string-join " " (list (concat wc-wrappers-dir "/rcs-init") path "initialize rcs"))
+      ("wc-rcs" (string-join-args " "
+                  (concat wc-wrappers-dir "/rcs-init")
+                  path
+                  "initialize rcs")
         'wc-rcs-command-callback (wc-rcs-command-buffer))
 
-      ("wc-rcs" (string-join " " (list (concat wc-wrappers-dir "/rcs-checkin") path "first checkin"))
+      ("wc-rcs" (string-join-args " "
+                  (concat wc-wrappers-dir "/rcs-checkin")
+                  path
+                  "first checkin")
         'wc-rcs-command-callback (wc-rcs-command-buffer)) )) )
 
 (defun wc-rcs-checkout ( file )

@@ -25,6 +25,11 @@
     (car list)
     (if (cdr list) (prefix-strings prefix (cdr list))) ))
 
+(defun string-join-args (prefix &rest args)
+  (apply 'concat
+    (car args)
+    (if (cdr args) (prefix-strings prefix (cdr args))) ))
+
 (defun string-strip-leading-whitespace ( string )
   (replace-regexp-in-string "^ *" "" string))
 

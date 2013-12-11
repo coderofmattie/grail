@@ -1,6 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; async-command-builders.el
 ;;----------------------------------------------------------------------
+(require 'macros)
 
 (defun async-build-basic ( prefix command callback &optional use-buffer &optional chained )
   (let
@@ -41,6 +42,7 @@
            (apply 'grail-process-async-chain ,(async-build-exp (cdr body))) )) ))
 
 (defmacro async-build-chained ( &rest body )
-  (async-build-exp body))
+  (macros-symbol-value-recursive
+    (async-build-exp body)))
 
 (provide 'async-command-builders)
