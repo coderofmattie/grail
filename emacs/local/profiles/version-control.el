@@ -19,6 +19,12 @@
   ;; just to be sure, this default may change in the future.
   vc-make-backup-files nil)
 
+(remove-hook 'ediff-quit-hook 'egg--kill-ediffing-temp-buffers)
+
+;;----------------------------------------------------------------------
+;; library functions based on various vcs modes
+;;----------------------------------------------------------------------
+
 (defun ver-ctl-root ( from-path )
   (vc-find-root from-path ".git"))
 
@@ -184,7 +190,8 @@
 (defun ver-ctl-diff ()
   "ver-ctl-file-diff: diff file against version"
   (interactive)
-  (ediff-revision buffer-file-name))
+  (merging-ediff-teardown-diff-egg-toggle-enable)
+  (call-interactively 'ediff-revision buffer-file-name))
 
 (defun ver-ctl-file-log ()
   "ver-ctl-file-log: diff file against version"
