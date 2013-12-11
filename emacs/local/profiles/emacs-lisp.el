@@ -17,6 +17,22 @@
   (interactive)
   (occur "(defun"))
 
+(defun dwim-complete/elisp-candidates ()
+  (let
+    (( name-list ))
+
+    (mapatoms
+      (lambda ( sym )
+        (setq name-list (cons (symbol-name sym) name-list )))
+      obarray)
+
+    name-list))
+
+(defun dwim-complete/elisp-source ()
+  (dwim-complete/make-source "symbols"
+    (dwim-complete/elisp-candidates)
+    (dwim-complete/make-action 'dwim-complete-replace-stem) ))
+
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
     (configure-for-programming 'elisp-list-fn-signatures "elisp-mode")
@@ -34,6 +50,6 @@
     (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
     (configure-for-debugging 'edebug-defun)
 
-;;    (dwim-tab-localize-context 'completion-at-point)
-    (turn-on-dwim-tab 'lisp-indent-line))
+    (turn-on-dwim-tab 'lisp-indent-line)
+    (dwim-complete/for-buffer 'dwim-complete/elisp-source) )
   t)

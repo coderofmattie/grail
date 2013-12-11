@@ -7,56 +7,105 @@
 
 (require 'helm-config)
 
-(defun dwim-complete/helm (prompt choices &optional complete-buffer)
-  "Use helm to select a choice from a list of choices."
-  (interactive)
+(setq helm-execute-action-at-once-if-one t)
 
+(defun dwim-complete/make-action ( &optional fn )
+  `(action . ,(if fn fn (lambda (selection) selection))))
+
+(defun dwim-complete/make-source ( name candidates action )
   (let
-    ((tmpsource nil)
-     (cands     nil)
-     (result    nil)
-     (rmap      nil)
-     (display-fn 'identity))
+    ((cands     (sort (mapcar (lambda (x) (identity x)) candidates) 'string-lessp)))
 
-    (setq cands (mapcar (lambda (x) (funcall display-fn x)) choices))
-    (setq rmap (mapcar (lambda (x) (cons (funcall display-fn x) x)) choices))
+    `((name . ,name)
+      (candidates . ,cands)
+      ,action) ))
 
-    (setq tmpsource
-      (list
-        (cons 'name prompt)
-        (cons 'candidates cands)
-        '(action . (("Expand" . (lambda (selection) selection)))) ))
+(defun dwim-complete/helm ( prompt input buffer &rest sources-list )
+  (helm
+    :sources sources-list
+    :input input
+    :prompt prompt
+    :buffer buffer))
 
-    (setq result (helm-other-buffer '(tmpsource) complete-buffer))
+(defvar dwim-complete-global-sources nil)
+(defvar dwim-complete-local-sources nil)
 
-    (if (null result)
-      (signal 'quit "user quit!")
-      (cdr (assoc result rmap))))
-    nil)
+(defvar dwim-complete-stem-start nil)
+(defvar dwim-complete-stem-stop nil)
 
-;; (dwim-complete/helm "crap" '(foo bar baz bing) (get-buffer-create "foo"))
+(defun dwim-complete-set-stem ( start end )
+  (setq dwim-complete-stem-start start)
+  (setq dwim-complete-stem-stop end))
 
-(defun dwim-complete-prefix ( root-string other-string )
-  (if (>= (length other-string) (length root-string))
-    (let
-      ((other-prefix (substring other-string 0 (length root-string))))
+(defun dwim-complete-replace-stem ( completion )
+  (when (and
+          (and dwim-complete-stem-start dwim-complete-stem-stop)
+          (> (- dwim-complete-stem-stop dwim-complete-stem-start) 0))
 
-      (if (string-equal root-string other-prefix)
-        other-string
-        nil))
-    nil))
+    (delete-region dwim-complete-stem-start dwim-complete-stem-stop)
+    (goto-char dwim-complete-stem-start) )
 
-(defun dwim-complete-filter-prefix ( root-string other-list )
-  (let
-    ((candidates nil))
+  (insert (format "%s" completion)))
 
-    (mapc
-      (lambda ( other )
+(defun dwim-complete-delete-stem ()
+  (when (and
+          (and dwim-complete-stem-start dwim-complete-stem-stop)
+          (> (- dwim-complete-stem-stop dwim-complete-stem-start) 0))
+
+    (delete-region dwim-complete-stem-start dwim-complete-stem-stop)
+    (goto-char dwim-complete-stem-start)) )
+
+(defun dwim-complete-global-add-source ( new-source )
+  (setq dwim-complete-global-sources (cons new-source dwim-complete-global-sources)) )
+
+(defun dwim-complete-local-add-source ( new-source )
+  (setq dwim-complete-local-sources (cons new-source dwim-complete-local-sources)) )
+
+(defun dwim-complete-behind-point ()
+  (save-excursion
+    (let*
+      ((initial-point (point))
+       (line-start (progn
+                     (beginning-of-line)
+                     (point)))
+       (behind-point (- initial-point 1)))
+
+      (catch 'abort
+        (when (equal initial-point line-start)
+          (throw 'abort ""))
+
+        (when (equal behind-point line-start)
+          (throw 'abort
+            (char-to-string (char-before initial-point))) )
+
         (let
-          ((check-prefix (dwim-complete-prefix root-string other)))
+          (( found (search-backward-regexp "^\\|\\b" line-start t) ))
 
-          (when check-prefix
-            (setq candidates (cons check-prefix candidates))) ))
-      other-list)
+          (if (eq nil found)
+            ""
+            (progn
+              (dwim-complete-set-stem found initial-point)
+              (buffer-substring-no-properties found initial-point)) )) ))))
 
-    candidates))
+(defun dwim-complete/buffer ()
+  (get-buffer-create "*complete*"))
+
+(defun dwim-complete/complete ()
+  (interactive)
+  (apply 'dwim-complete/helm "complete: "
+
+    (dwim-complete-behind-point)
+    (dwim-complete/buffer)
+
+    (mapcar 'funcall
+      (or dwim-complete-local-sources dwim-complete-global-sources)) ))
+
+(defun dwim-complete/for-buffer ( default-source )
+  (make-variable-buffer-local 'dwim-complete-local-sources)
+
+  (make-local-variable 'dwim-complete-stem-start)
+  (make-local-variable 'dwim-complete-stem-stop)
+
+  (setq dwim-complete-local-sources (list default-source))
+
+  (local-set-key (kbd "<M-tab>") 'dwim-complete/complete) )

@@ -82,35 +82,10 @@
 
 ;; strip off all the completion methods so that
 ;; only my completion system is used.
-(setq yas-prompt-functions
-  '(template/helm-prompt))
-
-(defun templates/mode-setup ()
-  ;; activate yasnippet in the buffer
-  (yas-minor-mode)
-
-  (dwim-tab-localize-context 'template/expand)
-  (dwim-tab-localize-context 'template/next)
-
-  (local-set-key (kbd "C-c t l") 'templates/list)
-
-  (local-set-key (kbd "C-c t i") 'template/insert)
-
-  (local-set-key (kbd "C-c t e") 'template/expand)
-  (local-set-key (kbd "C-c t n") 'template/next)
-
-  (local-set-key (kbd "C-c t c") 'template/new))
-
-(defun templates/list ()
-  "templates/list
-
-   List the current template table for the buffer's mode.
-  "
-  (interactive)
-  (yas-describe-tables))
+(setq yas-prompt-functions nil)
 
 ;;----------------------------------------------------------------------
-;; template commands.
+;; template dwim-tab functions
 ;;----------------------------------------------------------------------
 
 (defun template/in-field-p ()
@@ -140,6 +115,19 @@
       t)
     nil))
 
+;;----------------------------------------------------------------------
+;; template commands
+;;----------------------------------------------------------------------
+
+(defun templates/list ()
+  "templates/list
+
+   List the current template table for the buffer's mode.
+  "
+  (interactive)
+  (yas-describe-tables))
+
+
 (defun template/new ()
   "templates/new
 
@@ -148,33 +136,82 @@
   (interactive)
   (yas-new-snippet))
 
-;; (defun template/helm-prompt (prompt choices &optional display-fn)
-;;   "Use helm to select a snippet. Put this into `yas/prompt-functions.'"
-;;   (interactive)
-;;   (setq display-fn (or display-fn 'identity))
-;;   (if (require 'helm-config)
-;;     (let (tmpsource cands result rmap)
-;;       (setq cands (mapcar (lambda (x) (funcall display-fn x)) choices))
-;;       (setq rmap (mapcar (lambda (x) (cons (funcall display-fn x) x)) choices))
-;;       (setq tmpsource
-;;         (list
-;;           (cons 'name prompt)
-;;           (cons 'candidates cands)
-;;           '(action . (("Expand" . (lambda (selection) selection))))
-;;           ))
-;;       (setq result (helm-other-buffer '(tmpsource) "*helm-select-yasnippet"))
-;;       (if (null result)
-;;         (signal 'quit "user quit!")
-;;         (cdr (assoc result rmap))))
-;;     nil))
-
-(defun template/helm-prompt ( prompt choices &optional foo )
-  (dwim-complete/helm prompt choices (get-buffer-create "yasnippet/complete")))
-
-
 (defun template/insert ()
+  "templates/snippet
+
+   insert a snippet.
+  "
   (interactive)
   (yas-insert-snippet))
+
+;;----------------------------------------------------------------------
+;; dwim-complete integration
+;;----------------------------------------------------------------------
+
+(defun templates/yas-all-template-names ()
+  (yas--table-all-keys (car (yas--get-snippet-tables))) )
+
+(defun templates/yas-get-template-pair-by-name ( name )
+  (let
+    (( templates nil ))
+
+    (mapc
+      (lambda ( table )
+        (mapc
+          (lambda ( template-pair )
+            (when (string-equal (car template-pair) name)
+              (setq templates (cons template-pair templates)) ))
+          (yas--table-templates table)) )
+
+      (yas--get-snippet-tables))
+
+    templates))
+
+(defun templates/yas-select-from-multiple-templates ( template-list )
+  (message "templates: warning multiple templates")
+  (car template-list))
+
+(defun templates/yas-expand-template-from-pair ( template-pair )
+  (yas-expand-snippet
+    (yas--template-content ( cdr template-pair ))) )
+
+(defun templates/yas-action ( selection )
+  (let
+    ((template (templates/yas-select-from-multiple-templates
+                 (templates/yas-get-template-pair-by-name (format "%s" selection))) ))
+
+    (if template
+      (progn
+        (dwim-complete-delete-stem)
+        (templates/yas-expand-template-from-pair template))
+      (message "template/action: no template for %s" selection)) ))
+
+(defun templates/yas-source ()
+  (dwim-complete/make-source "templates"
+    (templates/yas-all-template-names)
+    (dwim-complete/make-action 'templates/yas-action)) )
+
+;;----------------------------------------------------------------------
+;; mode setup function
+;;----------------------------------------------------------------------
+
+(defun templates/mode-setup ()
+  ;; activate yasnippet in the buffer
+  (yas-minor-mode)
+
+  (dwim-tab-localize-context 'template/expand)
+  (dwim-tab-localize-context 'template/next)
+
+  (local-set-key (kbd "C-c t l") 'templates/list)
+
+  (local-set-key (kbd "C-c t i") 'template/insert)
+
+  (local-set-key (kbd "C-c t e") 'template/expand)
+  (local-set-key (kbd "C-c t n") 'template/next)
+
+  (local-set-key (kbd "C-c t c") 'template/new)
+
+  (dwim-complete-local-add-source 'templates/yas-source))
 
 ;;----------------------------------------------------------------------
 ;; configure the various languages for template support.

@@ -27,7 +27,9 @@
 
 ;; other window is more useful. there is no really good way
 ;; for buffer switching outside of buffer ring
-(global-set-key (kbd "<M-tab>") 'other-window-non-interactive)
+
+;; using it for complete now. will come up with something else.
+;; (global-set-key (kbd "<M-tab>") 'other-window-non-interactive)
 
 (global-set-key (kbd "<prior>") 'beginning-of-buffer)
 (global-set-key (kbd "<next>")  'end-of-buffer)
