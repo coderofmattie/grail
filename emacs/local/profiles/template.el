@@ -195,6 +195,19 @@
 ;; mode setup function
 ;;----------------------------------------------------------------------
 
+(defun ver-ctl-log-bindings ()
+  (let
+    ((ver-map (make-sparse-keymap)))
+
+    (define-key ver-map "l" 'ver-ctl-log-file-list)
+    (define-key ver-map "c" 'ver-ctl-log-file-create)
+    (define-key ver-map "o" 'ver-ctl-log-file-open)
+    (define-key ver-map "i" 'ver-ctl-log-insert-label)
+    (define-key ver-map "m" 'ver-ctl-log-insert-log)
+
+    (define-key ver-map "h" (keybindings-help-fn "ver log" ver-map))
+    (local-set-key (kbd "C-c l") ver-map)))
+
 (defun templates/mode-setup ()
   ;; activate yasnippet in the buffer
   (yas-minor-mode)
@@ -202,14 +215,20 @@
   (dwim-tab-localize-context 'template/expand)
   (dwim-tab-localize-context 'template/next)
 
-  (local-set-key (kbd "C-c t l") 'templates/list)
+  (let
+    ((key-map (make-sparse-keymap)))
 
-  (local-set-key (kbd "C-c t i") 'template/insert)
+    (define-key key-map "l" 'templates/list)
 
-  (local-set-key (kbd "C-c t e") 'template/expand)
-  (local-set-key (kbd "C-c t n") 'template/next)
+    (define-key key-map "i" 'template/insert)
+    (define-key key-map "e" 'template/expand)
+    (define-key key-map "n" 'template/next)
 
-  (local-set-key (kbd "C-c t c") 'template/new)
+    (define-key key-map "c" 'template/new)
+
+    (define-key key-map "h" (keybindings-help-fn "templates" key-map))
+
+    (local-set-key (kbd "C-c t") key-map))
 
   (dwim-complete-local-add-source 'templates/yas-source))
 
