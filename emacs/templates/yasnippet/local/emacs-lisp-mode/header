@@ -12,5 +12,5 @@
 
 $0
 
-(provides '${4:`(file-name-base buffer-file-name)`})
+(provide '${4:`(file-name-base buffer-file-name)`})
 
