@@ -1,8 +1,13 @@
 ;;----------------------------------------------------------------------
-;; merging
+;; merging.el
+;;
+;; merging and diffing support (internal)
 ;;----------------------------------------------------------------------
 (require 'diff)
-(require 'external-merge-command)
+
+;;----------------------------------------------------------------------
+;; regular diff mode
+;;----------------------------------------------------------------------
 
 (setq
   diff-switches "-U3")                 ;; turn on standard context diffs,
@@ -20,11 +25,7 @@
 ;;                          Ediff
 ;;----------------------------------------------------------------------
 
-;; I will enventually create my interactive merge interface with this
-;; mode as a foundation. Until then tweak the basics.
-
-(require 'ediff)          ;; 2-3 way merge tool, can be used
-                          ;; for cherry picking and splitting
+(require 'ediff)
 
 (setq
   ediff-custom-diff-options "-U3"         ;; same for ediff

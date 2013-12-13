@@ -6,8 +6,16 @@
 ;;----------------------------------------------------------------------
 (require 'grail-profile)
 (require 'buffer-status)
+
+;;----------------------------------------------------------------------
+;; programming packages not dependent on third party support
+;;----------------------------------------------------------------------
+
 (require 'tags-uber)
 (require 'working-copy)
+
+(require 'merging)
+(require 'ext-merging)
 
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
@@ -185,21 +193,3 @@
 ;;----------------------------------------------------------------------
 (eval-after-load 'java-mode
   '(require 'flymake))
-
-;;----------------------------------------------------------------------
-;; xml/html/css
-;;----------------------------------------------------------------------
-(setq
-  css-indent-offset 2)
-
-;;----------------------------------------------------------------------
-;; logging
-;;----------------------------------------------------------------------
-
-(defun load-logging-file (log-file)
-  (switch-to-buffer (find-file-noselect log-file))
-  (rename-buffer (concat "logwatch: " log-file))
-
-  (auto-revert-tail-mode)
-  (setq buffer-read-only t)
-  (goto-char (point-max)) )
