@@ -1,6 +1,9 @@
 ;;----------------------------------------------------------------------
 ;; Emacs Lisp
 ;;----------------------------------------------------------------------
+(require 'lex-cache)
+
+(defconst emacs-lisp-refresh-completion-interval 1)
 
 (defun emacs-lisp-create-repl ( repl-name )
   (with-current-buffer (get-buffer-create repl-name)
@@ -17,16 +20,17 @@
   (interactive)
   (occur "(defun"))
 
-(defun dwim-complete/elisp-candidates ()
-  (let
-    (( name-list ))
+(lex-cache dwim-complete/elisp-candidates emacs-lisp-refresh-completion-interval
+  (lambda ()
+    (let
+      (( name-list ))
 
-    (mapatoms
-      (lambda ( sym )
-        (setq name-list (cons (symbol-name sym) name-list )))
-      obarray)
+      (mapatoms
+        (lambda ( sym )
+          (setq name-list (cons (symbol-name sym) name-list )))
+        obarray)
 
-    name-list))
+      name-list)))
 
 (defun dwim-complete/elisp-source ()
   (dwim-complete/make-source "symbols"
