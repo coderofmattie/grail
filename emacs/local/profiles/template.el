@@ -1,18 +1,16 @@
 ;;----------------------------------------------------------------------
-;; template profile.
+;; template.el - template expansion support
 ;;
-;; support for the yasnippet template system with a generic interface
-;; layered on. This glue API prevents the yasnippet API from creeping
-;; into the rest of my config.
-;;----------------------------------------------------------------------
-
-;;----------------------------------------------------------------------
-;; load yassnippet template system
+;; description:
+;; 
+;; template expansion currently using yasnippet as the engine.
 ;;----------------------------------------------------------------------
 
 (grail-load 'yasnippet (grail-define-installer "yasnippet"
                          "git"
                          "https://github.com/capitaomorte/yasnippet.git"))
+
+(require 'lex-cache)
 
 ;;----------------------------------------------------------------------
 ;; configure yassnippet
@@ -186,28 +184,20 @@
         (templates/yas-expand-template-from-pair template))
       (message "template/action: no template for %s" selection)) ))
 
-(defun templates/yas-source ()
+(defconst templates/refresh-completion-interval 2)
+
+(lex-cache dwim-complete/templates-candidates templates/refresh-completion-interval
+  (lambda ()
+    (templates/yas-all-template-names) ))
+
+(defun dwim-complete/templates-source ()
   (dwim-complete/make-source "templates"
-    (templates/yas-all-template-names)
+    (dwim-complete/templates-candidates)
     (dwim-complete/make-action 'templates/yas-action)) )
 
 ;;----------------------------------------------------------------------
 ;; mode setup function
 ;;----------------------------------------------------------------------
-
-(defun ver-ctl-log-bindings ()
-  (let
-    ((ver-map (make-sparse-keymap)))
-
-    (define-key ver-map "l" 'ver-ctl-log-file-list)
-    (define-key ver-map "c" 'ver-ctl-log-file-create)
-    (define-key ver-map "o" 'ver-ctl-log-file-open)
-    (define-key ver-map "i" 'ver-ctl-log-insert-label)
-    (define-key ver-map "m" 'ver-ctl-log-insert-log)
-
-    (define-key ver-map "h" (keybindings-help-fn "ver log" ver-map))
-    (local-set-key (kbd "C-c l") ver-map)))
-
 (defun templates/mode-setup ()
   ;; activate yasnippet in the buffer
   (yas-minor-mode)
@@ -230,7 +220,10 @@
 
     (local-set-key (kbd "C-c t") key-map))
 
-  (dwim-complete-local-add-source 'templates/yas-source))
+  (unless (dwim-complete-mode-check-type major-mode "templates")
+    (dwim-complete-mode-add-source major-mode (dwim-complete/templates-source))
+
+    (dwim-complete-mode-add-type major-mode "templates")) )
 
 ;;----------------------------------------------------------------------
 ;; configure the various languages for template support.

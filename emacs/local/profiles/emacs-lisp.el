@@ -1,5 +1,9 @@
 ;;----------------------------------------------------------------------
-;; Emacs Lisp
+;; emacs-lisp.el - emacs lisp mode configuration
+;;
+;; description:
+;;
+;; configure emacs lisp with standardized programming features
 ;;----------------------------------------------------------------------
 (require 'lex-cache)
 
@@ -20,21 +24,46 @@
   (interactive)
   (occur "(defun"))
 
-(lex-cache dwim-complete/elisp-candidates emacs-lisp-refresh-completion-interval
+(defun emacs-lisp-function-symbols ()
+  (let
+    (( name-list ))
+
+    (mapatoms
+      (lambda ( sym )
+        (when (functionp sym)
+          (setq name-list (cons (symbol-name sym) name-list ))) )
+      obarray)
+
+    name-list))
+
+(lex-cache dwim-complete/elisp-fn-candidates emacs-lisp-refresh-completion-interval
   (lambda ()
-    (let
-      (( name-list ))
+    (emacs-lisp-function-symbols) ))
 
-      (mapatoms
-        (lambda ( sym )
-          (setq name-list (cons (symbol-name sym) name-list )))
-        obarray)
+(defun emacs-lisp-variable-symbols ()
+  (let
+    (( name-list ))
 
-      name-list)))
+    (mapatoms
+      (lambda ( sym )
+        (unless (functionp sym)
+          (setq name-list (cons (symbol-name sym) name-list ))) )
+      obarray)
 
-(defun dwim-complete/elisp-source ()
-  (dwim-complete/make-source "symbols"
-    (dwim-complete/elisp-candidates)
+    name-list))
+
+(lex-cache dwim-complete/elisp-var-candidates emacs-lisp-refresh-completion-interval
+  (lambda ()
+    (emacs-lisp-variable-symbols) ))
+
+(defun dwim-complete/emacs-lisp-fn-source ()
+  (dwim-complete/make-source "functions"
+    (dwim-complete/elisp-fn-candidates)
+    (dwim-complete/make-action 'dwim-complete-replace-stem) ))
+
+(defun dwim-complete/emacs-lisp-var-source ()
+  (dwim-complete/make-source "variables"
+    (dwim-complete/elisp-var-candidates)
     (dwim-complete/make-action 'dwim-complete-replace-stem) ))
 
 (add-hook 'emacs-lisp-mode-hook
@@ -55,5 +84,12 @@
     (configure-for-debugging 'edebug-defun)
 
     (turn-on-dwim-tab 'lisp-indent-line)
-    (dwim-complete/for-buffer 'dwim-complete/elisp-source) )
+
+    (unless (dwim-complete-mode-check-type major-mode "mode")
+      (dwim-complete-mode-add-source major-mode (dwim-complete/emacs-lisp-fn-source))
+      (dwim-complete-mode-add-source major-mode (dwim-complete/emacs-lisp-var-source))
+
+      (dwim-complete-mode-add-type major-mode "mode"))
+
+    (dwim-complete/for-buffer) )
   t)

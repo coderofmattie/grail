@@ -25,8 +25,8 @@
   (* 60 min))
 
 (defun lex-cache-bind ( symbol cache-fn )
-  (fset symbol cache-fn)
-  symbol)
+   (fset symbol cache-fn)
+   symbol)
 
 (defun lex-cache-build ( builder interval )
   (lexical-let

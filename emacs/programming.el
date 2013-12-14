@@ -91,8 +91,6 @@
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
-  (local-set-key (kbd "C-c x f") 'pop-dired-in-source-file)
-
   ;; it is *really* handy to see just the function signatures of all the
   ;; functions defined in a buffer. It is so useful that every programming
   ;; mode needs to define a function so that it is bound to a key.
