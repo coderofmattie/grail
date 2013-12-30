@@ -60,5 +60,3 @@
         (throw 'abort t))
 
       (funcall (cdr found-lang)) )))
-
-

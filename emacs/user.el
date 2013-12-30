@@ -1,5 +1,9 @@
 ;;----------------------------------------------------------------------
-;; user.el
+;; user.el - user interface configuration
+;;
+;; description:
+;;
+;; configuration of core emacs functionality.
 ;;----------------------------------------------------------------------
 (eval-when-compile
   (require 'grail-profile)
