@@ -315,8 +315,82 @@
                 (setq exists-list (cons dir exists-list))) )
         dir-list)
       (when (dir-path-if-accessible dir-list)
-	(setq exists-list (list dir-list))) )
+ (setq exists-list (list dir-list))) )
     exists-list))
+
+(defun grail-recurse-load-path ( dir )
+  (if (file-accessible-directory-p dir)
+    (let
+      (( elisp-files
+         (filter-dir-by-attributes dir
+           '(("type" "file")
+             ("path" ".*\.elc?$"))) )
+        ( elisp-dirs nil ))
+
+      (when elisp-files
+        (setq elisp-dirs (cons dir elisp-dirs)))
+
+      (let
+        (( sub-dirs
+           (filter-dir-by-attributes dir
+             '(("type" "dir")
+               (not "path" "^\.\.?$"))) ))
+
+        (when sub-dirs
+          (mapc
+            (lambda ( dir )
+              (let
+                (( next-level (grail-recurse-load-path dir) ))
+
+                (when next-level
+                  (setq elisp-dirs (append next-level elisp-dirs))) ))
+            sub-dirs)) )
+      elisp-dirs)
+    nil))
+
+(defmacro grail-new-load-path ( &rest body )
+  `(let
+     (( new-load-path nil )
+      ( search-results nil ))
+
+     ,@(mapcar
+        (lambda ( path )
+          `(progn
+             (setq search-results
+               (if (listp ,path)
+                 (grail-filter-directory-list ,path)
+                 (grail-recurse-load-path ,path)))
+
+             (when search-results
+               (setq new-load-path (append search-results new-load-path))) ))
+         body)
+
+     new-load-path))
+
+(defvar grail-dist-path-table (make-hash-table :test 'equal))
+
+(defun grail-update-dist-path-table ( dir-list )
+  (mapc
+    (lambda ( dir )
+      (when (file-accessible-directory-p dir)
+        (let
+          (( sub-dirs
+             (filter-dir-by-attributes dir
+               '(("type" "dir")
+                 (not "path" "^\.\.?$"))) ))
+
+          (when sub-dirs
+            (mapc
+              (lambda ( sub-dir )
+                (let
+                  (( dir-name (file-name-nondirectory sub-dir) ))
+                  (message "dir-name is \"%s\"" dir-name)
+
+                  (unless (gethash dir-name grail-dist-path-table)
+                    (message "putting in the hash %s"sub-dir)
+                    (puthash dir-name sub-dir grail-dist-path-table)) ))
+              sub-dirs)) )))
+      dir-list))
 
 (defun grail-extend-load-path ()
   "grail-extend-load-path
@@ -337,42 +411,67 @@
    non-existent directories are filtered out.
   "
   (let
-     ((new-load-path nil)
+    ((new-load-path
+       (grail-new-load-path
+         ;;----------------------------------------------------------------------
+         ;; user elisp code for platform, emacs, and user elisp
+         ;;----------------------------------------------------------------------
+         grail-platform-load-path
 
-      (gather-load-path
-        (lambda ( dir &optional subdirs )
+         grail-local-elisp
+
+         ;;----------------------------------------------------------------------
+         ;; 3rd party elisp
+         ;;----------------------------------------------------------------------
+
+         grail-dist-elisp
+         grail-elpa-load-path
+
+         ;;----------------------------------------------------------------------
+         ;; upstream source. repos can be deep requiring a search of
+         ;; subdirectories
+         ;;----------------------------------------------------------------------
+
+         grail-dist-cvs
+         grail-dist-git
+         grail-dist-bzr )))
+
+    (when new-load-path
+      (setq load-path (reverse new-load-path)))
+
+    (grail-update-dist-path-table (list grail-dist-cvs grail-dist-git grail-dist-bzr)) ))
+
+(defun grail-find-package-resource ( package resource )
+  (catch 'found
+    (let
+      (( package-dir (or (dir-path-if-accessible package)
+                         (gethash package grail-dist-path-table) )))
+
+      (if (file-accessible-directory-p package-dir)
+        (let
+          (( found-paths
+             (filter-dir-by-attributes package-dir
+               `(("path" ,resource))) ))
+
+          (when found-paths
+            (throw 'found found-paths))
+
           (let
-            ((filtered-load-path nil))
+            (( sub-dirs
+               (filter-dir-by-attributes package-dir
+                 '(("type" "dir")
+                    (not "path" "^\.\.?$"))) ))
 
-            (setq filtered-load-path
-              (if subdirs
-                (when (file-accessible-directory-p dir)
-                  (filter-dir-by-attributes dir
-                    '( ("type" "dir")
-                     (not "path" "^\.\.?$")) ))
-                (grail-filter-directory-list dir)) )
+            (when sub-dirs
+              (mapc
+                (lambda ( dir )
+                  (let
+                    (( next-level (grail-find-package-resource dir resource) ))
 
-            (when filtered-load-path
-              (setq new-load-path (append filtered-load-path new-load-path))) )) ))
-
-    (funcall gather-load-path grail-platform-load-path)
-
-    (funcall gather-load-path grail-local-emacs)
-
-    (funcall gather-load-path grail-local-elisp)
-
-    (funcall gather-load-path grail-dist-elisp)
-
-    (funcall gather-load-path grail-elpa-load-path)
-
-    (funcall gather-load-path grail-dist-cvs 't)
-
-    (funcall gather-load-path grail-dist-git 't)
-
-    (funcall gather-load-path grail-dist-bzr 't)
-
-    (if new-load-path
-      (setq load-path new-load-path)) ))
+                    (when next-level
+                      (throw 'found next-level)) ))
+                sub-dirs)) ))
+        nil) )))
 
 ;;----------------------------------------------------------------------
 ;; diagnostic support routines.

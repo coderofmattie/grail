@@ -197,6 +197,9 @@
     (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
       "The grail session state & persistent data directory which defaults to .emacs.d")
 
+    (defvar grail-interpreters-path (concat grail-elisp-root "/interpreters/")
+      "the path to the grail interpreters directory for interpreter files.")
+
     (grail-trap
       "Loading the grail-cfg file for user path changes."
       ;; grail-cfg.el is a file for user to change the tree structure that grail
