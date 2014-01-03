@@ -130,13 +130,17 @@
    C-c e b : evaluate the buffer.
   "
 
-  ;; These bindings use C-c <char> which is reserved for the user so
-  ;; I should be OK here.
+  (let
+    ((key-map (make-sparse-keymap)))
 
-  (local-set-key (kbd "C-c e d") eval-define)
-  (local-set-key (kbd "C-c e e") eval-expression)
-  (local-set-key (kbd "C-c e r") eval-region)
-  (local-set-key (kbd "C-c e b") eval-buffer))
+    (define-key key-map "d" eval-define)
+    (define-key key-map "e" eval-expression)
+    (define-key key-map "r" eval-region)
+    (define-key key-map "b" eval-buffer)
+
+    (define-key key-map "h" (keybindings-help-fn "evaluation" key-map))
+
+    (local-set-key (kbd "C-c e") key-map)) )
 
 (defun configure-for-docs ( docs-fn )
   (local-set-key (kbd "C-c h") docs-fn))
