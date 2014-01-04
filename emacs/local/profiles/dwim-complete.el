@@ -7,6 +7,8 @@
 ;; modules and as a interface that is generally usable throughout Emacs.
 ;; currently helm is outstanding for this purpose.
 ;;----------------------------------------------------------------------
+(require 'thingatpt)
+
 (grail-load 'helm (grail-define-installer "helm"
                     "git"
                     "https://github.com/emacs-helm/helm.git"))
@@ -91,30 +93,18 @@
       nil) ))
 
 (defun dwim-complete-behind-point ()
-  (save-excursion
-    (let*
-      ((initial-point (point))
-       (line-start (progn
-                     (beginning-of-line)
-                     (point)))
-       (behind-point (- initial-point 1)))
+  (interactive)
 
-      (catch 'abort
-        (when (equal initial-point line-start)
-          (throw 'abort ""))
+  (let
+    (( stem (thing-at-point 'symbol) )
+     ( start nil )
+     ( end (point)))
 
-        (when (equal behind-point line-start)
-          (throw 'abort
-            (char-to-string (char-before initial-point))) )
-
-        (let
-          (( found (search-backward-regexp "^\\|\\b" line-start t) ))
-
-          (if (eq nil found)
-            ""
-            (progn
-              (dwim-complete-set-stem found initial-point)
-              (buffer-substring-no-properties found initial-point)) )) ))))
+    (if stem
+      (progn
+        (dwim-complete-set-stem (- (point) (length stem)) end)
+        stem)
+      "") ))
 
 (defun dwim-complete/buffer ()
   (get-buffer-create "*complete*"))
