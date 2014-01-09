@@ -58,13 +58,13 @@
 
 (defun dwim-complete/emacs-lisp-fn-source ()
   (dwim-complete/make-source "functions"
-    (dwim-complete/elisp-fn-candidates)
-    (dwim-complete/make-action 'dwim-complete-replace-stem) ))
+    'dwim-complete/elisp-fn-candidates
+    'dwim-complete-replace-stem))
 
 (defun dwim-complete/emacs-lisp-var-source ()
   (dwim-complete/make-source "variables"
-    (dwim-complete/elisp-var-candidates)
-    (dwim-complete/make-action 'dwim-complete-replace-stem) ))
+    'dwim-complete/elisp-var-candidates
+    'dwim-complete-replace-stem))
 
 (add-hook 'emacs-lisp-mode-hook
   (lambda ()
@@ -91,5 +91,5 @@
 
       (dwim-complete-mode-add-type major-mode "mode"))
 
-    (dwim-complete/for-buffer) )
+    (dwim-complete/for-buffer))
   t)

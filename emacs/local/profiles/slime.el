@@ -42,8 +42,8 @@
 
 (defun dwim-complete/slime-source ()
   (dwim-complete/make-source "slime"
-    (dwim-complete/slime-candidates)
-    (dwim-complete/make-action 'dwim-complete-replace-stem) ))
+    'dwim-complete/slime-candidates
+    'dwim-complete-replace-stem ))
 
 (add-hook 'slime-connected-hook
   (lambda ()
@@ -68,20 +68,21 @@
 
 (lang-repl-mode-define "lisp-mode" 'lang-repl/slime)
 
-(add-hook 'lisp-mode-hook
-  (lambda ()
-    (slime-mode t)
+(defun slime/lisp-mode ()
+  (slime-mode t)
 
-    (unless (dwim-complete-mode-check-type major-mode "mode")
-      (dwim-complete-mode-add-source major-mode (dwim-complete/slime-source))
-      (dwim-complete-mode-add-type major-mode "mode"))
+  (unless (dwim-complete-mode-check-type major-mode "mode")
+    (dwim-complete-mode-add-source major-mode (dwim-complete/slime-source))
+    (dwim-complete-mode-add-type major-mode "mode"))
 
-    (code-documentation-setup "lisp-mode-docs" "lisp-mode" common-lisp-hyperspec-default)
-    (dwim-tab-localize-context 'slime-complete-symbol)
+  (code-documentation-setup "lisp-mode-docs" "lisp-mode" common-lisp-hyperspec-default)
 
-    (configure-for-evaluation
-      'slime-eval-defun
-      'slime-eval-last-expression
-      'slime-eval-region
-      'slime-eval-buffer) )
-  t)
+  (dwim-tab-localize-context 'slime-complete-symbol)
+
+  (configure-for-evaluation
+    'slime-eval-defun
+    'slime-eval-last-expression
+    'slime-eval-region
+    'slime-eval-buffer) )
+
+(add-hook 'lisp-mode-hook 'slime/lisp-mode t)

@@ -17,13 +17,13 @@
   auto-mode-alist (append '(("\\.cl$" . lisp-mode)
                             ("\\.lisp$" . lisp-mode)) auto-mode-alist ))
 
-(add-hook 'lisp-mode-hook
-  (lambda ()
-    (configure-for-programming 'cl-list-functions "lisp-mode")
+(defun profile/common-lisp ()
+  (configure-for-programming 'cl-list-functions "lisp-mode")
 
-    (lisp-smart-parens-editing)
+  (lisp-smart-parens-editing)
 
-    (dwim-complete/for-buffer)
+  (dwim-complete/for-buffer)
 
-    (turn-on-dwim-tab 'common-lisp-indent-function))
-  t)
+  (turn-on-dwim-tab 'common-lisp-indent-function))
+
+(add-hook 'lisp-mode-hook 'profile/common-lisp t)

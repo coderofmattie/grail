@@ -17,16 +17,21 @@
 
 (setq helm-execute-action-at-once-if-one t)
 
+(defun dwim-complete/make-name ( name )
+  `(name . ,name))
+
+(defun dwim-complete/make-candidates ( candidates-fn )
+  `(candidates .
+     (lambda ()
+       (sort (mapcar (lambda (x) (identity x)) (,candidates-fn)) 'string-lessp)) ))
+
 (defun dwim-complete/make-action ( &optional fn )
   `(action . ,(if fn fn (lambda (selection) selection))))
 
-(defun dwim-complete/make-source ( name candidates action )
-  (let
-    ((cands     (sort (mapcar (lambda (x) (identity x)) candidates) 'string-lessp)))
-
-    `((name . ,name)
-      (candidates . ,cands)
-      ,action) ))
+(defun dwim-complete/make-source ( name candidates-fn action )
+  `(,(dwim-complete/make-name name)
+    ,(dwim-complete/make-candidates candidates-fn)
+    ,(dwim-complete/make-action action)))
 
 (defun dwim-complete/helm ( prompt input buffer &rest sources-list )
   (helm
