@@ -267,16 +267,20 @@
 
   (if (bfr-in-ring-p)
     (let
-      ((buffer-list-string nil))
+      ((buffer-list nil)
+       (buffer-found nil))
 
       (dyn-ring-map buffer-ring
-        (lambda ( bfr-in-ring-p )
-          (setq discovered-buffer (bfr-find-buffer-for-id bfr-id))
-          (if buffer-list-string
-            (setq buffer-list-string (concat discovered-buffer "," buffer-list-string))
-            (setq buffer-list-string discovered-buffer)) ) )
+        (lambda ( buffer-id )
+          (message "got %s " buffer-id)
 
-      (message "buffers in [%s]: %s" bfr-ring-name buffer-list) )
+          (setq buffer-found (buffer-name (bfr-find-buffer-for-id buffer-id)))
+
+          (if buffer-list
+            (setq buffer-list (concat buffer-found "," buffer-list))
+            (setq buffer-list buffer-found)) ))
+
+      (message "buffers in [%s]: %s" buffer-ring-name buffer-list))
     (message "This buffer is not in a ring.") ))
 
 (defun bfr-switch-to-buffer-by-id ( id )
