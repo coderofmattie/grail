@@ -1,7 +1,6 @@
 ;;;----------------------------------------------------------------------
 ;; cm-path.el
 ;;----------------------------------------------------------------------
-
 (require 'cm-string)
 
 ;; this function was created because file-readable-p is strangely
@@ -37,6 +36,6 @@
       (setq path (cons (car c) path))
       (setq c (cdr c))
       )
-    (concat (string-join "/" path) "/")))
+    (concat (cm-string-join "/" path) "/")))
 
 (provide 'cm-path)

@@ -50,7 +50,7 @@
             (setq child-dirs (cdr child-dirs)) ) ))
 
       (if child-dirs
-        (concat (string-join "/" child-dirs) "/")
+        (concat (cm-string-join "/" child-dirs) "/")
         nil) )))
 
 ;; (files-child-of-path "/home/codermattie/" "/home/codermattie/code/")

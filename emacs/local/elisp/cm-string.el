@@ -2,10 +2,10 @@
 ;; cm-string.el
 ;;;----------------------------------------------------------------------
 
-(defun bracket-strings ( bracket list )
+(defun cm-bracket-strings ( bracket list )
   (apply 'concat bracket (prefix-strings bracket list) bracket))
 
-(defun prefix-strings ( prefix list )
+(defun cm-prefix-strings ( prefix list )
   "prefix-strings PREFIX LIST
 
    transform LIST concatenating the strings with PREFIX."
@@ -14,21 +14,18 @@
       (concat prefix string))
     list))
 
-(defun string-join (prefix list)
-  ;; This is analogous to the perl5 join function.
-  ;; given a <prefix> and a <list> of strings join the
-  ;; strings with <prefix> as a seperator between the
-  ;; list values.
-  ;;
-  ;; The result is a single string value.
-  (apply 'concat
-    (car list)
-    (if (cdr list) (prefix-strings prefix (cdr list))) ))
+(defun cm-string-join (prefix &rest args )
+  (when (equal (length args) 1)
+    (setq args (car args)))
 
-(defun string-join-args (prefix &rest args)
   (apply 'concat
     (car args)
-    (if (cdr args) (prefix-strings prefix (cdr args))) ))
+    (if (cdr args) (cm-prefix-strings prefix (cdr args))) ))
+
+(defun cm-string-join-args (prefix &rest args)
+  (apply 'concat
+    (car args)
+    (if (cdr args) (cm-prefix-strings prefix (cdr args))) ))
 
 (defun string-strip-leading-whitespace ( string )
   (replace-regexp-in-string "^ *" "" string))

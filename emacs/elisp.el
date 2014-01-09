@@ -152,7 +152,7 @@
   (format "key set: %s
 %s"
     group-name
-    (string-join "
+    (cm-string-join "
 "
       (mapcar
         (lambda ( keymap-pair )

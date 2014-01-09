@@ -31,7 +31,7 @@
   "ctags-exuberant -V -e --links=yes -a -L -")
 
 (defun tags-uber-find-initialize ( file-match tree-list )
-  (string-join " "
+  (cm-string-join " "
     (cons "find"
       (append
         ;; necessary to keep find from barfing on symlinks
@@ -42,7 +42,7 @@
 ;; (tags-uber-find-initialize "*.p[ml]" '("/home/foo" "/home/bar"))
 
 (defun tags-uber-find-update ( tags-file file-match tree-list )
-  (string-join " "
+  (cm-string-join " "
     (cons "find"
       (append
         tree-list
@@ -55,7 +55,7 @@
     (concat
       (tags-uber-find-initialize file-match tree-list)
       " "
-      (string-join " "
+      (cm-string-join " "
         (list
           tags-uber-cmd-base
           (format "--languages=%s" lang)
@@ -64,7 +64,7 @@
     (concat
       (tags-uber-find-update tags-file "*.p[ml]" tree-list)
       " "
-      (string-join " "
+      (cm-string-join " "
         (list
           tags-uber-cmd-base
           (format "--languages=%s" lang)
