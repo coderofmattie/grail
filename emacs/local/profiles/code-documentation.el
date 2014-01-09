@@ -35,21 +35,15 @@
     (code-documentation-browse-popup (or url documentation-browse-default-url)) ))
 
 (defun code-documentation-setup ( buffer-name ring-name default-url &optional browser-fn )
+  (make-variable-buffer-local 'browse-url-browser-function)
+
   (setq
     documentation-buffer-name buffer-name
     documentation-ring-name ring-name
     documentation-browse-default-url default-url
 
-    documentation-browse-fn (or browser-fn browser-profile-url-command))
+    documentation-browse-fn (or browser-fn browser-profile-url-command)
+
+    browse-url-browser-function 'code-documentation-browse-action)
 
   (configure-for-docs 'code-documentation-browse-action))
-
-(defun code-documentation-override-browser ( buffer-name ring-name default-url )
-  (setq
-    documentation-buffer-name buffer-name
-    documentation-ring-name ring-name
-    documentation-browse-default-url default-url)
-
-  (make-variable-buffer-local 'browse-url-browser-function)
-  (setq browse-url-browser-function 'code-documentation-browse-action))
-
