@@ -17,6 +17,8 @@
 (require 'merging)
 (require 'ext-merging)
 
+(require 'lang-repl)
+
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
 
@@ -91,6 +93,8 @@
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
+  (lang-repl-keybindings)
+
   ;; it is *really* handy to see just the function signatures of all the
   ;; functions defined in a buffer. It is so useful that every programming
   ;; mode needs to define a function so that it is bound to a key.
@@ -110,9 +114,6 @@
 (defun configure-for-navigation ( forwards backwards )
   (local-set-key (kbd "M-f") forwards)
   (local-set-key (kbd "M-b") backwards))
-
-(defun configure-for-repl ( repl-invoke )
-  (local-set-key (kbd "C-c r") repl-invoke))
 
 (defun configure-for-evaluation ( eval-define eval-expression eval-region eval-buffer )
   "Enable my programming customizations for the buffer

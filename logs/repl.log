@@ -1,0 +1,14 @@
+summary: create a unified repl interface.
+
+description:
+
+Create a unified repl interface. It needs to support
+multiple running REPL's per language with buffer
+management.
+
+[local/elisp/lang-repl.el]:
+  * implement the unified interface as local elisp
+    for use by profiles.
+
+
+
