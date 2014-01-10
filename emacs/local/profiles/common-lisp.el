@@ -24,6 +24,6 @@
 
   (dwim-complete/for-buffer)
 
-  (turn-on-dwim-tab 'common-lisp-indent-function))
+  (turn-on-dwim-tab 'lisp-indent-line))
 
 (add-hook 'lisp-mode-hook 'profile/common-lisp t)
