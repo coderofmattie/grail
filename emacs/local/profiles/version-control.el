@@ -87,7 +87,7 @@
   "list log files"
   (interactive)
   (message "log files: %s"
-    (string-join "," (mapcar 'car (ver-ctl-log-file-pairs (ver-ctl-log-files))))) )
+    (cm-string-join "," (mapcar 'car (ver-ctl-log-file-pairs (ver-ctl-log-files))))) )
 
 (defun ver-ctl-log-select ( prompt )
   (let
