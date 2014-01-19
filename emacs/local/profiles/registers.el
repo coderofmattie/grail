@@ -110,6 +110,3 @@
             (insert-register register-mapping)) ))) ))
 
 (dwim-tab-set-register-expand 'register-expand-keyword)
-
-
-

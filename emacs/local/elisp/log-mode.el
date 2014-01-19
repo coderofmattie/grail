@@ -13,6 +13,6 @@
     "major mode for editing log files")
 
 (defun log-mode-dwim-init ()
-  (turn-on-dwim-tab 'cperl-indent-command))
+  (turn-on-dwim-tab indent-line-function))
 
 (provide 'log-mode)

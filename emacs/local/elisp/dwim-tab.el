@@ -19,6 +19,37 @@
 (defun dwim-tab-set-register-expand ( expander )
   (setq dwim-tab-register-expand expander))
 
+(defun dwim-tab-stem-trigger ()
+  (if (looking-at-p "\\>")
+    t
+    nil))
+
+(defun dwim-tab-word-trigger ()
+  (let
+    (( at-point (thing-at-point 'word) ))
+
+    (if (and (stringp at-point)
+             (and (string-match "\\sw" at-point)
+                  (string-match "\\sw" (char-to-string (char-after))) ))
+      t
+      nil) ))
+
+(defun dwim-tab-make-expander ( context expander )
+  (cons context expander))
+
+(defun dwim-tab-expanders-by-regex ()
+  (let
+    (( all-expanders (append dwim-tab-local-context dwim-tab-global-context))
+     ( relevant-expanders nil) )
+
+    (mapc
+      (lambda ( expander )
+        (when (funcall (car expander))
+          (setq relevant-expanders (cons (cdr expander) relevant-expanders))) )
+      all-expanders)
+
+    (cons dwim-tab-register-expand relevant-expanders) ))
+
 (defun dwim-tab-localize-context ( &rest locals )
   "dwim-tab-local-context function-list
 
@@ -57,16 +88,9 @@
   "
   (interactive)
   (let
-    ((complete nil)
+    ((complete (dwim-tab-expanders-by-regex))
      (point-before (point))
      (success nil))
-
-    (setq complete (append
-                     dwim-tab-local-context
-                     dwim-tab-global-context complete))
-
-    (when dwim-tab-register-expand
-      (setq complete (cons dwim-tab-register-expand complete)))
 
     (when complete
       (dwim-install-change-hook)
@@ -101,10 +125,7 @@
   "
   (interactive)
 
-  (if (looking-at "\\>")
-    (if (try-complete-dwim)
-      t
-      (funcall dwim-tab-local-indent))
+  (unless (try-complete-dwim)
     (funcall dwim-tab-local-indent)) )
 
 (defun turn-on-dwim-tab ( &optional indent-function )

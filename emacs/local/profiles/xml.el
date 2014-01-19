@@ -10,10 +10,7 @@
 
 (add-hook 'nxml-mode-hook
   (lambda ()
-    (dwim-tab-localize-context 'nxml-complete)
+    (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'nxml-complete))
     (turn-on-dwim-tab 'nxml-indent-line)
     (configure-for-buffer-ring "nxml-mode"))
   t)
-
-
-

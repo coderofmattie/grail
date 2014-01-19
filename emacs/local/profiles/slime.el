@@ -77,7 +77,7 @@
 
   (code-documentation-setup "lisp-mode-docs" "lisp-mode" common-lisp-hyperspec-default)
 
-  (dwim-tab-localize-context 'slime-complete-symbol)
+  (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'slime-complete-symbol))
 
   (configure-for-evaluation
     'slime-eval-defun

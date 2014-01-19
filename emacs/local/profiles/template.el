@@ -202,8 +202,8 @@
   ;; activate yasnippet in the buffer
   (yas-minor-mode)
 
-  (dwim-tab-localize-context 'template/expand)
-  (dwim-tab-localize-context 'template/next)
+  (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'template/expand))
+  (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'template/next))
 
   (let
     ((key-map (make-sparse-keymap)))
