@@ -26,7 +26,7 @@
 (defun notes-profile/setup ()
   (interactive)
   (notes-profile/bindings)
-  (turn-on-dwim-tab 'indent-according-to-mode)
+  (turn-on-dwim-tab)
 
   (make-variable-buffer-local 'org-tab-first-hook)
   (add-to-list 'org-tab-first-hook 'dwim-tab-do-magic)
