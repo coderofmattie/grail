@@ -5,7 +5,6 @@
 ;; 
 ;; a repl backend for languages that provide REPL interfaces.
 ;;----------------------------------------------------------------------
-(require 'subr-x)
 
 (defvar lang-repl-table (make-hash-table :test 'equal))
 
