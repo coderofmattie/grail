@@ -27,7 +27,7 @@
 
   (if (mode-overlay-at-point-p 'flyspell-overlay)
     (progn
-      (flyspell-auto-correct-word)
+      (flyspell-correct-word-before-point)
       t)))
 
 ;; create a tab context where tab will invoke flyspell-auto-correct-word
