@@ -24,5 +24,5 @@
 
     (setq sh-indentation 2)
     (procedural-smart-parens-editing)
-    (turn-on-dwim-tab 'indent-for-tab-command))
+    (turn-on-dwim-tab))
   t)
