@@ -32,9 +32,6 @@
 
 (transient-mark-mode -1)                        ;; not a big fan of transient mark mode.
 
-(defun transient-mark-mode ( &optional ignore ) ;; I _really_ don't like transient mark mode.
-  (message "Goddamn hippies!"))                 ;; Make it impossible to turn on.
-
 (setq-default set-mark-command-repeat-pop t)  ;; C-u C-<spc> pops the mark, with this on
                                               ;; simply repeating C-<spc> continues backwards through
                                               ;; the ring. makes it easier to rewind back through a
