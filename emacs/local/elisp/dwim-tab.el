@@ -131,7 +131,7 @@
 (defun turn-on-dwim-tab ( &optional indent-function )
   (interactive)
 
-  (if (not (equal nil indent-function))
+  (if indent-function
     (setq dwim-tab-local-indent indent-function))
 
   (local-set-key (kbd "TAB") 'dwim-tab-do-magic))
