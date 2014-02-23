@@ -36,7 +36,7 @@
 
     (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
 
-    (turn-on-dwim-tab 'cperl-indent-command)
+    (turn-on-dwim-tab)
 
     (procedural-smart-parens-editing)
     (setq sp-escape-char "\\"))
