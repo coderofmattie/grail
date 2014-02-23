@@ -29,8 +29,8 @@
 ;; general grail profiles
 ;;----------------------------------------------------------------------
 
-;; registers
-(use-grail-profiles 0 "tramp" "spell" "browser" "terminal"
+;; registers "terminal"
+(use-grail-profiles 0 "tramp" "spell" "browser"
                       "jabber-emacs" "dwim-complete" "notes")
 
 (use-grail-profiles 10 "activate-buffer-status")
