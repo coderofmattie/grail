@@ -14,7 +14,7 @@
 (defvar-local dwim-tab-local-context nil
   "A function, or list of functions ")
 
-(defvar-local dwim-tab-local-indent 'indent-for-tab-command)
+(defvar dwim-tab-indent 'indent-according-to-mode)
 
 (defun dwim-tab-set-register-expand ( expander )
   (setq dwim-tab-register-expand expander))
@@ -48,7 +48,9 @@
           (setq relevant-expanders (cons (cdr expander) relevant-expanders))) )
       all-expanders)
 
-    (cons dwim-tab-register-expand relevant-expanders) ))
+    (if dwim-tab-register-expand
+      (cons dwim-tab-register-expand relevant-expanders)
+      relevant-expanders) ))
 
 (defun dwim-tab-localize-context ( &rest locals )
   "dwim-tab-local-context function-list
@@ -126,13 +128,15 @@
   (interactive)
 
   (unless (try-complete-dwim)
-    (funcall dwim-tab-local-indent)) )
+    (funcall dwim-tab-indent)) )
 
 (defun turn-on-dwim-tab ( &optional indent-function )
   (interactive)
 
   (if indent-function
-    (setq dwim-tab-local-indent indent-function))
+    (progn
+      (make-variable-buffer-local 'dwim-tab-indent)
+      (setq dwim-tab-indent indent-function)))
 
   (local-set-key (kbd "TAB") 'dwim-tab-do-magic))
 
