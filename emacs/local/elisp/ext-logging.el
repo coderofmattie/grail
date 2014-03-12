@@ -7,7 +7,8 @@
 ;; log viewing hooks and modes.
 ;;----------------------------------------------------------------------
 
-(defun load-logging-file (log-file)
+(defun load-logging-file ( log-file )
+  (interactive "fLog File: ")
   (switch-to-buffer (find-file-noselect log-file))
   (rename-buffer (concat "logwatch: " log-file))
 
