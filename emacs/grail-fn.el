@@ -227,34 +227,77 @@
 ;;
 
 (defvar grail-display-configured nil
-  "Boolean for if grail has configured the frame.")
+  "Boolean for if grail has configured the display.")
 
-(defvar grail-gui-configured nil
-  "Boolean for if grail has configured the gui.")
+(defvar grail-font-size 24)
 
-(defun grail-load-gui-configuration-once ( frame )
-  "grail-load-gui-configuration-once
-
-   Load the GUI configuration file gui.el setting a flag to
-   ensure that multiple calls only load the file once so that
-   this function can be safely placed on a hook.
-
-   It ignores an optional parameter so that it can be placed on
-   after-make-frame-functions.
-  "
-  (when (and (not grail-gui-configured) (is-current-frame-gui frame))
-    (load-user-elisp "gui")
-    (setq grail-gui-configured t)) )
-
-(defun grail-load-display-configuration-once ()
+(defun grail-load-display-configuration-once ( &rest ignore )
   "grail-load-display-configuration-once
 
    Load the display configuration file display.el only once,
    before a frame is created ala grail-load-gui-configuration-once.
   "
   (unless grail-display-configured
-    (load-user-elisp "display")
-    (setq grail-display-configured t)))
+    (load-user-elisp "user-display")
+    (setq grail-display-configured t)) )
+
+(defvar grail-graphical-configured nil
+  "Boolean for if grail has configured the frame.")
+
+(defun grail-select-best-font-family ( &optional frame )
+  (catch 'best-font
+    (dolist (canidate platform-font-family)
+      (when (member canidate (font-family-list frame))
+        (throw 'best-font canidate)) )
+
+    (car (font-family-list frame)) ))
+
+(defun grail-format-font ( family size &optional frame )
+  (let
+    (( font-spec (aref (font-info family frame) 1) ))
+    (concat (replace-regexp-in-string "pixelsize=[[:digit:]]+" (format "pixelsize=%s" size) font-spec) ":spacing=m") ))
+
+(defun grail-setup-frame-font ( font-spec &optional frame )
+  (set-face-attribute 'default frame
+    :font font-spec) )
+
+(defun grail-setup-frame-attributes ( &optional frame )
+  (set-face-attribute 'default frame :underline nil)
+  (set-face-attribute 'default frame :inverse-video nil)
+  (set-face-attribute 'default frame :box nil)
+  (set-face-attribute 'default frame :strike-through nil)
+  (set-face-attribute 'default frame :overline nil)
+
+  (set-face-background 'cursor "yellow" frame) )
+
+(defun grail-load-graphical-configuration-once ( &optional frame )
+  (when (and (not grail-graphical-configured) (is-current-frame-gui frame))
+
+     (let
+       (( font-spec (grail-format-font (grail-select-best-font-family frame) grail-font-size frame) ))
+
+       ;; setup the current frame with attributes
+       (grail-setup-frame-font font-spec frame)
+       (grail-setup-frame-attributes frame)
+
+       ;; setup subsequent frames with the frame alist
+       (setq
+         default-frame-alist
+         `((font . ,font-spec)
+           (underline . nil)
+           (inverse-video . nil)
+           (box . nil)
+           (strike-through . nil)
+           (overline . nil)
+           (cursor-color . "yellow") )
+
+         ;; misc graphical settings
+         use-dialog-box nil
+         x-select-enable-clipboard t) )
+
+    (setq-default cursor-type "box")
+
+    (setq grail-graphical-configured t) ))
 
 ;;----------------------------------------------------------------------
 ;; load-path construction
@@ -515,65 +558,6 @@
   (condition-case nil
     (find-library-name package)
     (error nil)) )
-
-;;----------------------------------------------------------------------
-;; faces
-;;----------------------------------------------------------------------
-
-;; I previously used custom-theme-set-faces for setting faces, however
-;; it broke with emacs --daemon, so I have created a macro to go
-;; to use set-face-attribute.
-
-(defun grail-set-face ( face attribute value )
-  "grail-set-face FACE ATTRIBUTE VALUE
-
-   set FACE attribute ATTRIBUTE to value. Attribute is a plain
-   symbol 'foo' converted to a syntatic attribute ':foo' by this
-   function.
-  "
-  (set-face-attribute face nil
-    (read (concat ":" attribute)) value))
-
-(defun pointer-to-face-p ( symbol )
-  "pointer-to-face-p SYMBOL
-
-   determine if SYMBOL is a variable that points to
-   a face (t), or a face symbol (nil).
-  "
-  (condition-case nil
-    (progn
-      (eval symbol)
-      t)
-    (error
-      nil)))
-
-(defmacro grail-set-faces ( &rest list )
-  "grail-set-faces BODY
-
-   Set one or more faces with a list of attributes.
-  "
-  (let
-    ((set-face-calls nil))
-
-    (mapc
-      ;; traverse the list of faces
-      (lambda ( face )
-        ;; traverse the list of attributes for a face.
-        (mapc
-          (lambda (attr-pair)
-            ;; cons each attribute as a call to grail-set-face
-            ;; onto a list of calls.
-            (setq set-face-calls
-              (cons
-                `(grail-set-face
-                   ,(if (pointer-to-face-p (car face))
-                      (car face)
-                      `',(car face))
-                   ,(symbol-name (car attr-pair)) ,(cadr attr-pair))
-                set-face-calls)))
-          (cdr face)))
-      list)
-    (cons 'progn set-face-calls)))
 
 ;;----------------------------------------------------------------------
 ;; ELPA

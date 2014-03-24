@@ -200,11 +200,33 @@
     (defvar grail-interpreters-path (concat grail-elisp-root "/interpreters/")
       "the path to the grail interpreters directory for interpreter files.")
 
+    (defvar grail-server-state (concat grail-state-path "/server/")
+      "the path to the grail interpreters directory for interpreter files.")
+
     (grail-trap
       "Loading the grail-cfg file for user path changes."
       ;; grail-cfg.el is a file for user to change the tree structure that grail
       ;; traverses before load-path is formed.
       (load-user-elisp "grail-cfg"))
+
+      (grail-trap
+        "redirect user-init-file and custom-file variables to grail-settings-file"
+        ;; the user-init-file _must_ be changed otherwise emacs will
+        ;; scribble all over grail which is not OK.
+
+        ;; The customize file path also needs to be set so that
+        ;; customize writes settings to a data-file rather than
+        ;; appending them to code.
+        (setq user-init-file
+          (setq custom-file
+            (concat grail-elisp-root grail-settings-file)))
+
+    ;; Load the user's settings if any. Do it early so that this
+    ;; stuff can be over-ridden in their config files.  The priority
+    ;; of customize settings is a toss-up, but it only comes into
+    ;; play when the user advances beyond relying on customize, and
+    ;; by then the priority is sensible.
+    (load-user-elisp grail-settings-file))
 
     ;;----------------------------------------------------------------------
     ;; Host specific adaptation
@@ -221,7 +243,7 @@
       "loading grail profiles support"
       (load-user-elisp "grail-profile"))
 
-    (defvar system-font-family nil)
+    (defvar platform-font-family nil)
 
     ;; save the state of load-path after the platform file if any has
     ;; been loaded.
@@ -244,7 +266,6 @@
 
       (load-user-elisp
         (concat "hosts/" (system-name))) )
-
 
     (grail-trap
       "Loading the username specific elisp."
@@ -272,56 +293,27 @@
       "load ELPA"
       (load-elpa-when-installed))
 
-    ;; dummy compatability functions for recent features in emacs, or
-    ;; broken ports.
+    (grail-trap
+     "Configuring the Emacs Server"
 
-    (unless (functionp 'window-system)
-      ;; Annoying Emacs.app 0.9-rc2 compat.
-      (defun window-system ()
-        "grail.el replacement for window system function."
-        window-system))
+     ;; configure and activate the server
+     (require 'server))
 
-    (unless (functionp 'daemonp)
-      (defun daemonp ()
-        "grail.el replacement for daemonp function."
-        nil))
+     ;; make sure there is a directory for server data
+     (grail-garuntee-dir-path grail-server-state)
 
-    (let*
-      ((server-env  (getenv "EMACS_SERVER_FILE"))
-       (server-dir  (if server-env (file-name-directory server-env) nil)))
+     (set-file-modes grail-server-state
+       (file-modes-symbolic-to-number "go-rwx" (file-modes grail-server-state)))
 
-       (if server-dir
-         (when (file-accessible-directory-p server-dir)
-           (setq
-             server-socket-dir server-dir
-             server-auth-dir server-dir
-             server-use-tcp t))
-         (message "grail: EMACS_SERVER_FILE not set - please set for correct server start")) )
+     (setq
+      server-use-tcp t
+      server-auth-dir grail-server-state)
 
     ;;----------------------------------------------------------------------
     ;; load the configuration based on mode.
     ;;----------------------------------------------------------------------
 
     (when (or (not noninteractive) (daemonp))
-
-      (grail-trap
-        "redirect user-init-file and custom-file variables to grail-settings-file"
-        ;; the user-init-file _must_ be changed otherwise emacs will
-        ;; scribble all over grail which is not OK.
-
-        ;; The customize file path also needs to be set so that
-        ;; customize writes settings to a data-file rather than
-        ;; appending them to code.
-        (setq user-init-file
-          (setq custom-file
-            (concat grail-elisp-root grail-settings-file)))
-
-      ;; Load the user's settings if any. Do it early so that this
-      ;; stuff can be over-ridden in their config files.  The priority
-      ;; of customize settings is a toss-up, but it only comes into
-      ;; play when the user advances beyond relying on customize, and
-      ;; by then the priority is sensible.
-      (load-user-elisp grail-settings-file))
 
       (grail-trap
         "load interface level elisp files"
@@ -347,21 +339,23 @@
 
       (grail-trap
         "load GUI files"
-        (cond
-          ((daemonp) (progn
-                       (add-to-list 'after-make-frame-functions 'grail-load-gui-configuration-once t)
-                       (add-hook 'before-make-frame-hook 'grail-load-display-configuration-once) ))
-          ((window-system) (progn
-                             (load-user-elisp "display")
-                             (load-user-elisp "gui") ))) )
 
-      ;; load all the group files requested. defer profile loading
-      ;; when starting as a daemon.
-      (grail-trap
-        "loading profiles from .emacs startup"
-        (grail-load-requested-profiles)) ))
+        (if (daemonp)
+          (progn
+            (add-hook 'before-make-frame-hook 'grail-load-display-configuration-once t)
+            (add-hook 'after-make-frame-functions 'grail-load-graphical-configuration-once t)
+            )
 
+          (progn
+            (server-start)
+            (load-user-elisp "user-display")
+            (grail-load-graphical-configuration-once)) )
+
+        ;; load all the group files requested. defer profile loading
+        ;; when starting as a daemon.
+        (grail-trap
+          "loading profiles from .emacs startup"
+          (grail-load-requested-profiles)) ) ))
   (error
     (message "Grail aborted from an internal error! %s" (princ error-trap))
-    (message "Please report this to %s" grail-maintainer-email))
-  )
+    (message "Please report this to %s" grail-maintainer-email)) )

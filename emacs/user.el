@@ -121,17 +121,6 @@
 
 ;; only need to start it when Emacs is not running in daemon mode
 
-(grail-trap
-  "Starting the Emacs Server"
-
-  (unless (daemonp)
-    (require 'server)
-    (server-start)
-
-    (unless (server-running-p)
-      (server-force-delete)
-      (server-start)) ))
-
 ;;----------------------------------------------------------------------
 ;;                 IPC shell:  comint/term mode
 ;;----------------------------------------------------------------------

@@ -18,7 +18,4 @@
   show-paren-delay 1
   paren-sexp-mode 'match)
 
-(grail-set-faces
-  (paren-face-match (background "grey20")))
-
 (paren-activate)
