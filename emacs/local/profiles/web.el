@@ -29,9 +29,6 @@
   ;; has it's own commenting
   (local-set-key (kbd "C-c ;") 'web-mode-comment-or-uncomment)
 
-  (turn-on-dwim-tab 'web-mode-indent-line)
-
-  ;; for some bizarre reason it only fontifies if font-lock is off.
-  (font-lock-mode 0))
+  (turn-on-dwim-tab 'web-mode-indent-line))
 
 (add-hook 'web-mode-hook 'web-mode-hook-fn t)

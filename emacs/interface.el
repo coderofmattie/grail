@@ -28,7 +28,7 @@
 (setq inhibit-splash-screen t)
 (setq inhibit-startup-echo-area-message t)
 
-(setq global-font-lock-mode 1)                ;; turn on font lock mode globally
+(setq global-font-lock-mode t)                ;; turn on font lock mode globally
 
 (transient-mark-mode -1)                        ;; not a big fan of transient mark mode.
 
