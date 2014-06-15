@@ -349,7 +349,7 @@
           (progn
             (server-start)
             (load-user-elisp "user-display")
-            (grail-load-graphical-configuration-once)) )
+            (grail-load-graphical-configuration-once (window-frame)) ) )
 
         ;; load all the group files requested. defer profile loading
         ;; when starting as a daemon.
