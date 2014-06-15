@@ -8,6 +8,8 @@
       "http://www.tldp.org/LDP/abs/abs-guide.html.tar.gz")
     1))
 
+(require 'generic-indent)
+
 (setq advanced-bash-scripting-guide (concat "file://" advanced-bash-scripting-guide "/index.html"))
 
 (defconst shell-function-regex "function")
@@ -25,6 +27,8 @@
     (setq
       sh-indentation 2
       sh-basic-offset 2)
+
+    (local-set-key (kbd "<return>") 'hard-electric-newline)
 
     (procedural-smart-parens-editing)
     (turn-on-dwim-tab))
