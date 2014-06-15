@@ -22,7 +22,10 @@
 
     (code-documentation-setup "shell-docs" "shell-mode" advanced-bash-scripting-guide)
 
-    (setq sh-indentation 2)
+    (setq
+      sh-indentation 2
+      sh-basic-offset 2)
+
     (procedural-smart-parens-editing)
     (turn-on-dwim-tab))
   t)

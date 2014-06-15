@@ -49,7 +49,8 @@
       (cons (list type char (make-vector 1 map-to))
             (reverse new-mapping))) ))
 
-(setq whitespace-style '(face trailing tabs empty tab-mark))
+;; empty does not work
+(setq whitespace-style '(face trailing tabs tab-mark))
 
 (update-whitespace-mappings 'tab-mark ?	 ?ɤ)
 (update-whitespace-mappings 'space-mark (elt " " 0) ?ɤ)
