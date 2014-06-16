@@ -1,7 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; async-command-builders.el
 ;;----------------------------------------------------------------------
-(require 'macros)
+(require 'macro-extensions)
 
 (defun async-build-basic ( prefix command callback &optional use-buffer &optional chained )
   (let

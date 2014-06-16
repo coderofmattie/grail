@@ -4,6 +4,20 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
+
+;;----------------------------------------------------------------------
+;; indentation
+;;----------------------------------------------------------------------
+
+;; disable electric stuff to avoid problems with my more sophisticated
+;; modes
+(electric-indent-mode 0)
+
+;;----------------------------------------------------------------------
+;; whitespace
+;;----------------------------------------------------------------------
+(setq indent-tabs-mode nil)
+
 (require 'grail-profile)
 (require 'buffer-status)
 
@@ -31,19 +45,6 @@
 
 ;; advanced functionality
 (use-grail-profiles 3 "template" "slime")
-
-;;----------------------------------------------------------------------
-;; indentation
-;;----------------------------------------------------------------------
-
-;; disable electric stuff to avoid problems with my more sophisticated
-;; modes
-(electric-indent-mode 0)
-
-;;----------------------------------------------------------------------
-;; whitespace
-;;----------------------------------------------------------------------
-(setq indent-tabs-mode nil)
 
 ;;----------------------------------------------------------------------
 ;;                          GUD

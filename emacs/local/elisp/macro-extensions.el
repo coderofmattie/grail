@@ -1,5 +1,5 @@
 ;;----------------------------------------------------------------------
-;; macros - a library of routines to deal with macro problems
+;; macro-extensions.el - a library of routines to deal with macro problems
 ;;
 ;; description:
 ;;
@@ -79,4 +79,4 @@
       (fset bound-lambda wrapped-lambda)
       bound-lambda) ))
 
-(provide 'macros)
+(provide 'macro-extensions)
