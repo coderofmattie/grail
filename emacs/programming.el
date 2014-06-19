@@ -13,11 +13,6 @@
 ;; modes
 (electric-indent-mode 0)
 
-;;----------------------------------------------------------------------
-;; whitespace
-;;----------------------------------------------------------------------
-(setq indent-tabs-mode nil)
-
 (require 'grail-profile)
 (require 'buffer-status)
 
@@ -94,6 +89,9 @@
 
 (defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
   "Enable my programming customizations for the buffer"
+
+  ;; whitespace
+  (setq indent-tabs-mode nil)
 
   (run-custom-hooks configure-programming-hook)
 
