@@ -28,7 +28,7 @@
 ;; (tags-uber-delete-tags-file (tags-uber-tags-path "cperl-mode" "imports"))
 
 (defconst tags-uber-cmd-base
-  "ctags-exuberant -V -e --links=yes -a -L -")
+  "ctags -V -e --links=yes -a -L -")
 
 (defun tags-uber-find-initialize ( file-match tree-list )
   (cm-string-join " "
