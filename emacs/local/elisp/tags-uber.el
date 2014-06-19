@@ -50,31 +50,39 @@
 
 ;; (tags-uber-find-update "/foo-tags" "*.p[ml]" '("/home/foo" "/home/bar"))
 
-(defun tags-uber-tags-command-builder ( lang tags-file file-match tree-list )
+(defun tags-uber-tags-command-builder ( lang tags-file file-match tree-list &rest options )
   (cons
     (concat
       (tags-uber-find-initialize file-match tree-list)
+
       " "
-      (cm-string-join " "
-        (list
-          tags-uber-cmd-base
-          (format "--languages=%s" lang)
-          (format "-f %s" tags-file))) )
+
+      (apply 'cm-string-join-args " "
+        tags-uber-cmd-base
+        (format "--languages=%s" lang)
+        (format "-f %s" tags-file)
+        options))
 
     (concat
-      (tags-uber-find-update tags-file "*.p[ml]" tree-list)
-      " "
-      (cm-string-join " "
-        (list
-          tags-uber-cmd-base
-          (format "--languages=%s" lang)
-          (format "-f %s" tags-file))) ) ))
+      (tags-uber-find-update tags-file file-match tree-list)
 
-;; (tags-uber-tags-command-builder "Perl" "/foo-tags" "*.p[ml]" '("/home/foo" "/home/bar"))
+      " "
+
+      (apply 'cm-string-join-args " "
+        tags-uber-cmd-base
+        (format "--languages=%s" lang)
+        (format "-f %s" tags-file)
+        options)) ))
+
+;;(tags-uber-tags-command-builder "Perl" "/foo-tags" "*.p[ml]" '("/home/foo" "/home/bar"))
+;; (tags-uber-tags-command-builder "Python" "/foo-tags" "*.p[ml]" '("/home/foo" "/home/bar") "--python-kinds=-i" )
 
 (defconst tags-uber-cmd-generators
   '(("cperl-mode" (lambda ( tags-file tree-list )
                     (tags-uber-tags-command-builder "Perl" tags-file  "*.p[ml]" tree-list)))
+
+     ("python-mode" (lambda ( tags-file tree-list )
+                     (tags-uber-tags-command-builder "Python" tags-file "*.py" tree-list)))
      ))
 
 (defun tags-uber-get-command-generator ( mode )
