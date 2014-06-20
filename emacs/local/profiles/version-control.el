@@ -26,7 +26,9 @@
 ;;----------------------------------------------------------------------
 
 (defun ver-ctl-root ( from-path )
-  (vc-find-root from-path ".git"))
+  (or
+    (vc-find-root from-path ".git")
+    (vc-find-root from-path ".hg") ))
 
 (defun ver-ctl-branch-list ()
   (let*
@@ -258,11 +260,15 @@
 
 (defun ver-ctl-modeline-string ()
   (let
-    ((detect-vcs (vc-backend buffer-file-name)))
+    ((detect-vcs  (condition-case nil
+                    (vc-backend buffer-file-name)
+                    (error "vc?")) )
 
-    (if detect-vcs
-      (concat (format "%s" detect-vcs) "->" (ver-ctl-branch-current))
-      "") ))
+     (detect-branch (condition-case nil
+                      (ver-ctl-branch-current)
+                      (error "?"))) )
+
+    (format "%s -> %s" detect-vcs detect-branch) ))
 
 (defun ver-ctl-hook ()
   (make-variable-buffer-local 'mattie-modeline-vcs)
