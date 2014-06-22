@@ -36,7 +36,8 @@
 
 ;; language profiles
 ;; not done yet: "clojure"
-(use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl" "shell-scripting" "web")
+(use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl"
+                      "shell-scripting" "web" "python")
 
 ;; advanced functionality
 (use-grail-profiles 3 "template" "slime")
