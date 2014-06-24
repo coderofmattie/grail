@@ -198,63 +198,63 @@
   (message "branches: %s" (string-join "," (ver-ctl-branch-list))) )
 
 (defun ver-ctl-git-diff ()
-  "ver-ctl-file-diff: diff file against version (git)"
+  "ver-ctl-git-diff: diff file against version (git)"
   (interactive)
   (merging-ediff-teardown-diff-egg-toggle-enable)
   (call-interactively 'ediff-revision buffer-file-name))
 
 (defun ver-ctl-vc-diff ()
-  "ver-ctl-ahg-diff: diff file against version (Hg)"
+  "ver-ctl-vc-diff: diff file against version (vc)"
   (interactive)
   (call-interactively 'ediff-revision buffer-file-name))
 
 (defun ver-ctl-git-file-log ()
-  "ver-ctl-git-file-log: diff file against version"
+  "ver-ctl-git-file-log: file log (git)"
   (interactive)
   (egg-file-log buffer-file-name))
 
 (defun ver-ctl-ahg-file-log ()
-  "ver-ctl-ahg-file-log: diff file against version"
+  "ver-ctl-ahg-file-log: file log (hg)"
   (interactive)
-  (ahg-short-log buffer-file-name) )
+  (ahg-log-cur-file buffer-file-name) )
+
+(defun ver-ctl-git-short-log ()
+  "ver-ctl-git-short-log: short log (git)"
+  (interactive)
+  (call-interactively 'egg-log))
+
+(defun ver-ctl-ahg-short-log ()
+  "ver-ctl-ahg-short-log: short log (hg)"
+  (interactive)
+  (ahg-short-log "tip" 0) )
 
 (defun ver-ctl-git-file-blame ()
-  "ver-ctl-git-file-blame: toggle blame mode"
+  "ver-ctl-git-file-blame: toggle blame mode (git)"
   (interactive)
   (egg-file-toggle-blame-mode))
 
 (defun ver-ctl-git-file-resolve ()
-  "ver-ctl-file-resolve: mark file as resolved"
+  "ver-ctl-file-resolve: mark file as resolved (git)"
   (interactive)
   (egg-resolve-merge-with-ediff))
 
 (defun ver-ctl-git-file-merge ()
-  "ver-ctl-file-merge: merge conflicted file"
+  "ver-ctl-file-merge: merge conflicted file (git)"
   (interactive)
   (egg-log-buffer-merge))
 
 (defun ver-ctl-git-status ()
-  "ver-ctl-git-status: show version control tree status"
+  "ver-ctl-git-status: show tree status (git)"
   (interactive)
   (call-interactively 'egg-status))
 
 (defun ver-ctl-ahg-status ()
-  "ver-ctl-ahg-status: show version control tree status"
+  "ver-ctl-ahg-status: show tree status (hg)"
   (interactive)
   (call-interactively 'ahg-status))
 
-(defun ver-ctl-git-br-status ()
-  "ver-ctl-git-branch-interface: version control branch interface"
-  (interactive)
-  (call-interactively 'egg-log))
-
-(defun ver-ctl-ahg-br-status ()
-  "ver-ctl-git-branch-interface: version control branch interface"
-  (interactive)
-  (call-interactively 'ahg-log))
-
-(defun ver-ctl-git-repo-status ()
-  "ver-ctl-git-repo-status: show the entire repository"
+(defun ver-ctl-git-repo ()
+  "ver-ctl-git-repo: show the entire repository (git)"
   (interactive)
 
   (setq current-prefix-arg 4)
@@ -271,29 +271,31 @@
   (call-interactively 'ahg-do-command))
 
 (defvar ver-ctl-vc-table
-  `(("vc-branch-list"  . ver-ctl-vc-branch-list)
-    ("git-branches"    . ver-ctl-branch-show-all)
+  `(("vc-branches"  . ver-ctl-vc-branch-list)
 
-    ("vc-diff"     . ver-ctl-ahg-diff)
-    ("git-diff"    . ver-ctl-git-diff)
+    ("vc-diff"      . ver-ctl-ahg-diff)
+    ("git-diff"     . ver-ctl-git-diff)
 
-    ("hg-log"      . ver-ctl-ahg-file-log)
-    ("git-log"     . ver-ctl-git-file-log)
+    ("hg-log"  . ver-ctl-ahg-file-log)
+    ("git-log" . ver-ctl-git-file-log)
 
-    ("hg-blame"    . ver-ctl-ahg-file-blame)
-    ("git-blame"   . ver-ctl-git-file-blame)
+    ("hg-short-log"  . ver-ctl-ahg-short-log)
+    ("git-short-log" . ver-ctl-git-short-log)
 
-    ("git-resolve" . ver-ctl-git-file-resolve)
+    ("hg-blame"     . ver-ctl-ahg-file-blame)
+    ("git-blame"    . ver-ctl-git-file-blame)
 
-    ("git-merge"   . ver-ctl-git-file-merge)
+    ("git-resolve"  . ver-ctl-git-file-resolve)
 
-    ("git-status"  . ver-ctl-git-status)
-    ("hg-status"   . ver-ctl-ahg-status)
+    ("git-merge"    . ver-ctl-git-file-merge)
+
+    ("git-status"   . ver-ctl-git-status)
+    ("hg-status"    . ver-ctl-ahg-status)
 
     ("git-execute"  . ver-ctl-git-br-execute)
     ("hg-execute"   . ver-ctl-ahg-br-execute)
 
-    ("git-repo-status"  . ver-ctl-git-repo-status) ))
+    ("git-repo"  . ver-ctl-git-repo) ))
 
 (defun ver-ctl-vc-name ()
   (let
@@ -320,49 +322,69 @@
   (let
     ((ver-map (make-sparse-keymap)))
 
+    (define-key ver-map "b"
+      (lambda ()
+        "show all branches"
+        (interactive)
+        (ver-ctl-call-function "branches")) )
+
     (define-key ver-map "d"
       (lambda ()
+        "diff the current file against head"
         (interactive)
         (ver-ctl-call-function "diff")) )
 
-    (define-key ver-map "l"
+    (define-key ver-map "f"
       (lambda ()
+        "file log"
         (interactive)
         (ver-ctl-call-function "log")) )
 
-    (define-key ver-map "b"
+    (define-key ver-map "l"
       (lambda ()
+        "short log"
+        (interactive)
+        (ver-ctl-call-function "short-log")) )
+
+    (define-key ver-map "a"
+      (lambda ()
+        "blame mode"
         (interactive)
         (ver-ctl-call-function "blame")) )
 
     (define-key ver-map "e"
       (lambda ()
+        "execute command"
         (interactive)
         (ver-ctl-call-function "execute")) )
 
-    (define-key ver-map "c"
+    (define-key ver-map "r"
       (lambda ()
+        "mark resolved"
         (interactive)
         (ver-ctl-call-function "resolve")) )
 
     (define-key ver-map "m"
       (lambda ()
+        "merge"
         (interactive)
         (ver-ctl-call-function "merge")) )
 
     (define-key ver-map "s"
       (lambda ()
+        "status"
         (interactive)
         (ver-ctl-call-function "status")) )
 
-    (define-key ver-map "r"
+    (define-key ver-map "x"
       (lambda ()
+        "repository view"
         (interactive)
         (ver-ctl-call-function "repo-status")) )
 
     (define-key ver-map "h" (keybindings-help-fn "ver ctl" ver-map))
 
-    (local-set-key (kbd "C-c v") ver-map)))
+    (local-set-key (kbd "C-c v") ver-map) ))
 
 (defun ver-ctl-modeline-string ()
   (let
