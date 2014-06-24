@@ -615,7 +615,7 @@ loads.\n")
         (message "grail-svn-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defvar grail-svn-buffer "*grail-svn*")
+(defconst grail-svn-buffer "*grail-svn*")
 
 (defun grail-svn-installer ( module url )
   (lexical-let
@@ -638,6 +638,8 @@ loads.\n")
 ;;
 ;; bzr
 ;;
+
+(defconst grail-bzr-buffer "*grail-bzr*")
 
 (defun grail-bzr-async ( url dir module output-buffer )
   "grail-bzr-async URL PATH OUTPUT-BUFFER
@@ -665,18 +667,63 @@ loads.\n")
     ((module-arg  module)
      (url-arg     url))
 
-    (grail-run-and-wait grail-svn-buffer
+    (grail-run-and-wait grail-hg-buffer
       (lambda ( run-buffer )
-        (grail-svn-async url-arg grail-dist-bzr module-arg run-buffer))) ))
+        (grail-bzr-async url-arg grail-dist-bzr module-arg run-buffer))) ))
 
 (defun grail-bzr-docs ( module url )
   (lexical-let
     ((module-arg  module)
      (url-arg     url))
 
-    (grail-run-and-wait grail-svn-buffer
+    (grail-run-and-wait grail-hg-buffer
       (lambda ( run-buffer )
-        (grail-svn-async url-arg grail-dist-docs module-arg run-buffer))) ))
+        (grail-bzr-async url-arg grail-dist-docs module-arg run-buffer))) ))
+
+;;
+;; mercurial
+;;
+
+(defconst grail-hg-buffer "*grail-hg*")
+
+(defun grail-hg-async ( url dir module output-buffer )
+  "grail-hg-async URL PATH OUTPUT-BUFFER
+
+   retrieve the URL to PATH, with OUTPUT-BUFFER as the output
+   buffer. The process object created is returned, or nil if a
+   process could not be created.
+  "
+  (condition-case trapped-error
+    (let
+      ((default-directory (grail-garuntee-dir-path dir)))
+
+      (start-process-shell-command "grail-hg" output-buffer
+        "hg"
+        "clone"
+        (quote-string-for-shell url)
+        (quote-string-for-shell module)))
+    (error
+      (progn
+        (message "grail-hg-async failed %s" (format-signal-trap trapped-error))
+        nil)) ))
+
+(defun grail-hg-installer ( module url )
+  (lexical-let
+    ((module-arg  module)
+     (url-arg     url))
+
+    (grail-run-and-wait grail-hg-buffer
+      (lambda ( run-buffer )
+        (grail-hg-async url-arg grail-dist-hg module-arg run-buffer))) ))
+
+(defun grail-hg-docs ( module url )
+  (lexical-let
+    ((module-arg  module)
+     (url-arg     url))
+
+    (grail-run-and-wait grail-hg-buffer
+      (lambda ( run-buffer )
+        (grail-hg-async url-arg grail-hg-docs module-arg run-buffer))) ))
 
 ;;
 ;; ELPA
@@ -753,6 +800,9 @@ loads.\n")
 (defun grail-bzr-args ( install-pair )
   `(grail-bzr-installer ,(grail-target install-pair) ,(grail-url install-pair)))
 
+(defun grail-hg-args ( install-pair )
+  `(grail-hg-installer ,(grail-target install-pair) ,(grail-url install-pair)))
+
 (defun grail-decompose-installer-type ( type-spec )
   "grail-decompose-installer-type SPEC
 
@@ -786,6 +836,7 @@ loads.\n")
    svn checkout:              : (grail-define-installer \"bob\" \"svn\" \"url\")
    bzr checkout:              : (grail-define-installer \"bob\" \"bzr\" \"url\")
    ELPA package:              : (grail-define-installer \"bob\" \"pkg\")
+   hg   package:
 
    Most of the time a single URL suffices. Many packages are a
    single elisp file, or a single tarball.
@@ -845,6 +896,7 @@ loads.\n")
                      ((string-equal "svn"   install-type) (grail-svn-args  install-pair))
                      ((string-equal "bzr"   install-type) (grail-bzr-args  install-pair))
                      ((string-match "tar"   install-type) (grail-tar-args  install-pair))
+                     ((string-match "hg"   install-type)  (grail-hg-args  install-pair))
 
                      (t (throw 'grail-trap
                           '((format "grail-define-installer: I don't have an installer for %s" install-type))))) ))
