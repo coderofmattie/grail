@@ -147,6 +147,9 @@
   (set-face-attribute  'flyspell-incorrect nil :underline t)
   (set-face-foreground 'flyspell-incorrect "red"))
 
+(defun display-faces-for-term ()
+  (set-face-foreground 'term "orange3") )
+
 (eval-after-load 'cperl-mode '(display-faces-for-cperl))
 (eval-after-load 'ediff-mode '(display-faces-for-ediff))
 (eval-after-load 'whitespace-mode '(display-faces-for-whitespace-mode))
@@ -154,5 +157,6 @@
 (eval-after-load 'helm '(display-faces-for-helm))
 (eval-after-load 'mic-paren '(display-faces-for-paren))
 (eval-after-load 'flyspell '(display-faces-for-flyspell))
+(eval-after-load 'term '(display-faces-for-term))
 
 (provide 'user-display)
