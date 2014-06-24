@@ -41,4 +41,3 @@
 
 (put 'erase-buffer 'disabled nil)             ;; enable erase-buffer, no hand-holding.
 
-(setq explicit-shell-file-name "/bin/zsh")

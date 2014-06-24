@@ -284,14 +284,3 @@
   (interactive)
   (x-select-text (filter-buffer-substring (region-beginning) (region-end))) )
 
-(defun split-term ( &optional command )
-  "run a terminal in a split window"
-  (interactive)
-
-  (split-window-horizontally)
-  (other-window 1)
-
-  (term
-    (if command
-      command
-      explicit-shell-file-name)) )

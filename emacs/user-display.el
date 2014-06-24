@@ -148,7 +148,7 @@
   (set-face-foreground 'flyspell-incorrect "red"))
 
 (defun display-faces-for-term ()
-  (set-face-foreground 'term "orange3") )
+  (set-face-foreground 'term "DarkOrange2") )
 
 (eval-after-load 'cperl-mode '(display-faces-for-cperl))
 (eval-after-load 'ediff-mode '(display-faces-for-ediff))
