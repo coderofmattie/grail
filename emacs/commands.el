@@ -283,3 +283,4 @@
   "copy the region to the clipboard"
   (interactive)
   (x-select-text (filter-buffer-substring (region-beginning) (region-end))) )
+

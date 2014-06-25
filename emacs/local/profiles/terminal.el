@@ -1,15 +1,55 @@
 ;;----------------------------------------------------------------------
 ;; enhanced terminal
 ;;----------------------------------------------------------------------
-(grail-load 'multi-term (grail-define-installer "multi-term"
-                         "file"
-                         "http://www.emacswiki.org/emacs/download/multi-term.el"))
 
-(setq multi-term-program "/bin/zsh")
+(require 'term)
 
-(defun sys ()
+;; terminal stuff
+
+(setq explicit-shell-file-name "/bin/zsh")
+
+(defun split-term ( &optional command )
+  "run a terminal in a split window"
   (interactive)
-  (multi-term))
+
+  (split-window-horizontally)
+  (other-window 1)
+
+  (term
+    (if command
+      command
+      explicit-shell-file-name)) )
+
+(defun close-term ( term-buffer term-window )
+  (other-window 1)
+  (delete-other-windows term-window)
+  (kill-buffer term-buffer) )
+
+(add-hook 'term-exec-hook
+  (lambda ()
+    (let*
+      ((buff (current-buffer))
+       (win  (get-buffer-window))
+       (proc (get-buffer-process buff)))
+
+      (lexical-let
+        ((term-buffer buff)
+         (term-window win))
+
+        (set-process-sentinel proc
+          (lambda (process event)
+            (if (string= event "finished\n")
+              (close-term term-buffer term-window)) )) ) )) )
+
+;; (grail-load 'multi-term (grail-define-installer "multi-term"
+;;                          "file"
+;;                          "http://www.emacswiki.org/emacs/download/multi-term.el"))
+
+;; (setq multi-term-program "/bin/zsh")
+
+;; (defun sys ()
+;;   (interactive)
+;;   (multi-term))
 
 ;; old code that may be useful.
 

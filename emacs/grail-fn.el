@@ -477,7 +477,8 @@
 
          grail-dist-cvs
          grail-dist-git
-         grail-dist-bzr )))
+         grail-dist-bzr 
+         grail-dist-hg )))
 
     (when new-load-path
       (setq load-path (reverse new-load-path)))

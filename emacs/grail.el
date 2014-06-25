@@ -139,51 +139,55 @@
     (defvar grail-settings-file "customize-settings.el"
       "The file where Emacs writes settings and customize data")
 
-    (defvar grail-local-emacs
+    (defconst grail-local-emacs
       (concat grail-local-dir "emacs/")
       "The directory containing Emacs packages that over-ride the packages
        distributed with Emacs.")
 
-    (defvar grail-local-elisp
+    (defconst grail-local-elisp
       (concat grail-local-dir "elisp/")
       "The directory containing Emacs libraries created and maintained by the
        user.")
 
-    (defvar grail-dist-dir
+    (defconst grail-dist-dir
       (concat grail-elisp-root "dist/")
       "The directory for managing distributed packages")
 
-    (defvar grail-dist-archive
+    (defconst grail-dist-archive
       (concat grail-dist-dir "archive/")
       "The directory for managing distributed packages")
 
-    (defvar grail-dist-docs
+    (defconst grail-dist-docs
       (concat grail-dist-dir "docs/")
       "the directory containing third party docs")
 
-    (defvar grail-dist-elisp
+    (defconst grail-dist-elisp
       (concat grail-dist-dir "elisp/")
       "The directory containing third-party elisp extensions of Emacs.")
 
-    (defvar grail-dist-elpa
+    (defconst grail-dist-elpa
       (concat grail-dist-dir "elpa/")
       "ELPA managed third party elisp.")
 
-    (defvar grail-dist-cvs
+    (defconst grail-dist-cvs
       (concat grail-dist-dir "cvs/")
       "cvs version control managed third party elisp")
 
-    (defvar grail-dist-bzr
+    (defconst grail-dist-bzr
       (concat grail-dist-dir "bzr/")
       "bzr version control managed third party elisp")
 
-    (defvar grail-dist-git
+    (defconst grail-dist-git
       (concat grail-dist-dir "git/")
       "git version control managed third party elisp")
 
-    (defvar grail-dist-svn
+    (defconst grail-dist-svn
       (concat grail-dist-dir "svn/")
       "subversion version control managed third party elisp")
+
+    (defconst grail-dist-hg
+      (concat grail-dist-dir "hg/")
+      "mercurial version control managed third party elisp")
 
     (defvar grail-elpa-load-path nil
       "The load-path extensions made by ELPA package activation")
