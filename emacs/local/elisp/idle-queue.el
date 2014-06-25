@@ -7,62 +7,55 @@
 ;;----------------------------------------------------------------------
 
 ;; how many idle seconds for the idle hook runs.
-(defconst idle-queue-time-before-start 2)
+(defconst idle-queue-delay 4)
 
 ;; the list of all hooks to run.
-(defvar idle-queue-run-pool nil)
+(defvar idle-queue-list nil)
 
 ;; the list of hooks currently being processed.
-(defvar idle-queue-run-list  nil)
+(defvar idle-queue-active  nil)
 
 ;; timer object for idle queue
-(defvar idle-queue-run-handle nil)
+(defvar idle-queue-handle nil)
 
 (defun idle-queue-start ()
-  (unless idle-queue-run-handle
+  (unless idle-queue-handle
     (message "starting idle queue idle processing")
 
-    (setq idle-queue-run-handle
-      (run-with-idle-timer idle-queue-run-handle t 'idle-queue-processor)) ))
+    (idle-queue-reset)
+
+    (setq idle-queue-handle
+      (run-with-idle-timer idle-queue-delay t 'idle-queue-processor)) ))
 
 (defun idle-queue-stop ()
   (interactive)
   (message "stopping idle queue idle processing")
 
-  (cancel-timer idle-queue-run-handle)
-  (setq idle-queue-run-handle nil))
+  (cancel-timer idle-queue-handle)
+
+  (idle-queue-reset)
+  (setq idle-queue-handle nil) )
 
 (defun idle-queue-reset ()
   (interactive)
 
-  (setq idle-queue-run-pool nil)
-  (setq idle-queue-run-list nil))
+  (setq idle-queue-active nil)
+  (setq idle-queue-list nil))
 
 (defun idle-queue-processor ()
-  (if idle-queue-run-list
+  (if (and idle-queue-list
+           (not idle-queue-active))
     (let
-      (( to-run (car idle-queue-run-list) ))
+      (( to-run (car idle-queue-list) ))
 
-      (setq idle-queue-run-list (cdr idle-queue-run-list))
+      (setq idle-queue-list (cdr idle-queue-list))
 
-      (funcall to-run))
+      (funcall to-run)
 
-    (setq idle-queue-run-list idle-queue-run-pool)) )
+      (setq to-run nil)) ))
 
 (defun idle-queue-add ( hook )
   (idle-queue-start)
-  (setq idle-queue-run-pool (cons hook idle-queue-run-pool)) )
-
-(defun idle-queue-remove ( hook )
-  (let
-    (( updated nil ))
-
-    (mapc
-      (lambda ( old-hook )
-        (unless (eq hook old-hook)
-          (setq updated (cons old-hook updated)) ))
-      idle-queue-run-pool)
-
-    (setq idle-queue-run-pool updated) ))
+  (setq idle-queue-list (cons hook idle-queue-list)) )
 
 (provide 'idle-queue)
