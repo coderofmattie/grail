@@ -253,7 +253,7 @@
   (interactive)
   (call-interactively 'ahg-status))
 
-(defun ver-ctl-git-repo ()
+(defun ver-ctl-git-repository ()
   "ver-ctl-git-repo: show the entire repository (git)"
   (interactive)
 
@@ -295,7 +295,7 @@
     ("git-execute"  . ver-ctl-git-br-execute)
     ("hg-execute"   . ver-ctl-ahg-br-execute)
 
-    ("git-repo"  . ver-ctl-git-repo) ))
+    ("git-repository"  . ver-ctl-git-repository) ))
 
 (defun ver-ctl-vc-name ()
   (let
@@ -380,7 +380,7 @@
       (lambda ()
         "repository view"
         (interactive)
-        (ver-ctl-call-function "repo-status")) )
+        (ver-ctl-call-function "repository")) )
 
     (define-key ver-map "h" (keybindings-help-fn "ver ctl" ver-map))
 
