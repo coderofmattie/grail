@@ -34,6 +34,6 @@
 (global-set-key (kbd "<prior>") 'beginning-of-buffer)
 (global-set-key (kbd "<next>")  'end-of-buffer)
 
-(global-set-key (kbd "C-c c r")  'split-term)
+(global-set-key (kbd "C-c r t")  'split-term)
 
 
