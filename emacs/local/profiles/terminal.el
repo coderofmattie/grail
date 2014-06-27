@@ -1,24 +1,12 @@
 ;;----------------------------------------------------------------------
 ;; enhanced terminal
 ;;----------------------------------------------------------------------
-
 (require 'term)
+(require 'buffer-ring)
 
-;; terminal stuff
-
-(setq explicit-shell-file-name "/bin/zsh")
-
-(defun split-term ( &optional command )
-  "run a terminal in a split window"
-  (interactive)
-
-  (split-window-horizontally)
-  (other-window 1)
-
-  (term
-    (if command
-      command
-      explicit-shell-file-name)) )
+;;----------------------------------------------------------------------
+;;                 IPC shell:  comint/term mode
+;;----------------------------------------------------------------------
 
 (defun close-term ( term-buffer term-window )
   (other-window 1)
@@ -41,33 +29,26 @@
             (if (string= event "finished\n")
               (close-term term-buffer term-window)) )) ) )) )
 
-;; (grail-load 'multi-term (grail-define-installer "multi-term"
-;;                          "file"
-;;                          "http://www.emacswiki.org/emacs/download/multi-term.el"))
+;; term only seems to run one mode.
 
-;; (setq multi-term-program "/bin/zsh")
+;; (defun terminal-profile-setup ()
+;;   (configure-for-buffer-ring "prompt") )
 
-;; (defun sys ()
-;;   (interactive)
-;;   (multi-term))
+;; (add-hook 'term-mode-hook 'terminal-profile-setup)
 
-;; old code that may be useful.
+(setq terminal-profile-local-shell "/usr/bin/zsh")
 
-;; ;; setup a hook that runs when the term process exits
-;; (defvar term-process-exit-hook nil
-;;   "a hook run when the term process exists")
+(defun local-term ( &optional command )
+  "run a terminal in a split window"
+  (interactive)
 
-;; ;; infect the term-sentinel function
-;; (defadvice term-sentinel (around term-sentinel-hook (proc msg))
-;;   (let
-;;     ((pbuffer (process-buffer proc))
-;;      (did-exit (memq (process-status proc) '(signal exit))))
-;;     ad-do-it
-;;     (when did-exit (run-hooks-with-arg term-process-exit-hook pbuffer)) ))
+  (split-window-horizontally)
+  (other-window 1)
 
-;; ;; get rid of the buffer when the process exits
-;; (add-hook 'term-process-exit-hook (lambda ( pbuffer )
-;;                                     (kill-buffer pbuffer))
-;;   t)
+  (term
+    (if command
+      command
+      terminal-profile-local-shell)) )
 
-;; (ad-activate 'term-sentinel)
+(global-set-key (kbd "C-c r t")  'split-term)
+

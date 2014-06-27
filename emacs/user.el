@@ -32,7 +32,7 @@
 ;; registers
 (use-grail-profiles 0 "tramp" "spell" "browser"
                       "jabber-emacs" "dwim-complete"
-                      "notes" "terminal" "file-browser")
+                      "notes" "file-browser" "terminal")
 
 (use-grail-profiles 10 "activate-buffer-status")
 
@@ -114,37 +114,7 @@
 
 (setq auto-mode-alist (append '(("\\.txt$"     . text-mode)) auto-mode-alist ))
 
-;;----------------------------------------------------------------------
-;; Emacs Server
-;;----------------------------------------------------------------------
-
-;; only need to start it when Emacs is not running in daemon mode
-
-;;----------------------------------------------------------------------
-;;                 IPC shell:  comint/term mode
-;;----------------------------------------------------------------------
-
-(setq shell-prompt-pattern "*? *")        ;; comint-prompt-regex is set
-                                          ;; to this regex that captures
-                                          ;; my shell prompt.
-
-(setq
-  comint-prompt-read-only t)              ;; make everything before the prompt RO
-
-;; the convention of adding lambda's to hooks is discouraged as
-;; re-eval'ing the buffer or byte compiling duplicates the lambda in
-;; the hook list.
-
-(add-hook 'comint-mode-hook
-  (lambda ()
-    (ansi-color-for-comint-mode-on)
-
-    ;; make up-down go through the history list.
-    (local-set-key (kbd "<up>") 'comint-previous-input)
-    (local-set-key (kbd "<down>") 'comint-next-input))
-  t)
-
-;;----------------------------------------------------------------------
+;----------------------------------------------------------------------
 ;;                    EShell
 ;;----------------------------------------------------------------------
 
