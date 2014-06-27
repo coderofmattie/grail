@@ -270,6 +270,11 @@
   (interactive)
   (call-interactively 'ahg-do-command))
 
+(defun ver-ctl-vc-revert ()
+  "ver-ctl-vc-revert: revert the file back to the commit state"
+  (interactive)
+  (vc-revert-file buffer-file-name))
+
 (defvar ver-ctl-vc-table
   `(("vc-branches"  . ver-ctl-vc-branch-list)
 
@@ -295,7 +300,9 @@
     ("git-execute"  . ver-ctl-git-br-execute)
     ("hg-execute"   . ver-ctl-ahg-br-execute)
 
-    ("git-repository"  . ver-ctl-git-repository) ))
+    ("git-repository"  . ver-ctl-git-repository)
+
+    ("vc-revert" . ver-ctl-vc-revert) ))
 
 (defun ver-ctl-vc-name ()
   (let
@@ -381,6 +388,12 @@
         "repository view"
         (interactive)
         (ver-ctl-call-function "repository")) )
+
+    (define-key ver-map "u"
+      (lambda ()
+        "revert file"
+        (interactive)
+        (ver-ctl-call-function "revert")) )
 
     (define-key ver-map "h" (keybindings-help-fn "ver ctl" ver-map))
 
