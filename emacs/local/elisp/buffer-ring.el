@@ -28,6 +28,14 @@
 (global-set-key (kbd "C-c C-b p") 'buffer-torus-prev-ring)
 (global-set-key (kbd "C-c C-b e") 'buffer-torus-delete-ring)
 
+(defun configure-for-buffer-ring ( buffer-ring-mode )
+  (when (buffer-ring-add buffer-ring-mode)
+    (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
+    (local-set-key (kbd "<M-left>")   'buffer-ring-prev-buffer)
+
+    (local-set-key (kbd "<M-up>")   'buffer-torus-next-ring)
+    (local-set-key (kbd "<M-down>") 'buffer-torus-prev-ring)) )
+
 (defvar buffer-ring-torus (make-dyn-ring)
   "a global ring of all the buffer rings. A torus I believe.")
 
