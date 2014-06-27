@@ -4,6 +4,7 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
+(require 'buffer-ring)
 
 ;;----------------------------------------------------------------------
 ;; indentation
@@ -69,18 +70,19 @@
   (local-set-key (kbd "C-c s i")  select-inner)
   (local-set-key (kbd "C-c s o")  select-outer))
 
-(defun configure-for-buffer-ring ( buffer-ring-mode )
-  (when (buffer-ring-add buffer-ring-mode)
-    (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
-    (local-set-key (kbd "<M-left>")   'buffer-ring-prev-buffer)
-
-    (local-set-key (kbd "<M-up>")   'buffer-torus-next-ring)
-    (local-set-key (kbd "<M-down>") 'buffer-torus-prev-ring)) )
-
 (grail-trap
   "Loading search paths."
 
   (load-user-elisp "search-paths"))
+
+(defun configure-for-search ( signatures-fn )
+  (interactive)
+
+  (when signatures-fn
+    (local-set-key (kbd "C-c s f") signatures-fn))
+
+    (local-set-key (kbd "C-c s g") 'grep)
+    (local-set-key (kbd "C-c s r") 'rgrep) )
 
 (defun configure-for-tags-uber ()
   (local-set-key (kbd "C-c i i") 'tags-uber-incremental)
@@ -99,6 +101,8 @@
   ;; highlight all fucked up files.
   (whitespace-mode)
 
+  (configure-for-search list-fn-signatures)
+
   (configure-for-tags-uber)
 
   (configure-for-buffer-ring buffer-ring-mode)
@@ -108,11 +112,7 @@
 
   (lang-repl-keybindings)
 
-  ;; it is *really* handy to see just the function signatures of all the
-  ;; functions defined in a buffer. It is so useful that every programming
-  ;; mode needs to define a function so that it is bound to a key.
-  (when list-fn-signatures
-    (local-set-key (kbd "C-c s") list-fn-signatures))
+  (local-set-key (kbd "C-c f s") 'sort-lines)
 
   ;; for starters this will comment the region, but a toggle command needs
   ;; to be defined.
