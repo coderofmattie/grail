@@ -32,7 +32,8 @@
 ;; registers
 (use-grail-profiles 0 "tramp" "spell" "browser"
                       "jabber-emacs" "dwim-complete"
-                      "notes" "file-browser" "terminal")
+                      "notes" "file-browser" "terminal"
+                      "net-paste")
 
 (use-grail-profiles 10 "activate-buffer-status")
 
