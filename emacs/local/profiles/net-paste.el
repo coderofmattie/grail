@@ -92,18 +92,21 @@
   (let
     ((destination (npaste-lookup-bin (ido-completing-read "region->to: " npaste-bins)) ))
 
-    (if (functionp destiation)
-      (call-interactively 'destination)
+    (if (commandp destiation)
+      (call-interactively destination)
       (message "could not find the pastebin") ) ))
 
 (defun npaste-buffer ()
   (interactive)
   (let
-    ((destination (npaste-lookup-bin (ido-completing-read "buffer->to: " npaste-bins)) ))
+    ((destination (npaste-lookup-bin (ido-completing-read "buffer->to: "
+                                      npaste-bins)
+                   npaste-buffer-table) ))
 
-    (if (functionp destiation)
-      (call-interactively 'destination)
+    (if (commandp destination)
+      (call-interactively destination )
       (message "could not find the pastebin") ) ))
+
 
 
 
