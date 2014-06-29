@@ -36,7 +36,7 @@
 
 ;; (add-hook 'term-mode-hook 'terminal-profile-setup)
 
-(setq terminal-profile-local-shell "/usr/bin/zsh")
+(setq terminal-profile-local-shell "zsh")
 
 (defun local-term ( &optional command )
   "run a terminal in a split window"
@@ -50,5 +50,5 @@
       command
       terminal-profile-local-shell)) )
 
-(global-set-key (kbd "C-c r t")  'split-term)
+(global-set-key (kbd "C-c r t")  'local-term)
 
