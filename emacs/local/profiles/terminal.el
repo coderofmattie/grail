@@ -38,12 +38,14 @@
 
 (setq terminal-profile-local-shell "zsh")
 
-(defun local-term ( &optional command )
+(defun local-term ( prefix &optional command )
   "run a terminal in a split window"
-  (interactive)
+  (interactive "P")
 
-  (split-window-horizontally)
-  (other-window 1)
+  (unless (and prefix (= (car prefix) 4))
+    (progn
+      (split-window-horizontally)
+      (other-window 1)) )
 
   (term
     (if command
