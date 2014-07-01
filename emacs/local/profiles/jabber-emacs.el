@@ -5,6 +5,8 @@
                      "git"
                      "git://git.code.sf.net/p/emacs-jabber/git"))
 
+(setq jabber-auto-reconnect t)
+
 (require 'buffer-ring)
 
 (defun jabber-emacs-in-ring ()
