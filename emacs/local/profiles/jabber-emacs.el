@@ -7,6 +7,18 @@
 
 (setq jabber-auto-reconnect t)
 
+(defun codermattie-im ()
+  "codermattie-im
+
+   connect to jabber account
+  "
+  (interactive)
+
+  (jabber-connect
+    "codermattie"
+    "xmppnet.de"
+    "emacs") )
+
 (require 'buffer-ring)
 
 (defun jabber-emacs-in-ring ()
