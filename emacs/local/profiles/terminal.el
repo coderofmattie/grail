@@ -36,6 +36,7 @@
 
 ;; (add-hook 'term-mode-hook 'terminal-profile-setup)
 
+(setq explicit-shell-file-name "bash")
 (setq terminal-profile-local-shell "zsh")
 
 (defun local-term ( prefix &optional command )
