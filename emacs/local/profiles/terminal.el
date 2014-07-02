@@ -31,10 +31,10 @@
 
 ;; term only seems to run one mode.
 
-;; (defun terminal-profile-setup ()
-;;   (configure-for-buffer-ring "prompt") )
+(defun terminal-profile-setup ()
+  (configure-for-buffer-ring "prompt") )
 
-;; (add-hook 'term-mode-hook 'terminal-profile-setup)
+(add-hook 'term-mode-hook 'terminal-profile-setup)
 
 (setq explicit-shell-file-name "bash")
 (setq terminal-profile-local-shell "zsh")
