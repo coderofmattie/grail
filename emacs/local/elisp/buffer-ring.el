@@ -30,8 +30,15 @@
 
 (defun configure-for-buffer-ring ( buffer-ring-mode )
   (when (buffer-ring-add buffer-ring-mode)
+
+    (local-unset-key (kbd "<M-right>"))
+    (local-unset-key (kbd "<M-left>"))
+
     (local-set-key (kbd "<M-right>")  'buffer-ring-next-buffer)
     (local-set-key (kbd "<M-left>")   'buffer-ring-prev-buffer)
+
+    (local-unset-key (kbd "<M-up>"))
+    (local-unset-key (kbd "<M-down>"))
 
     (local-set-key (kbd "<M-up>")   'buffer-torus-next-ring)
     (local-set-key (kbd "<M-down>") 'buffer-torus-prev-ring)) )
