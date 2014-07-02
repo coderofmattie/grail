@@ -42,10 +42,9 @@
   "run a terminal in a split window"
   (interactive "P")
 
-  (unless (and prefix (= (car prefix) 4))
-    (progn
-      (split-window-horizontally)
-      (other-window 1)) )
+  (unless (and prefix (equal (car prefix) 4))
+    (split-window-horizontally)
+    (other-window 1))
 
   (term
     (if command
