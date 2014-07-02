@@ -64,6 +64,21 @@
   (interactive)
   (dired-other-window (file-name-directory buffer-file-name)) )
 
+(defun toggle-comment-region ()
+  "toggle-comment-region
+
+   comment or uncomment the region
+  "
+  (interactive)
+  (comment-or-uncomment-region (mark) (point)) )
+
+(defun configure-for-code ()
+  (let
+    ((ver-map (make-sparse-keymap)))
+
+    (define-key ver-map "c" 'toggle-comment-region)
+    (local-set-key (kbd "C-c c") ver-map)))
+
 (defun configure-for-select ( select-inner select-outer )
   (local-set-key (kbd "C-c s w")  'select-word)
 
@@ -116,8 +131,7 @@
 
   ;; for starters this will comment the region, but a toggle command needs
   ;; to be defined.
-  (local-set-key (kbd "C-c u ;") 'uncomment-region)
-  (local-set-key (kbd "C-c ;") 'comment-region)
+  (configure-for-code)
 
   (local-set-key (kbd "C-c f s") 'sort-lines)
 
