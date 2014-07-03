@@ -189,3 +189,24 @@
           (message "press \"q\" to quit help.")
 
           (current-buffer))) )) )
+
+(defvar custom-keys-descriptions '()
+  "descriptions of custom key groups")
+
+(defmacro custom-key-group ( description chord global &rest body )
+  `(let
+     ((key-map  (make-sparse-keymap)))
+
+     ,@(mapcar
+        (lambda ( key-fn-pair )
+          `(define-key key-map ,(car key-fn-pair) ,(cdr key-fn-pair)))
+         body)
+
+     (define-key key-map "h" (keybindings-help-fn ,description key-map))
+
+     (,(if global
+         'global-set-key
+         'local-set-key)
+       (kbd (concat "C-c " ,chord)) key-map)
+
+     (setq custom-keys-descriptions (cons (cons ,chord ,description) custom-keys-descriptions)) ))
