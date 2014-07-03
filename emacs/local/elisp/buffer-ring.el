@@ -287,8 +287,6 @@
 
       (dyn-ring-map buffer-ring
         (lambda ( buffer-id )
-          (message "got %s " buffer-id)
-
           (setq buffer-found (buffer-name (bfr-find-buffer-for-id buffer-id)))
 
           (if buffer-list
