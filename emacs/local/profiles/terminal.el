@@ -15,31 +15,34 @@
     (delete-other-windows term-window)
     (kill-buffer term-buffer) ))
 
-(add-hook 'term-exec-hook
-  (lambda ()
-    (let*
-      ((buff (current-buffer))
-       (win  (get-buffer-window))
-       (proc (get-buffer-process buff)))
-
-      (lexical-let
-        ((term-buffer buff)
-         (term-window win))
-
-        (set-process-sentinel proc
-          (lambda (process event)
-            (if (string= event "finished\n")
-              (close-term term-buffer term-window)) )) ) )) )
-
-;; term only seems to run one mode.
-
 (defun terminal-profile-setup ()
-  (configure-for-buffer-ring "prompt") )
+  (let*
+    ((buff (current-buffer))
+     (win  (get-buffer-window))
+     (proc (get-buffer-process buff)))
 
-(add-hook 'term-mode-hook 'terminal-profile-setup)
+    (lexical-let
+      ((term-buffer buff)
+       (term-window win))
+
+      (set-process-sentinel proc
+        (lambda (process event)
+          (if (string= event "finished\n")
+            (close-term term-buffer term-window)) )) )) )
+
+(add-hook 'term-exec-hook 'terminal-profile-setup)
 
 (setq explicit-shell-file-name "bash")
 (setq terminal-profile-local-shell "zsh")
+
+(defadvice term (after terminal-profile/term-bindings)
+  (configure-for-buffer-ring "prompt"))
+
+(defadvice ansi-term (after terminal-profile/ansi-bindings)
+  (configure-for-buffer-ring "prompt"))
+
+(ad-activate 'term)
+(ad-activate 'ansi-term)
 
 (defun full-term ( prefix &optional command )
   "run a full terminal in full window C-u or (default) split window"
