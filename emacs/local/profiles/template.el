@@ -206,13 +206,11 @@
   (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'template/next))
 
   (custom-key-group "template" "t" nil
-    ("l" . 'templates/list)
-    ("i" . 'template/insert)
-    ("e" . 'template/expand)
-    ("n" . 'template/next)
-    ("c" . 'template/new)
-
-    ("b" . eval-buffer))
+    ("l" . templates/list)
+    ("i" . template/insert)
+    ("e" . template/expand)
+    ("n" . template/next)
+    ("c" . template/new))
 
   (unless (dwim-complete-mode-check-type major-mode "templates")
     (dwim-complete-mode-add-source major-mode (dwim-complete/templates-source))

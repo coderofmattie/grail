@@ -164,11 +164,11 @@
 
 (defun ver-ctl-log-bindings ()
   (custom-key-group "code editing" "l" nil
-    ("l" . 'ver-ctl-log-file-list)
-    ("c" . 'ver-ctl-log-file-create)
-    ("o" . 'ver-ctl-log-file-open)
-    ("i" . 'ver-ctl-log-insert-label)
-    ("m" . 'ver-ctl-log-insert-log)) )
+    ("l" . ver-ctl-log-file-list)
+    ("c" . ver-ctl-log-file-create)
+    ("o" . ver-ctl-log-file-open)
+    ("i" . ver-ctl-log-insert-label)
+    ("m" . ver-ctl-log-insert-log)) )
 
 (defvar ver-ctl-egg-log-hook nil)
 

@@ -8,10 +8,10 @@
 (global-unset-key (kbd "<S-tab>"))
 
 (custom-key-group "window manager" "w" t
-  ("k" . 'delete-frame)
-  ("m" . 'delete-other-windows)
-  ("h" . 'split-window-horizontally)
-  ("v" . 'split-window-vertically) )
+  ("k" . delete-frame)
+  ("m" . delete-other-windows)
+  ("h" . split-window-horizontally)
+  ("v" . split-window-vertically) )
 
 (global-set-key (kbd "C-x e") 'eval-expression)
 

@@ -58,30 +58,29 @@
     'dwim-complete/elisp-var-candidates
     'dwim-complete-replace-stem))
 
-(add-hook 'emacs-lisp-mode-hook
-  (lambda ()
-    (configure-for-programming 'elisp-list-fn-signatures "elisp-mode")
+(defun emacs-lisp/profile ()
+  (configure-for-programming 'elisp-list-fn-signatures "elisp-mode")
 
-    ;; this binding is very important. normal evaluation of defuns such as defvar
-    ;; and defcustom do not change the default value because the form only sets
-    ;; the value if nil.
+  (lisp-smart-parens-editing)
 
-    ;; eval-defun will "reset" these forms as well as not echoing into the buffer.
-    ;; this function/keybinding should be used exclusively to avoid frustrating
-    ;; errors.
+  (custom-key-group "elisp-eval" "e" nil
+     ("d" . eval-defun)
+     ("e" . eval-last-sexp)
+     ("r" . eval-region)
+     ("b" . eval-buffer))
 
-    (lisp-smart-parens-editing)
+  (custom-key-group "elisp-debug" "d" nil
+     ("d" . eval-defun))
 
-    (configure-for-evaluation 'eval-defun 'eval-last-sexp 'eval-region 'eval-buffer)
-    (configure-for-debugging 'edebug-defun)
+  (unless (dwim-complete-mode-check-type major-mode "mode")
+    (dwim-complete-mode-add-source major-mode (dwim-complete/emacs-lisp-fn-source))
+    (dwim-complete-mode-add-source major-mode (dwim-complete/emacs-lisp-var-source))
 
-    (turn-on-dwim-tab 'lisp-indent-line)
+    (dwim-complete-mode-add-type major-mode "mode"))
 
-    (unless (dwim-complete-mode-check-type major-mode "mode")
-      (dwim-complete-mode-add-source major-mode (dwim-complete/emacs-lisp-fn-source))
-      (dwim-complete-mode-add-source major-mode (dwim-complete/emacs-lisp-var-source))
+  (turn-on-dwim-tab 'lisp-indent-line)
 
-      (dwim-complete-mode-add-type major-mode "mode"))
+  (dwim-complete/for-buffer) )
 
-    (dwim-complete/for-buffer))
-  t)
+(add-hook 'emacs-lisp-mode-hook 'emacs-lisp/profile t)
+

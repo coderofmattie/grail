@@ -79,10 +79,11 @@
 
   (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'slime-complete-symbol))
 
-  (configure-for-evaluation
-    'slime-eval-defun
-    'slime-eval-last-expression
-    'slime-eval-region
-    'slime-eval-buffer) )
+  (custom-key-group "slime-eval" "e" nil
+     ("d" . slime-eval-defun)
+     ("e" . slime-eval-last-expression)
+     ("r" . slime-eval-region)
+     ("b" . slime-eval-buffer)) )
 
 (add-hook 'lisp-mode-hook 'slime/lisp-mode t)
+

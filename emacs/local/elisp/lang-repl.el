@@ -193,12 +193,9 @@
           (lang-repl-mode-create repl-mode)) )
       (message "cannot determine repl mode")) ))
 
-(defun configure-for-repl ()
-  (custom-key-group "REPL" "r" t
-    ("r" . 'lang-repl-cmd-repl)
-    ("n" . 'lang-repl-cmd-next)
-    ("c" . 'lang-repl-cmd-create)) )
-
-(configure-for-repl)
+(custom-key-group "REPL" "r" t
+  ("r" . lang-repl-cmd-repl)
+  ("n" . lang-repl-cmd-next)
+  ("c" . lang-repl-cmd-create))
 
 (provide 'lang-repl)

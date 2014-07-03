@@ -65,11 +65,13 @@
 
     (configure-for-programming 'scheme-list-fn-signatures "scheme-mode")
 
-    (configure-for-evaluation
-      'geiser-eval-definition
-      'geiser-eval-last-sexp
-      'geiser-eval-region
-      'geiser-eval-buffer)
+    ;; this is borked because these functions autoload!
+
+    ;; (configure-for-evaluation
+    ;;   'geiser-eval-definition
+    ;;   'geiser-eval-last-sexp
+    ;;   'geiser-eval-region
+    ;;   'geiser-eval-buffer)
 
     (turn-on-geiser-mode) )
   t)
