@@ -9,9 +9,11 @@
 ;;----------------------------------------------------------------------
 
 (defun close-term ( term-buffer term-window )
-  (other-window 1)
-  (delete-other-windows term-window)
-  (kill-buffer term-buffer) )
+  (with-current-buffer term-buffer
+    (other-window 1)
+
+    (delete-other-windows term-window)
+    (kill-buffer term-buffer) ))
 
 (add-hook 'term-exec-hook
   (lambda ()
@@ -39,8 +41,8 @@
 (setq explicit-shell-file-name "bash")
 (setq terminal-profile-local-shell "zsh")
 
-(defun local-term ( prefix &optional command )
-  "run a local terminal in full C-u or (default) split window"
+(defun full-term ( prefix &optional command )
+  "run a full terminal in full window C-u or (default) split window"
   (interactive "P")
 
   (unless (and prefix (equal (car prefix) 4))
@@ -52,6 +54,20 @@
       command
       terminal-profile-local-shell)) )
 
+(defun shell-term ( prefix &optional command )
+  "run a local shell in full window C-u or (default) split window"
+  (interactive "P")
+
+  (unless (and prefix (equal (car prefix) 4))
+    (split-window-horizontally)
+    (other-window 1))
+
+  (ansi-term
+    (if command
+      command
+      terminal-profile-local-shell)) )
+
 (global-set-key (kbd "C-c x t") 'local-term)
+(global-set-key (kbd "C-c x s") 'local-term)
 (global-set-key (kbd "C-c x c") 'shell-command) ;; works on remote host with tramp
 
