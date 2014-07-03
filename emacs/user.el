@@ -9,6 +9,8 @@
   (require 'grail-profile)
   (require 'grail-fn))
 
+(require 'buffer-ring)
+
 ;;----------------------------------------------------------------------
 ;; crypto
 ;;----------------------------------------------------------------------
@@ -164,6 +166,11 @@
     ;; turn on truncate mode before erc eats all available RAM.
      (require 'erc-truncate)
      (erc-truncate-mode 1)))
+
+(defun erc-mode-customization ()
+  (configure-for-buffer-ring "erc"))
+
+(add-hook 'erc-mode-hook 'erc-mode-customization t)
 
 ;;----------------------------------------------------------------------
 ;; ido smart completion
