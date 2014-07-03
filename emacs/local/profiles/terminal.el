@@ -55,14 +55,3 @@
 (global-set-key (kbd "C-c x t") 'local-term)
 (global-set-key (kbd "C-c x c") 'shell-command) ;; works on remote host with tramp
 
-(defun terminal-profile-bindings ()
-  (let
-    ((ver-map (make-sparse-keymap)))
-
-    (define-key ver-map "t" 'local-term)
-    (define-key ver-map "x" 'shell-command)
-
-    (define-key ver-map "h" (keybindings-help-fn "command exec" ver-map))
-    (local-set-key (kbd "C-c x") ver-map)))
-
-(terminal-profile-bindings)

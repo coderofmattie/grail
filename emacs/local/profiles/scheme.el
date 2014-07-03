@@ -74,37 +74,3 @@
     (turn-on-geiser-mode) )
   t)
 
-;; (defun scheme-profile-racket-callback ( status )
-;;   (if status
-;;     (message "scheme: racket exited with error status: %s" status)
-;;     (message "scheme: racket exited normally")))
-
-;; (setq scheme-profile-racket-async
-;;   (async-build-basic "racket"
-;;     (string-join " " (list "racket" "-S" scheme-profile-geiser-racket-dir
-;;                        "-e" "\'(require geiser/user) (run-geiser-server 9999 \"localhost\")\'" ))
-;;     'scheme-profile-racket-callback))
-
-;; (defun scheme-profile-racket ()
-;;   (interactive)
-;;   (apply 'grail-process-async-chain scheme-profile-racket-async) )
-
-;; (grail-load 'quack (grail-define-installer "quack"
-;;                     "file"
-;;                     "http://www.neilvandyke.org/quack/quack.el"))
-
-;; (setq-default
-;;   quack-dir (grail-garuntee-dir-path (concat grail-state-path "quack/"))
-;;   quack-default-program default-scheme-interpreter
-
-;;   ;; don't always prompt for the scheme interpreter. Use the default.
-;;   quack-run-scheme-always-prompts-p nil
-
-;;   ;; don't use customize to save settings.
-;;   quack-options-persist-p nil
-
-;;   ;; fontify using Emacs faces, don't use a drscheme theme clone.
-;;   quack-fontify-style 'emacs
-
-;;   ;; tabs are evil
-;;   quack-tabs-are-evil-p t)

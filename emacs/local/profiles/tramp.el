@@ -14,6 +14,3 @@
 (setq
   tramp-default-method "ssh"
   tramp-chunksize 500 )
-
-
-

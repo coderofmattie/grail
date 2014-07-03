@@ -2,7 +2,7 @@
 ;; template.el - template expansion support
 ;;
 ;; description:
-;; 
+;;
 ;; template expansion currently using yasnippet as the engine.
 ;;----------------------------------------------------------------------
 
@@ -205,20 +205,14 @@
   (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'template/expand))
   (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'template/next))
 
-  (let
-    ((key-map (make-sparse-keymap)))
+  (custom-key-group "template" "t" nil
+    ("l" . 'templates/list)
+    ("i" . 'template/insert)
+    ("e" . 'template/expand)
+    ("n" . 'template/next)
+    ("c" . 'template/new)
 
-    (define-key key-map "l" 'templates/list)
-
-    (define-key key-map "i" 'template/insert)
-    (define-key key-map "e" 'template/expand)
-    (define-key key-map "n" 'template/next)
-
-    (define-key key-map "c" 'template/new)
-
-    (define-key key-map "h" (keybindings-help-fn "templates" key-map))
-
-    (local-set-key (kbd "C-c t") key-map))
+    ("b" . eval-buffer))
 
   (unless (dwim-complete-mode-check-type major-mode "templates")
     (dwim-complete-mode-add-source major-mode (dwim-complete/templates-source))

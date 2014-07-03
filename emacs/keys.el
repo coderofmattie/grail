@@ -7,17 +7,11 @@
 ;; remove keybindings
 (global-unset-key (kbd "<S-tab>"))
 
-(defun wm-bindings ()
-  (let
-    ((ver-map (make-sparse-keymap)))
-
-    (define-key ver-map "k" 'delete-frame)
-    (define-key ver-map "m" 'delete-other-frames)
-
-    (define-key ver-map "h" (keybindings-help-fn "window manager" ver-map))
-    (local-set-key (kbd "C-c w") ver-map)))
-
-(wm-bindings)
+(custom-key-group "window manager" "w" t
+  ("k" . 'delete-frame)
+  ("m" . 'delete-other-windows)
+  ("h" . 'split-window-horizontally)
+  ("v" . 'split-window-vertically) )
 
 (global-set-key (kbd "C-x e") 'eval-expression)
 

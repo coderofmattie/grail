@@ -72,36 +72,45 @@
   (interactive)
   (comment-or-uncomment-region (mark) (point)) )
 
-(defun configure-for-code ()
-  (let
-    ((ver-map (make-sparse-keymap)))
+(defun toggle-comment-buffer ()
+  "toggle-comment-region
 
-    (define-key ver-map "c" 'toggle-comment-region)
-    (local-set-key (kbd "C-c c") ver-map)))
-
-(defun configure-for-select ( select-inner select-outer )
-  (local-set-key (kbd "C-c s w")  'select-word)
-
-  (local-set-key (kbd "C-c s i")  select-inner)
-  (local-set-key (kbd "C-c s o")  select-outer))
-
-(grail-trap
-  "Loading search paths."
-
-  (load-user-elisp "search-paths"))
-
-(defun configure-for-search ( signatures-fn )
+   comment or uncomment the region
+  "
   (interactive)
 
-  (when signatures-fn
-    (local-set-key (kbd "C-c s f") signatures-fn))
+  (mark-whole-buffer)
+  (call-interactively 'toggle-comment-region) )
 
-    (local-set-key (kbd "C-c s g") 'grep)
-    (local-set-key (kbd "C-c s r") 'rgrep) )
+(defun configure-for-code ()
+  (custom-key-group "code editing" "c" nil
+    ("c" . 'toggle-comment-region)
+    ("b" . 'toggle-comment-buffer)
+    ("i" . 'indent-region)
+    ("s" . 'sort-lines)) )
 
-(defun configure-for-tags-uber ()
-  (local-set-key (kbd "C-c i i") 'tags-uber-incremental)
-  (local-set-key (kbd "C-c i s") 'tags-uber-search))
+;; (defun configure-for-select ( select-inner select-outer )
+;;   (local-set-key (kbd "C-c s w")  'select-word)
+
+;;   (local-set-key (kbd "C-c s i")  select-inner)
+;;   (local-set-key (kbd "C-c s o")  select-outer))
+
+(defun configure-for-search-dummy ()
+  (interactive)
+  (message "function signature to find is not specified"))
+
+(defun configure-for-search ( signatures-fn )
+  (let
+    ((fn-function (or signatures-fn 'configure-for-search-dummy)))
+
+    (custom-key-group "search" "s" nil
+      ("f" . fn-function)
+      ("g" . 'grep)
+      ("r" . 'rgrep)
+      ("o" . 'occur)
+;;      ("i" . 'tags-uber-incremental)
+;;      ("t" . 'tags-uber-search)
+      ) ))
 
 (defvar configure-programming-hook nil)
 
@@ -110,30 +119,18 @@
 
   ;; whitespace
   (setq indent-tabs-mode nil)
-
-  (run-custom-hooks configure-programming-hook)
-
-  ;; highlight all fucked up files.
   (whitespace-mode)
 
-  (configure-for-search list-fn-signatures)
-
-  (configure-for-tags-uber)
+  ;; run hooks for programming configuration
+  (run-custom-hooks configure-programming-hook)
 
   (configure-for-buffer-ring buffer-ring-mode)
+  (configure-for-search list-fn-signatures)
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
-  (lang-repl-keybindings)
-
-  (local-set-key (kbd "C-c f s") 'sort-lines)
-
-  ;; for starters this will comment the region, but a toggle command needs
-  ;; to be defined.
   (configure-for-code)
-
-  (local-set-key (kbd "C-c f s") 'sort-lines)
 
   ;; found this on emacs-wiki , all scripts are automatically made executable.
   (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t) )
@@ -149,32 +146,20 @@
    eval-expr    : evaluate the current or last expression
    eval-region  : evaluate the region
    eval-buffer  : evaluate the buffer
-
-   C-c e     will be the prefix for evaluation functions:
-
-   C-c e d : evaluate a define
-   C-c e e : evaluate last or current sexp
-   C-c e r : evaluate the region.
-   C-c e b : evaluate the buffer.
   "
+  (custom-key-group "search" "e" nil
+    ("d" . eval-define)
+    ("e" . eval-expression)
+    ("r" . eval-region)
+    ("b" . eval-buffer)) )
 
-  (let
-    ((key-map (make-sparse-keymap)))
-
-    (define-key key-map "d" eval-define)
-    (define-key key-map "e" eval-expression)
-    (define-key key-map "r" eval-region)
-    (define-key key-map "b" eval-buffer)
-
-    (define-key key-map "h" (keybindings-help-fn "evaluation" key-map))
-
-    (local-set-key (kbd "C-c e") key-map)) )
-
-(defun configure-for-docs ( docs-fn )
-  (local-set-key (kbd "C-c h") docs-fn))
+(defun configure-for-docs ( docs-browse )
+  (custom-key-group "search" "i" nil
+    ("b" . docs-browse)) )
 
 (defun configure-for-debugging ( eval-debug )
-  (local-set-key (kbd "C-c d d") eval-debug))
+  (custom-key-group "search" "d" nil
+    ("d" . eval-debug)) )
 
 (defun configure-for-macros ( expand-macro )
   (local-set-key (kbd "C-c m e") expand-macro) )

@@ -163,17 +163,12 @@
         (message "no log selected!")) )))
 
 (defun ver-ctl-log-bindings ()
-  (let
-    ((ver-map (make-sparse-keymap)))
-
-    (define-key ver-map "l" 'ver-ctl-log-file-list)
-    (define-key ver-map "c" 'ver-ctl-log-file-create)
-    (define-key ver-map "o" 'ver-ctl-log-file-open)
-    (define-key ver-map "i" 'ver-ctl-log-insert-label)
-    (define-key ver-map "m" 'ver-ctl-log-insert-log)
-
-    (define-key ver-map "h" (keybindings-help-fn "ver log" ver-map))
-    (local-set-key (kbd "C-c l") ver-map)))
+  (custom-key-group "code editing" "l" nil
+    ("l" . 'ver-ctl-log-file-list)
+    ("c" . 'ver-ctl-log-file-create)
+    ("o" . 'ver-ctl-log-file-open)
+    ("i" . 'ver-ctl-log-insert-label)
+    ("m" . 'ver-ctl-log-insert-log)) )
 
 (defvar ver-ctl-egg-log-hook nil)
 

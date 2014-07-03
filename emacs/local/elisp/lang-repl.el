@@ -2,7 +2,7 @@
 ;; lang-repl.el - repl backend
 ;;
 ;; description:
-;; 
+;;
 ;; a repl backend for languages that provide REPL interfaces.
 ;;----------------------------------------------------------------------
 
@@ -193,16 +193,12 @@
           (lang-repl-mode-create repl-mode)) )
       (message "cannot determine repl mode")) ))
 
-(defun lang-repl-keybindings ()
-  (let
-    ((key-map (make-sparse-keymap)))
+(defun configure-for-repl ()
+  (custom-key-group "REPL" "r" t
+    ("r" . 'lang-repl-cmd-repl)
+    ("n" . 'lang-repl-cmd-next)
+    ("c" . 'lang-repl-cmd-create)) )
 
-    (define-key key-map "r" 'lang-repl-cmd-repl)
-    (define-key key-map "n" 'lang-repl-cmd-next)
-    (define-key key-map "c" 'lang-repl-cmd-create)
-
-    (define-key key-map "h" (keybindings-help-fn "REPL" key-map))
-
-    (local-set-key (kbd "C-c r") key-map)) )
+(configure-for-repl)
 
 (provide 'lang-repl)
