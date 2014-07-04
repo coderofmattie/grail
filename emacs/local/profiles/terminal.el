@@ -70,7 +70,8 @@
       command
       terminal-profile-local-shell)) )
 
-(global-set-key (kbd "C-c x t") 'local-term)
-(global-set-key (kbd "C-c x s") 'local-term)
+(global-set-key (kbd "C-c x t") 'full-term)
+(global-set-key (kbd "C-c x s") 'shell-term)
+
 (global-set-key (kbd "C-c x c") 'shell-command) ;; works on remote host with tramp
 
