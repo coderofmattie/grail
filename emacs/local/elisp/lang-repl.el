@@ -5,6 +5,7 @@
 ;;
 ;; a repl backend for languages that provide REPL interfaces.
 ;;----------------------------------------------------------------------
+(require 'subr-x)
 
 (defvar lang-repl-table (make-hash-table :test 'equal))
 
@@ -57,6 +58,9 @@
 
     (puthash mode lookup lang-repl-table)
 
+    (with-current-buffer repl-buffer
+      (lang-repl-mode-del-hook-fn mode))
+
     repl-buffer))
 
 (defun lang-repl-mode-del ( mode repl-buffer )
@@ -67,7 +71,6 @@
       (let
         (( deleted (delete repl-buffer (lang-repl-mode-list lookup)) ))
 
-        (message "deleted is %s" deleted)
         (when (not (equal (length deleted) (length (lang-repl-mode-list lookup))))
           (setcar lookup (car deleted))
           (setcdr lookup deleted)) )
@@ -75,8 +78,11 @@
       (puthash mode lookup lang-repl-table)) ))
 
 (defun lang-repl-mode-del-hook-fn ( mode )
-  `(lambda ()
-     (lang-repl-mode-del ,mode (buffer-name))) )
+  (add-hook 'kill-buffer-hook
+    `(lambda ()
+       (lang-repl-mode-del ,mode (buffer-name)))
+    t
+    t) )
 
 (defun lang-repl-mode-define ( mode create-fn )
   "MODE CREATE-FN
