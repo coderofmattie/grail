@@ -215,3 +215,29 @@
        (kbd (concat "C-c " ,chord)) key-map)
 
      (setq custom-keys-descriptions (cons (cons ,chord ,description) custom-keys-descriptions)) ))
+
+;;
+;; generic close proc buffer
+;;
+
+;; (defun close-term ( term-buffer term-window )
+;;   (with-current-buffer term-buffer
+;;     (other-window 1)
+
+;;     (delete-other-windows term-window)
+;;     (kill-buffer term-buffer) ))
+
+;; (defun terminal-profile-setup ()
+;;   (let*
+;;     ((buff (current-buffer))
+;;      (win  (get-buffer-window))
+;;      (proc (get-buffer-process buff)))
+
+;;     (lexical-let
+;;       ((term-buffer buff)
+;;        (term-window win))
+
+;;       (set-process-sentinel proc
+;;         (lambda (process event)
+;;           (if (string= event "finished\n")
+;;             (close-term term-buffer term-window)) )) )) )
