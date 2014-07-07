@@ -1,6 +1,16 @@
 ;;----------------------------------------------------------------------
 ;; python-programming
 ;;----------------------------------------------------------------------
+
+;; builtin to emacs but stay with upstream master
+(grail-load 'python-mode (grail-define-installer "python-mode"
+                          "bzr"
+                          "lp:python-mode"))
+
+(grail-load 'python-components-pdb (grail-define-installer "python-components"
+                                    "bzr"
+                                    "lp:python-mode/components-python-mode"))
+
 (require 'generic-indent)
 
 (setq
