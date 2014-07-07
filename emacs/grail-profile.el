@@ -516,7 +516,7 @@ loads.\n")
         (message "grail-cvs-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defvar grail-cvs-buffer "*grail-cvs*")
+(defconst grail-cvs-buffer "*grail-cvs*")
 
 (defun grail-cvs-installer ( module url )
   (lexical-let
@@ -561,7 +561,7 @@ loads.\n")
         (message "grail-git-async failed %s" (format-signal-trap trapped-error))
         nil)) ))
 
-(defvar grail-git-buffer "*grail-git*")
+(defconst grail-git-buffer "*grail-git*")
 
 (defun grail-git-installer ( module url )
   (lexical-let
