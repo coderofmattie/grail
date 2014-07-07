@@ -23,7 +23,7 @@
   (interactive)
   (occur python-function-regex))
 
-(defun programming-python-cfg ()
+(defun profile/python-cfg ()
   (interactive)
 
   (configure-for-navigation 'forward-word 'backward-word)
@@ -34,4 +34,19 @@
   (procedural-smart-parens-editing)
   (setq sp-escape-char "\\") )
 
-(add-hook 'python-mode-hook 'programming-python-cfg t)
+(add-hook 'python-mode-hook 'profile/python-cfg t t)
+
+(defconst profile/python-interpeter-exec "ipython")
+(defconst profile/python-interpeter-buffer (concat "*" python-shell-buffer-name "*"))
+
+(defun profile/python-repl ( first-call )
+  ;; this is all messed up because repl is messed up.
+
+  (run-python profile/python-interpeter-exec)
+  (lang-repl-mode-add "python-mode" profile/python-interpeter-buffer)
+
+  ;; (when first-call
+  ;;   (lang-repl-mode-add "python-mode" profile/python-interpeter-buffer))
+  )
+
+(lang-repl-mode-define "python-mode" 'profile/python-repl)
