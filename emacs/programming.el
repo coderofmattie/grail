@@ -29,16 +29,17 @@
 
 (require 'lang-repl)
 
+;; profiles not ready yet
+(setq grail-masked-profiles (cons "clojure" grail-masked-profiles))
+
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
 
 ;; higher level functionality
 (use-grail-profiles 1 "lisp" "code-documentation" "version-control")
 
-;; language profiles
-;; not done yet: "clojure"
 (use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl"
-                      "shell-scripting" "web" "python")
+                      "shell-scripting" "web" "python" "clojure")
 
 ;; advanced functionality
 (use-grail-profiles 3 "template" "slime")
