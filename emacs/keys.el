@@ -40,3 +40,8 @@
 
 ;; line number mode
 (global-set-key (kbd "C-c C-l")  'linum-mode)
+
+(custom-key-group "files" "f" nil
+    ("d" . dired)
+    ("s" . save-some-buffers))
+
