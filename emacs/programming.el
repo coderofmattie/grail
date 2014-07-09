@@ -130,7 +130,14 @@
   (local-set-key (kbd "M-b") backwards))
 
 (defun configure-for-macros ( expand-macro )
-  (local-set-key (kbd "C-c m e") expand-macro) )
+  `(lambda ()
+     (custom-key-group "macros" "m" nil
+       ("e" . expand-macro)) ))
+
+(defun configure-for-docs ( browse-docs )
+  `(lambda ()
+     (custom-key-group "macros" "i" nil
+       ("b" . browse-docs)) ))
 
 ;;----------------------------------------------------------------------
 ;; C/C++ common
