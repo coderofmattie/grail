@@ -37,7 +37,10 @@
 (add-hook 'python-mode-hook 'profile/python-cfg t t)
 
 (defconst profile/python-interpeter-exec "ipython")
-(defconst profile/python-interpeter-buffer (concat "*" python-shell-buffer-name "*"))
+
+(defun profile/python-interpeter-buffer ()
+  ;; has to be a function because it is not defined until run-python is called.
+  (concat "*" python-shell-buffer-name "*"))
 
 (defun profile/python-repl ( first-call )
   ;; this is all messed up because repl is messed up.
