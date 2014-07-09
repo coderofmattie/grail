@@ -8,29 +8,7 @@
 ;;                 IPC shell:  comint/term mode
 ;;----------------------------------------------------------------------
 
-(defun close-term ( term-buffer term-window )
-  (with-current-buffer term-buffer
-    (other-window 1)
-
-    (delete-other-windows term-window)
-    (kill-buffer term-buffer) ))
-
-(defun terminal-profile-setup ()
-  (let*
-    ((buff (current-buffer))
-     (win  (get-buffer-window))
-     (proc (get-buffer-process buff)))
-
-    (lexical-let
-      ((term-buffer buff)
-       (term-window win))
-
-      (set-process-sentinel proc
-        (lambda (process event)
-          (if (string= event "finished\n")
-            (close-term term-buffer term-window)) )) )) )
-
-(add-hook 'term-exec-hook 'terminal-profile-setup)
+(add-hook 'term-exec-hook 'proc-close-on-exit/sentinel)
 
 (setq explicit-shell-file-name "bash")
 (setq terminal-profile-local-shell "zsh")

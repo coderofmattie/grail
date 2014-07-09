@@ -220,24 +220,25 @@
 ;; generic close proc buffer
 ;;
 
-;; (defun close-term ( term-buffer term-window )
-;;   (with-current-buffer term-buffer
-;;     (other-window 1)
+(defun proc-close-on-exit/window ( proc-buffer )
+  (with-current-buffer proc-buffer
 
-;;     (delete-other-windows term-window)
-;;     (kill-buffer term-buffer) ))
+    ;; if proc is dead touching the buffer except to kill is a error. trap
+    ;; those situations and just kill it anyways.
+    (condition-case nil
+      (progn
+        (other-window 1)
+        (delete-other-windows proc-buffer))
+      (error nil))
 
-;; (defun terminal-profile-setup ()
-;;   (let*
-;;     ((buff (current-buffer))
-;;      (win  (get-buffer-window))
-;;      (proc (get-buffer-process buff)))
+    (kill-buffer proc-buffer)) )
 
-;;     (lexical-let
-;;       ((term-buffer buff)
-;;        (term-window win))
+(defun proc-close-on-exit/sentinel ()
+  (lexical-let*
+    ((p-buffer  (current-buffer))
+     (p-proc    (get-buffer-process p-buffer)))
 
-;;       (set-process-sentinel proc
-;;         (lambda (process event)
-;;           (if (string= event "finished\n")
-;;             (close-term term-buffer term-window)) )) )) )
+    (set-process-sentinel p-proc
+      (lambda ( process event )
+        (if (equal process p-proc)
+          (proc-close-on-exit/window p-buffer)) )) ))
