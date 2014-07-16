@@ -1,9 +1,8 @@
 #! /bin/bash
 
-git_repos=$(find $USER_ELISP/dist/git -maxdepth 1 -print | grep -E -v "$USER_ELISP/dist/git/?$")
+cd $USER_ELISP/dist/
 
-for repo in $git_repos
+for collection_dir in $( find . -maxdepth 1 -type d -print )
 do
-  echo $repo
-  ( cd $repo && git pull )
+  all-repos $collection_dir update
 done
