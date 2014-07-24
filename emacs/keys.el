@@ -38,6 +38,8 @@
 (global-set-key (kbd "<prior>") 'beginning-of-buffer)
 (global-set-key (kbd "<next>")  'end-of-buffer)
 
+(global-set-key (kbd "M-g")  'goto-line)
+
 ;; line number mode
 (global-set-key (kbd "C-c C-l")  'linum-mode)
 
