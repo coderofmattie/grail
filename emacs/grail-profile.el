@@ -1,9 +1,7 @@
 ;;;----------------------------------------------------------------------
 ;; grail-profile.el
 ;;----------------------------------------------------------------------
-(eval-when-compile
-  (require 'cl)
-  (require 'grail-fn))
+(require 'cl)
 
 (defvar grail-masked-profiles
   nil
@@ -48,7 +46,7 @@
                 (let
                   ((trapped (catch 'grail-trap
                               (catch 'grail-disabled
-                                (load-elisp-if-exists (concat grail-local-profiles profile)) ))))
+                                (grail-try-elisp (concat grail-local-profiles profile)) ))))
 
                   (if (consp trapped)
                     (progn
@@ -100,16 +98,13 @@
 
    recursively delete the directory PATH. t on success.
   "
-  (condition-case trapped-error
-    (if (dir-path-if-accessible path)
-      (if (equal 0 (call-process-shell-command "rm" nil nil nil "-r" path))
-        t
-        (throw 'grail-trap
-          '((message "grail-recursive-delete-directory path %s is not a directory or the user does not have permissions" path))))
-      (throw 'grail-trap
-        '((message "grail-recursive-delete-directory path %s is not a directory or the user does not have permissions" path))))
-    (error (throw 'grail-trap
-             (list (message "grail-recursive-delete-directory failed") (format-signal-trap trapped-error)))) ))
+  (grail-fail
+    "grail-recursive-delete-directory"
+    "deleting a directory"
+
+    (unless (equal 0 (call-process-shell-command "rm" nil nil nil "-r" path))
+      (grail-signal-fail "grail-recursive-delete-directory"
+        (format "path %s is not a directory or the user does not have permissions" path)) ) ))
 
 (defvar grail-dist-default-directory grail-dist-elisp)
 
@@ -127,7 +122,7 @@
 
    The path of the installation directory is returned for the installer's use.
   "
-  (grail-garuntee-dir-path (expand-file-name
+  (grail-dir-always (expand-file-name
                              (concat
                              (if package
                                (concat grail-dist-default-directory "/" package)
@@ -914,12 +909,7 @@ loads.\n")
 
    run an installer created by grail-define-installer.
   "
-  (condition-case trap
-    (eval installer)
-    (error
-      (throw 'grail-trap (list (format "installer error. please report \"%s\" to %s"
-                               (format-signal-trap trap)
-                               grail-maintainer-email))) )) )
+  (eval installer) )
 
 (defun grail-repair-by-installing ( package installer )
   "grail-repair-by-installing symbol:PACKAGE list|function:INSTALLER
@@ -939,38 +929,35 @@ loads.\n")
     (catch 'installer-abort
       (condition-case install-trap
 
-        ;; run the installer
-        (cond
-          ((functionp installer) (funcall installer))
-          ((listp installer) (grail-run-installer installer))
-          (t (throw 'grail-trap
-               '((format "unhandled installer type: not a function or a list %s"
-                   (princ (type-of installer)))))))
+        (progn
+          ;; run the installer
+          (cond
+            ((functionp installer) (funcall installer))
+            ((listp installer) (grail-run-installer installer))
+            (t (throw 'grail-profile
+                 '((format "unhandled installer type: not a function or a list %s"
+                     (princ (type-of installer)))))))
 
-        ;; if there wasn't a error update the load path.
-        (grail-extend-load-path)
+          ;; if there wasn't a error update the load path.
+          (grail-extend-load-path)
+
+          ;; try to load it again.
+          (require package) )
 
         (error
-          (message "grail repair of package %s failed with %s" package-name (format-signal-trap install-trap))
-          (throw 'installer-abort nil)))
-
-      ;; try to load it again.
-      (condition-case load-trap
-        (require package)
-        (error
-          (message "repair of package %s : installed ok, but loading failed anyways - %s."
-            package-name (format-signal-trap load-trap))
-          (throw 'installer-abort nil)) )
-
-      (message "installation repair of dependency %s completed :)" package-name)
-      t)))
+          (progn
+            (grail-report-fail
+              "grail-repair-by-installing"
+              (format "grail repair of package %s failed" package-name)
+              install-trap)
+            (throw 'installer-abort nil) )) ) ) ))
 
 (defun grail-load ( package installer )
   (unless (symbolp package)
     (message "package is not a symbol"))
 
   (let
-    ((trap-result (catch 'grail-trap
+    ((trap-result (catch 'grail-profile
                     (or (require package nil t)
                         (grail-repair-by-installing package installer))) ))
 
@@ -984,7 +971,7 @@ loads.\n")
   (let
     ((dir-path (concat grail-dist-docs top-level-dir)))
 
-    (if (dir-path-if-accessible dir-path)
+    (if (grail-dir-if-ok dir-path)
       dir-path
       (progn
         (grail-dist-default-to-docs)
@@ -992,7 +979,7 @@ loads.\n")
 
         (grail-run-installer installer)
 
-        (if (dir-path-if-accessible dir-path)
+        (if (dir-path-if-ok dir-path)
           dir-path
           nil))) ))
 

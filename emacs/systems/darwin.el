@@ -4,11 +4,7 @@
 ;; because it is launched by finder. Correct key environment variables.
 ;;----------------------------------------------------------------------
 
-;; for best font support on a laptop LCD, the font hinting setting of "medium"
-;; in the apple control panel works best, along with disabling anti-aliasing.
-(setq mac-allow-anti-aliasing nil)
-
-(setq platform-font-family '("DejaVu LGC Sans Mono" "DejaVu Sans Mono" "Trebuchet MS"))
+(setq grail-font-family '("DejaVu LGC Sans Mono" "DejaVu Sans Mono" "Trebuchet MS"))
 
 (mask-grail-profiles "spell")
 

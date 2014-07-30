@@ -14,7 +14,6 @@
 ;; modes
 (electric-indent-mode 0)
 
-(require 'grail-profile)
 (require 'buffer-status)
 
 ;;----------------------------------------------------------------------
@@ -30,7 +29,7 @@
 (require 'lang-repl)
 
 ;; profiles not ready yet
-(setq grail-masked-profiles (cons "clojure" grail-masked-profiles))
+(mask-grail-profiles "clojure")
 
 ;; re-usable programming modules
 (use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")

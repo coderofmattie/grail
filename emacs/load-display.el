@@ -2,6 +2,9 @@
 ;; user-display.el
 ;;----------------------------------------------------------------------
 
+(blink-cursor-mode 0)
+(set-face-background 'cursor "yellow")
+
 (defconst codermattie-bg-color "grey5")
 
 (set-face-background 'default codermattie-bg-color)

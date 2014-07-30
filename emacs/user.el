@@ -5,10 +5,6 @@
 ;;
 ;; configuration of core emacs functionality.
 ;;----------------------------------------------------------------------
-(eval-when-compile
-  (require 'grail-profile)
-  (require 'grail-fn))
-
 (require 'buffer-ring)
 
 ;;----------------------------------------------------------------------
@@ -130,25 +126,24 @@
 ;;                    EShell
 ;;----------------------------------------------------------------------
 
-(robust-load-elisp "eshell"
-  (require 'eshell)
+(require 'eshell)
 
-  (setq
-    eshell-windowed t                ;; enable windowing
-    eshell-save-history-on-exit nil) ;; kill the prompt to save history
+(setq
+  eshell-windowed t                ;; enable windowing
+  eshell-save-history-on-exit nil) ;; kill the prompt to save history
 
-  (add-hook 'eshell-mode-hook
-    (lambda ()
-      ;; add a list of commands that will pop a term buffer for out-of-eshell
-      ;; handling. Note: the variable eshell-visual-commands is buffer-local.
-      (setq eshell-visual-commands
- (append eshell-visual-commands (list "ssh" "su" "telnet"
-                                             "ftp" "lftp" "links")))
+(add-hook 'eshell-mode-hook
+  (lambda ()
+    ;; add a list of commands that will pop a term buffer for out-of-eshell
+    ;; handling. Note: the variable eshell-visual-commands is buffer-local.
+    (setq eshell-visual-commands
+      (append eshell-visual-commands (list "ssh" "su" "telnet"
+                                           "ftp" "lftp" "links")))
 
-      ;; I rarely want to quit eshell. when I do I can use quit. map
-      ;; the usual kill-buffer keybinding to rid-window.
-      (local-set-key (kbd "C-x k") 'rid-window))
-    t))
+    ;; I rarely want to quit eshell. when I do I can use quit. map
+    ;; the usual kill-buffer keybinding to rid-window.
+    (local-set-key (kbd "C-x k") 'rid-window))
+  t)
 
 ;;----------------------------------------------------------------------
 ;;                    ERC
@@ -197,7 +192,4 @@
 ;; beta features are commands that are in development, usable, but
 ;; require some more work for completion.
 
-(grail-trap
-  "Loading beta features."
-
-  (load-user-elisp "beta"))
+(grail-try-user-elisp "beta")

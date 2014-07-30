@@ -1,16 +1,10 @@
 ;;----------------------------------------------------------------------
 ;; beta.el
 ;;----------------------------------------------------------------------
+(require 'cl)
 
 (require 'cm-string)
 (require 'cm-list)
-
-(eval-when-compile
-;;  this works when compiled and eliminates a unkown symbol warning, but when source loaded
-;;  it croaks with cannot load file.
-;;  (load "elisp")
-  (require 'cl)
-  (require 'grail-fn))
 
 ;;
 ;; stable-track  - canidate for inclusion in commands.el

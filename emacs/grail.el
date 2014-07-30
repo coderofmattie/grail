@@ -1,6 +1,8 @@
-;;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
 ;; grail.el
 ;;----------------------------------------------------------------------
+(require 'cl)
+(require 'subr-x)
 
 ;; Grail loads an .emacs configuration in a robust, modular, and mode
 ;; aware manner.
@@ -65,301 +67,488 @@
   "the project page for Grail")
 
 ;;
-;; two functions needed before grail-fn is loaded.
+;; grail error handling
 ;;
 
-(defun diagnostic-load-elisp-file ( path )
-  "diagnostic-load-elisp-file PATH
+(defun grail-format-error ( information )
+  (string-join
+    (mapcar
+      (lambda ( info )
+        (cond
+          ((not info)     "no information")
+          ((stringp info) info)
+          (t              (pp-to-string info)) ) )
+      information)
+    " -> ") )
 
-   load a elisp file trapping any errors that occur. nil
-   is returned for a successful load. If there are
-   errors the signal is returned.
-  "
-  (condition-case error-trap
+(defun grail-report ( type component message &optional info )
+  (with-current-buffer "*scratch*"
+    (let
+      ((report-start (point))
+       (report (format "Grail %s! (%s) while \"%s\": %s"
+                 type
+                 component
+                 message
+                 (cond
+                   ((not info)      "no information")
+                   ((stringp info)  info)
+                   ((listp info)    (grail-format-error info))
+                   (t               (pp-to-string info)) )) ))
+
+      ;; put in both messages and the scratch buffer
+      (message report)
+      (insert (concat "; " report)) )
+
+    (insert "\n\n") ))
+
+(defun grail-report-fail ( component message &optional info )
+  (grail-report "Failure" component message info))
+
+(defun grail-report-error ( component message &optional info )
+  (grail-report "Error/ignored" component message info))
+
+(defun grail-report-info ( component &rest info )
+  (message "Grail Info (%s) %s" component (string-join (mapcar 'pp-to-string info) " ") ))
+
+(define-error 'grail-fail "grail failure")
+(defconst grail-abort nil)
+
+(defun grail-mk-signal ( &rest other )
+  (let
+    (( signal-data '() ))
+
+    (mapc
+      (lambda (x)
+        (when x
+          (setq signal-data (cons x signal-data)) ))
+      other)
+
+    signal-data))
+
+(defun grail-signal-fail ( fail-where fail-what &optional info )
+  (grail-report-fail fail-where fail-what info)
+  (signal 'grail-fail (grail-mk-signal (concat fail-where " failed")) ))
+
+(defun grail-signal-error ( fail-where fail-what &optional info )
+  (grail-report-error fail-where fail-what info)
+  (signal 'grail-fail (grail-mk-signal (concat fail-where " failed")) ))
+
+(defun grail-signal-abort ( fail-where fail-what &optional info)
+  "dual use. reports the error given and throws abort."
+  (condition-case trap-error
     (progn
-      (load (expand-file-name path))
-      nil)
-    (error error-trap)))
+      (grail-report-error fail-where fail-what info)
+      (throw 'grail-abort 'grail-abort) )
 
-(defmacro grail-trap ( message &rest body )
-  `(let
-     ((trap (catch 'grail-trap ,@body)))
+    ('error
+      (grail-signal-fail fail-where "could not throw a grail-fail abort" trap-error) ) ))
 
-     (if (consp trap)
-       (apply 'grail-report-errors (format "grail error: %s" ,message) trap)
-       trap) ))
+(defmacro grail-fail ( component description &rest body )
+  (lexical-let
+    ((error-where (eval component))
+     (error-what  (eval description)) )
 
-(defun grail-load-requested-profiles ()
-  ;; a dummy function replaced when grail loads the grail-profile package.
-  nil)
+    `(condition-case trap-error
+       (let
+         ((trap-abort (catch 'grail-abort ,@body)))
 
-(defun use-grail-profiles ( order &rest request-list )
-  ;; a dummy function replaced when grail loads the grail-profile package.
-  nil)
+         (when (equal trap-abort 'grail-abort)
+           (grail-signal-fail ,error-where ,error-what trap-abort))
 
-(condition-case error-trap
-  (progn
+         trap-abort)
+
+       ('grail-fail
+         (grail-signal-fail ,error-where ,error-what trap-error) )
+       ('error
+         (grail-signal-fail ,error-where ,error-what trap-error) ) ) ))
+
+(defmacro grail-abort ( component description &rest body )
+  (lexical-let
+    ((error-where (eval component))
+     (error-what  (eval description)) )
+
+    `(condition-case trap-error
+       (progn ,@body)
+
+       ('grail-fail
+         (grail-signal-abort ,error-where ,error-what trap-error) )
+       ('error
+         (grail-signal-abort ,error-where ,error-what trap-error) ) ) ))
+
+(defmacro grail-recover ( component description recover &rest body )
+  (lexical-let
+    ((error-where (eval component))
+     (error-what  (eval description)) )
+
+    `(condition-case trap-error
+       (progn ,@body)
+
+       ('grail-fail
+         (progn
+           ,@recover
+           (grail-signal-abort ,error-where ,error-what trap-error) ))
+       ('error
+         (progn
+           ,@recover
+           (grail-signal-abort ,error-where ,error-what trap-error) )) ) ))
+
+(defmacro grail-ignore ( component description &rest body )
+  (lexical-let
+    ((error-where (eval component))
+     (error-what  (eval description)) )
+
+    `(condition-case trap-error
+       (progn ,@body)
+
+       ('grail-fail
+         (grail-report-error ,error-where ,error-what trap-error)
+         nil )
+
+       ('error
+         (grail-report-error ,error-where ,error-what trap-error)
+         nil) ) ))
+
+;;
+;; path handling
+;;
+
+(defun grail-file-if-ok ( path )
+  "return the path if the file is readable, otherwise nil"
+  (if (and path (file-readable-p path))
+    (expand-file-name path)) )
+
+(defun grail-dir-if-ok ( path )
+  "return the path if the directory is readable, otherwise nil"
+
+  (if (and path (file-accessible-directory-p path))
+    (expand-file-name path)) )
+
+(defun grail-dir-always ( path )
+  "grail-dir-always
+
+   If the directory PATH does not already exist then create it.
+   return the path of the directory or nil.
+  "
+  (if (grail-dir-if-ok path)
+    (expand-file-name path)
+    (progn
+      (make-directory path t)
+      (expand-file-name path)) ))
+
+(defun grail-elisp-path ( path )
+  (when path
+    (catch 'found-path
+      (mapc
+        (lambda (p)
+          (let
+            (( full-path (concat path p) ))
+
+            (if (file-readable-p full-path)
+              (throw 'found-path full-path)) ))
+        '("" ".elc" ".el") )
+      nil)))
+
+(defun grail-user-path ( path )
+  (grail-elisp-path (concat grail-elisp-root "/" path)) )
+
+;;
+;; elisp loading
+;;
+
+(defun grail-load-elisp ( path )
+  "grail-load-elisp PATH
+
+   load a required file. If the file is not found or a loading error occurs
+   a grail-fail signal is raised.
+  "
+
+  (let
+    (( full-path (grail-elisp-path path) ))
+
+    (unless full-path
+      (grail-signal-fail "grail-load-elisp" (format "file \"%s\" not found" path)))
+
+
+    (grail-fail
+      "grail-load-elisp"
+      "loading a required elisp file"
+
+      (load (expand-file-name full-path))
+
+      (grail-report-info "grail-load-elisp" "loaded path: " full-path) ) ))
+
+(defun grail-load-user-elisp ( path )
+  (grail-load-elisp (grail-user-path path)) )
+
+(defun grail-try-elisp ( path )
+  "grail-try-elisp PATH
+
+   load a elisp file PATH if it exists otherwise ignore a non-existent file.
+  "
+  (let
+    (( full-path (grail-elisp-path path) ))
+
+    (when full-path
+      (grail-ignore
+        "grail-try-elisp"
+        "loading a elisp file"
+
+        (load (expand-file-name full-path))
+        (grail-report-info "grail-try-elisp" "loaded path: " full-path) )) ))
+
+(defun grail-try-user-elisp ( path )
+  (grail-try-elisp (grail-user-path path)) )
+
+;;
+;; Loading Entry Point
+;;
+
+(grail-ignore
+  "Grail Core"
+  "Grail Loading...."
+
+  (grail-fail
+    "grail elisp-root"
+    "Finding elisp-root"
+
     ;;
     ;; establish the root of the USER_ELISP configuration tree.
     ;;
 
-    ;; the first priority is the USER_ELISP environment variable
-    ;; the second priority is
     (defvar grail-elisp-root
       (expand-file-name (concat (getenv "USER_ELISP") "/"))
       "The root of the user's elisp tree")
 
     ;; abort the rest of grail if the USER_ELISP tree cannot be found.
-    (unless (file-accessible-directory-p grail-elisp-root)
-      (error "%s" "cannot access USER_ELISP directory !!"))
+    (unless (grail-dir-if-ok grail-elisp-root)
+      (grail-signal-fail "grail" "checking directory accessibility" "cannot read directory")) )
 
-    (message "grail is loading USER_ELISP %s" grail-elisp-root)
+  (grail-fail
+    "grail elisp-root"
+    "loading grail loader"
 
-    ;;----------------------------------------------------------------------
-    ;; load the 2cnd stage of grail with the more complex functions.
-    ;;----------------------------------------------------------------------
-    (let*
-      ((stage-2-path (concat grail-elisp-root "grail-fn"))
-       (stage-2-errors (diagnostic-load-elisp-file stage-2-path)))
+    (grail-load-user-elisp "grail-load")
+    (grail-report-info "grail" "loader loaded" grail-elisp-root) )
 
-      (when stage-2-errors
-        (error "could not load %s , the second stage of grail. with %s errors. USER_ELISP does not point to a working GRAIL install" stage-2-path (format-signal-trap stage-2-errors))) )
+  (defconst grail-local-dir
+    (concat grail-elisp-root "local/")
+    "The directory containing the user\'s local modifications to emacs
+     and elisp.
 
-    ;; define the directory structure of the configuration tree
-    ;; relative to USER_ELISP
+     grail-local-emacs and grail-local-elisp are the preferred
+     variables for accessing user specific elisp paths.")
 
-    (defvar grail-local-dir
-      (concat grail-elisp-root "local/")
-      "The directory containing the user's local modifications to emacs
-       and elisp.
+  (defconst grail-local-profiles (concat grail-local-dir "profiles/")
+    "The directory containing Grail profiles modules.")
 
-       grail-local-emacs and grail-local-elisp are the preferred
-       variables for accessing user specific elisp paths.")
+  (defconst grail-local-emacs
+    (concat grail-local-dir "emacs/")
+    "The directory containing Emacs packages that over-ride the packages
+     distributed with Emacs.")
 
-    (defvar grail-settings-file "customize-settings.el"
-      "The file where Emacs writes settings and customize data")
+  (defconst grail-local-elisp
+    (concat grail-local-dir "elisp/")
+    "The directory containing Emacs libraries created and maintained by the
+     user.")
 
-    (defconst grail-local-emacs
-      (concat grail-local-dir "emacs/")
-      "The directory containing Emacs packages that over-ride the packages
-       distributed with Emacs.")
+  (defconst grail-dist-dir
+    (concat grail-elisp-root "dist/")
+    "The directory for managing distributed packages")
 
-    (defconst grail-local-elisp
-      (concat grail-local-dir "elisp/")
-      "The directory containing Emacs libraries created and maintained by the
-       user.")
+  (defconst grail-dist-archive
+    (concat grail-dist-dir "archive/")
+    "The directory for managing distributed packages")
 
-    (defconst grail-dist-dir
-      (concat grail-elisp-root "dist/")
-      "The directory for managing distributed packages")
+  (defconst grail-dist-docs
+    (concat grail-dist-dir "docs/")
+    "the directory containing third party docs")
 
-    (defconst grail-dist-archive
-      (concat grail-dist-dir "archive/")
-      "The directory for managing distributed packages")
+  (defconst grail-dist-elisp
+    (concat grail-dist-dir "elisp/")
+    "The directory containing third-party elisp extensions of Emacs.")
 
-    (defconst grail-dist-docs
-      (concat grail-dist-dir "docs/")
-      "the directory containing third party docs")
+  (defconst grail-dist-elpa
+    (concat grail-dist-dir "elpa/")
+    "ELPA managed third party elisp.")
 
-    (defconst grail-dist-elisp
-      (concat grail-dist-dir "elisp/")
-      "The directory containing third-party elisp extensions of Emacs.")
+  (defconst grail-dist-cvs
+    (concat grail-dist-dir "cvs/")
+    "cvs version control managed third party elisp")
 
-    (defconst grail-dist-elpa
-      (concat grail-dist-dir "elpa/")
-      "ELPA managed third party elisp.")
+  (defconst grail-dist-bzr
+    (concat grail-dist-dir "bzr/")
+    "bzr version control managed third party elisp")
 
-    (defconst grail-dist-cvs
-      (concat grail-dist-dir "cvs/")
-      "cvs version control managed third party elisp")
+  (defconst grail-dist-git
+    (concat grail-dist-dir "git/")
+    "git version control managed third party elisp")
 
-    (defconst grail-dist-bzr
-      (concat grail-dist-dir "bzr/")
-      "bzr version control managed third party elisp")
+  (defconst grail-dist-svn
+    (concat grail-dist-dir "svn/")
+    "subversion version control managed third party elisp")
 
-    (defconst grail-dist-git
-      (concat grail-dist-dir "git/")
-      "git version control managed third party elisp")
+  (defconst grail-dist-hg
+    (concat grail-dist-dir "hg/")
+    "mercurial version control managed third party elisp")
 
-    (defconst grail-dist-svn
-      (concat grail-dist-dir "svn/")
-      "subversion version control managed third party elisp")
+  (defvar grail-elpa-load-path nil
+    "The load-path extensions made by ELPA package activation")
 
-    (defconst grail-dist-hg
-      (concat grail-dist-dir "hg/")
-      "mercurial version control managed third party elisp")
+  (defvar grail-boot-load-path load-path
+    "The load-path as constructed by emacs before grail initialization")
 
-    (defvar grail-elpa-load-path nil
-      "The load-path extensions made by ELPA package activation")
+  (defvar grail-platform-load-path nil
+    "The load-path after the platform files have been loaded.")
 
-    (defvar grail-boot-load-path load-path
-      "The load-path as constructed by emacs before grail initialization")
+  (defconst grail-state-path (concat (getenv "HOME") "/.emacs.d/")
+    "The grail session state & persistent data directory which defaults to .emacs.d")
 
-    (defvar grail-platform-load-path nil
-      "The load-path after the platform files have been loaded.")
+  (defconst grail-settings-file
+    (concat grail-state-path "/" "customize-settings.el")
+    "The file where Emacs writes settings and customize data")
 
-    (defvar grail-state-path (concat (getenv "HOME") "/.emacs.d/")
-      "The grail session state & persistent data directory which defaults to .emacs.d")
+  (defconst grail-interpreters-path (concat grail-elisp-root "/interpreters/")
+    "the path to the grail interpreters directory for interpreter files.")
 
-    (defvar grail-interpreters-path (concat grail-elisp-root "/interpreters/")
-      "the path to the grail interpreters directory for interpreter files.")
+  (defconst grail-server-state (concat grail-state-path "/server/")
+    "the path to the grail interpreters directory for interpreter files.")
 
-    (defvar grail-server-state (concat grail-state-path "/server/")
-      "the path to the grail interpreters directory for interpreter files.")
+  (defvar grail-font-family nil
+    "a list of preferred font families")
 
-    (grail-trap
-      "Loading the grail-cfg file for user path changes."
-      ;; grail-cfg.el is a file for user to change the tree structure that grail
-      ;; traverses before load-path is formed.
-      (load-user-elisp "grail-cfg"))
+  (defvar grail-font-size 24
+    "preferred size of fonts")
 
-      (grail-trap
-        "redirect user-init-file and custom-file variables to grail-settings-file"
-        ;; the user-init-file _must_ be changed otherwise emacs will
-        ;; scribble all over grail which is not OK.
+  (grail-ignore
+    "emacs persistent state"
+    "make state dir, redirect user-init-file and custom-file variables to grail-settings-file"
 
-        ;; The customize file path also needs to be set so that
-        ;; customize writes settings to a data-file rather than
-        ;; appending them to code.
-        (setq user-init-file
-          (setq custom-file
-            (concat grail-elisp-root grail-settings-file)))
+    ;; make sure there is a directory for session state and persistent data
+    (grail-dir-always grail-state-path)
+
+    ;; the user-init-file _must_ be changed otherwise emacs will
+    ;; scribble all over grail which is not OK.
+
+    ;; The customize file path also needs to be set so that
+    ;; customize writes settings to a data-file rather than
+    ;; appending them to code.
+
+    (setq user-init-file
+      (setq custom-file
+        grail-settings-file))
 
     ;; Load the user's settings if any. Do it early so that this
     ;; stuff can be over-ridden in their config files.  The priority
     ;; of customize settings is a toss-up, but it only comes into
     ;; play when the user advances beyond relying on customize, and
     ;; by then the priority is sensible.
-    (load-user-elisp grail-settings-file))
+    (grail-try-user-elisp grail-settings-file) )
 
-    ;;----------------------------------------------------------------------
-    ;; Host specific adaptation
-    ;;
-    ;; Each host system has a file that normalizes the platform
-    ;; and extends the library search space for extra libraries the system
-    ;; manages.
-    ;;
-    ;; these files and platform specific customization are loaded by
-    ;; platform here.
-    ;;----------------------------------------------------------------------
+  ;;----------------------------------------------------------------------
+  ;; Host specific adaptation
+  ;;
+  ;; Each host system has a file that normalizes the platform
+  ;; and extends the library search space for extra libraries the system
+  ;; manages.
+  ;;
+  ;; these files and platform specific customization are loaded by
+  ;; platform here.
+  ;;----------------------------------------------------------------------
 
-    (grail-trap
-      "loading grail profiles support"
-      (load-user-elisp "grail-profile"))
+  ;; save the state of load-path after the platform file if any has
+  ;; been loaded.
+  (setq grail-platform-load-path load-path)
 
-    (defvar platform-font-family nil)
+  (grail-recover
+    "load standard elisp"
+    "loading all stock elisp and ELPA except Grail Profiles"
+    (setq load-path grail-platform-load-path)
 
-    ;; save the state of load-path after the platform file if any has
-    ;; been loaded.
-    (setq grail-platform-load-path load-path)
+    (grail-update-load-path)
 
-    ;; integrate the user's Elisp tree into the load-path for the first time.
-    (grail-extend-load-path)
+    (load-elpa-when-installed) )
 
-    (grail-trap
-      "Loading the OS specific elisp."
+  ;; done after the load-path update so grail-profile can use
+  ;; libraries in local/elisp
 
-      (load-user-elisp
-        (cond
-          ((string-equal "gnu/linux" system-type)  "systems/linux")
-          ((string-equal "darwin"    system-type)  "systems/darwin")
-          ((string-equal "windows"   system-type)  "systems/windows"))))
+  (grail-fail
+    "grail profile"
+    "loading grail profiles"
 
-    (grail-trap
-      "Loading the hostname specific elisp."
+    (grail-load-user-elisp "grail-profile") )
 
-      (load-user-elisp
-        (concat "hosts/" (system-name))) )
+  (grail-ignore
+    "load system elisp"
+    "Loading the OS specific elisp."
 
-    (grail-trap
-      "Loading the username specific elisp."
+    (grail-try-user-elisp
+      (cond
+        ((string-equal "gnu/linux" system-type)  "systems/linux")
+        ((string-equal "darwin"    system-type)  "systems/darwin")
+        ((string-equal "windows"   system-type)  "systems/windows")))
 
-      (load-user-elisp
-        (concat "users/" (user-login-name))) )
+    (grail-try-user-elisp
+      (concat "hosts/" (system-name)))
 
-    ;;----------------------------------------------------------------------
-    ;; support for profiles.
-    ;;----------------------------------------------------------------------
+    (grail-try-user-elisp
+      (concat "users/" (user-login-name))) )
 
-    (defvar grail-local-profiles (concat grail-local-dir "profiles/")
-      "The directory containing Grail profiles modules.")
+  (grail-ignore
+    "Emacs Server"
+    "configuration before use"
 
-    ;; make sure there is a directory for session state and persistent data
-    (grail-garuntee-dir-path grail-state-path)
+    ;; make sure there is a directory for server data
+    (grail-dir-always grail-server-state)
 
-    (grail-trap
-      "loading user ELISP library"
-      ;; elisp loads the user's general elisp library.
-      (load-user-elisp "elisp"))
+    (set-file-modes grail-server-state
+      (file-modes-symbolic-to-number "go-rwx" (file-modes grail-server-state)))
 
-    ;; load ELPA when it is installed.
-    (grail-trap
-      "load ELPA"
-      (load-elpa-when-installed))
+    (require 'server)
 
-    (grail-trap
-     "Configuring the Emacs Server"
-
-     ;; configure and activate the server
-     (require 'server))
-
-     ;; make sure there is a directory for server data
-     (grail-garuntee-dir-path grail-server-state)
-
-     (set-file-modes grail-server-state
-       (file-modes-symbolic-to-number "go-rwx" (file-modes grail-server-state)))
-
-     (setq
+    (setq
       server-use-tcp t
-      server-auth-dir grail-server-state)
+      server-auth-dir grail-server-state) )
 
-    ;;----------------------------------------------------------------------
-    ;; load the configuration based on mode.
-    ;;----------------------------------------------------------------------
+  (grail-ignore
+    "user-elisp loading"
+    "final loading with of user elisp"
 
-    (when (or (not noninteractive) (daemonp))
+    (grail-try-user-elisp "elisp")
 
-      (grail-trap
-        "load interface level elisp files"
+    ;; only loaded when there is an active terminal.
+    (grail-try-user-elisp "interface")
 
-        ;; only loaded when there is an active terminal.
-        (load-user-elisp "interface")
+    (grail-try-user-elisp "user")
 
-        (load-user-elisp "user")
+    (grail-try-user-elisp "programming")
 
-        (load-user-elisp "programming")
+    ;; load commands and keys last so they can use definitions from user.el
+    ;; and friends.
+    (grail-try-user-elisp "commands")
+    (grail-try-user-elisp "keys") )
 
-        ;; load commands and keys last so they can use definitions from user.el
-        ;; and friends.
-        (load-user-elisp "commands")
-        (load-user-elisp "keys"))
+  (grail-ignore
+    "interface loading"
+    "configuring for daemon or application"
 
-      ;; In deamon mode the GUI related values are not defined by
-      ;; Emacs until a GUI frame is created. In this case place the
-      ;; GUI configuration on frame creation hooks.
+    (if (daemonp)
+      (grail-ignore
+        "daemon mode"
+        "setting hooks to defer configuring graphical properties"
 
-      ;; when not using emacs --daemon load frame.el and gui.el
-      ;; immediately.
+        (add-hook 'before-make-frame-hook 'grail-configure-display t)
+        (add-hook 'after-make-frame-functions 'grail-load-display t) )
+      (grail-ignore
+        "application mode"
+        "running graphical config immediately"
 
-      (grail-trap
-        "load GUI files"
+        (server-start)
 
-        (if (daemonp)
-          (progn
-            (add-hook 'before-make-frame-hook 'grail-load-display-configuration-once t)
-            (add-hook 'after-make-frame-functions 'grail-load-graphical-configuration-once t)
-            )
+        (grail-configure-display)
+        (grail-load-display (window-frame)) ) ))
 
-          (progn
-            (server-start)
-            (load-user-elisp "user-display")
-            (grail-load-graphical-configuration-once (window-frame)) ) )
+  (grail-ignore
+    "Grail Profiles"
+    "loading Grail Profiles"
 
-        ;; load all the group files requested. defer profile loading
-        ;; when starting as a daemon.
-        (grail-trap
-          "loading profiles from .emacs startup"
-          (grail-load-requested-profiles)) ) ))
-  (error
-    (message "Grail aborted from an internal error! %s" (princ error-trap))
-    (message "Please report this to %s" grail-maintainer-email)) )
+    (grail-load-requested-profiles) ) )

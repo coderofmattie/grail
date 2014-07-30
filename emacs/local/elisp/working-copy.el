@@ -6,7 +6,6 @@
 (require 'cm-string)
 (require 'file-utilities)
 (require 'async-command-builders)
-(require 'grail-profile)
 (require 'buffer-status)
 
 (defvar wc-home-dir (concat (getenv "HOME") "/"))

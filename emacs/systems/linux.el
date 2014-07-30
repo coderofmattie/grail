@@ -3,4 +3,4 @@
 ;; linux specific platform
 ;;----------------------------------------------------------------------
 
-(setq platform-font-family '("DejaVu LGC Sans Mono" "DejaVu Sans Mono" "dejavu sans mono"))
+(setq grail-font-family '("DejaVu LGC Sans Mono" "DejaVu Sans Mono" "dejavu sans mono"))

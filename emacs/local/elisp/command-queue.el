@@ -3,7 +3,6 @@
 ;;
 ;; run commands in the background in a worker queue like implementation
 ;;----------------------------------------------------------------------
-(require 'grail-profile)
 (require 'async-command-builders)
 (require 'idle-queue)
 
