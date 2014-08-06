@@ -111,8 +111,8 @@
       ("g" . grep)
       ("r" . rgrep)
       ("o" . occur)
-;;    ("i" . 'tags-uber-incremental)
-;;    ("t" . 'tags-uber-search)
+;;    ("i" . tags-uber-incremental)
+;;    ("t" . tags-uber-search)
       ) )
 
   (custom-key-group "code editing" "c" nil

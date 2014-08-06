@@ -202,10 +202,10 @@
           `(define-key key-map
              ,(car key-fn-pair)
 
-             ',(if (symbol-function (cdr key-fn-pair))
-                 (cdr key-fn-pair)
-                 (eval (cdr key-fn-pair)) ) ))
-         body)
+             ,(if (symbol-function (cdr key-fn-pair))
+         	  `',(cdr key-fn-pair)
+		(cdr key-fn-pair)) ) )
+	body)
 
      (define-key key-map "h" (keybindings-help-fn ,description key-map))
 
