@@ -12,20 +12,6 @@
  eval-expression-print-level nil
  print-level nil)
 
-;; much like easy-mmode-define-keymap macro but with a little more
-;; juice doing the defvar part as well.
-
-(defmacro def-sparse-map ( symbol docstring &rest keys )
-  "make it easy to define a keymap give the symbol, a docstring, followed by
-   the usual (key 'symbol) lists."
-  `(defvar ,symbol
-     (let
-       ((map (make-sparse-keymap)))
-       ,@(mapcar (lambda (binding)
-                   (list 'define-key 'map (car binding) (cadr binding))) keys)
-       map)
-     ,docstring))
-
 (defun mode-overlay-at-pos ( pos mode-symbol )
   "determine if the point is in a flyspell overlay. given a overlay list
    which may be nil, translate via predicate into boolean values which
