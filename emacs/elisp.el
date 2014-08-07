@@ -3,9 +3,6 @@
 ;;----------------------------------------------------------------------
 (require 'cm-string)
 
-;; increase the max eval depth to 4k. Hope this doesn't croak Emacs.
-(setq max-lisp-eval-depth 4096)
-
 ;; make sure that the pretty printer doesn't truncate which frustrates my
 ;; development.
 
@@ -198,14 +195,14 @@
      ((key-map  (make-sparse-keymap)))
 
      ,@(mapcar
-        (lambda ( key-fn-pair )
-          `(define-key key-map
-             ,(car key-fn-pair)
+         (lambda ( key-fn-pair )
+           `(define-key key-map
+              ,(car key-fn-pair)
 
-             ,(if (symbol-function (cdr key-fn-pair))
-         	  `',(cdr key-fn-pair)
-		(cdr key-fn-pair)) ) )
-	body)
+              ,(if (symbol-function (cdr key-fn-pair))
+                 `',(cdr key-fn-pair)
+                 (cdr key-fn-pair)) ) )
+         body)
 
      (define-key key-map "h" (keybindings-help-fn ,description key-map))
 
@@ -220,25 +217,17 @@
 ;; generic close proc buffer
 ;;
 
-(defun proc-close-on-exit/window ( proc-buffer )
-  (with-current-buffer proc-buffer
+(defun proc-close-on-exit/window ( &optional proc-buffer )
+  (async-exec-sentinel
+    (or proc-buffer (current-buffer))
+    (lambda ( proc-buffer )
+      ;; if proc is dead touching the buffer except to kill is a error. trap
+      ;; those situations and just kill it anyways.
+      (condition-case nil
+        ;; this is broken for reasons unknown anyways. FUCK I hate term mode.
+        (with-current-buffer proc-buffer
+          (other-window 1)
+          (delete-other-windows proc-buffer))
+        (error nil))
 
-    ;; if proc is dead touching the buffer except to kill is a error. trap
-    ;; those situations and just kill it anyways.
-    (condition-case nil
-      (progn
-        (other-window 1)
-        (delete-other-windows proc-buffer))
-      (error nil))
-
-    (kill-buffer proc-buffer)) )
-
-(defun proc-close-on-exit/sentinel ()
-  (lexical-let*
-    ((p-buffer  (current-buffer))
-     (p-proc    (get-buffer-process p-buffer)))
-
-    (set-process-sentinel p-proc
-      (lambda ( process event )
-        (if (equal process p-proc)
-          (proc-close-on-exit/window p-buffer)) )) ))
+      (kill-buffer proc-buffer) )) )

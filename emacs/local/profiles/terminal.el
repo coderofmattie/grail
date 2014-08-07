@@ -8,7 +8,10 @@
 ;;                 IPC shell:  comint/term mode
 ;;----------------------------------------------------------------------
 
-(add-hook 'term-exec-hook 'proc-close-on-exit/sentinel)
+(defadvice term (after terminal/after-hook)
+  (proc-close-on-exit/window))
+
+(ad-activate 'term)
 
 (setq explicit-shell-file-name "bash")
 (setq terminal-profile-local-shell "zsh")
