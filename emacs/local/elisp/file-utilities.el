@@ -1,7 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; file-utilities
 ;;----------------------------------------------------------------------
-(require 'cm-string)
+(require 'subr-x)
 
 (defconst files-home-dir (concat (getenv "HOME") "/"))
 
@@ -50,7 +50,7 @@
             (setq child-dirs (cdr child-dirs)) ) ))
 
       (if child-dirs
-        (concat (cm-string-join "/" child-dirs) "/")
+        (concat (string-join child-dirs "/") "/")
         nil) )))
 
 ;; (files-child-of-path "/home/codermattie/" "/home/codermattie/code/")
