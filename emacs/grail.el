@@ -271,7 +271,7 @@
 
     (grail-fail
       "grail-load-elisp"
-      "loading a required elisp file"
+      (format "loading a required elisp file: %s @ %s" path full-path)
 
       (load (expand-file-name full-path))
 
@@ -291,7 +291,7 @@
     (when full-path
       (grail-ignore
         "grail-try-elisp"
-        "loading a elisp file"
+        (format "loading an optional elisp file: %s @ %s" path full-path)
 
         (load (expand-file-name full-path))
         (grail-report-info "grail-try-elisp" "loaded path: " full-path) )) ))
