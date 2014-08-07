@@ -8,11 +8,6 @@
 (eval-when-compile
   (require 'cl))
 
-(defun mail ()
-  "start mutt mail client"
-  (interactive)
-  (ansi-term "mutt" "mutt"))
-
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"
   (message "the hex is %x" number))
