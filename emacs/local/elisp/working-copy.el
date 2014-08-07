@@ -2,11 +2,11 @@
 ;; working-copy
 ;; emulate local commit features and deal with perforce.
 ;;----------------------------------------------------------------------
-
-(require 'cm-string)
 (require 'file-utilities)
 (require 'async-command-builders)
 (require 'buffer-status)
+
+(require 'subr-x)
 
 (defvar wc-home-dir (concat (getenv "HOME") "/"))
 (defvar wc-modeline-status "")
@@ -124,11 +124,11 @@
       (setq wc-rcs-last-exit-status t))) )
 
 (defun wc-rcs-command-builder ( &rest command-string )
-  (async-build-basic "wc-rcs" (cm-string-join " " command-string)
+  (async-build-basic "wc-rcs" (string-join command-string " ")
                      'wc-rcs-command-callback (wc-rcs-command-buffer)) )
 
 (defun wc-rcs-command-chain-builder ( chain &rest builders )
-  (async-build-basic "wc-rcs" (cm-string-join " " command-string)
+  (async-build-basic "wc-rcs" (string-join command-string " ")
     'wc-rcs-command-callback (wc-rcs-command-buffer) chain))
 
 (defun wc-rcs-command-builder-checkin ( path log )
@@ -146,16 +146,20 @@
 (defun wc-rcs-init ( path )
   (wc-rcs-command-run
     (async-build-chained
-      ("wc-rcs" (cm-string-join-args " "
-                  (concat wc-wrappers-dir "/rcs-init")
-                  path
-                  "initialize rcs")
+      ("wc-rcs" (string-join
+                  (list
+                    (concat wc-wrappers-dir "/rcs-init")
+                    path
+                    "initialize rcs")
+                  " ")
         'wc-rcs-command-callback (wc-rcs-command-buffer))
 
-      ("wc-rcs" (cm-string-join-args " "
-                  (concat wc-wrappers-dir "/rcs-checkin")
-                  path
-                  "first checkin")
+      ("wc-rcs" (cm-string-join-args
+                  (list
+                    (concat wc-wrappers-dir "/rcs-checkin")
+                    path
+                    "first checkin")
+                  " ")
         'wc-rcs-command-callback (wc-rcs-command-buffer)) )) )
 
 (defun wc-rcs-checkout ( file )
