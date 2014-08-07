@@ -2,7 +2,6 @@
 ;; elisp.el
 ;;----------------------------------------------------------------------
 (require 'async-exec)
-(require 'cm-string)
 
 ;; make sure that the pretty printer doesn't truncate which frustrates my
 ;; development.
