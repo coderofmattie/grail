@@ -5,7 +5,6 @@
 ;;
 ;; support for scheme programming
 ;;----------------------------------------------------------------------
-(require 'cm-string)
 (require 'remap-assoc-mode)
 
 (grail-load 'geiser (grail-define-installer "geiser"
