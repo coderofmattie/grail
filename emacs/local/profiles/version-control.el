@@ -1,7 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; version-control.el
 ;;----------------------------------------------------------------------
-(require 'cm-string)
+(require 'subr-x)
 (require 'custom-key)
 
 (require 'vc)
@@ -98,7 +98,7 @@
   "list log files"
   (interactive)
   (message "log files: %s"
-    (cm-string-join "," (mapcar 'car (ver-ctl-log-file-pairs (ver-ctl-log-files))))) )
+    (string-join  (mapcar 'car (ver-ctl-log-file-pairs (ver-ctl-log-files))) ",")) )
 
 (defun ver-ctl-log-select ( prompt )
   (let
