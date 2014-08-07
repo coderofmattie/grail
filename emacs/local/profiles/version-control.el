@@ -2,6 +2,7 @@
 ;; version-control.el
 ;;----------------------------------------------------------------------
 (require 'cm-string)
+(require 'custom-key)
 
 (require 'vc)
 (require 'merging)

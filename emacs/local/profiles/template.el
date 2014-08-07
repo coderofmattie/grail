@@ -10,6 +10,7 @@
                          "git"
                          "https://github.com/capitaomorte/yasnippet.git"))
 
+(require 'custom-key)
 (require 'lex-cache)
 
 ;;----------------------------------------------------------------------

@@ -6,6 +6,7 @@
 ;; configure emacs lisp with standardized programming features
 ;;----------------------------------------------------------------------
 (require 'lex-cache)
+(require 'custom-key)
 
 (defconst emacs-lisp-refresh-completion-interval 1)
 

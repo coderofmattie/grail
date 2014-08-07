@@ -4,6 +4,7 @@
 ;; slime profile for common lisp coding
 ;;----------------------------------------------------------------------
 (require 'lang-repl)
+(require 'custom-key)
 
 (grail-load 'slime     (grail-define-installer "slime"
                          "cvs"
