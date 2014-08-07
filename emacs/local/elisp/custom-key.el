@@ -1,6 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; custom-key
 ;;----------------------------------------------------------------------
+(require 'subr-x)
 
 (defun keybindings-help-first-line ( fn )
   (let
@@ -16,14 +17,15 @@
   (format "key set: %s
 %s"
     group-name
-    (cm-string-join "
-"
+    (string-join
       (mapcar
         (lambda ( keymap-pair )
           (format "(%s) %s"
             (char-to-string (car keymap-pair))
             (keybindings-help-first-line (cdr keymap-pair))) )
-        (cdr keymap)) ) ))
+        (cdr keymap))
+      "
+") ))
 
 (defconst keybindings-help-buffer-name "*keybindings help*")
 
