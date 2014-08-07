@@ -1,6 +1,8 @@
 ;;----------------------------------------------------------------------
 ;; code editing tools
 ;;----------------------------------------------------------------------
+(require 'mode-tools)
+
 (grail-load 'dash (grail-define-installer "dash"
                    "git"
                    "https://github.com/magnars/dash.el.git"))

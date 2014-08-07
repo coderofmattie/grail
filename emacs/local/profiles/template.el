@@ -11,6 +11,8 @@
                          "https://github.com/capitaomorte/yasnippet.git"))
 
 (require 'custom-key)
+(require 'mode-tools)
+
 (require 'lex-cache)
 
 ;;----------------------------------------------------------------------
