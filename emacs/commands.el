@@ -4,9 +4,7 @@
 
 (require 'ucase-word)
 (require 'buffer-status)
-
-(eval-when-compile
-  (require 'cl))
+(require 'cl)
 
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"
