@@ -154,7 +154,7 @@
                   " ")
         'wc-rcs-command-callback (wc-rcs-command-buffer))
 
-      ("wc-rcs" (cm-string-join-args
+      ("wc-rcs" (string-join
                   (list
                     (concat wc-wrappers-dir "/rcs-checkin")
                     path
