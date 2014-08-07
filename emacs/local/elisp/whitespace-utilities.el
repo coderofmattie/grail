@@ -4,6 +4,11 @@
 (require 'whitespace)
 (require 'buffer-status)
 
+(defun buffer-modifiable-p (buffer)
+  (with-current-buffer buffer
+    (not (or (and (local-variable-p 'view-read-only) view-read-only)
+             (and (local-variable-p 'buffer-read-only) buffer-read-only))) ))
+
 (defun warn-if-tabs-in-buffer ()
   (interactive)
 

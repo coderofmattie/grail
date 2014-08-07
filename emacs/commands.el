@@ -6,6 +6,17 @@
 (require 'buffer-status)
 (require 'cl)
 
+(require 'whitespace-utilities)
+(require 'eol-utilities)
+
+(defun scrub-all ()
+  (interactive)
+  (if (buffer-modifiable-p)
+    (progn
+      (scrub-dos-eol)
+      (scrub-tabs) )
+    (message "cannot scrub in a read-only buffer!") ))
+
 (defun print-hex ( number )
   "print the hex of a number, faster than firing up calc mode"
   (message "the hex is %x" number))
@@ -46,11 +57,6 @@
   "
   (interactive "afunction? ")
   (message "returned: %s" (princ (funcall fn))) )
-
-(defun scrub-when-modifiable ()
-  (when (buffer-modifiable-p)
-    (scrub-dos-eol)
-    (scrub-tabs) ))
 
 (defun what-face (pos)
   (interactive "d")
