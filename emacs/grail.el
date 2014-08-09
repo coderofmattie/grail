@@ -545,7 +545,10 @@
         (server-start)
 
         (grail-configure-display)
-        (grail-load-display (window-frame)) ) ))
+        (grail-load-display (window-frame))
+
+        ;; do this so the per frame stuff loads for all frames
+        (add-hook 'after-make-frame-functions 'grail-load-display t) ) ))
 
   (grail-ignore
     "Grail Profiles"

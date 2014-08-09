@@ -306,13 +306,16 @@
     (grail-try-user-elisp "configure-display")
     (setq grail-display-configured t) ))
 
-(defun grail-merge-frame-parameters ( &rest pairs )
-  (mapc
-    (lambda ( new-param )
-      (assq-delete-all (car new-param) default-frame-alist))
-    pairs)
+(defun grail-merge-frame-parameters ( emacs-alist-sym &rest pairs )
+  (let
+    (( emacs-alist (eval emacs-alist-sym) ))
 
-  (setq default-frame-alist (append default-frame-alist pairs)) )
+    (mapc
+      (lambda ( x )
+        (setq emacs-alist (assq-delete-all (car x) emacs-alist)) )
+      pairs)
+
+    (set emacs-alist-sym (append pairs emacs-alist)) ))
 
 ;;
 ;; frame loading after first frame.
@@ -327,23 +330,29 @@
    load the display after the first frame is created and
    the graphical related symbols have been defined.
   "
-  (when (and
-          (not grail-display-loaded)
-          (is-frame-gui new-frame))
+  (when (is-frame-gui new-frame)
+    (when (not grail-display-loaded)
+      ;; set best font
+      (setq grail-font-best (grail-format-font (grail-select-best-font-family new-frame) grail-font-size new-frame))
 
-    ;; set best font
-    (setq grail-font-best (grail-format-font (grail-select-best-font-family new-frame) grail-font-size new-frame))
+      (when grail-font-best
+        ;; set for all new frames
+        (grail-merge-frame-parameters 'default-frame-alist `(font . ,grail-font-best))
 
-    (when grail-font-best
-      ;; set for all new frames
-      (grail-merge-frame-parameters `(font . ,grail-font-best))
+        ;; set the best font for current frame
+        (grail-set-best-font new-frame) )
 
-      ;; set the best font for current frame
-      (grail-set-best-font new-frame) )
+      (let
+        ((grail-frame new-frame))
 
-    (grail-try-user-elisp "load-display")
+        (grail-try-user-elisp "load-display") )
 
-    (setq grail-display-loaded t)) )
+      (setq grail-display-loaded t) )
+
+    (let
+      ((grail-frame new-frame))
+
+      (grail-try-user-elisp "configure-frame") ) ))
 
 ;;
 ;; font stuff
