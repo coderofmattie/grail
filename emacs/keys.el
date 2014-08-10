@@ -46,5 +46,6 @@
 
 (custom-key-group "files" "f" t
     ("d" . dired)
-    ("s" . save-some-buffers))
+    ("s" . save-some-buffers)
+    ("b" . hexl-find-file))
 
