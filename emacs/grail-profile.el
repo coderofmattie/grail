@@ -226,21 +226,16 @@
    install from URL into PATH with name NAME.  nil is returned
    when successful, otherwise an error is thrown.
   "
-  (condition-case error-trap
-    (let
-      ((install-path (concat (grail-dist-install-directory path) name)))
+  (let
+    ((install-path (concat (grail-dist-install-directory path) name)))
 
-      (with-temp-buffer
-        (url-insert-file-contents url)
-        (let
-          ((buffer-file-coding-system 'no-conversion))
-          (write-file install-path)))
+    (with-temp-buffer
+      (url-insert-file-contents url)
+      (let
+        ((buffer-file-coding-system 'no-conversion))
+        (write-file install-path)))
 
-      (message "grail-file-installer: installed of %s to %s completed" name install-path))
-    nil
-    (error
-      (format "grail-file-installer for %s failed with: %s"
-        name (format-signal-trap error-trap))) ))
+    (grail-report-info "grail-load file-installer" "completed install for" url path) ))
 
 (defun grail-wget-url-async ( url path output-buffer )
   "grail-wget-url-async URL PATH OUTPUT-BUFFER
