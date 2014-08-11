@@ -870,7 +870,7 @@ loads.\n")
 
   (grail-recover
     "grail-load"
-    (format "attempting to load profile %s" (symbol-name package))
+    (format "attempting to load profile component %s" (symbol-name package))
 
     (grail-fail
       "grail-load retry"
@@ -893,16 +893,21 @@ loads.\n")
         (grail-dist-default-to-packages)
         (grail-untar-strip-by-el)
 
+        (grail-report-info "grail-load install" "running installer for" package)
+
         (cond
           ((functionp installer) (funcall installer))
           ((listp installer)     (eval installer))
-          (t                     (grail-signal-fail "grail-load" "unknown installer type" package)) )
+          (t                     (grail-signal-fail "grail-load" "unknown installer type" package)) ) )
 
-        (grail-update-load-path) )
+      (grail-report-info "grail-load install" "attempting reload for" package)
 
+      (grail-update-load-path)
       (require package)
 
-      (grail-report-info "grail-load" "profile unload and install succeeded" package) )
+      (grail-report-info "grail-load" "profile loaded on install/retry" package)
+
+      t)
 
     (require package)
     (grail-report-info "grail-load" "profile loaded on the first try" package) ))
