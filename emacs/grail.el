@@ -1,3 +1,4 @@
+
 ;;----------------------------------------------------------------------
 ;; grail.el
 ;;----------------------------------------------------------------------
@@ -143,70 +144,54 @@
     ('error
       (grail-signal-fail fail-where "could not throw a grail-fail abort" trap-error) ) ))
 
-(defmacro grail-fail ( component description &rest body )
-  (lexical-let
-    ((error-where (eval component))
-     (error-what  (eval description)) )
+(defmacro grail-fail ( where what &rest body )
+  `(condition-case trap-error
+     (let
+       ((trap-abort (catch 'grail-abort ,@body)))
 
-    `(condition-case trap-error
-       (let
-         ((trap-abort (catch 'grail-abort ,@body)))
+       (when (equal trap-abort 'grail-abort)
+         (grail-signal-fail ,where ,what trap-abort))
 
-         (when (equal trap-abort 'grail-abort)
-           (grail-signal-fail ,error-where ,error-what trap-abort))
+       trap-abort)
 
-         trap-abort)
+     ('grail-fail
+       (grail-signal-fail ,where ,what trap-error) )
+     ('error
+       (grail-signal-fail ,where ,what trap-error) ) ))
 
-       ('grail-fail
-         (grail-signal-fail ,error-where ,error-what trap-error) )
-       ('error
-         (grail-signal-fail ,error-where ,error-what trap-error) ) ) ))
+(defmacro grail-abort ( where what &rest body )
+  `(condition-case trap-error
+     (progn ,@body)
 
-(defmacro grail-abort ( component description &rest body )
-  (lexical-let
-    ((error-where (eval component))
-     (error-what  (eval description)) )
+     ('grail-fail
+       (grail-signal-abort ,where ,what trap-error) )
+     ('error
+       (grail-signal-abort ,where ,what trap-error) ) ))
 
-    `(condition-case trap-error
-       (progn ,@body)
+(defmacro grail-recover ( where what recover &rest body )
+  `(condition-case trap-error
+     (progn ,@body)
 
-       ('grail-fail
-         (grail-signal-abort ,error-where ,error-what trap-error) )
-       ('error
-         (grail-signal-abort ,error-where ,error-what trap-error) ) ) ))
+     ('grail-fail
+       (progn
+         ,@recover
+         (grail-signal-abort ,where ,what trap-error) ))
+     ('error
+       (progn
+         ,@recover
+         (grail-signal-abort ,where ,what trap-error) )) ) )
 
-(defmacro grail-recover ( component description recover &rest body )
-  (lexical-let
-    ((error-where (eval component))
-     (error-what  (eval description)) )
+(defmacro grail-ignore ( where what &rest body )
+  `(condition-case trap-error
+     (progn ,@body)
 
-    `(condition-case trap-error
-       (progn ,@body)
+     ('grail-fail
+       (grail-report-error ,where ,what trap-error)
+       nil )
 
-       ('grail-fail
-         (progn
-           ,@recover
-           (grail-signal-abort ,error-where ,error-what trap-error) ))
-       ('error
-         (progn
-           ,@recover
-           (grail-signal-abort ,error-where ,error-what trap-error) )) ) ))
-
-(defmacro grail-ignore ( component description &rest body )
-  (lexical-let
-    ((error-where (eval component))
-     (error-what  (eval description)) )
-
-    `(condition-case trap-error
-       (progn ,@body)
-
-       ('grail-fail
-         (grail-report-error ,error-where ,error-what trap-error)
-         nil )
-
-       ('error
-         (grail-report-error ,error-where ,error-what trap-error)
-         nil) ) ))
+     ('error
+       (grail-report-error ,where ,what trap-error)
+       nil) ) )
 
 ;;
 ;; path handling
@@ -318,6 +303,8 @@
     (defvar grail-elisp-root
       (expand-file-name (concat (getenv "USER_ELISP") "/"))
       "The root of the user's elisp tree")
+
+    (grail-report-info "grail" "checking elisp-root" grail-elisp-root)
 
     ;; abort the rest of grail if the USER_ELISP tree cannot be found.
     (unless (grail-dir-if-ok grail-elisp-root)
