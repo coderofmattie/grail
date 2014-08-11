@@ -141,16 +141,3 @@
   "dwim-complete vcs for file completion: use <spc> for contents search."
   (interactive)
   (helm-browse-project))
-
-(defun dwim-complete-bindings ()
-  (let
-    ((ver-map (make-sparse-keymap)))
-
-    (define-key ver-map "f" 'dwim-complete-vcs-or-file)
-
-    (define-key ver-map "h" (keybindings-help-fn "dwim complete" ver-map))
-
-    (local-unset-key (kbd "C-c x"))
-    (global-set-key (kbd "C-c x") ver-map)))
-
-(dwim-complete-bindings)

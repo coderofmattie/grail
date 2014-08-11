@@ -391,7 +391,9 @@
         (interactive)
         (ver-ctl-call-function "revert")) )
 
-    (define-key ver-map "h" (keybindings-help-fn "ver ctl" ver-map))
+    (define-key ver-map "h" (keybindings-help-local "ver ctl" ver-map))
+
+    (custom-key-group-register "v" "version control" ver-map)
 
     (local-set-key (kbd "C-c v") ver-map) ))
 

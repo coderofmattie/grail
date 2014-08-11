@@ -20,6 +20,7 @@
     (define-key notes-map "l" 'org-insert-link)
 
     (define-key notes-map "h" (keybindings-help-fn "notes" notes-map))
+    (custom-key-group-register "o" "text notes" notes-map)
 
     (local-set-key (kbd "C-c o") notes-map)))
 
