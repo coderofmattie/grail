@@ -173,13 +173,11 @@
      (progn ,@body)
 
      ('grail-fail
-       (progn
-         ,@recover
-         (grail-signal-abort ,where ,what trap-error) ))
+       (unless ,recover
+         (grail-signal-abort ,where ,what trap-error)) )
      ('error
-       (progn
-         ,@recover
-         (grail-signal-abort ,where ,what trap-error) )) ) )
+       (unless ,recover
+         (grail-signal-abort ,where ,what trap-error)) ) ))
 
 (defmacro grail-ignore ( where what &rest body )
   `(condition-case trap-error
@@ -252,7 +250,6 @@
 
     (unless full-path
       (grail-signal-fail "grail-load-elisp" (format "file \"%s\" not found" path)))
-
 
     (grail-fail
       "grail-load-elisp"
