@@ -41,6 +41,8 @@
 
 (global-set-key (kbd "M-g")  'goto-line)
 
+(global-set-key (kbd "<backtab>") 'next-buffer)
+
 ;; line number mode
 (global-set-key (kbd "C-c C-l")  'linum-mode)
 
