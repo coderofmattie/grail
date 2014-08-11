@@ -3,6 +3,14 @@
 ;;----------------------------------------------------------------------
 (require 'cl)
 (require 'async-exec)
+(require 'sync-exec)
+
+(defun quote-string-for-shell ( string )
+  "quote-string-for-shell STRING
+
+   quote the string with ' for the shell.
+  "
+  (concat "\'" string "\'"))
 
 (defvar grail-masked-profiles
   nil
@@ -854,68 +862,50 @@ loads.\n")
             (cons 'and installer-calls)
             (car installer-calls)))) ) ))
 
-(defun grail-run-installer ( installer )
-  "grail-run-installer installer
-
-   run an installer created by grail-define-installer.
-  "
-  (eval installer) )
-
-(defun grail-repair-by-installing ( package installer )
-  "grail-repair-by-installing symbol:PACKAGE list|function:INSTALLER
-
-   Attempt to install PACKAGE and load the missing
-   dependency. INSTALLER is either defined by
-   grail-define-installer or a custom installer function.
-
-   t is returned on success and nil for failure.
-  "
-  (let
-    ((package-name    (symbol-name package)))
-
-    (grail-dist-default-to-packages)
-    (grail-untar-strip-by-el)
-
-    (catch 'installer-abort
-      (condition-case install-trap
-
-        (progn
-          ;; run the installer
-          (cond
-            ((functionp installer) (funcall installer))
-            ((listp installer) (grail-run-installer installer))
-            (t (throw 'grail-profile
-                 '((format "unhandled installer type: not a function or a list %s"
-                     (princ (type-of installer)))))))
-
-          ;; if there wasn't a error update the load path.
-          (grail-extend-load-path)
-
-          ;; try to load it again.
-          (require package) )
-
-        (error
-          (progn
-            (grail-report-fail
-              "grail-repair-by-installing"
-              (format "grail repair of package %s failed" package-name)
-              install-trap)
-            (throw 'installer-abort nil) )) ) ) ))
-
 (defun grail-load ( package installer )
+  (grail-report-info "grail-load" "attempting to load the profile: " (pp-to-string package))
+
   (unless (symbolp package)
-    (message "package is not a symbol"))
+    (grail-signal-fail "grail-load" (format "package \"%s\" is not a symbol" (pp-to-string package))) )
 
-  (let
-    ((trap-result (catch 'grail-profile
-                    (or (require package nil t)
-                        (grail-repair-by-installing package installer))) ))
+  (grail-recover
+    "grail-load"
+    (format "attempting to load profile %s" (symbol-name package))
 
-    (if (listp trap-result)
-      (progn
-        (message "got fail %s" (princ trap-result))
-        nil)
-      trap-result)) )
+    (grail-fail
+      "grail-load retry"
+      "attempting to recover from a failed profile load by installing"
+
+      ;; try and force a unload ignoring errors hoping they are not blockers
+      (grail-ignore
+        "grail-load reset"
+        "unload reset a failed profile"
+
+        ;; force unload
+        (unload-feature package t) )
+
+      ;; try and install ignoring errors hoping they are not blockers
+      (grail-ignore
+        "grail-load install"
+        "performing a install of a failed profile"
+
+        ;; set default dir and archive strip options
+        (grail-dist-default-to-packages)
+        (grail-untar-strip-by-el)
+
+        (cond
+          ((functionp installer) (funcall installer))
+          ((listp installer)     (eval installer))
+          (t                     (grail-signal-fail "grail-load" "unknown installer type" package)) )
+
+        (grail-update-load-path) )
+
+      (require package)
+
+      (grail-report-info "grail-load" "profile unload and install succeeded" package) )
+
+    (require package)
+    (grail-report-info "grail-load" "profile loaded on the first try" package) ))
 
 (defun grail-fetch-docs ( top-level-dir installer strip-level )
   (let

@@ -16,13 +16,6 @@
 ;; lists
 ;;
 
-(defun quote-string-for-shell ( string )
-  "quote-string-for-shell STRING
-
-   quote the string with ' for the shell.
-  "
-  (concat "\'" string "\'"))
-
 (defun list-filter-nil ( list )
   "Filter nil symbols from a list"
   (remq 'nil list))
