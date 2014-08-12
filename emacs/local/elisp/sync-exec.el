@@ -1,12 +1,6 @@
 ;;----------------------------------------------------------------------
 ;; sync-exec.el
 ;;----------------------------------------------------------------------
-(defun sync-exec-quote-args ( arg-list )
-  (mapcar
-    (lambda ( arg )
-      (concat "'" arg "\'"))
-    arg-list) )
-
 (defun sync-exec-buffer ( buffer-name )
   (let
     ((exec-buffer (get-buffer-create buffer-name)))
