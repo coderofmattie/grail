@@ -30,7 +30,7 @@
     (if (and (boundp 'mattie-modeline-vcs) (functionp mattie-modeline-vcs))
       (funcall mattie-modeline-vcs)
       "")
-    (if wc-modeline-status wc-modeline-status "")
+    (if (boundp 'wc-modeline-status) wc-modeline-status "")
     "]"))
 
 (defun setup-mattie-modeline ()
