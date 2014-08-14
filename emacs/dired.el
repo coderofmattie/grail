@@ -10,3 +10,5 @@
 
 (add-hook 'dired-mode-hook 'tame-dired)
 
+
+

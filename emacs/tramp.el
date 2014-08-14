@@ -4,8 +4,6 @@
 ;; tramp setup for emacs.
 ;;----------------------------------------------------------------------
 
-(eval-after-load 'tramp '(setenv "SHELL" "/bin/bash"))
-
 (require 'tramp)
 
 ; tramp-chunksize is defensive to reduce problems with hangs from sending

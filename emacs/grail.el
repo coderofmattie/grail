@@ -475,6 +475,26 @@
 
     (grail-load-user-elisp "grail-profile") )
 
+  ;; load elisp first so I can use it's functions everywhere
+
+  (defconst grail-config-load-ordered '( "elisp.el"))
+
+  (defconst grail-config-load-masked '( "grail.el"
+                                        "grail-load.el"
+                                        "grail-profile.el"
+                                        "configure-frame.el"
+                                        "configure-display.el"
+                                        "load-display.el"))
+
+  (grail-ignore
+    "user-elisp loading"
+    "final loading with of user elisp"
+
+    (mapc
+      (lambda ( ordered-config )
+        (grail-try-user-elisp ordered-config) )
+      grail-config-load-ordered) )
+
   (grail-ignore
     "load system elisp"
     "Loading the OS specific elisp."
@@ -507,23 +527,23 @@
       server-use-tcp t
       server-auth-dir grail-server-state) )
 
-  (grail-ignore
-    "user-elisp loading"
-    "final loading with of user elisp"
+  (let
+    (( config-files (grail-match-path grail-elisp-root
+                      '(("type" "file")
+                        ("path" ".*\.elc?$"))) )
 
-    (grail-try-user-elisp "elisp")
+     (no-load (append grail-config-load-ordered grail-config-load-masked)) )
 
-    ;; only loaded when there is an active terminal.
-    (grail-try-user-elisp "interface")
+    (mapc
+      (lambda (config-file )
+        (unless (member (file-name-nondirectory config-file) no-load)
+          (grail-ignore
+            "User Configuration"
+            (format "loading user configuration %s" config-file)
 
-    (grail-try-user-elisp "user")
+            (grail-try-elisp config-file)) ))
 
-    (grail-try-user-elisp "programming")
-
-    ;; load commands and keys last so they can use definitions from user.el
-    ;; and friends.
-    (grail-try-user-elisp "commands")
-    (grail-try-user-elisp "keys") )
+      config-files) )
 
   (grail-ignore
     "interface loading"

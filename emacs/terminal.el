@@ -56,4 +56,3 @@
     ("t" . full-term)
     ("s" . shell-term)
     ("c" . shell-command) )
-

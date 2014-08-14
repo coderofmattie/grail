@@ -14,3 +14,4 @@
     (turn-on-dwim-tab 'nxml-indent-line)
     (configure-for-buffer-ring "nxml-mode"))
   t)
+
