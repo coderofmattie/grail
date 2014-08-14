@@ -33,7 +33,7 @@
 (mask-grail-profiles "clojure")
 
 ;; re-usable programming modules
-(use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting" "repl")
+(use-grail-profiles 0 "code-highlighting" "code-editing" "code-formatting")
 
 ;; higher level functionality
 (use-grail-profiles 1 "lisp" "code-documentation" "version-control")

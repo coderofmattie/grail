@@ -5,13 +5,6 @@
 (require 'async-exec)
 (require 'sync-exec)
 
-(defun quote-string-for-shell ( string )
-  "quote-string-for-shell STRING
-
-   quote the string with ' for the shell.
-  "
-  (concat "\'" string "\'"))
-
 (defvar grail-masked-profiles
   nil
   "List of grail profiles masked by the user.")
@@ -42,31 +35,32 @@
 
       (mapc
         (lambda ( profile-order )
-          (message "grail: loading order %d -> %s" (car profile-order) (cdr profile-order))
+          (grail-report-info "grail-load-requested-profiles" "order" (car profile-order) "profile" (cdr profile-order))
+
           (mapc
             (lambda ( profile )
               (catch 'skip-profile
                 (when (member profile grail-masked-profiles)
-                  (message "ignoring masked profile %s" profile)
+                  (grail-report-info "ignoring masked profile" profile)
                   (throw 'skip-profile t))
 
-                (message "grail: loading profile %s" (concat grail-local-profiles profile))
-
                 (let
-                  ((trapped (catch 'grail-trap
-                              (catch 'grail-disabled
-                                (grail-try-elisp (concat grail-local-profiles profile)) ))))
+                  ((profile-path (concat grail-local-profiles profile) ))
 
-                  (if (consp trapped)
-                    (progn
-                      (push (cons (car profile-order) profile) grail-failed-profiles)
-                      (message "grail: profile %s failed to load" profile)
-                      (apply 'grail-report-errors
-                        (format "grail: profile %s failed to load" profile) trapped))
-                    (push profile grail-loaded-profiles)) )))
-            (cdr profile-order)))
-          order-sorted)
-      t)))
+                  (grail-report-info "grail-load-requested-profiles" "loading profile" profile-path)
+
+                  (grail-recover
+                    "grail-load-requested-profiles"
+                    (format "attempting to load a profile %s " profile-path)
+
+                    ;; recover is recording the fail
+                    (push (cons (car profile-order) profile) grail-failed-profiles)
+
+                    (grail-load-elisp profile-path)
+                    (push profile grail-loaded-profiles) ) ) ))
+
+            (cdr profile-order) ))
+          order-sorted) )))
 
 (defun grail-retry-failed-profiles ()
   "grail-retry-failed-profiles
@@ -114,29 +108,6 @@
     (unless (equal 0 (call-process-shell-command "rm" nil nil nil "-r" path))
       (grail-signal-fail "grail-recursive-delete-directory"
         (format "path %s is not a directory or the user does not have permissions" path)) ) ))
-
-(defvar grail-dist-default-directory grail-dist-elisp)
-
-(defun grail-dist-default-to-packages ()
-  (setq grail-dist-default-directory grail-dist-elisp))
-
-(defun grail-dist-default-to-docs ()
-  (setq grail-dist-default-directory grail-dist-docs dir-name))
-
-(defun grail-dist-install-directory ( &optional package )
-  "grail-dist-install-directory &optional string:PACKAGE
-
-   Ensure that the installation directory exists. The default is grail-dist-elisp,
-   however for multi-file packages an optional package name can be supplied.
-
-   The path of the installation directory is returned for the installer's use.
-  "
-  (grail-dir-always (expand-file-name
-                             (concat
-                             (if package
-                               (concat grail-dist-default-directory "/" package)
-                               grail-dist-default-directory)
-                               "/"))))
 
 (defun grail-download-dir-and-file-path ( name )
   (let
@@ -248,7 +219,7 @@
     (start-process-shell-command "grail-wget" output-buffer
       "wget"
       "--progress=dot:binary"
-      (quote-string-for-shell url) "-O" (quote-string-for-shell path))
+      (shell-quote-argument url) "-O" (shell-quote-argument path))
     (error
       (progn
         (message "grail-wget-url failed %s" (format-signal-trap trapped-error))
@@ -261,7 +232,7 @@
 (defvar grail-untar-strip-command nil)
 
 (defun grail-untar-strip-by-el ()
-  (setq grail-untar-strip-command (concat "--wildcards" " " (quote-string-for-shell "*.el"))) )
+  (setq grail-untar-strip-command (concat "--wildcards" " " (shell-quote-argument "*.el"))) )
 
 (defun grail-untar-strip-by-depth ( levels )
   (setq grail-untar-strip-command
@@ -285,8 +256,8 @@
           ((equal "bz2" compression) "j")
           (t (signal error (format "grail: error! unsupported compression %s" compression))))
         "f")
-      (quote-string-for-shell path)
-      "-C" (quote-string-for-shell target-dir)
+      (shell-quote-argument path)
+      "-C" (shell-quote-argument target-dir)
       grail-untar-strip-command)
     (error
       (progn
@@ -456,9 +427,9 @@ loads.\n")
       (start-process-shell-command "grail-cvs" output-buffer
         "cvs"
         "-d"
-        (quote-string-for-shell url)
+        (shell-quote-argument url)
         "co"
-        (quote-string-for-shell module)))
+        (shell-quote-argument module)))
     (error
       (progn
         (message "grail-cvs-async failed %s" (format-signal-trap trapped-error))
@@ -502,8 +473,8 @@ loads.\n")
       (start-process-shell-command "grail-git" output-buffer
         "git"
         "clone"
-        (quote-string-for-shell url)
-        (quote-string-for-shell module)))
+        (shell-quote-argument url)
+        (shell-quote-argument module)))
     (error
       (progn
         (message "grail-git-async failed %s" (format-signal-trap trapped-error))
@@ -556,8 +527,8 @@ loads.\n")
       (start-process-shell-command "grail-svn" output-buffer
         "svn"
         "checkout"
-        (quote-string-for-shell url)
-        (quote-string-for-shell module)))
+        (shell-quote-argument url)
+        (shell-quote-argument module)))
     (error
       (progn
         (message "grail-svn-async failed %s" (format-signal-trap trapped-error))
@@ -603,8 +574,8 @@ loads.\n")
       (start-process-shell-command "grail-bzr" output-buffer
         "bzr"
         "branch"
-        (quote-string-for-shell url)
-        (quote-string-for-shell module)))
+        (shell-quote-argument url)
+        (shell-quote-argument module)))
     (error
       (progn
         (message "grail-bzr-async failed %s" (format-signal-trap trapped-error))
@@ -648,8 +619,8 @@ loads.\n")
       (start-process-shell-command "grail-hg" output-buffer
         "hg"
         "clone"
-        (quote-string-for-shell url)
-        (quote-string-for-shell module)))
+        (shell-quote-argument url)
+        (shell-quote-argument module)))
     (error
       (progn
         (message "grail-hg-async failed %s" (format-signal-trap trapped-error))

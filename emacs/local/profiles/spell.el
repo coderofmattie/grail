@@ -10,7 +10,7 @@
   flyspell-issue-message-flag nil)                 ;; don't bog down in bad English.
 
 (unless (executable-find ispell-program-name)
-  (throw 'grail-disabled "aspell not available"))
+  (grail-signal-fail "grail/spell" "aspell executable not found"))
 
 (add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)
 
@@ -34,3 +34,5 @@
 ;; at the point.
 
 (dwim-tab-globalize-context (dwim-tab-make-expander 'dwim-tab-word-trigger 'correct-over-flyspell))
+
+(provide 'grail/spell)
