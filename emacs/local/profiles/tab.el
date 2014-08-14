@@ -1,14 +1,10 @@
 ;;----------------------------------------------------------------------
 ;; tab.el
 ;;----------------------------------------------------------------------
-(grail-load 'hippie-exp (grail-define-installer "hippie-exp"
-                          "pkg"
-                          'hippie-exp))
+(grail-load-package 'hippie-exp "pkg")
 
-(grail-load 'hippie-namespace  (grail-define-installer "hippie-namespace"
-                          "pkg"
-                          'hippie-namespace))
+(grail-load-package 'hippie-namespace "pkg")
 
 (dwim-tab-globalize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'hippie-expand))
 
-(provide 'grail/tab)
+(provide 'profile/tab)

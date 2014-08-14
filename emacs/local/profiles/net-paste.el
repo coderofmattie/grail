@@ -5,14 +5,9 @@
 ;;
 ;; interface to netpaste services
 ;;----------------------------------------------------------------------
-(grail-load 'dpaste (grail-define-installer "dpaste"
-                     "git"
-                     "https://github.com/gregnewman/dpaste.el.git"))
+(grail-load-package 'dpaste "git" "https://github.com/gregnewman/dpaste.el.git")
 
-
-(grail-load 'pastebin (grail-define-installer "elpastebin"
-                         "git"
-                         "https://github.com/nicferrier/elpastebin.git"))
+(grail-load-package 'pastebin "git" "https://github.com/nicferrier/elpastebin.git")
 
 ;; title construction
 
@@ -107,4 +102,4 @@
       (call-interactively destination )
       (message "could not find the pastebin") ) ))
 
-(provide 'grail/paste)
+(provide 'profile/paste)

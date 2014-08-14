@@ -1,11 +1,9 @@
 ;;----------------------------------------------------------------------
 ;; web.el - web development
 ;;----------------------------------------------------------------------
-(require 'remap-assoc-mode)
+(require 'mode-tools)
 
-(grail-load 'web-mode (grail-define-installer "web-mode"
-                          "git"
-                          "https://github.com/fxbois/web-mode.git"))
+(grail-load-package 'web-mode "git" "https://github.com/fxbois/web-mode.git")
 
 (remap-assoc-mode-to 'html-mode 'web-mode)
 (remap-assoc-mode-to 'javascript-mode 'web-mode)
@@ -33,5 +31,5 @@
 
 (add-hook 'web-mode-hook 'web-mode-hook-fn t)
 
-(provide 'grail/web)
+(provide 'profile/web)
 

@@ -4,15 +4,9 @@
 
 ;; adaptive fill for maintaining indentation inside comments
 
-(grail-load 'filladapt (grail-define-installer
-                         "filladapt"
-                         "file"
-                         "http://www.wonderworks.com/download/filladapt.el"))
+(grail-load-package 'filladapt "file" "http://www.wonderworks.com/download/filladapt.el")
 
-(grail-load 'htmlfontify (grail-define-installer
-                          "htmlfontify"
-                          "pkg"
-                          'htmlfontify))
+(grail-load 'htmlfontify "pkg")
 
 (add-hook 'emacs-lisp-mode-hook 'turn-on-filladapt-mode)
 
@@ -23,4 +17,4 @@
 
 ;; I would like to find a mode that lines up columns within code.
 
-(provide 'grail/code-formatting)
+(provide 'profile/code-formatting)

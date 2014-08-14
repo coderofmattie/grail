@@ -6,9 +6,7 @@
 ;; template expansion currently using yasnippet as the engine.
 ;;----------------------------------------------------------------------
 
-(grail-load 'yasnippet (grail-define-installer "yasnippet"
-                         "git"
-                         "https://github.com/capitaomorte/yasnippet.git"))
+(grail-load-package 'yasnippet "git" "https://github.com/capitaomorte/yasnippet.git")
 
 (require 'custom-key)
 (require 'mode-tools)

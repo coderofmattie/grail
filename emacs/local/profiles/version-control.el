@@ -10,17 +10,9 @@
 ;; egg fails with a busted autoload without this require
 (require 'edmacro)
 
-(grail-load 'egg (grail-define-installer "egg"
-                          "git"
-                          "git://github.com/byplayer/egg.git"))
+(grail-load-package 'egg "git" "git://github.com/byplayer/egg.git")
 
-(grail-load 'ahg (grail-define-installer "ahg"
-                     "hg"
-                     "https://bitbucket.org/agriggio/ahg" ))
-
-
-
-;; hg clone https://bitbucket.org/agriggio/ahg
+(grail-load-package 'ahg "hg" "https://bitbucket.org/agriggio/ahg" )
 
 (setq
   vc-handled-backends `(Bzr SVN Git Hg Arch SCCS Mtn CVS RCS)
@@ -418,5 +410,5 @@
 
 (add-hook 'configure-programming-hook 'ver-ctl-hook t)
 
-(provide 'grail/version-control)
+(provide 'profile/version-control)
 

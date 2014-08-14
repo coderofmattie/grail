@@ -4,9 +4,7 @@
 
 ;; third party extensions for general lisp support.
 
-(grail-load 'clojure-mode  (grail-define-installer "clojure"
-                            "pkg"
-                            'clojure-mode))
+(grail-load-package 'clojure-mode "pkg")
 
 ;;----------------------------------------------------------------------
 ;; scheme

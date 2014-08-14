@@ -9,9 +9,7 @@
 ;;----------------------------------------------------------------------
 (require 'thingatpt)
 
-(grail-load 'helm (grail-define-installer "helm"
-                    "git"
-                    "https://github.com/emacs-helm/helm.git"))
+(grail-load-package 'helm "git" "https://github.com/emacs-helm/helm.git")
 
 (require 'helm-config)
 
@@ -142,4 +140,4 @@
   (interactive)
   (helm-browse-project))
 
-(provide 'grail/dwim-complete)
+(provide 'profile/dwim-complete)

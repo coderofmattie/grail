@@ -2,9 +2,7 @@
 ;; notes.el
 ;;----------------------------------------------------------------------
 
-(grail-load 'org (grail-define-installer "org-mode"
-                  "git"
-                   "git://orgmode.org/org-mode.git"))
+(grail-load-package 'org "git" "git://orgmode.org/org-mode.git")
 
 (defun notes-profile/bindings ()
   (let

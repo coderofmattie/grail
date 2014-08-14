@@ -3,13 +3,9 @@
 ;;----------------------------------------------------------------------
 
 ;; builtin to emacs but stay with upstream master
-(grail-load 'python-mode (grail-define-installer "python-mode"
-                          "bzr"
-                          "lp:python-mode"))
+(grail-load-package 'python-mode "bzr" "lp:python-mode")
 
-(grail-load 'python-components-pdb (grail-define-installer "python-components"
-                                    "bzr"
-                                    "lp:python-mode/components-python-mode"))
+(grail-load 'python-components-pdb "bzr" "lp:python-mode/components-python-mode")
 
 (require 'generic-indent)
 
@@ -54,5 +50,5 @@
 
 (lang-repl-mode-define "python-mode" 'profile/python-repl)
 
-(provide 'grail/python)
+(provide 'profile/python)
 

@@ -5,9 +5,7 @@
 (require 'utilities)
 (require 'dwim-tab)
 
-(grail-load 'register-list (grail-define-installer "register-list"
-                         "pkg"
-                         'register-list))
+(grail-load-package 'register-list "pkg")
 
 (defvar reg-keyword-register-map
   "map of keywords to registers" '())
@@ -111,4 +109,4 @@
 
 (dwim-tab-set-register-expand 'register-expand-keyword)
 
-(provide 'grail/registers)
+(provide 'profile/registers)

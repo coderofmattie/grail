@@ -7,9 +7,7 @@
 ;;----------------------------------------------------------------------
 (require 'remap-assoc-mode)
 
-(grail-load 'geiser (grail-define-installer "geiser"
-                    "git"
-                    "git://git.sv.gnu.org/geiser.git"))
+(grail-load-package 'geiser "git" "git://git.sv.gnu.org/geiser.git")
 
 (defconst scheme-profile-geiser-scheme-dir (car (grail-find-package-resource "geiser" "scheme")))
 
@@ -75,6 +73,6 @@
     (turn-on-geiser-mode) )
   t)
 
-(provide 'grail/scheme)
+(provide 'profile/scheme)
 
 
