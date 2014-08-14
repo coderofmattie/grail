@@ -144,20 +144,11 @@
     (let
       ((exit-status (sync-exec-list install-dir (grail-profile-buffer) (grail-run-spec-command spec)) ))
 
-      (message "got here")
       (unless (equal 0 exit-status)
         (grail-signal-fail "grail-run-installer" "non-zero exit-status of installer"
           exit-status) )
 
-      (message "got there")
-
-      (concat install-dir "/" (grail-run-spec-result spec))
-
-      (message "lots of fun %s" (concat install-dir "/" (grail-run-spec-result spec)))
-
-      (concat install-dir "/" (grail-run-spec-result spec))
-      )) )
-
+      (concat install-dir "/" (grail-run-spec-result spec)) )) )
 
 ;;
 ;; ELPA package
@@ -177,6 +168,8 @@
   "
   (let
     (( install-path  (concat base-dir "/" name) ))
+
+    (grail-dir-always base-dir)
 
     (with-temp-buffer
       (url-insert-file-contents url)
