@@ -4,7 +4,7 @@
 ;; comprehensive tags support
 ;;----------------------------------------------------------------------
 (require 'command-queue)
-(require 'cm-string)
+;; (require 'cm-string)
 
 (require 'search-trees)
 
