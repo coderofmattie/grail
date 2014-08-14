@@ -138,6 +138,8 @@
   "
   (grail-report-info "grail-run-installer" "starting install with dir,command" install-dir (grail-run-spec-command spec))
 
+  (grail-dir-always install-dir)
+
   (with-current-buffer (grail-show-buffer)
     (let
       ((exit-status (sync-exec-list install-dir (grail-profile-buffer) (grail-run-spec-command spec)) ))
