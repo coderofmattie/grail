@@ -48,7 +48,7 @@
 ;; load-path construction
 ;;
 
-(defun filter-path-by-attributes ( path filter-name filter-value )
+(defun grail-match-path-attributes ( path filter-name filter-value )
   "create predicate filters for path/mode values"
 
   (catch 'result
@@ -67,14 +67,14 @@
           (throw 'result t))) )
     nil))
 
-(defmacro filter-path-with-match-sense ( path filter &rest body )
+(defmacro grail-match-path-logic ( path filter &rest body )
   `(if (eq 'not (car ,filter))
-     (when (filter-path-by-attributes ,path (car (cdr ,filter)) (car (cdr (cdr ,filter))))
+     (when (grail-match-path-attributes ,path (car (cdr ,filter)) (car (cdr (cdr ,filter))))
        ,@body)
-     (unless (filter-path-by-attributes ,path (car ,filter) (car (cdr ,filter)))
+     (unless (grail-match-path-attributes ,path (car ,filter) (car (cdr ,filter)))
        ,@body) ) )
 
-(defun filter-dir-by-attributes ( directory filters )
+(defun grail-match-path ( directory filters )
   (let
     ((contents (directory-files-and-attributes directory ))
      (filtered nil))
@@ -82,7 +82,7 @@
     (mapc (lambda ( path )
             (catch 'eliminate
               (mapc (lambda ( filter )
-                      (filter-path-with-match-sense path filter
+                      (grail-match-path-logic path filter
                         (throw 'eliminate t)))
                 filters)
 
@@ -111,7 +111,7 @@
 (defun grail-dirs ( path )
   (if (and path (grail-dir-if-ok path))
     (grail-filter-dirs
-      (filter-dir-by-attributes path
+      (grail-match-path path
         '(("type" "dir")
            (not "path" "^\.\.?$")) ))
     '()) )
@@ -119,7 +119,7 @@
 (defun grail-recurse-load-path ( dir )
   (when (grail-dir-if-ok dir)
     (let
-      (( elisp-files (filter-dir-by-attributes dir
+      (( elisp-files (grail-match-path dir
                        '(("type" "file")
                          ("path" ".*\.elc?$")) ) )
         ( elisp-dirs nil ))
@@ -164,7 +164,7 @@
       (when (file-accessible-directory-p dir)
         (let
           (( sub-dirs
-             (filter-dir-by-attributes dir
+             (grail-match-path dir
                '(("type" "dir")
                  (not "path" "^\.\.?$"))) ))
 
@@ -240,7 +240,7 @@
       (if (file-accessible-directory-p package-dir)
         (let
           (( found-paths
-             (filter-dir-by-attributes package-dir
+             (grail-match-path package-dir
                `(("path" ,resource))) ))
 
           (when found-paths
@@ -248,7 +248,7 @@
 
           (let
             (( sub-dirs
-               (filter-dir-by-attributes package-dir
+               (grail-match-path package-dir
                  '(("type" "dir")
                     (not "path" "^\.\.?$"))) ))
 
