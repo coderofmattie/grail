@@ -326,53 +326,67 @@
     "The directory containing Grail profiles modules.")
 
   (defconst grail-local-emacs
-    (concat grail-local-dir "emacs/")
+    (concat grail-local-dir "/emacs/")
     "The directory containing Emacs packages that over-ride the packages
      distributed with Emacs.")
 
   (defconst grail-local-elisp
-    (concat grail-local-dir "elisp/")
+    (concat grail-local-dir "/elisp/" )
     "The directory containing Emacs libraries created and maintained by the
      user.")
 
+  (defconst grail-local-templates
+    (concat grail-local-dir "/templates/" )
+    "local templates maintained by the user.")
+
   (defconst grail-dist-dir
-    (concat grail-elisp-root "dist/")
+    (concat grail-elisp-root "/dist/")
     "The directory for managing distributed packages")
-
-  (defconst grail-dist-archive
-    (concat grail-dist-dir "archive/")
-    "The directory for managing distributed packages")
-
-  (defconst grail-dist-docs
-    (concat grail-dist-dir "docs/")
-    "the directory containing third party docs")
-
-  (defconst grail-dist-elisp
-    (concat grail-dist-dir "elisp/")
-    "The directory containing third-party elisp extensions of Emacs.")
 
   (defconst grail-dist-elpa
     (concat grail-dist-dir "elpa/")
     "ELPA managed third party elisp.")
 
+  (defconst grail-dist-archive
+    (concat grail-dist-dir "/archive/")
+    "The directory for managing distributed packages")
+
+  (defconst grail-dist-docs
+    (concat grail-dist-dir "/docs/")
+    "the directory containing third party docs")
+
+  (defconst grail-dist-templates
+    (concat grail-dist-dir "/templates/")
+    "the directory containing third party docs")
+
+  (defconst grail-elisp-dir "elisp/")
+  (defconst grail-dist-elisp
+    (concat grail-dist-dir "/" grail-elisp-dir)
+    "The directory containing third-party elisp extensions of Emacs.")
+
+  (defconst grail-cvs-dir "cvs/")
   (defconst grail-dist-cvs
-    (concat grail-dist-dir "cvs/")
+    (concat grail-dist-dir "/" grail-cvs-dir)
     "cvs version control managed third party elisp")
 
+  (defconst grail-bzr-dir "bzr/")
   (defconst grail-dist-bzr
-    (concat grail-dist-dir "bzr/")
+    (concat grail-dist-dir "/" grail-bzr-dir)
     "bzr version control managed third party elisp")
 
+  (defconst grail-git-dir "git/")
   (defconst grail-dist-git
-    (concat grail-dist-dir "git/")
+    (concat grail-dist-dir "/" grail-git-dir)
     "git version control managed third party elisp")
 
+  (defconst grail-svn-dir "svn/")
   (defconst grail-dist-svn
-    (concat grail-dist-dir "svn/")
+    (concat grail-dist-dir "/" grail-svn-dir)
     "subversion version control managed third party elisp")
 
+  (defconst grail-hg-dir "hg/")
   (defconst grail-dist-hg
-    (concat grail-dist-dir "hg/")
+    (concat grail-dist-dir "/" grail-hg-dir)
     "mercurial version control managed third party elisp")
 
   (defvar grail-elpa-load-path nil

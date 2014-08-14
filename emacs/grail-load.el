@@ -93,48 +93,49 @@
               (concat directory "/" (car path-with-attributes)) )
       filtered) ))
 
-(defun grail-filter-directory-list ( dir-list )
-  (let
-    ((exists-list nil))
+(defun grail-filter-dirs ( dir-list )
+  (cond
+    ((eq nil dir-list)   '() )
+    ((listp dir-list)    (let
+                           ((exists-list nil))
 
-    (if (listp dir-list)
-      (mapc (lambda ( dir )
-              (when (grail-dir-if-ok dir)
-                (setq exists-list (cons dir exists-list))) )
-        dir-list)
-      (when (grail-dir-if-ok dir-list)
-        (setq exists-list (list dir-list))) )
-    exists-list))
+                           (mapc (lambda ( dir )
+                                   (when (grail-dir-if-ok dir)
+                                     (setq exists-list (cons dir exists-list))) )
+                             dir-list)
+
+                           exists-list) )
+    ((stringp dir-list)  (if (grail-dir-if-ok dir-list) (list dir-list) '()) )
+    (t                   (grail-signal-fail "grail-filter-dirs" "checking directory accessibility" "cannot read directory") ) ))
+
+(defun grail-dirs ( path )
+  (if (and path (grail-dir-if-ok path))
+    (grail-filter-dirs
+      (filter-dir-by-attributes path
+        '(("type" "dir")
+           (not "path" "^\.\.?$")) ))
+    '()) )
 
 (defun grail-recurse-load-path ( dir )
-  (if (file-accessible-directory-p dir)
+  (when (grail-dir-if-ok dir)
     (let
-      (( elisp-files
-         (filter-dir-by-attributes dir
-           '(("type" "file")
-             ("path" ".*\.elc?$"))) )
+      (( elisp-files (filter-dir-by-attributes dir
+                       '(("type" "file")
+                         ("path" ".*\.elc?$")) ) )
         ( elisp-dirs nil ))
 
       (when elisp-files
         (setq elisp-dirs (cons dir elisp-dirs)))
 
-      (let
-        (( sub-dirs
-           (filter-dir-by-attributes dir
-             '(("type" "dir")
-               (not "path" "^\.\.?$"))) ))
+      (mapc
+        (lambda ( dir )
+          (let
+            ((next-level (grail-recurse-load-path dir) ))
 
-        (when sub-dirs
-          (mapc
-            (lambda ( dir )
-              (let
-                (( next-level (grail-recurse-load-path dir) ))
-
-                (when next-level
-                  (setq elisp-dirs (append next-level elisp-dirs))) ))
-            sub-dirs)) )
-      elisp-dirs)
-    nil))
+            (when next-level
+                  (setq elisp-dirs (append next-level elisp-dirs)) ) ) )
+        (grail-dirs dir) )
+      elisp-dirs) ))
 
 (defmacro grail-new-load-path ( &rest body )
   `(let
@@ -146,7 +147,7 @@
           `(progn
              (setq search-results
                (if (listp ,path)
-                 (grail-filter-directory-list ,path)
+                 (grail-filter-dirs ,path)
                  (grail-recurse-load-path ,path)))
 
              (when search-results

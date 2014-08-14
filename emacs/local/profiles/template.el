@@ -38,46 +38,14 @@
 ;; cannot be turned off
 (strip-minor-mode-keymap 'yas-minor-mode)
 
-(defconst yasnippet-local-templates
-  (expand-file-name (concat grail-elisp-root "templates/yasnippet/"))
-  "the yasnippet tree path relative to grail-elisp-root")
-
-(defconst yasnippet-collections
-  '(("rejeep" "https://github.com/rejeep/yasnippets.git")
-    ("local" nil)))
-
 (defun templates-update-collections ()
-  (let
-    ((new-dirs nil))
 
-    (mapc
-      (lambda ( dir )
-        (when (file-accessible-directory-p dir)
-          (setq new-dirs (cons dir new-dirs))) )
-      yas-snippet-dirs)
+  ;; the easiest way to update is simply to combine all the paths in a ordered way. delete-dups deletes
+  ;; subsequent dups so redundant paths are removed in an ordered way preserving precedence.
+  (setq yas-snippet-dirs
+    (delete-dups (append (list grail-local-templates) (grail-dirs grail-dist-templates) yas-snippet-dirs)) )
 
-    (mapc
-      (lambda ( collection )
-        (let*
-          ((collection-name (car collection))
-           (collection-dir (concat yasnippet-local-templates "/" collection-name "/")))
-
-          (if (file-directory-p collection-dir)
-            (setq new-dirs (cons collection-dir new-dirs))
-            (let
-              ((retrieve (cadr collection)))
-
-              (if retrieve
-                (progn
-                  (grail-git-templates yasnippet-local-templates collection-name retrieve)
-                  (setq new-dirs (cons collection-dir new-dirs))
-                  (message "templates: installed collection %s" collection-name))
-                (message "templates: no way to install missing collection %s" collection-name)) )) ))
-      yasnippet-collections)
-
-    (setq yas-snippet-dirs new-dirs)
-
-    (yas-reload-all) ))
+  (yas-reload-all) )
 
 (templates-update-collections)
 
