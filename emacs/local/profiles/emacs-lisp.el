@@ -85,4 +85,4 @@
 
 (add-hook 'emacs-lisp-mode-hook 'emacs-lisp/profile t)
 
-(provide 'grail/emacs-lisp)
+(provide 'profile/emacs-lisp)

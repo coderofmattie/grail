@@ -5,4 +5,4 @@
 
 (add-hook 'find-file-hook 'buffer-display-status t)
 
-(provide 'grail/activate-buffer-status)
+(provide 'profile/activate-buffer-status)

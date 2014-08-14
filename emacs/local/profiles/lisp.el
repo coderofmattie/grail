@@ -52,4 +52,4 @@
   (lisp-smart-navigation)
   (lisp-smart-parens) )
 
-(provide 'grail/lisp)
+(provide 'profile/lisp)

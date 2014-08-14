@@ -28,4 +28,4 @@
 
 (add-hook 'lisp-mode-hook 'profile/common-lisp t)
 
-(provide 'grail/common-lisp)
+(provide 'profile/common-lisp)

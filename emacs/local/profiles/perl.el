@@ -2,7 +2,7 @@
 ;; perl5
 ;;----------------------------------------------------------------------
 (require 'cperl-mode)
-(require 'remap-assoc-mode)
+(require 'mode-tools)
 
 (remap-assoc-mode-to 'perl-mode 'cperl-mode)
 
@@ -42,5 +42,5 @@
     (setq sp-escape-char "\\"))
   t)
 
-(provide 'grail/perl)
+(provide 'profile/perl)
 
