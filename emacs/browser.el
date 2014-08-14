@@ -49,4 +49,3 @@
   (make-variable-buffer-local 'browse-url-browser-function)
   (setq browse-url-browser-function (or wrapper-fn browser-profile-url-command)))
 
-(provide 'grail/browser)
