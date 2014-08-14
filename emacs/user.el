@@ -184,12 +184,3 @@
 
 (setq auto-mode-alist
   (cons '("\\.firewall$" . conf-mode) auto-mode-alist) )
-
-;;----------------------------------------------------------------------
-;; Beta features
-;;----------------------------------------------------------------------
-
-;; beta features are commands that are in development, usable, but
-;; require some more work for completion.
-
-(grail-try-user-elisp "beta")
