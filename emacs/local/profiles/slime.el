@@ -88,3 +88,5 @@
 
 (add-hook 'lisp-mode-hook 'slime/lisp-mode t)
 
+(provide 'grail/slime)
+

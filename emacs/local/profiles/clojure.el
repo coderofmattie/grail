@@ -29,3 +29,5 @@
 
 ;;     (substitute-key-definition 'reindent-then-newline-and-indent nil clojure-mode-map)
 ;;     (configure-for-evaluation 'slime-eval-defun 'slime-eval-last-expression 'slime-eval-region 'slime-eval-buffer) ))
+
+(provide 'grail/clojure)

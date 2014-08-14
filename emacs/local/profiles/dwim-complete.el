@@ -141,3 +141,5 @@
   "dwim-complete vcs for file completion: use <spc> for contents search."
   (interactive)
   (helm-browse-project))
+
+(provide 'grail/dwim-complete)

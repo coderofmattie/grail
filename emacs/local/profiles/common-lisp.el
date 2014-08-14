@@ -27,3 +27,5 @@
   (turn-on-dwim-tab 'lisp-indent-line))
 
 (add-hook 'lisp-mode-hook 'profile/common-lisp t)
+
+(provide 'grail/common-lisp)

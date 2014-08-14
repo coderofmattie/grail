@@ -35,3 +35,5 @@
   (flyspell-mode) )
 
 (add-hook 'org-mode-hook 'notes-profile/setup)
+
+(provide 'grail/notes)

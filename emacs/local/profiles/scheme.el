@@ -75,3 +75,6 @@
     (turn-on-geiser-mode) )
   t)
 
+(provide 'grail/scheme)
+
+

@@ -216,3 +216,5 @@
   (lambda ()
     (templates/mode-setup))
   t)
+
+(provide 'grail/template)

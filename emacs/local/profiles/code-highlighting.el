@@ -19,3 +19,5 @@
   paren-sexp-mode 'match)
 
 (paren-activate)
+
+(provide 'grail/code-highlighting)

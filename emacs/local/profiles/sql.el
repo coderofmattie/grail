@@ -7,3 +7,5 @@
                      "http://www.emacswiki.org/cgi-bin/wiki/download/plsql.el"))
 
 (setq plsql-indent 2)
+
+(provide 'grail/sql)

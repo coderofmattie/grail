@@ -27,5 +27,6 @@
 (add-hook 'jabber-chat-mode-hook 'jabber-emacs-in-ring t)
 (add-hook 'jabber-roster-mode-hook 'jabber-emacs-in-ring t)
 
+(provide 'grail/jabber)
 
 

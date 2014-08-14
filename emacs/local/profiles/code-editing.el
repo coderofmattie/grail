@@ -19,3 +19,5 @@
 (defun procedural-smart-parens-editing ()
   (interactive)
   (smartparens-mode 1))
+
+(provide 'grail/code-editing)

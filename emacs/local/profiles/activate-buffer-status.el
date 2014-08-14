@@ -4,3 +4,5 @@
 (require 'buffer-status)
 
 (add-hook 'find-file-hook 'buffer-display-status t)
+
+(provide 'grail/activate-buffer-status)

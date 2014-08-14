@@ -32,3 +32,6 @@
   (turn-on-dwim-tab 'web-mode-indent-line))
 
 (add-hook 'web-mode-hook 'web-mode-hook-fn t)
+
+(provide 'grail/web)
+

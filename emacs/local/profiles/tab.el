@@ -10,3 +10,5 @@
                           'hippie-namespace))
 
 (dwim-tab-globalize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'hippie-expand))
+
+(provide 'grail/tab)

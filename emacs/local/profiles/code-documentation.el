@@ -47,3 +47,5 @@
     browse-url-browser-function 'code-documentation-browse-action)
 
   (configure-for-docs 'code-documentation-browse-action))
+
+(provide 'grail/code-documentation)

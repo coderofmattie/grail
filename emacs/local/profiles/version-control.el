@@ -417,3 +417,6 @@
   (ver-ctl-log-bindings))
 
 (add-hook 'configure-programming-hook 'ver-ctl-hook t)
+
+(provide 'grail/version-control)
+

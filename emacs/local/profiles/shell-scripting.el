@@ -33,3 +33,5 @@
     (procedural-smart-parens-editing)
     (turn-on-dwim-tab))
   t)
+
+(provide 'grail/shell-scripting)

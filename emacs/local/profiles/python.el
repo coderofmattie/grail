@@ -53,3 +53,6 @@
   )
 
 (lang-repl-mode-define "python-mode" 'profile/python-repl)
+
+(provide 'grail/python)
+

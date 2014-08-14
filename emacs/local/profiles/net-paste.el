@@ -107,6 +107,4 @@
       (call-interactively destination )
       (message "could not find the pastebin") ) ))
 
-
-
-
+(provide 'grail/paste)

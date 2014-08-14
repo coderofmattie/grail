@@ -22,3 +22,5 @@
 (eval-after-load 'cmuscheme  '(add-hook 'scheme-mode-hook     'turn-on-filladapt-mode))
 
 ;; I would like to find a mode that lines up columns within code.
+
+(provide 'grail/code-formatting)

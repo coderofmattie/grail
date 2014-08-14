@@ -41,3 +41,6 @@
     (procedural-smart-parens-editing)
     (setq sp-escape-char "\\"))
   t)
+
+(provide 'grail/perl)
+
