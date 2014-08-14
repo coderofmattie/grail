@@ -1,51 +1,10 @@
 ;;;----------------------------------------------------------------------
 ;; grail-load.el
 ;;----------------------------------------------------------------------
-
-;; grail-fn is a library of functions required by grail to boot. These
-;; functions are seperated from grail itself to minimize the
-;; opportunities for errors to occur in the earliest stage of loading,
-;; and to facilitate compilation.
 (require 'cl)
 
-;;----------------------------------------------------------------------
-;; general lisp functions
-;;----------------------------------------------------------------------
-
 ;;
-;; lists
-;;
-
-(defun list-filter-nil ( list )
-  "Filter nil symbols from a list"
-  (remq 'nil list))
-
-(defun seq-filter-nil ( &rest list-seq )
-  "Filter nil symbols from a sequence."
-  (list-filter-nil list-seq))
-
-(defun map-filter-nil ( func &rest seq )
-  "map-filter-nil FUNC LIST
-
-   Filter the nil elements of LIST from the input and output of
-   function FUNC.
-
-   FUNC is applied to the non-nil elements of SEQ ala mapcar. The
-   result is either a list or nil if filtering eliminated all
-   output."
-  (let
-    ((rvalue nil))
-
-    (dolist (element seq)
-      (when element
-        (let
-          ((transform (funcall func element)))
-          (when transform
-            (push transform rvalue)))))
-    (reverse rvalue)))
-
-;;
-;; load-path construction
+;; grail-match - return a list of paths that match a given criteria
 ;;
 
 (defun grail-match-path-attributes ( path filter-name filter-value )
@@ -93,7 +52,11 @@
               (concat directory "/" (car path-with-attributes)) )
       filtered) ))
 
-(defun grail-filter-dirs ( dir-list )
+;;
+;; grail-match - return a list of paths that match a given criteria
+;;
+
+(defun grail-dirs-filter ( dir-list )
   (cond
     ((eq nil dir-list)   '() )
     ((listp dir-list)    (let
@@ -106,11 +69,11 @@
 
                            exists-list) )
     ((stringp dir-list)  (if (grail-dir-if-ok dir-list) (list dir-list) '()) )
-    (t                   (grail-signal-fail "grail-filter-dirs" "checking directory accessibility" "cannot read directory") ) ))
+    (t                   (grail-signal-fail "grail-dirs-filter" "checking directory accessibility" "cannot read directory") ) ))
 
 (defun grail-dirs ( path )
   (if (and path (grail-dir-if-ok path))
-    (grail-filter-dirs
+    (grail-dirs-filter
       (grail-match-path path
         '(("type" "dir")
            (not "path" "^\.\.?$")) ))
@@ -147,7 +110,7 @@
           `(progn
              (setq search-results
                (if (listp ,path)
-                 (grail-filter-dirs ,path)
+                 (grail-dirs-filter ,path)
                  (grail-recurse-load-path ,path)))
 
              (when search-results
