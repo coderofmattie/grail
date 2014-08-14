@@ -35,4 +35,3 @@
 
 (dwim-tab-globalize-context (dwim-tab-make-expander 'dwim-tab-word-trigger 'correct-over-flyspell))
 
-(provide 'grail/spell)

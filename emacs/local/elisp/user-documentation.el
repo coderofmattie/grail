@@ -1,6 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; code-documentation
 ;;----------------------------------------------------------------------
+(require 'user-browser)
 
 (defvar-local documentation-buffer-name nil)
 (defvar-local documentation-ring-name nil)
@@ -48,4 +49,4 @@
 
   (configure-for-docs 'code-documentation-browse-action))
 
-(provide 'grail/code-documentation)
+(provide 'user/code-documentation)
