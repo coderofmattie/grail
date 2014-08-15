@@ -67,7 +67,7 @@
 
           (current-buffer))) )) )
 
-(defvar custom-keys-descriptions '()
+(defvar custom-keys-descriptions (make-hash-table :test 'equal)
   "descriptions of custom key groups")
 
 (defun keybindings-help-global ()
@@ -81,8 +81,8 @@
       (erase-buffer)
       (insert "Custom Key Groups\n")
 
-      (mapc
-        (lambda (x)
+      (maphash
+        (lambda ( key x )
 
           (insert (format "keys: C-c <%s> %s\n%s\n\n"
                     (elt x 0)
@@ -99,8 +99,8 @@
   (vector chord description keymap) )
 
 (defun custom-key-group-register ( chord description key-map)
-  (setq custom-keys-descriptions
-    (cons (custom-key-group-new chord description key-map) custom-keys-descriptions)) )
+  (unless (gethash chord custom-keys-descriptions)
+    (puthash chord (custom-key-group-new chord description key-map) custom-keys-descriptions)) )
 
 (defmacro custom-key-group ( description chord global &rest body )
   `(let

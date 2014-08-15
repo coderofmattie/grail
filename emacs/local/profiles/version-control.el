@@ -156,7 +156,7 @@
         (message "no log selected!")) )))
 
 (defun ver-ctl-log-bindings ()
-  (custom-key-group "code editing" "l" nil
+  (custom-key-group "feature logs" "l" nil
     ("l" . ver-ctl-log-file-list)
     ("c" . ver-ctl-log-file-create)
     ("o" . ver-ctl-log-file-open)
