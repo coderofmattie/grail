@@ -51,3 +51,11 @@
     ("s" . save-some-buffers)
     ("b" . hexl-find-file))
 
+(custom-key-group "mark" "m" t
+  ("x" . exchange-point-and-mark)
+  ("p" . push-mark-command)
+  ("g" . pop-global-mark))
+
+
+
+
