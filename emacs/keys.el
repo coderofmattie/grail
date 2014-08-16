@@ -4,6 +4,7 @@
 ;; keybinding tools and configuration.
 ;;----------------------------------------------------------------------
 (require 'custom-key)
+(require 'user-commands)
 
 ;; remove keybindings
 (global-unset-key (kbd "<S-tab>"))
