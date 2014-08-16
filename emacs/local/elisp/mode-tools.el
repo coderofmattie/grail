@@ -49,6 +49,6 @@
     (lambda (pair)
       (if (eq (cdr pair) old-mode)
         (setcdr pair new-mode)))
-    (append auto-mode-alist interpreter-mode-alist)) )
+    (append magic-mode-alist auto-mode-alist interpreter-mode-alist)) )
 
 (provide 'mode-tools)
