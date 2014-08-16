@@ -83,7 +83,7 @@
   (interactive)
   (x-select-text (filter-buffer-substring (region-beginning) (region-end))) )
 
-(defun maximize ()
+(defun maximize-frame ()
   "toggle maximization the current frame"
   (interactive)
   (cond
@@ -101,7 +101,7 @@
 
     ((message "window system %s is not supported by maximize" (symbol-name (window-system)))) ))
 
-(defun fullscreen ()
+(defun fullscreen-frame ()
   (interactive)
   (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
     '(2 "_NET_WM_STATE_FULLSCREEN" 0)))

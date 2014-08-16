@@ -10,9 +10,11 @@
 
 (custom-key-group "window manager" "w" t
   ("k" . delete-frame)
-  ("m" . delete-other-windows)
-  ("h" . split-window-horizontally)
-  ("v" . split-window-vertically) )
+  ("x" . delete-other-windows)
+  ("s" . split-window-horizontally)
+  ("v" . split-window-vertically)
+  ("m" . maximize-frame)
+  ("f" . fullscreen-frame) )
 
 (global-set-key (kbd "C-x e") 'eval-expression)
 
