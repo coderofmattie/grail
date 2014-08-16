@@ -64,7 +64,9 @@
   ;; run hooks for programming configuration
   (run-custom-hooks configure-programming-hook)
 
-  (configure-for-buffer-ring buffer-ring-mode)
+  ;; buffer-ring
+  (buffer-ring/local-keybindings)
+  (buffer-ring/add buffer-ring-mode)
 
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
