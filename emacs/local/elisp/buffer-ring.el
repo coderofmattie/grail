@@ -470,7 +470,7 @@
   (global-set-key (kbd "<M-right>")  'buffer-ring/next)
   (global-set-key (kbd "<M-left>")   'buffer-ring/prev)
 
-  (custom-key-group "buffers" "b" t
+  (custom-key-group "buffer ring" "b" t
     ("b" . buffer-ring/list-buffers)
     ("r" . buffer-torus/list-rings)
     ("a" . buffer-ring/add)
