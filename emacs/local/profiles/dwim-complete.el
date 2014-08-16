@@ -112,10 +112,21 @@
 (defun dwim-complete/buffer ()
   (get-buffer-create "*complete*"))
 
+
+;; a buffer local value for the mode to use for dwim. nil
+;; by default so the major-mode is the actual default.
+(defvar dwim-mode nil)
+
+(defun dwim-complete/set-mode ( mode )
+  (set (make-local-variable 'dwim-mode) mode))
+
+(defun dwim-complete/get-mode ()
+  (or dwim-mode major-mode))
+
 (defun dwim-complete/complete ()
   (interactive)
   (let
-    (( completions (dwim-complete-mode-get-sources major-mode) ))
+    (( completions (dwim-complete-mode-get-sources (dwim-complete/get-mode)) ))
 
     (if completions
       (apply 'dwim-complete/helm
@@ -123,7 +134,7 @@
         (dwim-complete-behind-point)
         (dwim-complete/buffer)
         completions)
-      (message "no completions available for mode: %s" major-mode)) ))
+      (message "no completions available for mode: %s" (dwim-complete/get-mode)) ) ))
 
 (defun dwim-complete/for-buffer ()
   (make-local-variable 'dwim-complete-stem-start)
