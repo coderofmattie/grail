@@ -38,17 +38,5 @@
   ;; has to be a function because it is not defined until run-python is called.
   (concat "*" python-shell-buffer-name "*"))
 
-(defun profile/python-repl ( first-call )
-  ;; this is all messed up because repl is messed up.
-
-  (run-python profile/python-interpeter-exec)
-  (lang-repl-mode-add "python-mode" profile/python-interpeter-buffer)
-
-  ;; (when first-call
-  ;;   (lang-repl-mode-add "python-mode" profile/python-interpeter-buffer))
-  )
-
-(lang-repl-mode-define "python-mode" 'profile/python-repl)
-
 (provide 'profile/python)
 

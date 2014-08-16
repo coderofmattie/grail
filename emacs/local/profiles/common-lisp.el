@@ -3,6 +3,8 @@
 ;;----------------------------------------------------------------------
 (defvar cl-function-decl ".*(defun.*")
 
+(defconst cl-lisp-name "cl-lisp")
+
 (defun cl-list-functions ()
   (interactive)
   (occur cl-function-decl))
@@ -18,7 +20,7 @@
                             ("\\.lisp$" . lisp-mode)) auto-mode-alist ))
 
 (defun profile/common-lisp ()
-  (configure-for-programming 'cl-list-functions "lisp-mode")
+  (configure-for-programming 'cl-list-functions cl-lisp-name)
 
   (lisp-smart-parens-editing)
 
