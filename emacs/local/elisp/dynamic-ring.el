@@ -41,6 +41,14 @@
   (when (car ring-struct)
     (aref (car ring-struct) dyn-ring-value)))
 
+(defun dyn-ring-element ( ring-struct )
+  "dyn-ring-element RING
+
+   Return the RING's head element.
+  "
+  (when (car ring-struct)
+    (car ring-struct)) )
+
 ;;
 ;; ring elements
 ;;
