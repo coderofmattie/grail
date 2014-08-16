@@ -170,7 +170,7 @@
         ((search-name (buffer-ring/buffer-name search-buffer))
          (discover-id (buffer-ring/buffer-id search-name)) )
 
-        (when (and discover-id (string-equal id discover-id))
+        (when (equal id discover-id)
           (throw 'found-buffer search-name)) ))
     nil))
 
@@ -268,23 +268,24 @@
       (remove-hook 'kill-buffer-hook 'buffer-ring-delete t))
     (buffer-ring/info "This buffer is not in a ring") ))
 
-(defun buffer-ring/fix ()
+(defun buffer-ring/fix ( &optional other-ring )
   "buffer-ring/fix
 
   fix a buffer ring by pruning any references to buffers that do not exist."
   (interactive)
 
-  (let
-    ((count 0))
+  (let*
+    (( with-ring (or other-ring buffer-ring))
+     (count 0))
 
-    (dyn-ring-traverse buffer-ring
+    (dyn-ring-traverse with-ring
       (lambda ( ring-element )
         (let
           (( search (buffer-ring/search-buffer-list (dyn-ring-element-value ring-element)) ))
 
           (unless search
             (setq count (+ count 1))
-            (dyn-ring-delete buffer-ring ring-element) ) )) )
+            (dyn-ring-delete with-ring ring-element) ) )) )
 
     (when (> count 0)
       (message "buffer-ring: fixed %s dead buffer references" count))
@@ -322,24 +323,26 @@
       (switch-to-buffer target-buffer)
       (buffer-ring/info "buffer to switch to not found .. very bad")) ))
 
-(defun buffer-ring/rotate ( direction )
-  (if (buffer-ring/buffer-id)
-    (if (< (dyn-ring-size (buffer-ring/fix)) 2)
+(defun buffer-ring/rotate ( direction &optional other-ring )
+  (let
+    (( with-ring (or other-ring buffer-ring) ))
+
+    (if (< (dyn-ring-size (buffer-ring/fix with-ring)) 2)
       (buffer-ring/info "There is only one buffer in the ring.")
       (progn
-        (funcall direction buffer-ring)
-        (buffer-ring/switch-to-buffer (dyn-ring-value buffer-ring)) ))
+        (funcall direction with-ring)
+        (buffer-ring/switch-to-buffer (dyn-ring-value with-ring)) ))
     (message "buffer not in ring.")) )
 
-(defun buffer-ring/prev ()
+(defun buffer-ring/prev ( &optional other-ring )
   "buffer-ring/prev
 
    Switch to the previous buffer in the buffer ring.
   "
   (interactive)
-  (buffer-ring/rotate 'dyn-ring-rotate-left))
+  (buffer-ring/rotate 'dyn-ring-rotate-left other-ring))
 
-(defun buffer-ring/next ()
+(defun buffer-ring/next ( &optional other-ring )
   "buffer-ring/next
 
    Switch to the previous buffer in the buffer ring.
@@ -367,7 +370,7 @@
           (lambda ( buffer-ring )
             (not (dyn-ring-empty-p (cdr buffer-ring)))))
       (progn
-        (buffer-ring/info "switching to ring %s" (buffer-torus/current-name))
+        (buffer-ring/info "switching to ring" (buffer-torus/current-name))
         (let
           ((current-head (dyn-ring-value (cdr (dyn-ring-value buffer-ring-torus)))))
 
@@ -391,7 +394,7 @@
   (buffer-torus/rotate 'dyn-ring-rotate-left))
 
 (defun buffer-torus/list-rings ()
-  "buffer-torus/list-rings.
+  "buffer-torus/list-rings
 
    List the buffer rings in the buffer torus.
   "
@@ -409,6 +412,31 @@
       (dyn-ring-map buffer-ring-torus 'car))
 
     (buffer-ring/info "buffer rings: %s" ring-list) ))
+
+(defun buffer-torus/search-rings ( ring-name )
+  "buffer-torus/search-rings RING-NAME
+
+   search the torus for a ring matching RING-NAME
+  "
+  (interactive)
+
+  (catch 'found
+    (dyn-ring-map buffer-ring-torus
+      (lambda ( ring )
+        (when (string-equal (car ring) ring-name)
+          (throw 'found (cdr ring))) ) )
+    nil) )
+
+(defun buffer-torus/get-ring-buffer ( ring-name )
+  "buffer-torus/get-ring RING-NAME
+
+   return the buffer ring for RING-NAME
+  "
+  (let
+    (( found-ring (buffer-torus/search-rings ring-name) ))
+
+    (when found-ring
+      (buffer-ring/search-buffer-list (dyn-ring-value found-ring)) ) ))
 
 (defun buffer-torus/delete ()
   "buffer-torus/delete
