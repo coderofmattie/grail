@@ -28,6 +28,14 @@
   (when defun-fn
     (set (make-local-variable  'borg-repl/eval-defun) defun-fn)) )
 
+(defun borg-repl/invoke-binding ( binding )
+  (if (commandp binding)
+    (let
+      (( current-prefix-arg nil ))
+
+      (call-interactively binding))
+    (funcall binding) ))
+
 (defun borg-repl/start ()
   "borg-repl/start
 
@@ -36,7 +44,7 @@
   (interactive)
 
   (if (boundp 'borg-repl/create-repl)
-    (funcall borg-repl/create-repl)
+    (borg-repl/invoke-binding borg-repl/create-repl)
     (borg-repl/error-msg "no REPL start defined here.") ) )
 
 (defun borg-repl/statement ()
@@ -47,10 +55,7 @@
   (interactive)
 
   (if (boundp 'borg-repl/eval-line)
-    (if (commandp 'borg-repl/eval-line)
-      (call-interactively borg-repl/eval-line)
-      (funcall borg-repl/eval-line) )
-
+    (borg-repl/invoke-binding borg-repl/eval-line)
     (borg-repl/error-msg "no REPL eval line defined here.") ) )
 
 (defun borg-repl/region ()
@@ -59,9 +64,8 @@
    eval the region.
   "
   (interactive)
-
   (if (boundp 'borg-repl/eval-region)
-    (funcall borg-repl/eval-region)
+    (borg-repl/invoke-binding borg-repl/eval-region)
     (borg-repl/error-msg "no REPL eval region defined here.") ) )
 
 (defun borg-repl/buffer ()
@@ -72,7 +76,7 @@
   (interactive)
 
   (if (boundp 'borg-repl/eval-buffer)
-    (funcall borg-repl/eval-buffer)
+    (borg-repl/invoke-binding borg-repl/eval-buffer)
     (borg-repl/error-msg "no REPL eval buffer defined here.") ) )
 
 (defun borg-repl/definition ()
@@ -83,7 +87,7 @@
   (interactive)
 
   (if (boundp 'borg-repl/eval-defun)
-    (funcall borg-repl/eval-defun)
+    (borg-repl/invoke-binding borg-repl/eval-defun)
     (borg-repl/error-msg "no REPL eval definition defined here.") ) )
 
 (defun borg-repl/get-buffer ()
