@@ -22,11 +22,11 @@
   (set (make-local-variable 'borg-repl/repl-name) repl-name)
   (set (make-local-variable 'borg-repl/create-repl) create-fn)
   (set (make-local-variable 'borg-repl/eval-line) line-fn)
-  (set (make-local-varable  'borg-repl/eval-region) region-fn)
-  (set (make-local-varable  'borg-repl/eval-buffer) buffer-fn)
+  (set (make-local-variable  'borg-repl/eval-region) region-fn)
+  (set (make-local-variable  'borg-repl/eval-buffer) buffer-fn)
 
   (when defun-fn
-    (set (make-local-varable  'borg-repl/eval-defun) defun-fn)) )
+    (set (make-local-variable  'borg-repl/eval-defun) defun-fn)) )
 
 (defun borg-repl/start ()
   "borg-repl/start
