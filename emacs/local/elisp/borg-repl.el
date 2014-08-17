@@ -47,7 +47,10 @@
   (interactive)
 
   (if (boundp 'borg-repl/eval-line)
-    (funcall borg-repl/eval-line)
+    (if (commandp 'borg-repl/eval-line)
+      (call-interactively borg-repl/eval-line)
+      (funcall borg-repl/eval-line) )
+
     (borg-repl/error-msg "no REPL eval line defined here.") ) )
 
 (defun borg-repl/region ()
@@ -177,7 +180,7 @@
       (borg-repl/error-msg "no REPL for this buffer")
       nil) ) )
 
-(custom-key-group "borg repl" "r" t
+(custom-key-group "borg repl" "e" t
   ("x" . borg-repl/start)
   ("e" . borg-repl/statement)
   ("r" . borg-repl/region)
