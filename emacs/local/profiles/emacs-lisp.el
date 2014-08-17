@@ -87,13 +87,6 @@
           (message "profile/elisp: cannot create new scratch buffer")
           nil) )) ))
 
-(defun profile/elisp-repl-statement ()
-  (interactive)
-  (let
-    (( current-prefix-arg ))
-
-    (call-interactively 'eval-last-sexp nil)) )
-
 (defun emacs-lisp/profile ()
   (configure-for-programming 'elisp-list-fn-signatures profile/elisp-name)
 
@@ -101,7 +94,7 @@
 
   (borg-repl/bind-repl profile/elisp-name
     'profile/elisp-repl-new
-    'profile/elisp-repl-statement
+    'eval-last-sexp
     'eval-region
     'eval-buffer
     'eval-defun )
