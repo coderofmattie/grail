@@ -49,8 +49,27 @@
 ;; line number mode
 (global-set-key (kbd "C-c C-l")  'linum-mode)
 
+(defvar user-keys/tree-browser nil)
+
+(defun user-keys/start-tree-browser ()
+  "user-keys/start-tree-browser
+
+   start a directory tree browser if one
+   has been loaded.
+  "
+  (interactive)
+
+  (if user-keys/tree-browser
+    (let
+      (( current-prefix-arg nil ))
+
+      (call-interactively user-keys/tree-browser)
+      (funcall user-keys/tree-browser) )
+    (message "user-config: no tree browser loaded") ))
+
 (custom-key-group "files" "f" t
     ("d" . dired)
+    ("n" . user-keys/start-tree-browser)
     ("s" . save-some-buffers)
     ("b" . hexl-find-file))
 

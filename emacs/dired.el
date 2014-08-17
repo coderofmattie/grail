@@ -10,5 +10,6 @@
 
 (add-hook 'dired-mode-hook 'tame-dired)
 
+(use-grail-profiles 0 "dir-tree")
 
 
