@@ -6,12 +6,29 @@
 ;; support for scheme programming
 ;;----------------------------------------------------------------------
 (require 'remap-assoc-mode)
+(require 'borg-repl)
+
+(defconst profile/scheme-name "scheme")
+(defconst profile/scheme-repl-name (borg-repl/repl-name profile/scheme-name))
 
 (grail-load-package 'geiser "git" "git://git.sv.gnu.org/geiser.git")
 
-(defconst scheme-profile-geiser-scheme-dir (car (grail-find-package-resource "geiser" "scheme")))
+;;
+;; file associations
+;;
 
+(setq
+  auto-mode-alist (append '(("\\.rkt$" . scheme-mode)) auto-mode-alist ))
+
+;;
+;; need scheme code for repl side inside distribution
+;;
+(defconst scheme-profile-geiser-scheme-dir (car (grail-find-package-resource "geiser" "scheme")))
 (defconst scheme-profile-geiser-racket-dir (concat scheme-profile-geiser-scheme-dir "/racket/"))
+
+;;
+;; defaults
+;;
 
 (setq-default
   geiser-active-implementations '(racket)
@@ -20,16 +37,9 @@
   geiser-racket-init-file (concat grail-interpreters-path "/racket/geiser.rkt")
   geiser-repl-query-on-kill-p nil)
 
-;;----------------------------------------------------------------------
-;; auto mode list additions
-;;----------------------------------------------------------------------
-
-(setq
-  auto-mode-alist (append '(("\\.rkt$" . scheme-mode)) auto-mode-alist ))
-
-;;----------------------------------------------------------------------
-;; create standard configure-for-programming functions
-;;----------------------------------------------------------------------
+;;
+;; search stuff
+;;
 
 ;; the atom definition is tweaked for regex purpose. Without including
 ;; the list symbols the regex would run over lists in it's quest for
@@ -52,26 +62,42 @@
   (interactive)
   (occur scheme-function-regex))
 
-;;----------------------------------------------------------------------
-;; mode hooks
-;;----------------------------------------------------------------------
+;;
+;; REPL mode hooks
+;;
 
-(add-hook 'scheme-mode-hook
-  (lambda ()
-    (lisp-smart-parens-editing)
+(defadvice geiser (after profile-scheme-advice-geiser
+                    (&rest ignore) )
+  (buffer-ring/add profile/scheme-repl-name)
+  (buffer-ring/local-keybindings) )
 
-    (configure-for-programming 'scheme-list-fn-signatures "scheme-mode")
+(ad-activate 'geiser)
 
-    ;; this is borked because these functions autoload!
+;;
+;; language mode hooks.
+;;
 
-    ;; (configure-for-evaluation
-    ;;   'geiser-eval-definition
-    ;;   'geiser-eval-last-sexp
-    ;;   'geiser-eval-region
-    ;;   'geiser-eval-buffer)
+(defun profile/scheme-run-geiser ()
+  (interactive)
+  (call-interactively 'geiser))
 
-    (turn-on-geiser-mode) )
-  t)
+(defun profile/scheme-mode-setup ()
+  (lisp-smart-parens-editing)
+
+  (configure-for-programming 'scheme-list-fn-signatures profile/scheme-name)
+
+  (borg-repl/bind-repl cl-repl-name
+    'geiser
+    'geiser-eval-last-sexp
+    'geiser-eval-region
+    'geiser-eval-buffer
+    'geiser-eval-definition )
+
+  (turn-on-geiser-mode) )
+
+
+
+(add-hook 'scheme-mode-hook 'profile/scheme-mode-setup t)
 
 (provide 'profile/scheme)
 
