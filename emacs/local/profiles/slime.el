@@ -62,7 +62,9 @@
 ;;
 
 (defun profile/slime-repl-setup ()
-  (lisp-smart-parens-editing)
+  (grail-require profile/syntax-tools "emacs-lisp" "syntax"
+    (profile/syntax-tools-mode-setup)
+    (profile/syntax-tools-lisp) )
 
   (buffer-ring/add cl-repl-name)
   (buffer-ring/local-keybindings)

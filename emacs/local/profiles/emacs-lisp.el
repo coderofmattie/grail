@@ -90,7 +90,9 @@
 (defun emacs-lisp/profile ()
   (configure-for-programming 'elisp-list-fn-signatures profile/elisp-name)
 
-  (lisp-smart-parens-editing)
+  (grail-require profile/syntax-tools "emacs-lisp" "syntax"
+    (profile/syntax-tools-mode-setup)
+    (profile/syntax-tools-lisp) )
 
   (borg-repl/bind-repl profile/elisp-name
     'profile/elisp-repl-new

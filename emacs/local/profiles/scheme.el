@@ -82,7 +82,10 @@
   (call-interactively 'geiser))
 
 (defun profile/scheme-mode-setup ()
-  (lisp-smart-parens-editing)
+
+  (grail-require profile/syntax-tools "emacs-lisp" "syntax"
+    (profile/syntax-tools-mode-setup)
+    (profile/syntax-tools-lisp) )
 
   (configure-for-programming 'scheme-list-fn-signatures profile/scheme-name)
 

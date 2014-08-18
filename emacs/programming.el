@@ -26,7 +26,7 @@
 (use-grail-profiles 0 "code-highlighting" "syntax-tools" "code-formatting")
 
 ;; higher level functionality
-(use-grail-profiles 1 "lisp" "version-control")
+(use-grail-profiles 1 "version-control")
 
 (use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl"
                       "shell-scripting" "web" "python" "clojure")
