@@ -160,7 +160,8 @@
      (erc-truncate-mode 1)))
 
 (defun erc-mode-customization ()
-  (configure-for-buffer-ring "erc"))
+  (buffer-ring/addd "erc")
+  (buffer-ring/local-keybindings))
 
 (add-hook 'erc-mode-hook 'erc-mode-customization t)
 

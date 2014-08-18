@@ -29,7 +29,8 @@
     (rename-buffer browser-profile-buffer-name)
 
     (with-current-buffer browser-profile-buffer-name
-      (configure-for-buffer-ring browser-profile-ring-name))
+      (buffer-ring/add browser-profile-ring-name)
+      (buffer-ring/local-keybindings) )
 
     (browser-profile-clear-unique))
 

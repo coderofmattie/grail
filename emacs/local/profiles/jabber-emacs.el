@@ -1,6 +1,8 @@
 ;;----------------------------------------------------------------------
 ;; jabber-emacs
 ;;----------------------------------------------------------------------
+(require 'buffer-ring)
+
 (grail-load 'jabber "git" "git://git.code.sf.net/p/emacs-jabber/git")
 
 (setq jabber-auto-reconnect t)
@@ -17,10 +19,9 @@
     "xmppnet.de"
     "emacs") )
 
-(require 'buffer-ring)
-
 (defun jabber-emacs-in-ring ()
-  (configure-for-buffer-ring "jabber") )
+  (buffer-ring/add "jabber")
+  (buffer-ring/local-keybindings))
 
 (add-hook 'jabber-chat-mode-hook 'jabber-emacs-in-ring t)
 (add-hook 'jabber-roster-mode-hook 'jabber-emacs-in-ring t)

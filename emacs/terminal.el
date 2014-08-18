@@ -5,6 +5,8 @@
 (require 'buffer-ring)
 (require 'custom-key)
 
+(defconst user-terminal-name "shell")
+
 ;;----------------------------------------------------------------------
 ;;                 IPC shell:  comint/term mode
 ;;----------------------------------------------------------------------
@@ -17,11 +19,16 @@
 (setq explicit-shell-file-name "bash")
 (setq terminal-profile-local-shell "zsh")
 
+
+(defun user-terminal-ring ()
+  (buffer-ring/add "user-terminal-name")
+  (buffer-ring/local-keybindings) )
+
 (defadvice term (after terminal-profile/term-bindings)
-  (configure-for-buffer-ring "prompt"))
+  (user-terminal-ring))
 
 (defadvice ansi-term (after terminal-profile/ansi-bindings)
-  (configure-for-buffer-ring "prompt"))
+  (user-terminal-ring))
 
 (ad-activate 'term)
 (ad-activate 'ansi-term)

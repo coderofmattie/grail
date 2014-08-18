@@ -6,7 +6,8 @@
 (require 'dired)
 
 (defun tame-dired ()
-  (configure-for-buffer-ring "dired") )
+  (buffer-ring/add "dired")
+  (buffer-ring/local-keybindings))
 
 (add-hook 'dired-mode-hook 'tame-dired)
 
