@@ -102,6 +102,9 @@
   (unless (gethash chord custom-keys-descriptions)
     (puthash chord (custom-key-group-new chord description key-map) custom-keys-descriptions)) )
 
+(defconst custom-key-group-prefix "C-c"
+  "default key chord for custom keys")
+
 (defmacro custom-key-group ( description chord global &rest body )
   `(let
      ((key-map  (make-sparse-keymap)))
@@ -121,7 +124,37 @@
      (,(if global
          'global-set-key
          'local-set-key)
-       (kbd (concat "C-c " ,chord)) key-map)
+       (kbd (concat custom-key-group-prefix " " ,chord)) key-map)
+
+     (custom-key-group-register ,chord ,description key-map) ))
+
+(defmacro custom-key-set ( description chord global &rest body )
+  `(let
+     ((key-map  (make-sparse-keymap)))
+
+     ;; do this part just so we can create help
+     ,@(mapcar
+         (lambda ( key-fn-pair )
+           `(define-key key-map
+              ,(car key-fn-pair)
+
+              ,(if (symbol-function (cdr key-fn-pair))
+                 `',(cdr key-fn-pair)
+                 (cdr key-fn-pair)) ) )
+         body)
+
+     ,@(mapcar
+        (lambda ( key-fn-pair )
+          `(,(if global
+               'global-set-key
+               'local-set-key)
+
+             (kbd (concat custom-key-group-prefix "-" ,(car key-fn-pair)) )
+
+             ,(if (symbol-function (cdr key-fn-pair))
+                 `',(cdr key-fn-pair)
+                (cdr key-fn-pair)) ) )
+        body)
 
      (custom-key-group-register ,chord ,description key-map) ))
 
