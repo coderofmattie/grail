@@ -12,7 +12,6 @@
 ;;----------------------------------------------------------------------
 ;; programming packages not dependent on third party support
 ;;----------------------------------------------------------------------
-
 (require 'tags-uber)
 (require 'working-copy)
 
