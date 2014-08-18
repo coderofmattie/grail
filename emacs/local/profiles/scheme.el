@@ -23,7 +23,7 @@
 ;;
 ;; need scheme code for repl side inside distribution
 ;;
-(defconst scheme-profile-geiser-scheme-dir (car (grail-package-resource "geiser" "scheme")))
+(defconst scheme-profile-geiser-scheme-dir (grail-package-resource "geiser" "scheme"))
 (defconst scheme-profile-geiser-racket-dir (concat scheme-profile-geiser-scheme-dir "/racket/"))
 
 ;;

@@ -102,7 +102,7 @@
 
 (defmacro grail-new-load-path ( &rest body )
   `(let
-     (( new-load-path nil )
+     (( new-load-path grail-platform-load-path )
       ( search-results nil ))
 
      ,@(mapcar
@@ -119,7 +119,6 @@
 
      new-load-path))
 
-
 ;;
 ;; keep a table of all the dirs where we install so we can later
 ;; lookup by package a path to get misc data files out and see
@@ -128,8 +127,7 @@
 
 (defvar grail-package-path-table (make-hash-table :test 'equal))
 
-(defun grail-package-path-init ()
-  (puthash "elisp" grail-dist-elisp grail-package-path-table) )
+(puthash "elisp" grail-dist-elisp grail-package-path-table)
 
 (defun grail-update-package-paths ( dir-list )
   (mapc
@@ -148,7 +146,6 @@
                   (( dir-name (file-name-nondirectory sub-dir) ))
 
                   (unless (gethash dir-name grail-package-path-table)
-;;                    (message "putting in the hash %s" sub-dir)
                     (puthash dir-name sub-dir grail-package-path-table)) ))
               sub-dirs)) )))
       dir-list))
@@ -156,92 +153,87 @@
 (defun grail-update-load-path ()
   "grail-update-load-path
 
-   build extended-load-path in override order highest -> lowest with:
-
-   --- override ---
-
-   1. grail-local-emacs   - local, for preferring local modifications of mainline packages.
-   2. emacs-load-path     - the emacs boot load path
-
-   --- extend ---
-
-   3. grail-local-elisp   - user written elisp
-   4. elpa-load-path      - elpa managed third party packages
-   5. grail-dist-elisp    - grail managed third party packages
-
-   non-existent directories are filtered out.
+   update the load path. all of the paths listed are scanned for sub-dirs and
+   added. everything is pre-pended to grail-platform-load-path.
   "
   (let
     ((new-load-path
        (grail-new-load-path
-         ;;----------------------------------------------------------------------
-         ;; user elisp code for platform, emacs, and user elisp
-         ;;----------------------------------------------------------------------
-         grail-platform-load-path
+
+         ;;
+         ;; ELPA kinda stale
+         ;;
+         grail-elpa-load-path
+
+         ;;
+         ;; my code smells like roses so load first.
+         ;;
 
          grail-local-elisp
 
-         ;;----------------------------------------------------------------------
-         ;; 3rd party elisp
-         ;;----------------------------------------------------------------------
+         ;;
+         ;; fresh elisp
+         ;;
 
          grail-dist-elisp
-         grail-elpa-load-path
 
-         ;;----------------------------------------------------------------------
-         ;; upstream source. repos can be deep requiring a search of
-         ;; subdirectories
-         ;;----------------------------------------------------------------------
+         ;;
+         ;; fresh version control
+         ;;
 
          grail-dist-cvs
          grail-dist-git
          grail-dist-bzr
-         grail-dist-hg )))
+         grail-dist-hg
+         grail-dist-svn )))
 
     (when new-load-path
-      (setq load-path (reverse new-load-path)))
+      (setq load-path new-load-path))
 
-    (grail-update-package-paths (list grail-dist-cvs grail-dist-git grail-dist-bzr grail-dist-hg)) ))
+    (grail-update-package-paths (list grail-dist-cvs grail-dist-git grail-dist-bzr grail-dist-hg grail-dist-svn)) ))
+
+(defun grail-package-resource-internal ( pkg-dir resource )
+  (catch 'found
+    (unless (grail-dir-if-ok pkg-dir)
+      (throw 'found nil) )
+
+    (let
+      (( found-paths
+         (grail-match-path pkg-dir
+           `(("path" ,resource))) ))
+
+      (when found-paths
+        (throw 'found found-paths))
+
+      (let
+        (( sub-dirs
+           (grail-match-path pkg-dir
+             '(("type" "dir")
+               (not "path" "^\.\.?$"))) ))
+
+        (unless sub-dirs
+          (throw 'found nil) )
+
+        (mapc
+          (lambda ( dir )
+            (let
+              (( next-level (grail-package-resource-internal dir resource) ))
+
+              (when next-level
+                (throw 'found next-level)) ))
+          sub-dirs))
+      nil)) )
 
 (defun grail-package-resource ( package resource )
-  (catch 'found
-    (let
-      (( package-dir (or (grail-dir-if-ok package)
-                         (gethash package grail-package-path-table) )))
+  (let
+    (( pkg-lookup (or (grail-package-resource-internal (gethash package grail-package-path-table) resource)
+                      (grail-package-resource-internal (gethash "elisp" grail-package-path-table) resource) ) ))
 
-      (if (and package-dir
-               (file-accessible-directory-p package-dir) )
-        (let
-          (( found-paths
-             (grail-match-path package-dir
-               `(("path" ,resource))) ))
-
-          (when found-paths
-            (throw 'found found-paths))
-
-          (let
-            (( sub-dirs
-               (grail-match-path package-dir
-                 '(("type" "dir")
-                    (not "path" "^\.\.?$"))) ))
-
-            (when sub-dirs
-              (mapc
-                (lambda ( dir )
-                  (let
-                    (( next-level (grail-package-resource dir resource) ))
-
-                    (when next-level
-                      (throw 'found next-level)) ))
-                sub-dirs)) ))
-        nil) )))
-
+    (when pkg-lookup
+      (car pkg-lookup) ) ))
 
 (defun grail-install-sentinel ( package path )
-  (if (or (grail-package-resource package path)
-          (grail-package-resource "elisp" path) )
-    t
-    nil))
+  (grail-package-resource package path) )
 
 ;;
 ;; user interface loading

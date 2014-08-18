@@ -311,12 +311,7 @@
     (unless (grail-dir-if-ok grail-elisp-root)
       (grail-signal-fail "grail" "checking directory accessibility" "cannot read directory")) )
 
-  (grail-fail
-    "grail elisp-root"
-    "loading grail loader"
 
-    (grail-load-user-elisp "grail-load")
-    (grail-report-info "grail" "loader loaded" grail-elisp-root) )
 
   (defconst grail-local-dir
     (concat grail-elisp-root "local/")
@@ -399,7 +394,7 @@
   (defvar grail-boot-load-path load-path
     "The load-path as constructed by emacs before grail initialization")
 
-  (defvar grail-platform-load-path nil
+  (defvar grail-platform-load-path load-path
     "The load-path after the platform files have been loaded.")
 
   (defconst grail-state-path (concat (getenv "HOME") "/.emacs.d/")
@@ -421,6 +416,13 @@
   (defvar grail-font-size 24
     "preferred size of fonts")
 
+  (grail-fail
+    "grail elisp-root"
+    "loading grail loader"
+
+    (grail-load-user-elisp "grail-load")
+    (grail-report-info "grail" "loader loaded" grail-elisp-root) )
+
   (grail-ignore
     "emacs persistent state"
     "make state dir, redirect user-init-file and custom-file variables to grail-settings-file"
@@ -437,14 +439,7 @@
 
     (setq user-init-file
       (setq custom-file
-        grail-settings-file))
-
-    ;; Load the user's settings if any. Do it early so that this
-    ;; stuff can be over-ridden in their config files.  The priority
-    ;; of customize settings is a toss-up, but it only comes into
-    ;; play when the user advances beyond relying on customize, and
-    ;; by then the priority is sensible.
-    (grail-try-user-elisp grail-settings-file) )
+        grail-settings-file)) )
 
   ;;----------------------------------------------------------------------
   ;; Host specific adaptation
@@ -457,16 +452,9 @@
   ;; platform here.
   ;;----------------------------------------------------------------------
 
-  ;; save the state of load-path after the platform file if any has
-  ;; been loaded.
-  (setq grail-platform-load-path load-path)
-
   (grail-recover
     "load standard elisp"
     "loading all stock elisp and ELPA except Grail Profiles"
-    (setq load-path grail-platform-load-path)
-
-    (grail-package-path-init)
 
     (grail-update-load-path)
 
