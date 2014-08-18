@@ -191,6 +191,11 @@
        (grail-report-error ,where ,what trap-error)
        nil) ) )
 
+(defmacro grail-requires ( profile where what &rest body )
+  `(if (featurep ',profile)
+     (progn ,@body)
+     (grail-report "missing feature" ,where "disabled due to missing feature" ',profile) ))
+
 ;;
 ;; path handling
 ;;
