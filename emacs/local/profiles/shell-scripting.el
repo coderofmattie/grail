@@ -1,6 +1,8 @@
 ;;----------------------------------------------------------------------
 ;; shell-script
 ;;----------------------------------------------------------------------
+(require 'user-programming)
+(require 'dwim-tab)
 
 ;; (setq advanced-bash-scripting-guide
 ;;   (grail-fetch-docs "advanced-bash-scripting-guide"
@@ -30,7 +32,9 @@
 
     (local-set-key (kbd "<return>") 'hard-electric-newline)
 
-    (procedural-smart-parens-editing)
+    (grail-requires profile/syntax-tools "shell scripting profile" "smart syntax"
+      (profile/syntax-tools-setup) )
+
     (turn-on-dwim-tab))
   t)
 

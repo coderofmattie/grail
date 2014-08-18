@@ -2,7 +2,10 @@
 ;; perl5
 ;;----------------------------------------------------------------------
 (require 'cperl-mode)
+
+(require 'dwim-tab)
 (require 'mode-tools)
+(require 'user-programming)
 
 (remap-assoc-mode-to 'perl-mode 'cperl-mode)
 
@@ -27,20 +30,19 @@
   (interactive)
   (occur perl-function-regex))
 
-(add-hook 'cperl-mode-hook
-  (lambda ()
-    (set-face-foreground cperl-pod-face "orange3")
+(defun profile/cperl-mode-setup ()
+  (set-face-foreground cperl-pod-face "orange3")
 
-    (configure-for-navigation 'forward-word 'backward-word)
-    (configure-for-programming 'perl-list-fn-signatures "perl-mode")
+  (configure-for-programming 'perl-list-fn-signatures "perl-mode")
 
-    (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
+  (local-set-key (kbd "C-h f") 'cperl-perldoc-at-point)
 
-    (turn-on-dwim-tab)
+  (turn-on-dwim-tab)
 
-    (procedural-smart-parens-editing)
-    (setq sp-escape-char "\\"))
-  t)
+  (grail-requires profile/syntax-tools "perl profile" "smart syntax"
+    (profile/syntax-tools-setup) ) )
+
+(add-hook 'cperl-mode-hook 'profile/cperl-mode-setup t)
 
 (provide 'profile/perl)
 

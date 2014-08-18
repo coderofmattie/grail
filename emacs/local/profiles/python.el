@@ -27,8 +27,8 @@
 
   (turn-on-dwim-tab)
 
-  (procedural-smart-parens-editing)
-  (setq sp-escape-char "\\") )
+  (grail-requires profile/syntax-tools "python profile" "smart syntax"
+    (profile/syntax-tools-setup) ) )
 
 (add-hook 'python-mode-hook 'profile/python-cfg t t)
 

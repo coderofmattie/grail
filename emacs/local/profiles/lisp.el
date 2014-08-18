@@ -52,4 +52,8 @@
   (lisp-smart-navigation)
   (lisp-smart-parens) )
 
+
+(syntax-move/bind-next 'sp-forward-sexp)
+
+
 (provide 'profile/lisp)

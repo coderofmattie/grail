@@ -13,8 +13,8 @@
 (set-face-background 'sp-wrap-overlay-face "grey10")
 (set-face-background 'sp-wrap-tag-overlay-face "grey10")
 
-(defun procedural-smart-parens-editing ()
+(defun profile/syntax-tools-setup ()
   (interactive)
   (smartparens-mode 1))
 
-(provide 'profile/code-editing)
+(provide 'profile/syntax-tools)
