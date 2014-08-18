@@ -1,4 +1,3 @@
-
 ;;----------------------------------------------------------------------
 ;; grail.el
 ;;----------------------------------------------------------------------
@@ -466,6 +465,8 @@
     "load standard elisp"
     "loading all stock elisp and ELPA except Grail Profiles"
     (setq load-path grail-platform-load-path)
+
+    (grail-package-path-init)
 
     (grail-update-load-path)
 

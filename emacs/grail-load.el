@@ -119,9 +119,19 @@
 
      new-load-path))
 
-(defvar grail-dist-path-table (make-hash-table :test 'equal))
 
-(defun grail-update-dist-path-table ( dir-list )
+;;
+;; keep a table of all the dirs where we install so we can later
+;; lookup by package a path to get misc data files out and see
+;; if we have installed a package vs. it being built-in to emacs.
+;;
+
+(defvar grail-package-path-table (make-hash-table :test 'equal))
+
+(defun grail-package-path-init ()
+  (puthash "elisp" grail-dist-elisp grail-package-path-table) )
+
+(defun grail-update-package-paths ( dir-list )
   (mapc
     (lambda ( dir )
       (when (file-accessible-directory-p dir)
@@ -136,11 +146,10 @@
               (lambda ( sub-dir )
                 (let
                   (( dir-name (file-name-nondirectory sub-dir) ))
-                  ;; (message "dir-name is \"%s\"" dir-name)
 
-                  (unless (gethash dir-name grail-dist-path-table)
-                    ;; (message "putting in the hash %s" sub-dir)
-                    (puthash dir-name sub-dir grail-dist-path-table)) ))
+                  (unless (gethash dir-name grail-package-path-table)
+;;                    (message "putting in the hash %s" sub-dir)
+                    (puthash dir-name sub-dir grail-package-path-table)) ))
               sub-dirs)) )))
       dir-list))
 
@@ -192,15 +201,16 @@
     (when new-load-path
       (setq load-path (reverse new-load-path)))
 
-    (grail-update-dist-path-table (list grail-dist-cvs grail-dist-git grail-dist-bzr grail-dist-hg)) ))
+    (grail-update-package-paths (list grail-dist-cvs grail-dist-git grail-dist-bzr grail-dist-hg)) ))
 
-(defun grail-find-package-resource ( package resource )
+(defun grail-package-resource ( package resource )
   (catch 'found
     (let
       (( package-dir (or (grail-dir-if-ok package)
-                         (gethash package grail-dist-path-table) )))
+                         (gethash package grail-package-path-table) )))
 
-      (if (file-accessible-directory-p package-dir)
+      (if (and package-dir
+               (file-accessible-directory-p package-dir) )
         (let
           (( found-paths
              (grail-match-path package-dir
@@ -219,12 +229,19 @@
               (mapc
                 (lambda ( dir )
                   (let
-                    (( next-level (grail-find-package-resource dir resource) ))
+                    (( next-level (grail-package-resource dir resource) ))
 
                     (when next-level
                       (throw 'found next-level)) ))
                 sub-dirs)) ))
         nil) )))
+
+
+(defun grail-install-sentinel ( package path )
+  (if (or (grail-package-resource package path)
+          (grail-package-resource "elisp" path) )
+    t
+    nil))
 
 ;;
 ;; user interface loading
