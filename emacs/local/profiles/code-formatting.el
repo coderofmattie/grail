@@ -6,8 +6,6 @@
 
 (grail-load-package 'filladapt "file" "http://www.wonderworks.com/download/filladapt.el")
 
-(grail-load 'htmlfontify "pkg")
-
 (add-hook 'emacs-lisp-mode-hook 'turn-on-filladapt-mode)
 
 (eval-after-load 'cc-mode    '(add-hook 'c-mode-common-hook   'c-setup-filladapt))
