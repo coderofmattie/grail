@@ -101,6 +101,8 @@
     'eval-buffer
     'eval-defun )
 
+  (borg-repl/bind-macro-expand 'pp-macroexpand-last-sexp)
+
   (custom-key-group "elisp-debug" "d" nil
      ("d" . eval-defun))
 

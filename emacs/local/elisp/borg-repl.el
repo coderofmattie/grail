@@ -26,7 +26,10 @@
   (set (make-local-variable  'borg-repl/eval-buffer) buffer-fn)
 
   (when defun-fn
-    (set (make-local-variable  'borg-repl/eval-defun) defun-fn)) )
+    (set (make-local-variable 'borg-repl/eval-defun) defun-fn)) )
+
+(defun borg-repl/bind-macro-expand ( expand-fn )
+  (set (make-local-variable 'borg-repl/macro-expand) expand-fn))
 
 (defun borg-repl/invoke-binding ( binding )
   (if (commandp binding)
@@ -67,6 +70,13 @@
   (if (boundp 'borg-repl/eval-region)
     (borg-repl/invoke-binding borg-repl/eval-region)
     (borg-repl/error-msg "no REPL eval region defined here.") ) )
+
+(defun borg-repl/macro-expand ()
+  (interactive)
+
+  (if (boundp 'borg-repl/macro-expand)
+    (borg-repl/invoke-binding borg-repl/macro-expand)
+    (borg-repl/error-msg "no REPL macro expand defined here.") ) )
 
 (defun borg-repl/buffer ()
   "borg-repl/buffer
@@ -193,6 +203,7 @@
   ("v" . borg-repl/view)
   ("s" . borg-repl/switch)
   ("n" . borg-repl/next)
-  ("p" . borg-repl/prev) )
+  ("p" . borg-repl/prev)
+  ("m" . borg-repl/macro-expand) )
 
 (provide 'borg-repl)
