@@ -100,7 +100,9 @@
     'slime-eval-last-expression
     'slime-eval-region
     'slime-eval-buffer
-    'slime-eval-defun) )
+    'slime-eval-defun)
+
+  (borg-repl/bind-macro-expand 'slime-macroexpand-1) )
 
 (add-hook 'lisp-mode-hook 'profile/slime-lisp-setup t)
 
