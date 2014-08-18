@@ -110,6 +110,8 @@
 
     (dwim-complete-mode-add-type profile/elisp-name "mode"))
 
+  (dwim-complete/set-mode profile/elisp-name)
+
   (turn-on-dwim-tab 'lisp-indent-line)
 
   (dwim-complete/for-buffer) )
