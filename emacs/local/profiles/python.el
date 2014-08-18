@@ -22,7 +22,6 @@
 (defun profile/python-cfg ()
   (interactive)
 
-  (configure-for-navigation 'forward-word 'backward-word)
   (configure-for-programming 'python-list-fn-signatures "python-mode")
 
   (turn-on-dwim-tab)

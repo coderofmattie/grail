@@ -23,10 +23,6 @@
 ;;----------------------------------------------------------------------
 (wc-enable-globally)
 
-(defun pop-dired-in-source-file ()
-  (interactive)
-  (dired-other-window (file-name-directory buffer-file-name)) )
-
 (defun toggle-comment-region ()
   "toggle-comment-region
 
@@ -88,15 +84,6 @@
 
   ;; found this on emacs-wiki , all scripts are automatically made executable.
   (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t) )
-
-(defun configure-for-navigation ( forwards backwards )
-  (local-set-key (kbd "M-f") forwards)
-  (local-set-key (kbd "M-b") backwards))
-
-(defun configure-for-macros ( expand-macro )
-  `(lambda ()
-     (custom-key-group "macros" "m" nil
-       ("e" . expand-macro)) ))
 
 (defun configure-for-docs ( browse-docs )
   `(lambda ()

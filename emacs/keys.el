@@ -67,8 +67,17 @@
       (funcall user-keys/tree-browser) )
     (message "user-config: no tree browser loaded") ))
 
+(defun pop-dired-in-file ()
+  "pop-dired-in-file
+
+   pop a dired buffer in the directory of the current file.
+  "
+  (interactive)
+  (dired-other-window (file-name-directory buffer-file-name)) )
+
 (custom-key-group "files" "f" t
     ("d" . dired)
+    ("c" . pop-dired-in-file)
     ("n" . user-keys/start-tree-browser)
     ("s" . save-some-buffers)
     ("b" . hexl-find-file))

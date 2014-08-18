@@ -22,7 +22,6 @@
   (configure-for-select 'web-mode-element-content-select 'web-mode-element-select)
 
   (configure-for-programming nil "web-code")
-  (configure-for-navigation 'web-mode-element-traverse 'web-mode-element-previous)
 
   ;; has it's own commenting
   (local-set-key (kbd "C-c ;") 'web-mode-comment-or-uncomment)
