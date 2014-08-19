@@ -26,8 +26,8 @@
 
   (turn-on-dwim-tab)
 
-  (grail-requires profile/syntax-tools "python profile" "smart syntax"
-    (profile/syntax-tools-setup) ) )
+  (grail-require profile/syntax-tools "python profile" "smart syntax"
+    (profile/syntax-tools-mode-setup) ) )
 
 (add-hook 'python-mode-hook 'profile/python-cfg t t)
 

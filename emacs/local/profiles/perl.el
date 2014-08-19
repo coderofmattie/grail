@@ -39,8 +39,8 @@
 
   (turn-on-dwim-tab)
 
-  (grail-requires profile/syntax-tools "perl profile" "smart syntax"
-    (profile/syntax-tools-setup) ) )
+  (grail-require profile/syntax-tools "perl profile" "smart syntax"
+    (profile/syntax-tools-mode-setup) ) )
 
 (add-hook 'cperl-mode-hook 'profile/cperl-mode-setup t)
 

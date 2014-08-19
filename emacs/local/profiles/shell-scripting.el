@@ -4,38 +4,32 @@
 (require 'user-programming)
 (require 'dwim-tab)
 
-;; (setq advanced-bash-scripting-guide
-;;   (grail-fetch-docs "advanced-bash-scripting-guide"
-;;     (grail-define-installer "advanced-bash-scripting-guide" "tar:gz"
-;;       "http://www.tldp.org/LDP/abs/abs-guide.html.tar.gz")
-;;     1))
-
 (require 'generic-indent)
 
-;; (setq advanced-bash-scripting-guide (concat "file://" advanced-bash-scripting-guide "/index.html"))
-
 (defconst shell-function-regex "function")
+(defconst profile/shell-name "shell")
 
 (defun shell-list-fn-signatures ()
   (interactive)
   (occur shell-function-regex))
 
-(add-hook 'sh-mode-hook
-  (lambda ()
-    (configure-for-programming 'shell-list-fn-signatures "shell-mode")
+(defun profile/shell-mode-setup ()
+  (configure-for-programming 'shell-list-fn-signatures profile/shell-name)
 
-    (code-documentation-setup "shell-docs" "shell-mode" advanced-bash-scripting-guide)
+  (buffer-ring/add profile/shell-name)
+  (buffer-ring/local-keybindings)
 
-    (setq
-      sh-indentation 2
-      sh-basic-offset 2)
+  (setq
+    sh-indentation 2
+    sh-basic-offset 2)
 
     (local-set-key (kbd "<return>") 'hard-electric-newline)
 
-    (grail-requires profile/syntax-tools "shell scripting profile" "smart syntax"
-      (profile/syntax-tools-setup) )
+  (grail-require profile/syntax-tools "shell scripting profile" "smart syntax"
+    (profile/syntax-tools-mode-setup) )
 
-    (turn-on-dwim-tab))
-  t)
+  (turn-on-dwim-tab) )
+
+(add-hook 'sh-mode-hook 'profile/shell-mode-setup t)
 
 (provide 'profile/shell-scripting)
