@@ -28,7 +28,7 @@
 ;; higher level functionality
 (use-grail-profiles 1 "version-control")
 
-(use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl"
+(use-grail-profiles 2 "emacs-lisp" "common-lisp" "sql" "scheme" "perl5"
                       "shell-scripting" "web" "python" "clojure")
 
 ;; advanced functionality
