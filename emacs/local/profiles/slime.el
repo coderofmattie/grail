@@ -6,7 +6,7 @@
 (require 'custom-key)
 (require 'borg-repl)
 (require 'programming-generic)
-
+(require 'mode-tools)
 (require 'profile/common-lisp)
 
 (defconst cl-repl-name (borg-repl/repl-name cl-lisp-name))
