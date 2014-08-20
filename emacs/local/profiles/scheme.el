@@ -104,12 +104,15 @@
 
 (defun profile/scheme-repl-setup ()
   (interactive)
+
   (borg-repl/bind-repl cl-repl-name
     'geiser
     'geiser-eval-last-sexp
     'geiser-eval-region
     'geiser-eval-buffer
     'geiser-eval-definition )
+
+  (borg-repl/bind-connect 'geiser-connect)
 
   (turn-on-geiser-mode) )
 
