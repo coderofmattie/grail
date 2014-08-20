@@ -31,6 +31,9 @@
 (defun borg-repl/bind-macro-expand ( expand-fn )
   (set (make-local-variable 'borg-repl/macro-expand) expand-fn))
 
+(defun borg-repl/bind-connect ( connect-fn )
+  (set (make-local-variable 'borg-repl/connect) connect-fn))
+
 (defun borg-repl/invoke-binding ( binding )
   (if (commandp binding)
     (let
@@ -49,6 +52,17 @@
   (if (boundp 'borg-repl/create-repl)
     (borg-repl/invoke-binding borg-repl/create-repl)
     (borg-repl/error-msg "no REPL start defined here.") ) )
+
+(defun borg-repl/connect ()
+  "borg-repl/connect
+
+   connect to a running repl.
+  "
+  (interactive)
+
+  (if (boundp 'borg-repl/connect)
+    (borg-repl/invoke-binding borg-repl/connect)
+    (borg-repl/error-msg "no REPL connect defined here.") ) )
 
 (defun borg-repl/statement ()
   "borg-repl/statement
@@ -196,6 +210,7 @@
 
 (custom-key-group "borg repl" "e" t
   ("x" . borg-repl/start)
+  ("c" . borg-repl/connect)
   ("e" . borg-repl/statement)
   ("r" . borg-repl/region)
   ("b" . borg-repl/buffer)

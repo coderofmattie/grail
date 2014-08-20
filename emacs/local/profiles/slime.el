@@ -42,10 +42,9 @@
       'profile/slime-candidates
       'dwim-complete-replace-stem ))
 
-  (defun profile/slime-dwim-setup ()
-    (unless (dwim-complete-mode-check-type cl-lisp-name "mode")
-      (dwim-complete-mode-add-source cl-lisp-name (profile/slime-source))
-      (dwim-complete-mode-add-type cl-lisp-name "mode")) ) )
+  (unless (dwim-complete-mode-check-type cl-lisp-name "mode")
+    (dwim-complete-mode-add-source cl-lisp-name (profile/slime-source))
+    (dwim-complete-mode-add-type cl-lisp-name "mode")) )
 
 (defun profile/slime-common-setup ()
   (grail-require profile/syntax-tools
@@ -55,11 +54,11 @@
     (profile/syntax-tools-mode-setup)
     (profile/syntax-tools-lisp) )
 
-  (grail-require
+  (grail-require profile/dwim-complete
     "slime common setup"
     "enable dwim-tabe"
 
-    (profile/slime-dwim-setup)
+    (dwim-complete/set-mode cl-lisp-name)
     (dwim-complete/for-buffer) ) )
 
 ;;
@@ -95,9 +94,11 @@
     'slime-eval-buffer
     'slime-eval-defun)
 
+  (borg-repl/bind-connect 'slime-connect)
+
   (borg-repl/bind-macro-expand 'slime-macroexpand-1) )
 
-(add-hook 'lisp-mode-hook 'profile/slime-lisp-setup t)
+(add-hook 'lisp-mode-hook 'profile/slime-mode-setup t)
 
 (provide 'grail/slime)
 
