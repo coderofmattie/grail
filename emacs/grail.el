@@ -110,6 +110,17 @@
 (defun grail-report-info ( component &rest info )
   (message "Grail Info (%s) %s" component (string-join (mapcar 'pp-to-string info) " ") ))
 
+(defun grail-report-quiet ( type component message &optional info )
+  (message "Grail %s! (%s) while \"%s\": %s"
+    type
+    component
+    message
+    (cond
+      ((not info)      "no information")
+      ((stringp info)  info)
+      ((listp info)    (grail-format-error info))
+      (t               (pp-to-string info)) )) )
+
 (define-error 'grail-fail "grail failure")
 (defconst grail-abort nil)
 
@@ -192,8 +203,15 @@
 
 (defmacro grail-require ( profile where what &rest body )
   `(if (featurep ',profile)
-     (progn ,@body)
-     (grail-report "missing feature" ,where "disabled due to missing feature" ',profile) ))
+     (condition-case trap-error
+       (progn ,@body)
+
+       ('error
+         (grail-report-quiet ,where ,what trap-error)
+         nil) )
+
+     (grail-report-quiet "missing feature"
+       ,where "disabled due to missing feature" ',profile) ))
 
 ;;
 ;; path handling
