@@ -5,7 +5,7 @@
 
 (require 'dwim-tab)
 (require 'mode-tools)
-(require 'user-programming)
+(require 'programming-generic)
 
 (remap-assoc-mode-to 'perl-mode 'cperl-mode)
 
@@ -34,14 +34,16 @@
 (defun profile/perl5-mode-setup ()
   (set-face-foreground cperl-pod-face "orange3")
 
-  (configure-for-programming 'profile/perl5-fn-signatures profile/perl5-mode-name)
+  (programming-mode-generic 'profile/perl5-fn-signatures)
 
   (buffer-ring/add profile/perl5-mode-name)
   (buffer-ring/local-keybindings)
 
   (turn-on-dwim-tab)
 
-  (grail-require profile/syntax-tools "perl profile" "smart syntax"
+  (grail-require profile/syntax-tools
+    "perl profile"
+    "smart syntax"
     (profile/syntax-tools-mode-setup) ) )
 
 (add-hook 'cperl-mode-hook 'profile/perl5-mode-setup t)

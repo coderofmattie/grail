@@ -4,24 +4,24 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
-(require 'buffer-ring)
 (require 'custom-key)
 
-(require 'buffer-status)
+;;
+;; major programming features
+;;
 
-;;----------------------------------------------------------------------
-;; programming packages not dependent on third party support
-;;----------------------------------------------------------------------
 (require 'tags-uber)
 (require 'working-copy)
 
-(require 'merging)
-(require 'ext-merging)
+;;
+;; working copy enable
+;;
 
-;;----------------------------------------------------------------------
-;;                           working-copy
-;;----------------------------------------------------------------------
 (wc-enable-globally)
+
+;;
+;; some generic code editing stuff
+;;
 
 (defun toggle-comment-region ()
   "toggle-comment-region
@@ -41,13 +41,14 @@
   (mark-whole-buffer)
   (call-interactively 'toggle-comment-region) )
 
-(defun configure-for-search-dummy ()
+(defun programming-search-missing ()
   (interactive)
   (message "function signature to find is not specified"))
 
-(defvar configure-programming-hook nil)
+(defvar configure-programming-hook nil
+  "hook so other programming tools can run after programming-mode-generic")
 
-(defun configure-for-programming ( list-fn-signatures &optional buffer-ring-mode )
+(defun programming-mode-generic ( &optional fn-search )
   "Enable my programming customizations for the buffer"
 
   ;; whitespace
@@ -57,15 +58,11 @@
   ;; run hooks for programming configuration
   (run-custom-hooks configure-programming-hook)
 
-  ;; buffer-ring
-  (buffer-ring/local-keybindings)
-  (buffer-ring/add buffer-ring-mode)
-
   ;; better return key for programming
   (local-set-key (kbd "<return>") 'newline-and-indent)
 
   (let
-    ((fn-search (or list-fn-signatures 'configure-for-search-dummy)))
+    ((fn-search (or fn-search 'programming-search-missing)))
 
     (custom-key-group "search" "s" nil
       ("f" . fn-search)
@@ -85,9 +82,4 @@
   ;; found this on emacs-wiki , all scripts are automatically made executable.
   (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p t) )
 
-(defun configure-for-docs ( browse-docs )
-  `(lambda ()
-     (custom-key-group "macros" "i" nil
-       ("b" . browse-docs)) ))
-
-(provide 'user-programming)
+(provide 'programming-generic)

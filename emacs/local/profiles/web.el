@@ -2,6 +2,8 @@
 ;; web.el - web development
 ;;----------------------------------------------------------------------
 (require 'mode-tools)
+(require 'programming-generic)
+(require 'dwim-tab)
 
 (grail-load-package 'web-mode "git" "https://github.com/fxbois/web-mode.git")
 
@@ -18,17 +20,17 @@
   setq web-mode-css-indent-offset web-profile-indent-offset
   setq web-mode-code-indent-offset web-profile-indent-offset)
 
-(defun web-mode-hook-fn ()
+(defun web-mode-profile-setup ()
   (configure-for-select 'web-mode-element-content-select 'web-mode-element-select)
 
-  (configure-for-programming nil "web-code")
+  (programming-mode-generic)
 
   ;; has it's own commenting
   (local-set-key (kbd "C-c ;") 'web-mode-comment-or-uncomment)
 
   (turn-on-dwim-tab 'web-mode-indent-line))
 
-(add-hook 'web-mode-hook 'web-mode-hook-fn t)
+(add-hook 'web-mode-hook 'web-mode-profile-setup t)
 
 (provide 'profile/web)
 

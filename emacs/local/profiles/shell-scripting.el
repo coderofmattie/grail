@@ -1,7 +1,7 @@
 ;;----------------------------------------------------------------------
 ;; shell-script
 ;;----------------------------------------------------------------------
-(require 'user-programming)
+(require 'programming-generic)
 (require 'dwim-tab)
 
 (require 'generic-indent)
@@ -14,7 +14,7 @@
   (occur shell-function-regex))
 
 (defun profile/shell-mode-setup ()
-  (configure-for-programming 'shell-list-fn-signatures profile/shell-name)
+  (programming-mode-generic 'shell-list-fn-signatures)
 
   (buffer-ring/add profile/shell-name)
   (buffer-ring/local-keybindings)
@@ -23,9 +23,12 @@
     sh-indentation 2
     sh-basic-offset 2)
 
-    (local-set-key (kbd "<return>") 'hard-electric-newline)
+  (local-set-key (kbd "<return>") 'hard-electric-newline)
 
-  (grail-require profile/syntax-tools "shell scripting profile" "smart syntax"
+  (grail-require profile/syntax-tools
+    "shell scripting profile"
+    "smart syntax"
+
     (profile/syntax-tools-mode-setup) )
 
   (turn-on-dwim-tab) )

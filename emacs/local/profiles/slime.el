@@ -5,6 +5,7 @@
 ;;----------------------------------------------------------------------
 (require 'custom-key)
 (require 'borg-repl)
+(require 'programming-generic)
 
 (require 'profile/common-lisp)
 
@@ -12,16 +13,8 @@
 
 (grail-load-package 'slime "git" "https://github.com/slime/slime")
 
-(setq hyperspec-dir nil)
-
-;; (setq hyperspec-dir
-;;   (grail-fetch-docs "hyperspec"
-;;     (grail-define-installer "hyperspec" "tar:gz"
-;;       "ftp://ftp.lispworks.com/pub/software_tools/reference/HyperSpec-7-0.tar.gz")
-;;     1))
-
 ;;
-;; basic setup
+;; mode defaults
 ;;
 
 (setq
@@ -32,71 +25,71 @@
   slime-words-of-encouragement '("The name is Bond. James Bond."
                                   "These are your father's parentheses. Elegant weapons from a more civilized age."
                                   "We were on the edge of the desert when the Emacs took hold."
-                                  "Mine says: Desert Eagle ... .50")
-  common-lisp-hyperspec-root (concat "file://" hyperspec-dir "/"))
-
-;; (setq common-lisp-hyperspec-default (concat common-lisp-hyperspec-root "Body/00_.htm"))
-;; (code-documentation-setup "lisp-mode-docs" "lisp-mode" common-lisp-hyperspec-default)
-
+                                  "Mine says: Desert Eagle ... .50") )
 ;;
 ;; dwim setup
 ;;
 
-(defun profile/slime-candidates ()
-  (car (slime-simple-completions "")))
+(grail-require profile/dwim-complete
+  "slime"
+  "dwim complete source creation"
 
-(defun profile/slime-source ()
-  (dwim-complete/make-source "slime"
-    'profile/slime-candidates
-    'dwim-complete-replace-stem ))
+  (defun profile/slime-candidates ()
+    (car (slime-simple-completions "")))
 
-(defun profile/slime-dwim-setup ()
-  (unless (dwim-complete-mode-check-type cl-lisp-name "mode")
-    (dwim-complete-mode-add-source cl-lisp-name (profile/slime-source))
-    (dwim-complete-mode-add-type cl-lisp-name "mode"))
+  (defun profile/slime-source ()
+    (dwim-complete/make-source "slime"
+      'profile/slime-candidates
+      'dwim-complete-replace-stem ))
 
-  (dwim-complete/for-buffer) )
+  (defun profile/slime-dwim-setup ()
+    (unless (dwim-complete-mode-check-type cl-lisp-name "mode")
+      (dwim-complete-mode-add-source cl-lisp-name (profile/slime-source))
+      (dwim-complete-mode-add-type cl-lisp-name "mode")) ) )
+
+(defun profile/slime-common-setup ()
+  (grail-require profile/syntax-tools
+    "emacs-lisp"
+    "syntax"
+
+    (profile/syntax-tools-mode-setup)
+    (profile/syntax-tools-lisp) )
+
+  (grail-require
+    "slime common setup"
+    "enable dwim-tabe"
+
+    (profile/slime-dwim-setup)
+    (dwim-complete/for-buffer) ) )
 
 ;;
 ;; repl buffer setup
 ;;
 
 (defun profile/slime-repl-setup ()
-  (grail-require profile/syntax-tools "emacs-lisp" "syntax"
-    (profile/syntax-tools-mode-setup)
-    (profile/syntax-tools-lisp) )
+  (profile/slime-common-setup)
+
+  (turn-on-dwim-tab 'lisp-indent-line)
 
   (buffer-ring/add cl-repl-name)
-  (buffer-ring/local-keybindings)
-
-  (profile/slime-dwim-setup) )
+  (buffer-ring/local-keybindings) )
 
 (add-hook 'slime-connected-hook 'profile/slime-repl-setup t)
 
 ;;
-;; borg repl functions
+;; integration into common lisp
 ;;
 
-(defun profile/slime-repl-create ()
-  "profile/slime-repl-create
-
-   create a new slime REPL.
-  "
-  (interactive)
-  (slime) )
-
-(defun profile/slime-lisp-setup ()
+(defun profile/slime-mode-setup ()
+  (profile/slime-common-setup)
 
   ;; turn on minor mode
   (slime-mode t)
 
-  (dwim-complete/set-mode cl-lisp-name)
-  (profile/slime-dwim-setup)
-
   (dwim-tab-localize-context (dwim-tab-make-expander 'dwim-tab-stem-trigger 'slime-complete-symbol))
 
   (borg-repl/bind-repl cl-repl-name
-    'profile/slime-repl-create
+    'slime
     'slime-eval-last-expression
     'slime-eval-region
     'slime-eval-buffer

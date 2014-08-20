@@ -1,13 +1,15 @@
 ;;----------------------------------------------------------------------
 ;; python-programming
 ;;----------------------------------------------------------------------
+(require 'dwim-tab)
+(require 'generic-indent)
+(require 'programming-generic)
 
 ;; builtin to emacs but stay with upstream master
+
 (grail-load-package 'python-mode "bzr" "lp:python-mode")
 
-(grail-load 'python-components-pdb "bzr" "lp:python-mode/components-python-mode")
-
-(require 'generic-indent)
+(defconst profile/python-name "python")
 
 (setq
   python-indent 2
@@ -19,21 +21,34 @@
   (interactive)
   (occur python-function-regex))
 
-(defun profile/python-cfg ()
+(defun profile/python-mode-setup ()
   (interactive)
 
-  (configure-for-programming 'python-list-fn-signatures "python-mode")
+  (programming-mode-generic 'python-list-fn-signatures)
+
+  (buffer-ring/add profile/python-name)
+  (buffer-ring/local-keybindings)
 
   (turn-on-dwim-tab)
 
-  (grail-require profile/syntax-tools "python profile" "smart syntax"
+  (grail-require profile/syntax-tools
+    "python profile"
+    "smart syntax"
+
     (profile/syntax-tools-mode-setup) ) )
 
-(add-hook 'python-mode-hook 'profile/python-cfg t t)
+(add-hook 'python-mode-hook 'profile/python-mode-setup t t)
+
+;;
+;; advanced ipython capability for repl
+;;
+
+(grail-load 'python-components-pdb "bzr" "lp:python-mode/components-python-mode")
 
 (defconst profile/python-interpeter-exec "ipython")
+(defconst profile/python-repl-name)
 
-(defun profile/python-interpeter-buffer ()
+(defun profile/python-repl-buffer-name ()
   ;; has to be a function because it is not defined until run-python is called.
   (concat "*" python-shell-buffer-name "*"))
 

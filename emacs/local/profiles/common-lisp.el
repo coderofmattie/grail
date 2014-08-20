@@ -1,8 +1,9 @@
 ;;----------------------------------------------------------------------
 ;; common lisp
 ;;----------------------------------------------------------------------
+(require 'buffer-ring)
 (require 'dwim-tab)
-(require 'user-programming)
+(require 'programming-generic)
 
 (defvar cl-function-decl ".*(defun.*")
 (defconst cl-lisp-name "cl-lisp")
@@ -22,13 +23,23 @@
                             ("\\.lisp$" . lisp-mode)) auto-mode-alist ))
 
 (defun profile/cl-mode-setup ()
-  (configure-for-programming 'cl-list-functions cl-lisp-name)
+  (programming-mode-generic 'cl-list-functions)
+
+  (buffer-ring/add cl-lisp-name)
+  (buffer-ring/local-keybindings)
 
   (grail-require profile/syntax-tools
+    "common lisp"
+    "initializing syntax tools"
+
     (profile/syntax-tools-mode-setup)
     (profile/syntax-tools-lisp) )
 
-  (dwim-complete/for-buffer)
+  (grail-require profile/dwim-complete
+    "common lisp"
+    "initializing dwim-complete"
+
+    (dwim-complete/for-buffer) )
 
   (turn-on-dwim-tab 'lisp-indent-line) )
 

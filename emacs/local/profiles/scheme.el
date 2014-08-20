@@ -5,37 +5,13 @@
 ;;
 ;; support for scheme programming
 ;;----------------------------------------------------------------------
+(require 'dwim-tab)
 (require 'remap-assoc-mode)
 (require 'borg-repl)
+(require 'programming-generic)
 
 (defconst profile/scheme-name "scheme")
 (defconst profile/scheme-repl-name (borg-repl/repl-name profile/scheme-name))
-
-(grail-load-package 'geiser "git" "git://git.sv.gnu.org/geiser.git")
-
-;;
-;; file associations
-;;
-
-(setq
-  auto-mode-alist (append '(("\\.rkt$" . scheme-mode)) auto-mode-alist ))
-
-;;
-;; need scheme code for repl side inside distribution
-;;
-(defconst scheme-profile-geiser-scheme-dir (grail-package-resource "geiser" "scheme"))
-(defconst scheme-profile-geiser-racket-dir (concat scheme-profile-geiser-scheme-dir "/racket/"))
-
-;;
-;; defaults
-;;
-
-(setq-default
-  geiser-active-implementations '(racket)
-  geiser-default-implementation "racket"
-  geiser-racket-collects (list scheme-profile-geiser-racket-dir)
-  geiser-racket-init-file (concat grail-interpreters-path "/racket/geiser.rkt")
-  geiser-repl-query-on-kill-p nil)
 
 ;;
 ;; search stuff
@@ -47,6 +23,14 @@
 
 (defconst scheme-regex-whitespace "[ \n\t]" "whitespace in scheme")
 (defconst scheme-regex-atom "[^ \n\t()]+" "whitespace in scheme")
+
+;;
+;; file associations
+;;
+
+(setq
+  auto-mode-alist (append '(("\\.rkt$" . scheme-mode)) auto-mode-alist ))
+
 
 (defconst scheme-function-regex (concat
                                   "("
@@ -61,6 +45,47 @@
 (defun scheme-list-fn-signatures ()
   (interactive)
   (occur scheme-function-regex))
+
+(defun profile/scheme-mode-setup ()
+  (programming-mode-generic 'scheme-list-fn-signatures)
+
+  (buffer-ring/add profile/scheme-name)
+  (buffer-ring/local-keybindings)
+
+  (grail-require profile/syntax-tools
+    "emacs-lisp"
+    "syntax"
+
+    (profile/syntax-tools-mode-setup)
+    (profile/syntax-tools-lisp) )
+
+  (turn-on-dwim-tab 'lisp-indent-line) )
+
+(add-hook 'scheme-mode-hook 'profile/scheme-mode-setup t)
+
+;;
+;; geiser repl
+;;
+
+(grail-load-package 'geiser "git" "git://git.sv.gnu.org/geiser.git")
+
+;;
+;; need scheme code for repl side inside distribution
+;;
+
+(defconst scheme-profile-geiser-scheme-dir (grail-package-resource "geiser" "scheme"))
+(defconst scheme-profile-geiser-racket-dir (concat scheme-profile-geiser-scheme-dir "/racket/"))
+
+;;
+;; defaults
+;;
+
+(setq-default
+  geiser-active-implementations '(racket)
+  geiser-default-implementation "racket"
+  geiser-racket-collects (list scheme-profile-geiser-racket-dir)
+  geiser-racket-init-file (concat grail-interpreters-path "/racket/geiser.rkt")
+  geiser-repl-query-on-kill-p nil)
 
 ;;
 ;; REPL mode hooks
@@ -77,18 +102,8 @@
 ;; language mode hooks.
 ;;
 
-(defun profile/scheme-run-geiser ()
+(defun profile/scheme-repl-setup ()
   (interactive)
-  (call-interactively 'geiser))
-
-(defun profile/scheme-mode-setup ()
-
-  (grail-require profile/syntax-tools "emacs-lisp" "syntax"
-    (profile/syntax-tools-mode-setup)
-    (profile/syntax-tools-lisp) )
-
-  (configure-for-programming 'scheme-list-fn-signatures profile/scheme-name)
-
   (borg-repl/bind-repl cl-repl-name
     'geiser
     'geiser-eval-last-sexp
@@ -98,9 +113,7 @@
 
   (turn-on-geiser-mode) )
 
-
-
-(add-hook 'scheme-mode-hook 'profile/scheme-mode-setup t)
+(add-hook 'scheme-mode-hook 'profile/scheme-repl-setup t)
 
 (provide 'profile/scheme)
 

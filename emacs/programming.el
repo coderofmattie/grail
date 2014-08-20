@@ -4,7 +4,12 @@
 ;; programming configuration including templates,merging, highlighting,
 ;; completion etc.
 ;;----------------------------------------------------------------------
-(require 'user-programming)
+(require 'merging)
+(require 'ext-merging)
+
+(require 'buffer-ring)
+
+(require 'programming-generic)
 
 ;;----------------------------------------------------------------------
 ;; indentation
@@ -53,38 +58,35 @@
                                 ("\\.h$"       . c++-mode)
                                  ) auto-mode-alist ))
 
-(defun c-list-fn-signatures ()
-  (interactive)
-  (message "not implemented yet"))
+(defun c-mode-generic-setup ()
+  (c-set-style "linux")                 ;; base off of linux style
+  (setq c-basic-offset 2)               ;; tabs are 2 spaces
 
-(defun c++-list-fn-signatures ()
-  (interactive)
-  (message "not implemented yet"))
+  (c-set-offset 'substatement-open '0)  ;; hanging braces
 
-(add-hook 'c-mode-common-hook
-  (lambda ()
-    (c-set-style "linux")                 ;; base off of linux style
-    (setq c-basic-offset 2)               ;; tabs are 2 spaces
+  ;; auto-hungry newline and whitespace delete
+  (c-toggle-auto-hungry-state 1) )
 
-    (c-set-offset 'substatement-open '0)  ;; hanging braces
+(add-hook 'c-mode-common-hook 'c-mode-generic-setup t)
 
-    ;; auto-hungry newline and whitespace delete
-    (c-toggle-auto-hungry-state 1))
-  t)
+(defconst c-mode-name "C")
 
-(add-hook 'c-mode-hook
-  (lambda ()
-    (configure-for-programming 'c-list-fn-signatures "c-mode"))
-  t)
+(defun c-mode-setup ()
+  (programming-mode-generic)
 
-(add-hook 'c++-mode-hook
-  (lambda ()
-    (configure-for-programming 'c++-list-fn-signatures "c++-mode"))
-  t)
+  (buffer-ring/add c-mode-name)
+  (buffer-ring/local-keybindings) )
 
-;;----------------------------------------------------------------------
-;; Java
-;;----------------------------------------------------------------------
-(eval-after-load 'java-mode
-  '(require 'flymake))
+(add-hook 'c-mode-hook 'c-mode-setup t)
+
+(defconst c-mode-name "C++")
+
+(defun c++-mode-setup ()
+  (programming-mode-generic)
+
+  (buffer-ring/add c++-mode-name)
+  (buffer-ring/local-keybindings) )
+
+(add-hook 'c++-mode-hook 'c++mode-setup t)
+
 

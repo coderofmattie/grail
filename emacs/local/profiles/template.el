@@ -215,4 +215,4 @@
     (templates/mode-setup))
   t)
 
-(provide 'grail/template)
+(provide 'profile/template)
