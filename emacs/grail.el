@@ -329,8 +329,6 @@
     (unless (grail-dir-if-ok grail-elisp-root)
       (grail-signal-fail "grail" "checking directory accessibility" "cannot read directory")) )
 
-
-
   (defconst grail-local-dir
     (concat grail-elisp-root "local/")
     "The directory containing the user\'s local modifications to emacs
@@ -434,12 +432,17 @@
   (defvar grail-font-size 24
     "preferred size of fonts")
 
+  ;;----------------------------------------------------------------------
+  ;; load grail-load
+  ;;
+  ;; load grail-load so it's routines can be used from here down.
+  ;;----------------------------------------------------------------------
   (grail-fail
     "grail elisp-root"
     "loading grail loader"
 
     (grail-load-user-elisp "grail-load")
-    (grail-report-info "grail" "loader loaded" grail-elisp-root) )
+    (grail-report-info "grail" "loader loaded" "grail-load") )
 
   (grail-ignore
     "emacs persistent state"
@@ -459,53 +462,51 @@
       (setq custom-file
         grail-settings-file)) )
 
-  ;;----------------------------------------------------------------------
+  ;;
+  ;; ELPA and record the platform load-path before
+  ;; the first update-load-path
+  ;;
+
+  (grail-ignore
+    "load standard elisp"
+    "loading ELPA packages"
+
+    (setq grail-platform-load-path load-path)
+    (load-elpa-when-installed) )
+
+  ;;
+  ;; first update of load-path so my library functions
+  ;; are available
+  ;;
+
+  (grail-fail
+    "update load-path"
+    "grail update-load-path first time"
+
+    (grail-update-load-path))
+
+  ;;
+  ;; load grail-profile so it's functions are available
+  ;; for adding profiles
+  ;;
+
+  (grail-fail
+    "grail profile load"
+    "loading grail profile"
+
+    (grail-load-user-elisp "grail-profile")
+    (grail-report-info "grail" "profile loaded" "grail-profile") )
+
+  ;;
   ;; Host specific adaptation
   ;;
+
   ;; Each host system has a file that normalizes the platform
   ;; and extends the library search space for extra libraries the system
   ;; manages.
   ;;
   ;; these files and platform specific customization are loaded by
   ;; platform here.
-  ;;----------------------------------------------------------------------
-
-  (grail-recover
-    "load standard elisp"
-    "loading all stock elisp and ELPA except Grail Profiles"
-
-    (grail-update-load-path)
-
-    (load-elpa-when-installed) )
-
-  ;; done after the load-path update so grail-profile can use
-  ;; libraries in local/elisp
-
-  (grail-fail
-    "grail profile"
-    "loading grail profiles"
-
-    (grail-load-user-elisp "grail-profile") )
-
-  ;; load elisp first so I can use it's functions everywhere
-
-  (defconst grail-config-load-ordered '( "elisp.el"))
-
-  (defconst grail-config-load-masked '( "grail.el"
-                                        "grail-load.el"
-                                        "grail-profile.el"
-                                        "configure-frame.el"
-                                        "configure-display.el"
-                                        "load-display.el"))
-
-  (grail-ignore
-    "user-elisp loading"
-    "final loading with of user elisp"
-
-    (mapc
-      (lambda ( ordered-config )
-        (grail-try-user-elisp ordered-config) )
-      grail-config-load-ordered) )
 
   (grail-ignore
     "load system elisp"
@@ -523,6 +524,50 @@
     (grail-try-user-elisp
       (concat "users/" (user-login-name))) )
 
+  ;;
+  ;; load the user configuration elisp
+  ;;
+
+  (defconst grail-config-load-ordered '( "elisp.el"))
+
+  (defconst grail-config-load-masked '( "grail.el"
+                                        "grail-load.el"
+                                        "grail-profile.el"
+                                        "configure-frame.el"
+                                        "configure-display.el"
+                                        "load-display.el"))
+
+  (grail-ignore
+    "user-elisp loading"
+    "pre-defined user elisp files"
+
+    (mapc
+      (lambda ( ordered-config )
+        (grail-try-user-elisp ordered-config) )
+      grail-config-load-ordered) )
+
+  (grail-ignore
+    "user-elisp loading"
+    "pre-defined user elisp files"
+
+    (let
+      (( config-files (grail-match-path grail-elisp-root
+                        '(("type" "file")
+                          ("path" ".*\.elc?$"))) )
+
+        (no-load (append grail-config-load-ordered grail-config-load-masked)) )
+
+      (mapc
+        (lambda ( config-file )
+          (unless (member (file-name-nondirectory config-file) no-load)
+            (grail-ignore
+              "User Configuration"
+              (format "loading user configuration %s" config-file)
+
+              (grail-try-elisp config-file)) ))
+
+        config-files) ) )
+
   (grail-ignore
     "Emacs Server"
     "configuration before use"
@@ -539,24 +584,6 @@
       server-use-tcp t
       server-auth-dir grail-server-state) )
 
-  (let
-    (( config-files (grail-match-path grail-elisp-root
-                      '(("type" "file")
-                        ("path" ".*\.elc?$"))) )
-
-     (no-load (append grail-config-load-ordered grail-config-load-masked)) )
-
-    (mapc
-      (lambda (config-file )
-        (unless (member (file-name-nondirectory config-file) no-load)
-          (grail-ignore
-            "User Configuration"
-            (format "loading user configuration %s" config-file)
-
-            (grail-try-elisp config-file)) ))
-
-      config-files) )
-
   (grail-ignore
     "interface loading"
     "configuring for daemon or application"
@@ -568,6 +595,7 @@
 
         (add-hook 'before-make-frame-hook 'grail-configure-display t)
         (add-hook 'after-make-frame-functions 'grail-load-display t) )
+
       (grail-ignore
         "application mode"
         "running graphical config immediately"
