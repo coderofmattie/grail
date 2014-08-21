@@ -600,7 +600,17 @@
         "application mode"
         "running graphical config immediately"
 
-        (server-start)
+        (grail-ignore
+          "emacs server"
+          "starting the server"
+
+          (let
+            (( server-file (getenv "EMACS_SERVER_FILE") ))
+
+            (if (file-exists-p server-file)
+              (grail-report-info "grail" "start server file already exists"
+                server-file)
+              (server-start) )) )
 
         (grail-configure-display)
         (grail-load-display (window-frame))
