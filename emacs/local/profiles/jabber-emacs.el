@@ -3,7 +3,7 @@
 ;;----------------------------------------------------------------------
 (require 'buffer-ring)
 
-(grail-load 'jabber "git" "git://git.code.sf.net/p/emacs-jabber/git")
+(grail-load-package 'jabber "git" "git://git.code.sf.net/p/emacs-jabber/git")
 
 (setq jabber-auto-reconnect t)
 
