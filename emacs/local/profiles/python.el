@@ -43,10 +43,10 @@
 ;; advanced ipython capability for repl
 ;;
 
-(grail-load 'python-components-pdb "bzr" "lp:python-mode/components-python-mode")
+(grail-load-package 'python-components-pdb "bzr" "lp:python-mode/components-python-mode")
 
 (defconst profile/python-interpeter-exec "ipython")
-(defconst profile/python-repl-name)
+(defconst profile/python-repl-name (borg-repl/repl-name profile/python-name) )
 
 (defun profile/python-repl-buffer-name ()
   ;; has to be a function because it is not defined until run-python is called.
