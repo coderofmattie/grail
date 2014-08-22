@@ -183,11 +183,17 @@
      (progn ,@body)
 
      ('grail-fail
-       (unless ,recover
-         (grail-signal-abort ,where ,what trap-error)) )
+       (progn
+         (grail-report-fail ,where ,what (list "attempting to recover" trap-error))
+
+         (unless ,recover
+           (grail-signal-abort ,where ,what trap-error)) ) )
      ('error
-       (unless ,recover
-         (grail-signal-abort ,where ,what trap-error)) ) ))
+       (progn
+         (grail-report-fail ,where ,what (list "attempting to recover" trap-error))
+
+         (unless ,recover
+           (grail-signal-abort ,where ,what trap-error)) ) ) ))
 
 (defmacro grail-ignore ( where what &rest body )
   `(condition-case trap-error
