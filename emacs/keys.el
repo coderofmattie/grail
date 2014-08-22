@@ -15,7 +15,8 @@
   ("s" . split-window-horizontally)
   ("v" . split-window-vertically)
   ("m" . maximize-frame)
-  ("f" . fullscreen-frame) )
+  ("f" . fullscreen-frame)
+  ("n" . make-frame-command) )
 
 (global-set-key (kbd "C-x e") 'eval-expression)
 
