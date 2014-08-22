@@ -231,52 +231,57 @@
   (unless (symbolp package)
     (grail-signal-fail "grail-load" (format "package \"%s\" is not a symbol" (symbol-name package))) )
 
-  (grail-recover
-    "grail-load"
-    (format "attempting to load profile component %s" (symbol-name package))
+  (let
+    ((pkg-name (symbol-name package)))
 
-    (grail-fail
-      "grail-load retry"
-      "attempting to recover from a failed profile load by installing"
-
-      ;; try and force a unload ignoring errors hoping they are not blockers
-      (grail-ignore
-        "grail-load reset"
-        "unload reset a failed profile"
-
-        ;; force unload
-        (unload-feature package t) )
-
-      ;; try and install ignoring errors hoping they are not blockers
-      (grail-ignore
-        "grail-load install"
-        "performing a install of a failed profile"
-
-        (grail-report-info "grail-load install" "running installer for" package)
-
-        (eval installer)
-
-        (grail-report-info "grail-load install" "attempting reload for" package) )
+    (grail-recover
+      "grail-load"
+      (format "attempting to load profile component %s" (symbol-name package))
 
       (grail-fail
-        "grail-load retry load"
-        "retrying to load a failed profile"
+        "grail-load retry"
+        "attempting to recover from a failed profile load by installing"
 
-        (grail-update-load-path)
-        (require package)
+        ;; try and force a unload ignoring errors hoping they are not blockers
+        (grail-ignore
+          "grail-load reset"
+          "unload reset a failed profile"
 
-        (grail-report-info "grail-load" "profile loaded on install/retry" package) ) )
+          ;; force unload
+          (unload-feature package t) )
 
-    (let
-      ((pkg-name (symbol-name package)))
+        ;; try and install ignoring errors hoping they are not blockers
+        (grail-ignore
+          "grail-load install"
+          "performing a install of a failed profile"
+
+          (grail-report-info "grail-load install" "running installer for" package)
+
+          (eval installer)
+
+          (grail-report-info "grail-load install" "attempting reload for" package) )
+
+        (grail-fail
+          "grail-load retry load"
+          "retrying to load a failed profile"
+
+          (grail-update-load-path)
+
+          (unless (grail-install-sentinel pkg-name (concat pkg-name ".el"))
+            (grail-signal-fail "grail-load"
+              "package not found in local/dist table assuming missing upstream after install attempt" (list pkg-name)) )
+
+          (require package)
+
+          (grail-report-info "grail-load" "profile loaded on install/retry" package) ) )
 
       (unless (grail-install-sentinel pkg-name (concat pkg-name ".el"))
         (grail-signal-fail "grail-load"
-          "package not found in local/dist table assuming missing upstream" (list pkg-name)) ) )
+          "package not found in local/dist table assuming missing upstream after install attempt" (list pkg-name)) )
 
-    (require package)
+      (require package)
 
-    (grail-report-info "grail-load" "profile loaded on the first try" package) ))
+      (grail-report-info "grail-load" "profile loaded on the first try" package) )) )
 
 (defun grail-archive-specification ( specification )
   "grail-archive-specification SPEC
