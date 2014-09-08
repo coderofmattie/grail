@@ -5,6 +5,8 @@
 (require 'programming-generic)
 (require 'dwim-tab)
 
+(defconst profile/web-mode-name "web")
+
 (grail-load-package 'web-mode "git" "https://github.com/fxbois/web-mode.git")
 
 (remap-assoc-mode-to 'html-mode 'web-mode)
@@ -21,12 +23,15 @@
   setq web-mode-code-indent-offset web-profile-indent-offset)
 
 (defun web-mode-profile-setup ()
-  (configure-for-select 'web-mode-element-content-select 'web-mode-element-select)
+;;  (configure-for-select 'web-mode-element-content-select 'web-mode-element-select)
 
   (programming-mode-generic)
 
+  (buffer-ring/add profile/web-mode-name)
+  (buffer-ring/local-keybindings)
+
   ;; has it's own commenting
-  (local-set-key (kbd "C-c ;") 'web-mode-comment-or-uncomment)
+;;  (local-set-key (kbd "C-c ;") 'web-mode-comment-or-uncomment)
 
   (turn-on-dwim-tab 'web-mode-indent-line))
 
