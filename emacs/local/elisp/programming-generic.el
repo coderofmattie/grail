@@ -10,7 +10,7 @@
 ;; major programming features
 ;;
 
-(require 'tags-uber)
+;; (require 'tags-uber)
 (require 'working-copy)
 
 ;;
