@@ -6,7 +6,7 @@
 ;; support for scheme programming
 ;;----------------------------------------------------------------------
 (require 'dwim-tab)
-(require 'remap-assoc-mode)
+(require 'mode-tools)
 (require 'borg-repl)
 (require 'programming-generic)
 
