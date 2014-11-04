@@ -21,7 +21,7 @@
 
 
 (defun user-terminal-ring ()
-  (buffer-ring/add "user-terminal-name")
+  (buffer-ring/add user-terminal-name)
   (buffer-ring/local-keybindings) )
 
 (defadvice term (after terminal-profile/term-bindings)
