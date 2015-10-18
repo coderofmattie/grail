@@ -5,6 +5,7 @@
 ;;----------------------------------------------------------------------
 (require 'custom-key)
 (require 'user-commands)
+(require 'ucase-word)
 
 ;; remove keybindings
 (global-unset-key (kbd "<S-tab>"))
@@ -46,6 +47,8 @@
 (global-set-key (kbd "M-g")  'goto-line)
 
 (global-set-key (kbd "<backtab>") 'next-buffer)
+
+(global-set-key (kbd "<f1>") 'toggle-ucase-word)
 
 ;; line number mode
 (global-set-key (kbd "C-c C-l")  'linum-mode)
