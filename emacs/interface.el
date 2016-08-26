@@ -3,7 +3,8 @@
 ;;----------------------------------------------------------------------
 
 ;; get rid of that horrible dinging
-(setq visible-bell t)
+(setq ring-bell-function 'ignore)          ;; not only is this annoying it
+                                           ;; triggers Emacs rendering bugs
 
 ;; disable things I don't use from eating screen-space
 
