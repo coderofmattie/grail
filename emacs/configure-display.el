@@ -31,7 +31,3 @@
   '(overline . nil)
   '(mouse-color . "red")
   '(cursor-color . "yellow") )
-
-
-
-
