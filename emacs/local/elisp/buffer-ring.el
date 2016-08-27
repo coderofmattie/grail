@@ -331,8 +331,7 @@
       (buffer-ring/info "There is only one buffer in the ring.")
       (progn
         (funcall direction with-ring)
-        (buffer-ring/switch-to-buffer (dyn-ring-value with-ring)) ))
-    (message "buffer not in ring.")) )
+        (buffer-ring/switch-to-buffer (dyn-ring-value with-ring)) )) ))
 
 (defun buffer-ring/prev ( &optional other-ring )
   "buffer-ring/prev
