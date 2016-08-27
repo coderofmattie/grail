@@ -11,7 +11,7 @@
 
 (grail-load-package 'helm "git" "https://github.com/emacs-helm/helm.git")
 
-(require 'helm-config)
+(require 'helm)
 
 (setq helm-execute-action-at-once-if-one t)
 
