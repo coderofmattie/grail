@@ -24,9 +24,14 @@
 ;; create adapter to remap parens with smartparens in the mix
 ;;
 
+;; this insert function in smartparen is gone now.
+;; (defun insert-smart-remapped-char ( character )
+;;   (setq last-command-event character)
+;;   (sp--self-insert-command 1) )
+
 (defun insert-smart-remapped-char ( character )
   (setq last-command-event character)
-  (sp--self-insert-command 1) )
+  (insert-char character) )
 
 (defun insert-dumb-remapped-char ( character )
   (insert-char character)
