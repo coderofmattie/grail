@@ -3,4 +3,6 @@
 ;; linux specific platform
 ;;----------------------------------------------------------------------
 
-(setq grail-font-family '("DejaVu LGC Sans Mono" "DejaVu Sans Mono" "dejavu sans mono"))
+;; LGC sans mono is Latin Greek Cryllic only. prefer the full DejaVu Sans Mono
+
+(setq grail-font-family '("DejaVu Sans Mono" "dejavu sans mono" "DejaVu LGC Sans Mono"))
