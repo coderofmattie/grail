@@ -28,11 +28,7 @@
   (let
     (( at-point (thing-at-point 'word) ))
 
-    (if (and (stringp at-point)
-             (and (string-match "\\sw" at-point)
-                  (string-match "\\sw" (char-to-string (char-after))) ))
-      t
-      nil) ))
+    (stringp at-point) ))
 
 (defun dwim-tab-make-expander ( context expander )
   (cons context expander))
