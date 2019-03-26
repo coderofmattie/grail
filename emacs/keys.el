@@ -53,6 +53,15 @@
 ;; line number mode
 (global-set-key (kbd "C-c C-l")  'linum-mode)
 
+;; ido mode
+(global-set-key (kbd "C-c C-i")  'ido-mode)
+
+;; registers
+(custom-key-group "registers" "r" t
+  ("c" . copy-to-register)
+  ("i" . insert-register)
+  ("l" . list-registers) )
+
 (defvar user-keys/tree-browser nil)
 
 (defun user-keys/start-tree-browser ()
