@@ -326,7 +326,7 @@
     ;;
 
     (defvar grail-elisp-root
-      (expand-file-name (concat (getenv "EMACS_GRAIL_PATH") "/"))
+      (expand-file-name (concat (getenv "USER_ELISP") "/"))
       "The root of the user's elisp tree")
 
     (grail-report-info "grail" "checking elisp-root" grail-elisp-root)
